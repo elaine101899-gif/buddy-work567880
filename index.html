@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070018';
+  var BUILD='202608070020';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6942,27 +6942,29 @@ var INCIDENT=(function(){
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
     var _fSig=d.iFillerSig||'';
     var _dSig=d.iDirectorSig||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
-    h+='<div style="margin-bottom:14px;">';
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">';
+    h+='<div style="flex:1;min-width:120px;">';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">填表人簽名</div>';
     if(_fSig){
-      h+='<div style="display:flex;align-items:center;gap:10px;">';
-      h+='<img id="iFillerSigImg" src="'+_fSig+'" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;">';
-      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" style="padding:7px 14px;border-radius:12px;border:1.5px solid var(--teal);background:#e8f7f4;color:var(--teal);font-size:.8rem;font-weight:700;cursor:pointer;">重新簽名</button>';
-      h+='</div>';
+      h+='<img id="iFillerSigImg" src="'+_fSig+'" onclick="INCIDENT._openFillerSig()" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:4px;">';
+      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" style="padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';
     } else {
-      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" class="cln-sig-btn" style="width:100%;padding:12px;border-radius:12px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.85rem;cursor:pointer;">✍️ 點此簽名</button>';
-      h+='<img id="iFillerSigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:6px;">';
+      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" style="width:100%;padding:16px 8px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此<br>簽名</button>';
+      h+='<img id="iFillerSigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:4px;">';
     }
     h+='</div>';
-    h+='<div style="margin-bottom:14px;">';
+    h+='<div style="flex:1;min-width:120px;">';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">主任簽名（金佩樺）</div>';
     if(_dSig){
       h+='<img id="iDirectorSigImg" src="'+_dSig+'" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;">';
     } else {
-      h+='<div id="iDirectorSigImg" style="color:#bbb;font-size:.8rem;">（SIGLIB 尚未有金佩樺的簽名）</div>';
+      h+='<div id="iDirectorSigImg" style="color:#bbb;font-size:.78rem;">（尚未存簽名）</div>';
     }
     h+='</div>';
-    h+='<div style="flex:1;min-width:140px;margin-bottom:8px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">結案日期</div><input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'"></div>';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">結案日期</div>';
+    h+='<input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'">';
+    h+='</div>';
     h+='</div>';
     /* 受傷記錄詳細 */
     h+='<div class="df-sec"><div class="df-lbl">🗂 受傷記錄（詳細）</div>';
@@ -9194,7 +9196,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:18--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:20--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
