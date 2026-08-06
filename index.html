@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070017';
+  var BUILD='202608070018';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -7152,7 +7152,7 @@ var INCIDENT=(function(){
   /* ─── 列印 HTML ─── */
   function _buildHTML(d,ph1,ph2){
     var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
-    var AC='#c0392b',AL='#fdf0ee';
+    var AC='#6b7a99',AL='#f0f2f7';
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>幼兒事故單</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
     p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:8.5pt;padding:10px 14px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
@@ -9194,7 +9194,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:17--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:18--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
