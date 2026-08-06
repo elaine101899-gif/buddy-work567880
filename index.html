@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070111';
+  var BUILD='202608070121';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5924,10 +5924,12 @@ var LEAVE_BOSS=(function(){
     BOSS_NAMES.forEach(function(name){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
+      var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
       h+='<button onclick="LEAVE_BOSS.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a8ac8;text-align:left;display:flex;align-items:center;justify-content:space-between;">';
       h+='<div><div style="font-weight:800;font-size:1rem;color:#3a4888;">👤 '+name+'</div>';
       h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      h+='<span style="color:#ccc;font-size:1.2rem;">›</span>';
+      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
+      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
       h+='</button>';
     });
     h+='</div>';
@@ -5951,14 +5953,19 @@ var LEAVE_BOSS=(function(){
         var d=forms[fid];var hd=d.header||{};
         var dateStr=hd.date?hd.date.replace(/-/g,'/'):'（未填日期）';
         var leaveType=hd.leaveType||'';
+        var isRead=!!d.read;
         h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid #7a8ac8;">';
         h+='<div style="padding:14px;cursor:pointer;" onclick="LEAVE_BOSS.editForm(\''+fid+'\')">';
-        h+='<div style="font-weight:800;font-size:.95rem;color:#3a4888;">'+dateStr+'　'+leaveType+'</div>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:#3a4888;">'+dateStr+'　'+leaveType+'</div>';
         if(hd.from||hd.to){h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">'+(hd.from?hd.from.replace('T',' ').slice(0,16):'')+'～'+(hd.to?hd.to.replace('T',' ').slice(0,16):'')+'</div>';}
         h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
         h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
         h+='<button onclick="LEAVE_BOSS.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#7a8ac8;font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
         h+='<button onclick="LEAVE_BOSS.printFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE_BOSS.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
         h+='<button onclick="LEAVE_BOSS.deleteFid(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
         h+='</div></div>';
       });
@@ -6091,6 +6098,11 @@ var LEAVE_BOSS=(function(){
     var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);
     _wrap().innerHTML=renderList();
   }
+  function toggleRead(fid){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return;
+    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _wrap().innerHTML=renderList();
+  }
 
   /* ─── 部門主管簽名 ─── */
   function _openMgrSig(){
@@ -6216,7 +6228,7 @@ var LEAVE_BOSS=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
 })();
 
 /* ════ 機動人員請假交接單 ════ */
@@ -6238,11 +6250,15 @@ var LEAVE_FLEX=(function(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
     FLEX_NAMES.forEach(function(name){
-      var count=Object.keys(getForms(name)).length;
+      var forms=getForms(name);
+      var count=Object.keys(forms).length;
+      var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
       h+='<button onclick="LEAVE_FLEX.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
       h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
       h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      h+='<span style="color:#ccc;font-size:1.2rem;">›</span></button>';
+      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
+      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='</button>';
     });
     h+='</div>';return h;
   }
@@ -6262,14 +6278,19 @@ var LEAVE_FLEX=(function(){
       fids.forEach(function(fid){
         var d=forms[fid];var hd=d.header||{};
         var dateStr=hd.date?hd.date.replace(/-/g,'/'):'（未填日期）';
+        var isRead=!!d.read;
         h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+BDC+';">';
         h+='<div style="padding:14px;cursor:pointer;" onclick="LEAVE_FLEX.editForm(\''+fid+'\')">';
-        h+='<div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
         if(hd.from||hd.to){h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">'+(hd.from?hd.from.replace('T',' ').slice(0,16):'')+'～'+(hd.to?hd.to.replace('T',' ').slice(0,16):'')+'</div>';}
         h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
         h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
         h+='<button onclick="LEAVE_FLEX.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+BDC+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
         h+='<button onclick="LEAVE_FLEX.printFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE_FLEX.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
         h+='<button onclick="LEAVE_FLEX.deleteFid(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
         h+='</div></div>';
       });
@@ -6350,6 +6371,11 @@ var LEAVE_FLEX=(function(){
     curStep='form';_wrap().innerHTML=renderForm(d);
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function toggleRead(fid){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return;
+    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _wrap().innerHTML=renderList();
+  }
   function _openMgrSig(){
     var d=getForms(curName)[curFid]||{};
     _sigPad.open('部門主管簽名',d.sigMgr||'',function(dataURL){
@@ -6396,7 +6422,7 @@ var LEAVE_FLEX=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
 })();
 
 var LEAVE_COOK=(function(){
@@ -6418,11 +6444,15 @@ var LEAVE_COOK=(function(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
     COOK_NAMES.forEach(function(name){
-      var count=Object.keys(getForms(name)).length;
+      var forms=getForms(name);
+      var count=Object.keys(forms).length;
+      var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
       h+='<button onclick="LEAVE_COOK.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
       h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
       h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      h+='<span style="color:#ccc;font-size:1.2rem;">›</span></button>';
+      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
+      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='</button>';
     });
     h+='</div>';return h;
   }
@@ -6442,14 +6472,19 @@ var LEAVE_COOK=(function(){
       fids.forEach(function(fid){
         var d=forms[fid];var hd=d.header||{};
         var dateStr=hd.date?hd.date.replace(/-/g,'/'):'（未填日期）';
+        var isRead=!!d.read;
         h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+BDC+';">';
         h+='<div style="padding:14px;cursor:pointer;" onclick="LEAVE_COOK.editForm(\''+fid+'\')">';
-        h+='<div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
         if(hd.from||hd.to){h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">'+(hd.from?hd.from.replace('T',' ').slice(0,16):'')+'～'+(hd.to?hd.to.replace('T',' ').slice(0,16):'')+'</div>';}
         h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
         h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
         h+='<button onclick="LEAVE_COOK.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+BDC+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
         h+='<button onclick="LEAVE_COOK.printFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE_COOK.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
         h+='<button onclick="LEAVE_COOK.deleteFid(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
         h+='</div></div>';
       });
@@ -6527,6 +6562,11 @@ var LEAVE_COOK=(function(){
     curStep='form';_wrap().innerHTML=renderForm(d);
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function toggleRead(fid){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return;
+    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _wrap().innerHTML=renderList();
+  }
   function _openMgrSig(){
     var d=getForms(curName)[curFid]||{};
     _sigPad.open('部門主管簽名',d.sigMgr||'',function(dataURL){
@@ -6573,7 +6613,7 @@ var LEAVE_COOK=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -9053,7 +9093,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 01:11--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 01:21--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
