@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062336';
+  var BUILD='202608062344';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2937,14 +2937,12 @@ function asrLoad() {
           var lsRep  = asrDB.reports[key];
           /* 若 localStorage 沒這筆，或 IDB 這筆有照片而 localStorage 沒有 → 用 IDB */
           if (!lsRep) { asrDB.reports[key] = idbRep; updated = true; return; }
-          var idbHasPhoto = idbRep && (idbRep.photo1 || idbRep.photo2 ||
-            (idbRep.acts && Object.keys(idbRep.acts).some(function(ak){
-              var a=idbRep.acts[ak];return a&&(a.photo1||a.photo2);
-            })));
-          var lsHasPhoto = lsRep && (lsRep.photo1 || lsRep.photo2 ||
-            (lsRep.acts && Object.keys(lsRep.acts).some(function(ak){
-              var a=lsRep.acts[ak];return a&&(a.photo1||a.photo2);
-            })));
+          var idbHasPhoto = idbRep && idbRep.photos && Object.keys(idbRep.photos).some(function(ai){
+            var ph=idbRep.photos[ai]; return ph&&(ph[0]||ph[1]);
+          });
+          var lsHasPhoto = lsRep && lsRep.photos && Object.keys(lsRep.photos).some(function(ai){
+            var ph=lsRep.photos[ai]; return ph&&(ph[0]||ph[1]);
+          });
           if (idbHasPhoto && !lsHasPhoto) { asrDB.reports[key] = idbRep; updated = true; }
         });
         if (updated && typeof ASR !== 'undefined' && ASR.rdrT) {
@@ -9168,7 +9166,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:36--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:44--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
