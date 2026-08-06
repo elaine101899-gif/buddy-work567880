@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062322';
+  var BUILD='202608062323';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -8963,12 +8963,7 @@ var PHONEVISIT=(function(){
     teacherOrder.forEach(function(tn){
       teacherMap[tn].recs.sort(function(a,b){return (a.date+' '+(a.time||'')).localeCompare(b.date+' '+(b.time||''));});
     });
-    // 無印風頁首圖標：細框圓形 + 校名縮寫
-    var legoSvg='<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">'
-      +'<circle cx="22" cy="22" r="20" fill="none" stroke="#8C8279" stroke-width="1.2"/>'
-      +'<text x="22" y="17" text-anchor="middle" font-family="PingFang TC,sans-serif" font-weight="600" font-size="8" fill="#5C5550" letter-spacing="0">小布迪</text>'
-      +'<text x="22" y="29" text-anchor="middle" font-family="PingFang TC,sans-serif" font-weight="400" font-size="6.5" fill="#8C8279" letter-spacing="0.5">BABYCARE</text>'
-      +'</svg>';
+    var legoSvg='<img src="'+_CLEAN_LOGO+'" style="height:44px;width:auto;">';
     // 無印良品風裝飾：菱形點陣取代 LEGO 圓點
     function studStrip(color,n){
       var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+(n*14)+'" height="14" viewBox="0 0 '+(n*14)+' 14">';
@@ -9166,7 +9161,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:22--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:23--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
