@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062334';
+  var BUILD='202608062336';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1406,6 +1406,7 @@ body.adm .sync-setup{display:block;}
 .cln-table{width:100%;border-collapse:collapse;font-size:.78rem;min-width:560px;}
 .cln-table th,.cln-table td{border:1px solid var(--border);padding:6px 4px;text-align:center;}
 .cln-table thead th{background:#f4f6fb;color:var(--navy);font-weight:700;white-space:nowrap;}
+.cln-table td:first-child,.cln-table th:first-child{white-space:nowrap;}
 .cln-day{font-weight:700;color:var(--navy);background:#fafbfd;}
 .cln-chk{width:18px;height:18px;cursor:pointer;}
 .cln-sig-btn{background:var(--teal);color:#fff;border:none;border-radius:14px;padding:5px 9px;font-size:.72rem;cursor:pointer;white-space:nowrap;}
@@ -9167,7 +9168,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:34--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:36--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
