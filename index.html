@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062325';
+  var BUILD='202608062334';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -7413,20 +7413,24 @@ function _cleanBuildPrintHTML(title,theadHtml,rowsHtml){
 function _cleanBuildCompactPrintHTML(title,bodyHtml,sectionCount){
   var n=sectionCount||1;
   /* 區塊數越少，字級與留白可以放越大，盡量把整張 A4 填滿、減少底部空白 */
-  var fsH2=n<=1?20:(n===2?18:16), fsH3=n<=1?16:(n===2?14:13), fsTb=n<=1?15:(n===2?13:11.5);
-  var pad=n<=1?'9px 12px':(n===2?'7px 10px':'5px 8px');
-  var sigW=n<=1?64:(n===2?52:42), sigH=n<=1?32:(n===2?26:20);
+  var fsH2=n<=1?20:(n===2?18:15), fsH3=n<=1?16:(n===2?14:12), fsTb=n<=1?15:(n===2?13:10);
+  var pad=n<=1?'9px 12px':(n===2?'7px 10px':'2px 3px');
+  var sigW=n<=1?64:(n===2?52:30), sigH=n<=1?32:(n===2?26:12);
+  var h3m=n<=1?'16px 0 6px':(n===2?'12px 0 4px':'6px 0 2px');
+  var pgm=n<=1?'10mm':(n===2?'10mm':'7mm');
+  var bpad=n<=1?'14px':(n===2?'12px':'8px');
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+title+'</title>'+
-    '<style>body{font-family:"Noto Sans TC",sans-serif;padding:14px;color:#1a2b4a;}'+
-    '@page{size:A4;margin:10mm;}'+
+    '<style>body{font-family:"Noto Sans TC",sans-serif;padding:'+bpad+';color:#1a2b4a;}'+
+    '@page{size:A4;margin:'+pgm+';}'+
     'h2{text-align:center;margin:0 0 16px;font-size:'+fsH2+'px;}'+
-    'h3{margin:16px 0 6px;font-size:'+fsH3+'px;color:#1a2b4a;background:#eef2fb;padding:6px 10px;border-radius:4px;}'+
-    'table{width:100%;border-collapse:collapse;font-size:'+fsTb+'px;margin-bottom:10px;table-layout:fixed;}'+
-    'th,td{border:1px solid #555;padding:'+pad+';text-align:center;overflow:hidden;word-break:break-all;}'+
+    'h3{margin:'+h3m+';font-size:'+fsH3+'px;color:#1a2b4a;background:#eef2fb;padding:3px 8px;border-radius:4px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:'+fsTb+'px;margin-bottom:6px;table-layout:fixed;}'+
+    'th,td{border:1px solid #555;padding:'+pad+';text-align:center;overflow:hidden;word-break:break-all;line-height:1.2;}'+
     'th:first-child,td:first-child{width:'+(n<=1?70:(n===2?60:50))+'px;}'+
+    'td .note-inner{max-height:'+(n<=2?'36px':'22px')+';overflow:hidden;text-overflow:ellipsis;}'+
     'th{background:#f4f6fb;}img.sig{width:'+sigW+'px;height:'+sigH+'px;object-fit:contain;}'+
     '@media print{button{display:none;}}</style></head><body>'+
-    '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;"><img src="'+_CLEAN_LOGO+'" style="height:44px;width:auto;"><div style="text-align:center;"><div style="font-size:'+fsH2+'px;font-weight:900;">臺南市私立小布迪音樂藝術托嬰中心</div><div style="font-size:'+(fsH2-2)+'px;font-weight:700;">'+title+'</div></div></div>'+
+    '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:'+(n>=3?'6px':'12px')+'px;"><img src="'+_CLEAN_LOGO+'" style="height:'+(n>=3?'36':'44')+'px;width:auto;"><div style="text-align:center;"><div style="font-size:'+fsH2+'px;font-weight:900;">臺南市私立小布迪音樂藝術托嬰中心</div><div style="font-size:'+(fsH2-2)+'px;font-weight:700;">'+title+'</div></div></div>'+
     bodyHtml+
     '<script>window.onload=function(){window.print();}<\/script></body></html>';
 }
@@ -8016,11 +8020,12 @@ var BEDDING=(function(){
       var rec=getRecForClass(cid);
       if(!rec.sigs)rec.sigs=['','','','',''];
       body+='<h3>'+cls.label+'</h3>';
-      body+='<table><thead><tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th></tr></thead><tbody>';
+      body+='<table><colgroup><col style="width:14%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:10%"><col style="width:36%"></colgroup>';
+      body+='<thead><tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th></tr></thead><tbody>';
       rec.rows.forEach(function(row){
         body+='<tr><td>'+(row.name||'')+'</td>';
         row.d.forEach(function(dv){body+='<td>'+(dv||'')+'</td>';});
-        body+='<td>'+(row.note||'')+'</td></tr>';
+        body+='<td><div class="note-inner">'+(row.note||'')+'</div></td></tr>';
       });
       body+='<tr><td>托育人員簽章</td>';
       rec.sigs.forEach(function(s){body+='<td>'+(s?'<img class="sig" src="'+s+'">':'')+'</td>';});
@@ -9162,7 +9167,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:25--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:34--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
