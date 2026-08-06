@@ -7385,13 +7385,15 @@ var _CLEAN_LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHgAAABvCAYAAAAnt
 /* ── 清潔表單：共用列印／下載 ── */
 function _cleanBuildPrintHTML(title,theadHtml,rowsHtml){
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+title+'</title>'+
-    '<style>@page{size:A4 portrait;margin:8mm;}'+
-    'body{font-family:"Noto Sans TC",sans-serif;padding:8px;color:#1a2b4a;}'+
-    'table{width:100%;border-collapse:collapse;font-size:11px;table-layout:fixed;}'+
-    'th,td{border:1px solid #555;padding:3px 4px;text-align:center;overflow:hidden;word-break:break-all;}'+
-    'th:first-child,td:first-child{width:50px;}'+
-    'th{background:#eef2fb;}img.sig{width:46px;height:22px;object-fit:contain;}'+
-    '@media print{button{display:none;}}</style></head><body>'+
+    '<style>@page{size:A4 portrait;margin:6mm;}'+
+    'html,body{height:100%;margin:0;padding:0;}'+
+    'body{font-family:"Noto Sans TC",sans-serif;padding:4px;color:#1a2b4a;font-size:10px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;}'+
+    'th,td{border:1px solid #555;padding:2px 3px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.2;}'+
+    'th:first-child,td:first-child{width:52px;}'+
+    'th{background:#eef2fb;}img.sig{max-width:44px;max-height:16px;object-fit:contain;display:block;margin:0 auto;}'+
+    '@media print{button{display:none;}html,body{height:auto;}'+
+    'table{page-break-inside:avoid;}}</style></head><body>'+
     '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px;"><img src="'+_CLEAN_LOGO+'" style="height:44px;width:auto;"><div style="text-align:center;"><div style="font-size:14px;font-weight:900;">臺南市私立小布迪音樂藝術托嬰中心</div><div style="font-size:13px;font-weight:700;">'+title+'</div></div></div>'+
     '<table><thead>'+theadHtml+'</thead><tbody>'+rowsHtml+'</tbody></table>'+
     '<script>window.onload=function(){window.print();}<\/script></body></html>';
@@ -9147,7 +9149,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:13--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:17--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
