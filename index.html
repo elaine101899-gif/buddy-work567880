@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062344';
+  var BUILD='202608070002';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6720,64 +6720,135 @@ var LEAVE_COOK=(function(){
 })();
 
 /* ════ 幼兒事故單 ════ */
-var INCIDENT = (function(){
-  var KEY = 'xiaoBudiIncident';
-  var _iPhotos={1:null,2:null}; /* 照片存記憶體，避免 localStorage 超限 */
-  function getSaved(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
-  function setSaved(d){
-    /* 事故單不把照片存入 localStorage（太大），照片只靠記憶體 + IDB */
-    var noPhoto={};Object.keys(d).forEach(function(k){if(k!=='photo1'&&k!=='photo2')noPhoto[k]=d[k];});
-    var lsOk=false;
-    try{localStorage.setItem(KEY,JSON.stringify(noPhoto));lsOk=true;}catch(e){}
-    if(!lsOk&&typeof _xbdDB!=='undefined')_xbdDB.showErr('⚠️ 事故單儲存失敗！資料已備份至 IndexedDB，重開頁面即可復原');
-    /* IDB 存完整資料（含照片） */
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));
+var INCIDENT=(function(){
+  var KEY='xiaoBudiIncidentV2',FB_PATH='xiaobuddyIncidentV2';
+  var curCls='run',curFid='',curStep='hub';
+  var db={baby:{},crawl:{},run:{}};
+  var _iPhotos={1:null,2:null};
+
+  function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':'寶寶班';}
+  function clsBd(c){return c==='run'?'var(--run-bd)':c==='crawl'?'var(--crawl-bd)':'var(--baby-bd)';}
+  function clsIcon(c){return c==='run'?'🏃':c==='crawl'?'🐛':'🍼';}
+
+  function loadLocal(){
+    try{var v=JSON.parse(localStorage.getItem(KEY)||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
+    catch(e){db={baby:{},crawl:{},run:{}};}
   }
-  /* 壓縮照片至最大 1200px / JPEG 75%，減少 localStorage 占用 */
-  function _compressPhoto(src,cb){
-    var img=new Image();
-    img.onload=function(){
-      var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;
-      var sc=Math.min(1,MAX/Math.max(w,h));
-      var cw=Math.round(w*sc),ch=Math.round(h*sc);
-      var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;
-      cvs.getContext('2d').drawImage(img,0,0,cw,ch);
-      cb(cvs.toDataURL('image/jpeg',0.75));
-    };
-    img.onerror=function(){cb(src);}; /* 壓縮失敗時用原圖 */
-    img.src=src;
+  function _wrap(){return document.getElementById('incidentWrap');}
+  function saveAll(){
+    var light={baby:{},crawl:{},run:{}};
+    ['baby','crawl','run'].forEach(function(cls){
+      Object.keys(db[cls]).forEach(function(fid){
+        var d=db[cls][fid],noP={};
+        Object.keys(d).forEach(function(k){if(k!=='photo1'&&k!=='photo2')noP[k]=d[k];});
+        light[cls][fid]=noP;
+      });
+    });
+    try{localStorage.setItem(KEY,JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(db));
+  }
+  function pushFb(cls,fid,data){
+    try{var fb=_fbInit();if(!fb)return;var noP={};Object.keys(data).forEach(function(k){if(k!=='photo1'&&k!=='photo2')noP[k]=data[k];});fb.ref(FB_PATH+'/'+cls+'/'+fid).set(noP);}catch(e){}
+  }
+  function loadFb(cls,cb){
+    try{var fb=_fbInit();if(!fb){cb();return;}
+      fb.ref(FB_PATH+'/'+cls).once('value',function(snap){
+        var d=snap.val()||{};
+        Object.keys(d).forEach(function(fid){
+          if(!db[cls][fid])db[cls][fid]=d[fid];
+          else Object.keys(d[fid]).forEach(function(k){if(k!=='photo1'&&k!=='photo2')db[cls][fid][k]=d[fid][k];});
+        });
+        saveAll();cb();
+      });
+    }catch(e){cb();}
   }
 
   function v(id){var e=document.getElementById(id);return e?(e.value||''):'';}
   function gcb(name){var es=document.querySelectorAll('input[name="'+name+'"]:checked');var r=[];es.forEach(function(e){r.push(e.value);});return r;}
-
-  function chk(name,val,arr){
-    var checked=arr&&arr.indexOf(val)!==-1;
-    return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:6px;font-size:.85rem;cursor:pointer;"><input type="checkbox" name="'+name+'" value="'+val+'"'+(checked?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';
-  }
-  function rad(name,val,cur){
-    return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:.85rem;cursor:pointer;"><input type="radio" name="'+name+'" value="'+val+'"'+(cur===val?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';
-  }
+  function chk(name,val,arr){var checked=arr&&arr.indexOf(val)!==-1;return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:6px;font-size:.85rem;cursor:pointer;"><input type="checkbox" name="'+name+'" value="'+val+'"'+(checked?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
+  function rad(name,val,cur){return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:.85rem;cursor:pointer;"><input type="radio" name="'+name+'" value="'+val+'"'+(cur===val?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
 
+  /* ─── 首頁（班級選擇）─── */
+  function renderHub(){
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增事故單</div>';
+    ['baby','crawl','run'].forEach(function(cls){
+      var items=db[cls]||{};
+      var total=Object.keys(items).length;
+      var unread=Object.keys(items).filter(function(fid){return !items[fid].read;}).length;
+      h+='<button onclick="INCIDENT.openClass(\''+cls+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+clsBd(cls)+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
+      h+='<div><div style="font-weight:800;font-size:1rem;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</div>';
+      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+total+' 份事故單</div></div>';
+      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
+      else if(total>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='</button>';
+    });
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 列表（指定班別）─── */
+  function renderList(){
+    var cls=curCls;
+    var items=db[cls]||{};
+    var fids=Object.keys(items).sort(function(a,b){return (items[b].createdAt||0)-(items[a].createdAt||0);});
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
+    h+='<button onclick="INCIDENT.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
+    h+='<span style="font-weight:800;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</span>';
+    h+='<button onclick="INCIDENT.newForm()" style="padding:8px 16px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增</button>';
+    h+='</div>';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無事故單記錄<br><br><button onclick="INCIDENT.newForm()" style="padding:12px 24px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份事故單</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=items[fid];
+        var dateStr=d.iAccDate||d.iDate||'（未填日期）';
+        var childName=d.iChildName||'（未填名稱）';
+        var isRead=!!d.read;
+        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+clsBd(cls)+';">';
+        h+='<div style="padding:14px;cursor:pointer;" onclick="INCIDENT.editForm(\''+fid+'\')">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+esc(childName)+'</div>';
+        h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">'+esc(dateStr)+'</div>';
+        if(d.iDesc){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">'+pe(d.iDesc).slice(0,50)+'</div>';}
+        h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="INCIDENT.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="INCIDENT.downloadFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="INCIDENT.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
+        h+='<button onclick="INCIDENT.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 表單 ─── */
   function renderForm(d){
     var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
-
-    /* ── 基本資料 ── */
+    h+='<button onclick="INCIDENT.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
+    /* 基本資料 */
     h+='<div class="df-sec"><div class="df-lbl">📋 基本資料</div>';
-    /* 快速選擇幼兒 */
     (function(){
       if(typeof asrDB==='undefined')return;
-      var clsLabel={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+      var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
       h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">快速選擇幼兒</div>';
       h+='<select id="iChildSel" class="df-inp" style="width:100%;" onchange="INCIDENT.onChildSel()">';
       h+='<option value="">── 選擇幼兒（自動填入姓名、班級、托育人員）──</option>';
+      var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+      var teachers=pl.teachers||asrDB.teachers||[];
       ['baby','crawl','run'].forEach(function(cls){
-        (asrDB.teachers||[]).filter(function(t){return t.cls===cls;}).forEach(function(t){
-          (asrDB.children[t.id]||[]).forEach(function(c){
-            h+='<option value="'+c.id+'|'+t.id+'">【'+clsLabel[cls]+'】'+c.name+'</option>';
-          });
+        teachers.filter(function(t){return t.cls===cls;}).forEach(function(t){
+          var kids=(pl.children&&pl.children[t.id])||asrDB.children[t.id]||[];
+          kids.forEach(function(c){h+='<option value="'+c.id+'|'+t.id+'">【'+clsLabelMap[cls]+'】'+c.name+'</option>';});
         });
       });
       h+='</select></div>';
@@ -6798,56 +6869,46 @@ var INCIDENT = (function(){
     h+='<input type="number" id="iAccHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iAccHour||'')+'"><span style="font-size:.82rem;">時</span>';
     h+='<input type="number" id="iAccMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iAccMin||'')+'"><span style="font-size:.82rem;">分</span>';
     h+='</div></div>';
-
-    /* ── 事故發生地點 ── */
+    /* 地點 */
     h+='<div class="df-sec"><div class="df-lbl">📍 事故發生地點</div>';
     h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['戶外遊戲場','行政區','班級教室','走廊','廁所'].forEach(function(vv){h+=chk('iLoc',vv,d.iLoc);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iLocOther" class="df-inp" value="'+esc(d.iLocOther||'')+'"></div></div>';
-
-    /* ── 事故類屬 ── */
+    /* 類屬 */
     h+='<div class="df-sec"><div class="df-lbl">📂 事故類屬</div><div style="display:flex;flex-wrap:wrap;">';
     ['本身意外','他人意外','他人故意','托育人員疏忽','其他'].forEach(function(vv){h+=chk('iType',vv,d.iType);});
     h+='</div></div>';
-
-    /* ── 事故發生簡述 ── */
+    /* 簡述 */
     h+='<div class="df-sec"><div class="df-lbl">📝 事故發生簡述</div><textarea id="iDesc" class="df-ta" placeholder="請描述事故經過…" style="min-height:100px;">'+pe(d.iDesc||'')+'</textarea></div>';
-
-    /* ── 立即處理措施 ── */
+    /* 立即處理 */
     h+='<div class="df-sec"><div class="df-lbl">🩹 立即處理措施</div><div style="display:flex;flex-wrap:wrap;">';
     ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){h+=chk('iImm',vv,d.iImm);});
     h+='</div></div>';
-
-    /* ── 受傷部位 ── */
+    /* 受傷部位 */
     h+='<div class="df-sec"><div class="df-lbl">🫀 受傷部位</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部'].forEach(function(vv){h+=chk('iBodyPart',vv,d.iBodyPart);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iBodyOther" class="df-inp" value="'+esc(d.iBodyOther||'')+'"></div></div>';
-
-    /* ── 受傷狀況A ── */
+    /* 狀況A */
     h+='<div class="df-sec"><div class="df-lbl">🔴 受傷狀況（一）</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['出血','疼痛','紅腫','瘀青'].forEach(function(vv){h+=chk('iInjA',vv,d.iInjA);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iInjAOther" class="df-inp" value="'+esc(d.iInjAOther||'')+'"></div></div>';
-
-    /* ── 受傷狀況B ── */
+    /* 狀況B */
     h+='<div class="df-sec"><div class="df-lbl">🟠 受傷狀況（二）</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀'].forEach(function(vv){h+=chk('iInjB',vv,d.iInjB);});
     h+='</div><div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:6px;"><span style="font-size:.82rem;white-space:nowrap;">異物入：</span>';
     ['鼻','眼','耳','喉'].forEach(function(vv){h+=chk('iFB',vv,d.iFB);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iInjBOther" class="df-inp" value="'+esc(d.iInjBOther||'')+'"></div></div>';
-
-    /* ── 緊急措施 ── */
+    /* 緊急措施 */
     h+='<div class="df-sec"><div class="df-lbl">🚑 緊急措施</div>';
     [['iFirstAider','急救者'],['iSentBy','送醫者'],['iNotifyStaff','通知相關人員者'],['iContactParent','聯絡家長者'],['iEmgOther','其他']].forEach(function(pair){
       h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;"><span style="font-size:.82rem;white-space:nowrap;min-width:100px;">'+pair[1]+'：</span><input type="text" id="'+pair[0]+'" class="df-inp" value="'+esc(d[pair[0]]||'')+'"></div>';
     });
     h+='</div>';
-
-    /* ── 處理情形 ── */
+    /* 處理情形 */
     h+='<div class="df-sec"><div class="df-lbl">📋 處理情形</div>';
     h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">'+rad('iTreatment','機構自行處理無須送醫',d.iTreatment)+rad('iTreatment','其他',d.iTreatment)+'</div>';
     h+='<input type="text" id="iTreatOther" class="df-inp" placeholder="其他說明" value="'+esc(d.iTreatOther||'')+'"></div>';
-
-    /* ── 送醫情形 ── */
+    /* 送醫情形 */
     h+='<div class="df-sec"><div class="df-lbl">🏥 送醫情形</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;min-width:40px;">送醫：</span>'+rad('iHospSent','有',d.iHospSent)+rad('iHospSent','無',d.iHospSent)+'</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><span style="font-size:.82rem;min-width:40px;">結果：</span>'+rad('iHospResult','急診後出院',d.iHospResult)+rad('iHospResult','急診後住院',d.iHospResult)+rad('iHospResult','其他',d.iHospResult)+'</div>';
@@ -6855,8 +6916,7 @@ var INCIDENT = (function(){
     h+='<div style="flex:1;min-width:100px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">住院天數</div><input type="number" id="iHospDays" class="df-inp" min="0" placeholder="0" value="'+esc(d.iHospDays||'')+'"></div>';
     h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">醫院/診所名稱</div><input type="text" id="iHospName" class="df-inp" value="'+esc(d.iHospName||'')+'"></div>';
     h+='</div><input type="text" id="iHospOther" class="df-inp" placeholder="其他說明" value="'+esc(d.iHospOther||'')+'"></div>';
-
-    /* ── 通知家長時間 ── */
+    /* 通知家長時間 */
     h+='<div class="df-sec"><div class="df-lbl">📞 通知家長時間</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
     h+='<input type="date" id="iNotifyDate" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.iNotifyDate||'')+'">';
@@ -6864,34 +6924,27 @@ var INCIDENT = (function(){
     h+='<input type="number" id="iNotifyHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iNotifyHour||'')+'"><span style="font-size:.82rem;">時</span>';
     h+='<input type="number" id="iNotifyMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iNotifyMin||'')+'"><span style="font-size:.82rem;">分</span>';
     h+='</div></div>';
-
-    /* ── 通知家長內容 ── */
+    /* 通知內容 */
     h+='<div class="df-sec"><div class="df-lbl">💬 通知家長內容</div><textarea id="iNotifyContent" class="df-ta" placeholder="請填寫通知內容…" style="min-height:80px;">'+pe(d.iNotifyContent||'')+'</textarea></div>';
-
-    /* ── 家長反應 ── */
+    /* 家長反應 */
     h+='<div class="df-sec"><div class="df-lbl">👨‍👩‍👧 家長反應</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['無法諒解','諒解','提出告訴','和解','其它'].forEach(function(vv){h+=chk('iParent',vv,d.iParent);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="iParentOther" class="df-inp" value="'+esc(d.iParentOther||'')+'"></div></div>';
-
-    /* ── 後續追蹤 ── */
+    /* 後續追蹤 */
     h+='<div class="df-sec"><div class="df-lbl">🔍 後續追蹤</div><textarea id="iFollowUp" class="df-ta" placeholder="請填寫後續追蹤情形…" style="min-height:80px;">'+pe(d.iFollowUp||'')+'</textarea></div>';
-
-    /* ── 檢討事項 ── */
+    /* 檢討事項 */
     h+='<div class="df-sec"><div class="df-lbl">✅ 檢討事項</div><div style="display:flex;flex-wrap:wrap;">';
     ['設施維修','懲處失職','加強常規','加強應變處理能力','加強工作人員教育訓練'].forEach(function(vv){h+=chk('iReview',vv,d.iReview);});
     h+='</div></div>';
-
-    /* ── 檢討與改進 ── */
+    /* 檢討與改進 */
     h+='<div class="df-sec"><div class="df-lbl">📓 檢討與改進</div><textarea id="iReviewNote" class="df-ta" placeholder="請填寫檢討與改進內容…" style="min-height:80px;">'+pe(d.iReviewNote||'')+'</textarea></div>';
-
-    /* ── 簽名 ── */
+    /* 簽名 */
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
     h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">填表人</div><input type="text" id="iFiller" class="df-inp" value="'+esc(d.iFiller||'')+'"></div>';
     h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">主任</div><input type="text" id="iDirector" class="df-inp" value="'+esc(d.iDirector||'')+'"></div>';
     h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">結案日期</div><input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'"></div>';
     h+='</div></div>';
-
-    /* ── 受傷記錄詳細 ── */
+    /* 受傷記錄詳細 */
     h+='<div class="df-sec"><div class="df-lbl">🗂 受傷記錄（詳細）</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">受傷日期</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
@@ -6914,8 +6967,7 @@ var INCIDENT = (function(){
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">傷口處描述</div>';
     h+='<textarea id="iWoundDesc" class="df-ta" placeholder="請描述傷口狀況…" style="min-height:80px;">'+pe(d.iWoundDesc||'')+'</textarea>';
     h+='</div>';
-
-    /* ── 照片 ── */
+    /* 照片 */
     h+='<div class="df-sec"><div class="df-lbl">📷 事故照片（橫式）</div>';
     h+='<div style="display:flex;gap:12px;margin-top:8px;">';
     h+='<div id="iPhoto1Box" style="flex:1;min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;" onclick="INCIDENT.uploadPhoto(1)">';
@@ -6930,58 +6982,18 @@ var INCIDENT = (function(){
     h+='<input type="file" id="iPhotoInput1" accept="image/*" style="display:none">';
     h+='<input type="file" id="iPhotoInput2" accept="image/*" style="display:none">';
     h+='</div>';
-
-    /* ── 按鈕 ── */
+    /* 按鈕 */
     h+='<div class="lf-btns" style="flex-wrap:wrap;">';
     h+='<button class="lf-save-btn if-save-btn" onclick="INCIDENT.saveForm()">💾 儲存</button>';
     h+='<button class="lf-dl-btn" onclick="INCIDENT.download()">🖨️ 列印</button>';
-    h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="INCIDENT.downloadFile()">📥 下載存檔</button>';
-    h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="INCIDENT.exportData()">📤 匯出資料</button>';
-    h+='<button class="lf-dl-btn" style="background:#6a4fc8;" onclick="INCIDENT.importData()">📂 載入備份</button>';
     h+='</div>';
-
     h+='</div>';
     return h;
   }
 
-  function init(){
-    var wrap=document.getElementById('incidentWrap');
-    if(!wrap)return;
-    var d=getSaved();
-    /* 從 localStorage 恢復照片到記憶體（若存在） */
-    if(d.photo1&&!_iPhotos[1])_iPhotos[1]=d.photo1;
-    if(d.photo2&&!_iPhotos[2])_iPhotos[2]=d.photo2;
-    wrap.innerHTML=renderForm(d);
-    /* IDB 救援：永遠嘗試從 IDB 補回照片（照片不存 localStorage，滑掉 app 後記憶體清空就靠這裡） */
-    if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get(KEY,function(raw){
-        if(!raw)return;
-        try{
-          var rd=JSON.parse(raw);
-          if(!rd||!Object.keys(rd).length)return;
-          var hasData=d&&Object.keys(d).some(function(k){return k!=='photo1'&&k!=='photo2'&&d[k];});
-          var photoUpdated=false;
-          if(rd.photo1&&!_iPhotos[1]){_iPhotos[1]=rd.photo1;photoUpdated=true;}
-          if(rd.photo2&&!_iPhotos[2]){_iPhotos[2]=rd.photo2;photoUpdated=true;}
-          if(!hasData){
-            /* 表單資料也不在 localStorage，完整從 IDB 恢復 */
-            var noPhoto={};Object.keys(rd).forEach(function(k){if(k!=='photo1'&&k!=='photo2')noPhoto[k]=rd[k];});
-            try{localStorage.setItem(KEY,JSON.stringify(noPhoto));}catch(ex){}
-            wrap.innerHTML=renderForm(rd);
-          } else if(photoUpdated){
-            /* 表單資料在 localStorage 但照片只在 IDB，補回照片顯示 */
-            var b1=document.getElementById('iPhoto1Box');
-            var b2=document.getElementById('iPhoto2Box');
-            if(b1&&_iPhotos[1])b1.innerHTML='<img src="'+_iPhotos[1]+'" style="width:100%;height:100%;object-fit:contain;">';
-            if(b2&&_iPhotos[2])b2.innerHTML='<img src="'+_iPhotos[2]+'" style="width:100%;height:100%;object-fit:contain;">';
-          }
-        }catch(ex){}
-      });
-    }
-  }
-
+  /* ─── 收集表單資料 ─── */
   function collectData(){
-    var d=getSaved();
+    var d=JSON.parse(JSON.stringify(db[curCls][curFid]||{}));
     ['iDate','iChildName','iAge','iAgeMonth','iCls','iTeacher',
      'iAccDate','iAccHour','iAccMin','iLocOther',
      'iDesc','iInjAOther','iInjBOther','iBodyOther',
@@ -6998,77 +7010,160 @@ var INCIDENT = (function(){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
     });
     ['iLoc','iType','iImm','iBodyPart','iInjA','iInjB','iFB','iParent','iReview'].forEach(function(name){d[name]=gcb(name);});
-    /* 永遠帶入記憶體中的照片（防止 localStorage 超限時照片遺失） */
     if(_iPhotos[1])d.photo1=_iPhotos[1];
     if(_iPhotos[2])d.photo2=_iPhotos[2];
     return d;
   }
 
+  /* ─── 導覽 ─── */
+  function init(){
+    curStep='hub';curFid='';
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderHub();
+    ['baby','crawl','run'].forEach(function(cls){
+      loadFb(cls,function(){if(curStep==='hub')w.innerHTML=renderHub();});
+    });
+  }
+  function openClass(cls){
+    curCls=cls;curFid='';curStep='list';
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderList();
+    loadFb(cls,function(){if(curStep==='list'&&curCls===cls)w.innerHTML=renderList();});
+  }
+  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var today=new Date();
+    var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
+    db[curCls][curFid]={cls:curCls,createdAt:Date.now(),read:false,iDate:yy,iAccDate:yy};
+    _iPhotos={1:null,2:null};curStep='form';
+    _wrap().innerHTML=renderForm(db[curCls][curFid]);
+  }
+  function editForm(fid){
+    curFid=fid;var d=db[curCls][fid]||{};
+    _iPhotos={1:d.photo1||null,2:d.photo2||null};
+    curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+
+  /* ─── 儲存 / 閱畢 / 刪除 ─── */
   function saveForm(){
-    setSaved(collectData());
+    var d=collectData();d.cls=curCls;
+    var ex=db[curCls][curFid]||{};
+    d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;d.updatedAt=Date.now();
+    db[curCls][curFid]=d;saveAll();pushFb(curCls,curFid,d);
     var btn=document.querySelector('#incidentWrap .if-save-btn');
     if(btn){btn.textContent='✅ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}
   }
+  function toggleRead(fid){
+    if(!db[curCls][fid])return;
+    db[curCls][fid].read=!db[curCls][fid].read;
+    saveAll();pushFb(curCls,fid,db[curCls][fid]);
+    _wrap().innerHTML=renderList();
+  }
+  function deleteForm(fid){
+    if(!confirm('確定要刪除這份事故單嗎？此操作無法復原。'))return;
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+curCls+'/'+fid).remove();}catch(e){}
+    delete db[curCls][fid];saveAll();
+    _wrap().innerHTML=renderList();
+  }
+  function downloadFid(fid){
+    var d=db[curCls][fid];if(!d)return;
+    _doPrint(_buildHTML(d,d.photo1||null,d.photo2||null));
+    if(!d.read){d.read=true;saveAll();pushFb(curCls,fid,d);if(curStep==='list')_wrap().innerHTML=renderList();}
+  }
 
-  function ckStr(arr,val){return arr&&arr.indexOf(val)!==-1?'☑':'□';}
-  function radStr(cur,val){return cur===val?'☑':'□';}
-  function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  /* ─── 照片上傳 ─── */
+  function uploadPhoto(n){
+    var inp=document.getElementById('iPhotoInput'+n);if(!inp)return;
+    inp.onchange=function(){
+      var f=inp.files[0];if(!f)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        _compressPhoto(e.target.result,function(compressed){
+          _iPhotos[n]=compressed;
+          var d=collectData();if(_iPhotos[1])d.photo1=_iPhotos[1];if(_iPhotos[2])d.photo2=_iPhotos[2];
+          d.cls=curCls;var ex=db[curCls][curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+          db[curCls][curFid]=d;saveAll();
+          var box=document.getElementById('iPhoto'+n+'Box');
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+        });
+      };
+      reader.readAsDataURL(f);
+    };
+    inp.click();
+  }
 
-  function _buildHTML(){
-    saveForm();var d=getSaved();
-    /* 優先使用記憶體照片（可能因 localStorage 超限而未存入） */
-    var ph1=_iPhotos[1]||d.photo1||null;
-    var ph2=_iPhotos[2]||d.photo2||null;
-    var logoEl=document.querySelector('.hero-logo');
-    var logoSrc=logoEl?logoEl.src:'';
-    var AC='#c0392b'; var AL='#fdf0ee'; var AM='#e8897a'; /* 事故紅 */
+  /* ─── 列印 ─── */
+  function download(){
+    saveForm();var d=db[curCls][curFid]||{};
+    _doPrint(_buildHTML(d,_iPhotos[1]||d.photo1,_iPhotos[2]||d.photo2));
+  }
+  function _doPrint(h){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
+    else{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
+      setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+    }
+  }
+
+  /* ─── 快速選幼兒 ─── */
+  function onChildSel(){
+    var sel=document.getElementById('iChildSel');if(!sel||!sel.value)return;
+    var parts=sel.value.split('|'),cid=parts[0],tid=parts[1];
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:[])||[];
+    var t=teachers.filter(function(x){return x.id===tid;})[0];
+    var kids=t?((pl.children&&pl.children[t.id])||(typeof asrDB!=='undefined'?asrDB.children[t.id]:[])||[]):[];
+    var c=kids.filter(function(x){return x.id===cid;})[0];
+    if(!c||!t)return;
+    var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+    var nameEl=document.getElementById('iChildName'),clsEl=document.getElementById('iCls'),teacherEl=document.getElementById('iTeacher');
+    if(nameEl)nameEl.value=c.name;if(clsEl)clsEl.value=clsLabelMap[t.cls]||t.cls;if(teacherEl)teacherEl.value=t.name;
+  }
+
+  /* ─── 列印 HTML ─── */
+  function _buildHTML(d,ph1,ph2){
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var AC='#c0392b',AL='#fdf0ee';
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>幼兒事故單</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
     p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:8.5pt;padding:10px 14px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-    /* header */
     p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:8px;margin-bottom:10px;}';
     p+='.hdr img{height:54px;width:auto;}';
     p+='.hdr-txt{flex:1;text-align:center;}';
     p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:#2d3057;}';
     p+='.hdr-txt .t2{font-size:10.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
-    /* card */
     p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
     p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:9pt;padding:5px 12px;letter-spacing:.5px;}';
     p+='.card-body{padding:6px 10px;}';
-    /* table inside card */
     p+='table.dt{width:100%;border-collapse:collapse;font-size:8.5pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:3px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    /* inline row */
-    p+='.row2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}';
-    p+='.col{flex:1;min-width:0;}';
-    p+='.lbl{font-size:7pt;font-weight:700;color:#888;margin-bottom:1px;}';
-    p+='.val{font-size:8.5pt;border-bottom:1px solid #ddd;min-height:12px;padding:1px 2px;}';
     p+='.inpbox{border:1px solid #ddd;border-radius:5px;min-height:28px;font-size:8.5pt;padding:3px 6px;white-space:pre-wrap;}';
-    /* checkboxes */
     p+='.ck-row{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:8pt;margin:2px 0;}';
-    /* photos */
     p+='.photos{display:flex;gap:10px;margin-top:6px;page-break-inside:avoid;break-inside:avoid;}';
     p+='.pbox{flex:1;min-height:210px;border:1.5px solid #ddd;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;}';
     p+='.pbox img{width:100%;height:100%;object-fit:contain;}';
-    /* sig */
     p+='.sig-row{display:flex;justify-content:space-around;margin-top:4px;}';
     p+='.sig-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8pt;}';
     p+='.sig-line{border-bottom:1px solid #aaa;width:80px;min-height:14px;}';
     p+='@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}';
     p+='</style></head><body>';
-
-    /* ── 標題 ── */
     p+='<div class="hdr">';
     if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
     p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">🚨 幼兒事故單</div></div>';
     p+='</div>';
-
     function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #888;border-radius:2px;margin-right:3px;vertical-align:middle;text-align:center;line-height:9px;font-size:7pt;">'+(ok?'✓':'')+'</span>';}
     function cks(arr,val){return ck(arr&&arr.indexOf(val)!==-1);}
     function rs(cur,val){return ck(cur===val);}
-
-    /* ── 基本資料 ── */
+    function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
     p+='<div class="card"><div class="card-hd">📋 基本資料</div><div class="card-body">';
     p+='<table class="dt">';
     p+='<tr><td class="th" style="width:15%;">日期</td><td style="width:35%;">'+esc2(d.iDate||'')+'</td><td class="th" style="width:15%;">嬰幼兒姓名</td><td>'+esc2(d.iChildName||'')+'</td></tr>';
@@ -7076,27 +7171,18 @@ var INCIDENT = (function(){
     p+='<tr><td class="th">班級托育人員</td><td colspan="3">'+esc2(d.iTeacher||'')+'</td></tr>';
     p+='<tr><td class="th">事故發生時間</td><td colspan="3">'+esc2(d.iAccDate||'')+'　'+rs(d.iAccAmPm,'上午')+'上午 '+rs(d.iAccAmPm,'下午')+'下午　'+esc2(d.iAccHour||'__')+'時 '+esc2(d.iAccMin||'__')+'分</td></tr>';
     p+='</table></div></div>';
-
-    /* ── 地點 & 類屬 ── */
     p+='<div style="display:flex;gap:7px;margin-bottom:7px;">';
     p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📍 事故發生地點</div><div class="card-body"><div class="ck-row">';
     ['戶外遊戲場','行政區','班級教室','走廊','廁所'].forEach(function(vv){p+=cks(d.iLoc,vv)+vv+' ';});
     p+='</div><div style="font-size:8pt;margin-top:4px;">其他：'+esc2(d.iLocOther||'')+'</div></div></div>';
     p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📂 事故類屬</div><div class="card-body"><div class="ck-row">';
     ['本身意外','他人意外','他人故意','托育人員疏忽','其他'].forEach(function(vv){p+=cks(d.iType,vv)+vv+' ';});
-    p+='</div></div></div>';
-    p+='</div>';
-
-    /* ── 事故簡述 ── */
+    p+='</div></div></div></div>';
     p+='<div class="card"><div class="card-hd">📝 事故發生簡述</div><div class="card-body"><div class="inpbox" style="min-height:50px;">'+esc2(d.iDesc||'')+'</div></div></div>';
-
-    /* ── 立即處理措施 & 受傷情形 ── */
     p+='<div class="card"><div class="card-hd">🩹 立即處理措施</div><div class="card-body"><div class="ck-row">';
     ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){p+=cks(d.iImm,vv)+vv+'　';});
     p+='</div></div></div>';
-
-    p+='<div class="card"><div class="card-hd">🫀 受傷情形</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='<div class="card"><div class="card-hd">🫀 受傷情形</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:15%;">受傷部位</td><td>';
     ['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部'].forEach(function(vv){p+=cks(d.iBodyPart,vv)+vv+' ';});
     p+='　其他：'+esc2(d.iBodyOther||'')+'</td></tr>';
@@ -7104,35 +7190,22 @@ var INCIDENT = (function(){
     p+='<tr><td class="th">狀況（二）</td><td>';['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀'].forEach(function(vv){p+=cks(d.iInjB,vv)+vv+' ';});
     p+='　異物入：';['鼻','眼','耳','喉'].forEach(function(vv){p+=cks(d.iFB,vv)+vv+' ';});p+='其他：'+esc2(d.iInjBOther||'')+'</td></tr>';
     p+='</table></div></div>';
-
-    /* ── 緊急措施 ── */
-    p+='<div class="card"><div class="card-hd">🚑 緊急措施</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='<div class="card"><div class="card-hd">🚑 緊急措施</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:18%;">急救者</td><td>'+esc2(d.iFirstAider||'')+'</td><td class="th" style="width:18%;">送醫者</td><td>'+esc2(d.iSentBy||'')+'</td></tr>';
     p+='<tr><td class="th">通知相關人員者</td><td>'+esc2(d.iNotifyStaff||'')+'</td><td class="th">聯絡家長者</td><td>'+esc2(d.iContactParent||'')+'</td></tr>';
     p+='<tr><td class="th">其他</td><td colspan="3">'+esc2(d.iEmgOther||'')+'</td></tr>';
     p+='</table></div></div>';
-
-    /* ── 處理情形 & 送醫 ── */
-    p+='<div class="card"><div class="card-hd">🏥 處理結果</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='<div class="card"><div class="card-hd">🏥 處理結果</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:15%;">處理情形</td><td>'+rs(d.iTreatment,'機構自行處理無須送醫')+'機構自行處理無須送醫　'+rs(d.iTreatment,'其他')+'其他：'+esc2(d.iTreatOther||'')+'</td><td class="th" style="width:12%;">送醫</td><td>'+rs(d.iHospSent,'有')+'有　'+rs(d.iHospSent,'無')+'無</td></tr>';
     p+='<tr><td class="th">送醫結果</td><td colspan="3">'+rs(d.iHospResult,'急診後出院')+'急診後出院　'+rs(d.iHospResult,'急診後住院')+'急診後住院（'+esc2(d.iHospDays||'')+'天）　'+rs(d.iHospResult,'其他')+'其他：'+esc2(d.iHospOther||'')+'　醫院/診所：'+esc2(d.iHospName||'')+'</td></tr>';
     p+='</table></div></div>';
-
-    /* ── 通知家長 ── */
-    p+='<div class="card"><div class="card-hd">📞 通知家長</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='<div class="card"><div class="card-hd">📞 通知家長</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:15%;">通知時間</td><td colspan="3">'+esc2(d.iNotifyDate||'')+'　'+rs(d.iNotifyAmPm,'上午')+'上午 '+rs(d.iNotifyAmPm,'下午')+'下午　'+esc2(d.iNotifyHour||'__')+'時 '+esc2(d.iNotifyMin||'__')+'分</td></tr>';
     p+='<tr><td class="th">通知內容</td><td colspan="3"><div class="inpbox" style="min-height:36px;">'+esc2(d.iNotifyContent||'')+'</div></td></tr>';
     p+='<tr><td class="th">家長反應</td><td colspan="3"><div class="ck-row">';
     ['無法諒解','諒解','提出告訴','和解','其它'].forEach(function(vv){p+=cks(d.iParent,vv)+vv+' ';});p+='其他：'+esc2(d.iParentOther||'');
-    p+='</div></td></tr>';
-    p+='</table></div></div>';
-
-    /* ── 後續追蹤 & 檢討 ── */
-    p+='<div class="card"><div class="card-hd">🔍 後續追蹤與檢討</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='</div></td></tr></table></div></div>';
+    p+='<div class="card"><div class="card-hd">🔍 後續追蹤與檢討</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:15%;">後續追蹤</td><td colspan="3"><div class="inpbox" style="min-height:36px;">'+esc2(d.iFollowUp||'')+'</div></td></tr>';
     p+='<tr><td class="th">檢討事項</td><td colspan="3"><div class="ck-row">';
     ['設施維修','懲處失職','加強常規','加強應變處理能力','加強工作人員教育訓練'].forEach(function(vv){p+=cks(d.iReview,vv)+vv+' ';});
@@ -7143,105 +7216,23 @@ var INCIDENT = (function(){
     p+='<div class="sig-item"><div class="sig-line">'+esc2(d.iFiller||'')+'</div><div>填表人</div></div>';
     p+='<div class="sig-item"><div class="sig-line">'+esc2(d.iDirector||'')+'</div><div>主任</div></div>';
     p+='<div class="sig-item"><div class="sig-line">'+esc2(d.iCloseDate||'')+'</div><div>結案日期</div></div>';
-    p+='</div>';
-    p+='</div></div>';
-
-    /* ── 受傷記錄詳細 ── */
-    p+='<div class="card"><div class="card-hd">🗂 受傷記錄（詳細）</div><div class="card-body">';
-    p+='<table class="dt">';
+    p+='</div></div></div>';
+    p+='<div class="card"><div class="card-hd">🗂 受傷記錄（詳細）</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:18%;">受傷日期</td><td>'+esc2(d.iInjDate2||'')+'　'+rs(d.iInjAmPm2,'上午')+'上午 '+rs(d.iInjAmPm2,'下午')+'下午　'+esc2(d.iInjHour2||'__')+'時 '+esc2(d.iInjMin2||'__')+'分</td><td class="th" style="width:20%;">緊急處理傷口日期</td><td>'+esc2(d.iTreatDate||'')+'　'+rs(d.iTreatAmPm,'上午')+'上午 '+rs(d.iTreatAmPm,'下午')+'下午　'+esc2(d.iTreatHour||'__')+'時 '+esc2(d.iTreatMin||'__')+'分</td></tr>';
     p+='<tr><td class="th">受傷部位</td><td>'+esc2(d.iInjPart2||'')+'</td><td class="th">傷口處理</td><td>'+esc2(d.iWoundTreat||'')+'</td></tr>';
     p+='<tr><td class="th">傷口處描述</td><td colspan="3"><div class="inpbox" style="min-height:50px;">'+esc2(d.iWoundDesc||'')+'</div></td></tr>';
     p+='</table></div></div>';
-
-    /* ── 照片 ── */
-    p+='<div class="card"><div class="card-hd">📷 事故照片</div><div class="card-body">';
-    p+='<div class="photos">';
+    p+='<div class="card"><div class="card-hd">📷 事故照片</div><div class="card-body"><div class="photos">';
     p+='<div class="pbox">'+(ph1?'<img src="'+ph1+'">':'<div style="color:#ccc;font-size:8pt;text-align:center;">無照片</div>')+'</div>';
     p+='<div class="pbox">'+(ph2?'<img src="'+ph2+'">':'<div style="color:#ccc;font-size:8pt;text-align:center;">無照片</div>')+'</div>';
     p+='</div></div></div>';
-
     p+='</body></html>';
     return p;
   }
 
-  function uploadPhoto(n){
-    var inp=document.getElementById('iPhotoInput'+n);
-    if(!inp)return;
-    inp.onchange=function(){
-      var f=inp.files[0];if(!f)return;
-      var reader=new FileReader();
-      reader.onload=function(e){
-        _compressPhoto(e.target.result,function(compressed){
-          _iPhotos[n]=compressed; /* 存到記憶體 */
-          /* 合併所有記憶體照片後再存（確保 IDB 有兩張照片） */
-          var d=getSaved();
-          if(_iPhotos[1])d.photo1=_iPhotos[1];
-          if(_iPhotos[2])d.photo2=_iPhotos[2];
-          setSaved(d);
-          var box=document.getElementById('iPhoto'+n+'Box');
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
-        });
-      };
-      reader.readAsDataURL(f);
-    };
-    inp.click();
-  }
-
-  function download(){
-    var h=_buildHTML();
-    /* 先嘗試 window.open；iOS Safari popup 被擋時改用 iframe 列印 */
-    var w=null;
-    try{w=window.open('','_blank');}catch(e){}
-    if(w){
-      w.document.write(h);w.document.close();
-      setTimeout(function(){try{w.print();}catch(e){}},600);
-    } else {
-      /* fallback：hidden iframe */
-      var ifr=document.createElement('iframe');
-      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
-      document.body.appendChild(ifr);
-      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
-      setTimeout(function(){
-        try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}
-        setTimeout(function(){document.body.removeChild(ifr);},3000);
-      },600);
-    }
-  }
-  function downloadFile(){
-    var h=_buildHTML();
-    var blob=new Blob([h],{type:'text/html;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;
-    a.download='幼兒事故單_'+(new Date().toISOString().slice(0,10))+'.html';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);
-    /* 延遲 60 秒再 revoke，確保 iOS Safari 完成下載 */
-    setTimeout(function(){URL.revokeObjectURL(url);},60000);
-  }
-  function exportData(){var d=getSaved();var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='事故單資料.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);}
-  function importData(){var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';inp.onchange=function(){var f=inp.files[0];if(!f)return;var reader=new FileReader();reader.onload=function(e){try{var d=JSON.parse(e.target.result);setSaved(d);init();alert('✅ 資料載入成功！');}catch(err){alert('❌ 載入失敗');}};reader.readAsText(f);};document.body.appendChild(inp);inp.click();document.body.removeChild(inp);}
-
-  function onChildSel(){
-    var sel=document.getElementById('iChildSel');
-    if(!sel||!sel.value)return;
-    var parts=sel.value.split('|');
-    var cid=parts[0],tid=parts[1];
-    if(typeof asrDB==='undefined')return;
-    var t=(asrDB.teachers||[]).filter(function(x){return x.id===tid;})[0];
-    var c=t?(asrDB.children[tid]||[]).filter(function(x){return x.id===cid;})[0]:null;
-    if(!c||!t)return;
-    var clsLabel={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
-    var nameEl=document.getElementById('iChildName');
-    var clsEl=document.getElementById('iCls');
-    var teacherEl=document.getElementById('iTeacher');
-    if(nameEl)nameEl.value=c.name;
-    if(clsEl)clsEl.value=clsLabel[t.cls]||t.cls;
-    if(teacherEl)teacherEl.value=t.name;
-  }
-
-  return{init:init,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,uploadPhoto:uploadPhoto,onChildSel:onChildSel};
+  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download};
 })();
+
 
 /* ── 清潔表單：共用簽名畫板 ── */
 /* ── 清潔表單：老師常用簽名庫 ── */
@@ -9166,7 +9157,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:44--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:02--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
