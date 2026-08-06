@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608062320';
+  var BUILD='202608062322';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -8824,15 +8824,21 @@ var PHONEVISIT=(function(){
     var el=document.getElementById('pv-records');
     var lbl=document.getElementById('pv-rec-lbl');
     if(!el) return;
+    /* 只顯示當月紀錄 */
+    var now=new Date();
+    var curRoc=now.getFullYear()-1911;
+    var curMo=now.getMonth()+1;
+    var curMonthPfx=curRoc+'.'+(curMo<10?'0':'')+curMo+'.';
     var recs=[];
     Object.keys(db).forEach(function(id){
       var r=db[id];
       if(r.cls!==curCls) return;
       if(curChild && (r.childId!==curChild.id||r.teacherId!==curChild.teacherId)) return;
+      if(!r.date||r.date.indexOf(curMonthPfx)!==0) return;
       recs.push({id:id,r:r});
     });
     recs.sort(function(a,b){return (b.r.ts||0)-(a.r.ts||0);});
-    if(lbl) lbl.textContent='歷史記錄'+(curChild?' — '+curChild.name:'')+'（共'+recs.length+'筆）';
+    if(lbl) lbl.textContent='本月記錄'+(curChild?' — '+curChild.name:'')+'（'+curRoc+'年'+curMo+'月，共'+recs.length+'筆）';
     if(!recs.length){el.innerHTML='<div style="color:#bbb;text-align:center;padding:16px 0;font-size:.85rem;">尚無記錄</div>';return;}
     var h='';
     recs.forEach(function(item){
@@ -9160,7 +9166,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:20--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/06 23:22--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
