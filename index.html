@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070030';
+  var BUILD='202608070111';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6221,537 +6221,359 @@ var LEAVE_BOSS=(function(){
 
 /* ════ 機動人員請假交接單 ════ */
 var LEAVE_FLEX=(function(){
-  var KEY='xiaoBudiLeaveFlex';
-  function getSaved(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
-  function setSaved(d){
-    var lsOk=false;
-    try{localStorage.setItem(KEY,JSON.stringify(d));lsOk=true;}catch(e){}
-    if(!lsOk&&typeof _xbdDB!=='undefined')_xbdDB.showErr('⚠️ 假單儲存失敗！資料已備份至 IndexedDB，重開頁面即可復原');
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));
-  }
-  function v(id){var el=document.getElementById(id);return el?(el.value||''):''}
-  function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+  var KEY='xiaoBudiLeaveFlexV2';
+  var FLEX_NAMES=['黃鈺雯','陳芓妍'];
+  var curName='',curFid='',curStep='hub';
+  var TX='#3d7030',BGC='#e8f0e5',BDC='#7aaa6a';
 
-  function init(){
-    var wrap=document.getElementById('leaveFlexWrap');
-    if(!wrap)return;
-    var d=getSaved();
-    wrap.innerHTML=renderForm(d);
-    /* IDB 救援：若 localStorage 空白，異步嘗試從 IndexedDB 復原 */
-    if((!d||!Object.keys(d).length)&&typeof _xbdDB!=='undefined'){
-      _xbdDB.get(KEY,function(raw){
-        if(!raw)return;
-        try{var rd=JSON.parse(raw);if(rd&&Object.keys(rd).length){setSaved(rd);wrap.innerHTML=renderForm(rd);}}catch(ex){}
+  function getAll(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
+  function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
+  function getForms(name){return getAll()[name]||{};}
+  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);}
+  function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
+  function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+  function _wrap(){return document.getElementById('leaveFlexWrap');}
+
+  function renderHub(){
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
+    FLEX_NAMES.forEach(function(name){
+      var count=Object.keys(getForms(name)).length;
+      h+='<button onclick="LEAVE_FLEX.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
+      h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
+      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
+      h+='<span style="color:#ccc;font-size:1.2rem;">›</span></button>';
+    });
+    h+='</div>';return h;
+  }
+
+  function renderList(){
+    var forms=getForms(curName);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[b].createdAt||0)-(forms[a].createdAt||0);});
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
+    h+='<button onclick="LEAVE_FLEX.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
+    h+='<span style="font-weight:800;color:'+TX+';">👤 '+curName+'</span>';
+    h+='<button onclick="LEAVE_FLEX.newForm()" style="padding:8px 16px;background:'+BDC+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增假單</button>';
+    h+='</div>';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無假單記錄<br><br><button onclick="LEAVE_FLEX.newForm()" style="padding:12px 24px;background:'+BDC+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份假單</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=forms[fid];var hd=d.header||{};
+        var dateStr=hd.date?hd.date.replace(/-/g,'/'):'（未填日期）';
+        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+BDC+';">';
+        h+='<div style="padding:14px;cursor:pointer;" onclick="LEAVE_FLEX.editForm(\''+fid+'\')">';
+        h+='<div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
+        if(hd.from||hd.to){h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">'+(hd.from?hd.from.replace('T',' ').slice(0,16):'')+'～'+(hd.to?hd.to.replace('T',' ').slice(0,16):'')+'</div>';}
+        h+='</div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="LEAVE_FLEX.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+BDC+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="LEAVE_FLEX.printFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE_FLEX.deleteFid(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='</div></div>';
       });
     }
+    h+='</div>';return h;
   }
 
   function renderForm(data){
     var hd=data.header||{};
-    var TX='#3d7030';
     var h='<div style="padding:12px 14px 6px;">';
-
-    /* ── 基本資料 ── */
+    h+='<button onclick="LEAVE_FLEX.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:10px;">📋 基本資料</div>';
     h+='<div style="margin-bottom:8px;"><div class="lf-flbl">交接日期</div><input type="date" id="fDate" class="df-inp" value="'+(hd.date||'')+'"></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名（簽名）</div><input type="text" id="fName" class="df-inp" value="'+(hd.name||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="fName" class="df-inp" value="'+(hd.name||curName).replace(/"/g,'&quot;')+'" readonly style="background:#f5f5f5;color:#666;"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="fLeaveType" class="df-inp">';
     ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
     h+='</select></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="fFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="fFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="fToD" class="df-inp" style="flex:3;" value="'+(hd.to||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="fToT" class="df-inp" style="flex:2;" value="'+((hd.to||'').split(/[T ]/)[1]||'')+'"></div></div></div>';
-    h+='<div style="margin-bottom:8px;"><div class="lf-flbl">請假人職務／班別</div>';
-    h+='<div class="lf-ck-row">';
-    ['主任','副主任','行政主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="fRole_'+r+'" '+(((hd.roles||[]).indexOf(r)>=0)?'checked':'')+'>'+r+'</label>';});
-    h+='</div>';
-    h+='<div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="fUnit" class="df-inp" placeholder="填寫班別" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'" style="flex:1;"></div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;"><input type="date" id="fFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'"><input type="time" id="fFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;"><input type="date" id="fToD" class="df-inp" style="flex:3;" value="'+(hd.to||'').split(/[T ]/)[0]+'"><input type="time" id="fToT" class="df-inp" style="flex:2;" value="'+((hd.to||'').split(/[T ]/)[1]||'')+'"></div></div></div>';
+    h+='<div style="margin-bottom:8px;"><div class="lf-flbl">請假人職務／班別</div><div class="lf-ck-row">';
+    ['主任','副主任','行政主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="fRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="fUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="fSub" class="df-inp" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div>';
-    h+='<div class="lf-ck-row"><label><input type="checkbox" id="fCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div>';
-    h+='<input type="text" id="fCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'">';
-    h+='<div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="fCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div>';
-    h+='</div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="fCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="fCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="fCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div><input type="text" id="fMgr" class="df-inp" value="'+(hd.mgr||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div><input type="text" id="fDir" class="df-inp" value="'+(hd.dir||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='</div></div>';
-
-    /* ── 規定 ── */
+    h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
+    var _mSig=data.sigMgr||'';
+    if(_mSig){h+='<img id="fMgrSigImg" src="'+_mSig+'" onclick="LEAVE_FLEX._openMgrSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE_FLEX._openMgrSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="fMgrSigBtn" onclick="LEAVE_FLEX._openMgrSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="fMgrSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    h+='</div>';
+    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
+    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;">';}
+    else{h+='<div style="color:#bbb;font-size:.78rem;">（尚未有主任簽名）</div>';}
+    h+='</div></div></div>';
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:8px;">📌 請假職務代理人規定如下</div>';
     h+='<ol style="padding-left:18px;font-size:.8rem;color:#444;line-height:1.7;margin:0;">';
-    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。',
-     '其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。',
-     '行政主管簽章並影印留存','公開告知相關人員',
-     '填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置',
-     '以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){h+='<li>'+t+'</li>';});
+    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){h+='<li>'+t+'</li>';});
     h+='</ol></div>';
-
-    /* ── 每日事務 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:8px;">📅 每日事務</div>';
     [['fDailyArea','機動區域'],['fDailySweep','掃地區域'],['fDailyProxy','值班代理人']].forEach(function(f){
       h+='<div style="margin-bottom:8px;"><div class="lf-flbl">'+f[1]+'</div><input type="text" id="'+f[0]+'" class="df-inp" value="'+(data[f[0]]||'').replace(/"/g,'&quot;')+'"></div>';
     });
     h+='</div>';
-
-    /* ── 打掃區域注意事項 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">🧹 打掃區域注意事項</div>';
     h+='<textarea id="fCleanNote" class="df-ta" style="min-height:80px;" placeholder="打掃區域注意事項…">'+(data.cleanNote||'')+'</textarea></div>';
-
-    /* ── 注意事項 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">📝 注意事項</div>';
     h+='<textarea id="fNote" class="df-ta" style="min-height:80px;" placeholder="注意事項…">'+(data.note||'')+'</textarea></div>';
-
-    /* ── 代理人交辦事項 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">📋 代理人交辦事項</div>';
     h+='<textarea id="fHandover" class="df-ta" style="min-height:100px;" placeholder="代理人交辦事項…">'+(data.handover||'')+'</textarea></div>';
-
-    /* ── 按鈕 ── */
-    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
-    h+='<button class="lf-save-btn" onclick="LEAVE_FLEX.saveForm()">💾 儲存</button>';
-    h+='<button class="lf-dl-btn" onclick="LEAVE_FLEX.download()">🖨️ 列印</button>';
-    h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="LEAVE_FLEX.downloadFile()">📥 下載存檔</button>';
-    h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="LEAVE_FLEX.exportData()">📤 匯出資料</button>';
-    h+='<button class="lf-dl-btn" style="background:#6a4fc8;" onclick="LEAVE_FLEX.importData()">📂 載入備份</button>';
-    h+='</div></div>';
-    return h;
+    h+='<div class="lf-btns" style="flex-wrap:wrap;"><button class="lf-save-btn lf-flex-save" onclick="LEAVE_FLEX.saveForm()">💾 儲存</button><button class="lf-dl-btn" onclick="LEAVE_FLEX.download()">🖨️ 列印</button></div>';
+    h+='</div>';return h;
   }
 
-  function collectData(){
-    var roles=[];
-    ['主任','副主任','行政主管','其它'].forEach(function(r){if(vcb('fRole_'+r))roles.push(r);});
-    return {
-      header:{
-        date:v('fDate'),name:v('fName'),leaveType:v('fLeaveType'),
-        from:(v('fFromD')||'')+(v('fFromT')?'T'+v('fFromT'):''),
-        to:(v('fToD')||'')+(v('fToT')?'T'+v('fToT'):''),
-        roles:roles,unit:v('fUnit'),sub:v('fSub'),
-        certBaby:vcb('fCertBaby'),certNo:v('fCertNo'),certEdu:vcb('fCertEdu'),
-        mgr:v('fMgr'),dir:v('fDir')
-      },
-      fDailyArea:v('fDailyArea'),fDailySweep:v('fDailySweep'),fDailyProxy:v('fDailyProxy'),
-      cleanNote:v('fCleanNote'),note:v('fNote'),handover:v('fHandover')
-    };
+  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();}
+  function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
+  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
+    var d={header:{name:curName,date:yy},createdAt:Date.now()};
+    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
+    saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  function editForm(fid){
+    curFid=fid;var d=getForms(curName)[fid]||{};
+    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
+    curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function _openMgrSig(){
+    var d=getForms(curName)[curFid]||{};
+    _sigPad.open('部門主管簽名',d.sigMgr||'',function(dataURL){
+      d.sigMgr=dataURL;saveFid(curName,curFid,collectData(d));
+      var img=document.getElementById('fMgrSigImg');var btn=document.getElementById('fMgrSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
+    });
   }
 
-  function saveForm(){
-    setSaved(collectData());
-    var btn=document.querySelector('#leaveFlexWrap .lf-save-btn');
-    if(btn){var old=btn.textContent;btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent=old;},1500);}
+  function collectData(ex){
+    var existing=ex||getForms(curName)[curFid]||{};
+    var roles=[];['主任','副主任','行政主管','其它'].forEach(function(r){if(vcb('fRole_'+r))roles.push(r);});
+    return {header:{date:v('fDate'),name:curName,leaveType:v('fLeaveType'),from:(v('fFromD')||'')+(v('fFromT')?'T'+v('fFromT'):''),to:(v('fToD')||'')+(v('fToT')?'T'+v('fToT'):''),roles:roles,unit:v('fUnit'),sub:v('fSub'),certBaby:vcb('fCertBaby'),certNo:v('fCertNo'),certEdu:vcb('fCertEdu')},fDailyArea:v('fDailyArea'),fDailySweep:v('fDailySweep'),fDailyProxy:v('fDailyProxy'),cleanNote:v('fCleanNote'),note:v('fNote'),handover:v('fHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||''};
   }
+  function saveForm(){var d=collectData();saveFid(curName,curFid,d);var btn=document.querySelector('#leaveFlexWrap .lf-flex-save');if(btn){btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}}
 
   function fmtDate(s){if(!s)return '___年__月__日';var d=new Date(s);if(isNaN(d))return s;return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';}
-  function fmtDateTime(s){
-    if(!s)return '___年__月__日　__時__分';
-    var d=new Date(s);if(isNaN(d))return s;
-    var h=d.getHours(),m=d.getMinutes();
-    return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日　'+(h<10?'0':'')+h+'時'+(m<10?'0':'')+m+'分';
-  }
+  function fmtDateTime(s){if(!s)return '___年__月__日　__時__分';var d=new Date(s);if(isNaN(d))return s;var h=d.getHours(),m=d.getMinutes();return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日　'+(h<10?'0':'')+h+'時'+(m<10?'0':'')+m+'分';}
   function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:9px;font-size:8pt;">'+(ok?'✓':'')+'</span>';}
 
-  function _buildHTML(){
-    saveForm();
-    var data=getSaved();var hd=data.header||{};
-    var bgC='#e8f0e5';var bdC='#7aaa6a';var txC='#3d7030';
-    var logoEl=document.querySelector('.hero-logo');
-    var logoSrc=logoEl?logoEl.src:'';
-
-    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假職務代理交接單（機動）</title><style>';
-    p+='*{box-sizing:border-box;margin:0;padding:0;}';
-    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-    p+='.hdr{display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2.5px solid '+bdC+';padding-bottom:8px;margin-bottom:10px;}';
-    p+='.hdr img{height:52px;width:auto;}';
-    p+='.hdr-txt{text-align:center;}';
-    p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:'+txC+';}';
-    p+='.hdr-txt .t2{font-size:10pt;font-weight:700;color:#444;margin-top:3px;}';
-    p+='table{width:100%;border-collapse:collapse;margin-bottom:7px;font-size:8.5pt;}';
-    p+='td{border:1px solid #bbb;padding:4px 7px;vertical-align:middle;}';
-    p+='.th{background:'+bgC+';color:'+txC+';font-weight:700;white-space:nowrap;}';
-    p+='.rules{font-size:7.8pt;margin:0 0 8px;line-height:1.55;}';
-    p+='.rules b{font-size:8.2pt;display:block;margin-bottom:2px;}';
-    p+='.rules ol{padding-left:15px;margin:0;}';
-    p+='.sec{border:1.5px solid '+bdC+';border-radius:8px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.sec-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:9pt;padding:5px 12px;border-left:4px solid '+bdC+';}';
-    p+='.sec-bd{padding:8px 12px;min-height:55px;font-size:8.5pt;white-space:pre-wrap;}';
-    p+='.sig-row{display:flex;justify-content:flex-end;gap:60px;margin-top:8px;}';
-    p+='.sig-item{display:flex;align-items:flex-end;gap:5px;font-size:9pt;}';
-    p+='.sig-line{border-bottom:1px solid #000;width:90px;min-height:16px;}';
-    p+='@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}';
-    p+='</style></head><body>';
-
-    /* 標題 */
-    p+='<div class="hdr">';
-    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
-    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（機動人員）</div></div>';
-    p+='</div>';
-
-    /* 表頭 */
-    p+='<table>';
-    p+='<tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
-    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td>';
-    p+='<td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td>';
-    p+='<td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
+  function _buildHTML(data){
+    var hd=data.header||{};
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假職務代理交接單（機動）</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.hdr{display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2.5px solid '+BDC+';padding-bottom:8px;margin-bottom:10px;}.hdr img{height:52px;width:auto;}.hdr-txt{text-align:center;}.hdr-txt .t1{font-size:13pt;font-weight:900;color:'+TX+';}.hdr-txt .t2{font-size:10pt;font-weight:700;color:#444;margin-top:3px;}table{width:100%;border-collapse:collapse;margin-bottom:7px;font-size:8.5pt;}td{border:1px solid #bbb;padding:4px 7px;vertical-align:middle;}.th{background:'+BGC+';color:'+TX+';font-weight:700;white-space:nowrap;}.rules{font-size:7.8pt;margin:0 0 8px;line-height:1.55;}.rules b{font-size:8.2pt;display:block;margin-bottom:2px;}.rules ol{padding-left:15px;margin:0;}.sec{border:1.5px solid '+BDC+';border-radius:8px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}.sec-hd{background:'+BGC+';color:'+TX+';font-weight:800;font-size:9pt;padding:5px 12px;}.sec-bd{padding:8px 12px;min-height:55px;font-size:8.5pt;white-space:pre-wrap;}.sig-row{display:flex;justify-content:flex-end;gap:60px;margin-top:8px;}.sig-item{display:flex;align-items:flex-end;gap:5px;font-size:9pt;}.sig-box{border-bottom:1px solid #000;min-width:90px;min-height:40px;display:flex;align-items:flex-end;justify-content:center;}.sig-box img{max-height:38px;max-width:120px;object-fit:contain;}@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}</style></head><body>';
+    p+='<div class="hdr">';if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（機動人員）</div></div></div>';
+    p+='<table><tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
+    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     var roleStr=['主任','副主任','行政主管','其它'].map(function(r){return ck((hd.roles||[]).indexOf(r)>=0)+r;}).join('　');
-    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td>';
-    p+='<td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td>';
-    p+='<td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
-    p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(hd.mgr||'')+'</td>';
-    p+='<td class="th">主任<br>簽名</td><td colspan="3">'+(hd.dir||'')+'</td></tr>';
-    p+='</table>';
-
-    /* 規定 */
+    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
+    p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(data.sigMgr?'<img src="'+data.sigMgr+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td><td class="th">主任<br>簽名</td><td colspan="3">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
-    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。',
-     '其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。',
-     '行政主管簽章並影印留存','公開告知相關人員',
-     '填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置',
-     '以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});
-    p+='</ol></div>';
-
-    /* 每日事務 */
-    p+='<table style="margin-bottom:8px;">';
-    p+='<tr><td class="th" rowspan="3" style="width:18px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
-    p+='<td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">機動區域：</span>'+(data.fDailyArea||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">掃地區域：</span>'+(data.fDailySweep||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">值班代理人：</span>'+(data.fDailyProxy||'')+'</td></tr>';
-    p+='</table>';
-
-    /* 打掃區域注意事項 */
+    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
+    p+='<table style="margin-bottom:8px;"><tr><td class="th" rowspan="3" style="width:18px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
+    p+='<td><span style="color:'+TX+';font-size:7.5pt;font-weight:700;">機動區域：</span>'+(data.fDailyArea||'')+'</td></tr>';
+    p+='<tr><td><span style="color:'+TX+';font-size:7.5pt;font-weight:700;">掃地區域：</span>'+(data.fDailySweep||'')+'</td></tr>';
+    p+='<tr><td><span style="color:'+TX+';font-size:7.5pt;font-weight:700;">值班代理人：</span>'+(data.fDailyProxy||'')+'</td></tr></table>';
     p+='<div class="sec"><div class="sec-hd">打掃區域注意事項</div><div class="sec-bd">'+(data.cleanNote||'&nbsp;')+'</div></div>';
-    /* 注意事項 */
     p+='<div class="sec"><div class="sec-hd">注意事項</div><div class="sec-bd">'+(data.note||'&nbsp;')+'</div></div>';
-    /* 代理人交辦事項 */
     p+='<div class="sec"><div class="sec-hd">代理人交辦事項</div><div class="sec-bd" style="min-height:80px;">'+(data.handover||'&nbsp;')+'</div></div>';
-
-    /* 簽名 */
-    p+='<div class="sig-row">';
-    p+='<div class="sig-item">代理人：<div class="sig-line"></div></div>';
-    p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;任：<div class="sig-line"></div></div>';
-    p+='</div>';
-    p+='</body></html>';
-    return {html:p,name:(hd.name||''),date:(hd.date||'')};
+    p+='</body></html>';return p;
   }
+  function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
+  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
+  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  function download(){
-    var r=_buildHTML();
-    var w=window.open('','_blank');
-    w.document.write(r.html);w.document.close();
-    setTimeout(function(){w.print();},600);
-  }
-
-  function downloadFile(){
-    var r=_buildHTML();
-    var dp=(r.date||'').replace(/-/g,'').slice(0,8)||new Date().toISOString().slice(0,10).replace(/-/g,'');
-    var fname='請假交接單_機動_'+(r.name||'')+'_'+dp+'.html';
-    var blob=new Blob([r.html],{type:'text/html;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download=fname;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }
-
-  function exportData(){
-    var d=getSaved();
-    var name=(d.header&&d.header.name)||'機動';
-    var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='請假資料_機動_'+name+'.json';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }
-
-  function importData(){
-    var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
-    inp.onchange=function(){
-      var f=inp.files[0];if(!f)return;
-      var reader=new FileReader();
-      reader.onload=function(e){
-        try{
-          var d=JSON.parse(e.target.result);
-          setSaved(d);
-          var wrap=document.getElementById('leaveFlexWrap');
-          if(wrap) wrap.innerHTML=renderForm(getSaved());
-          alert('✅ 資料載入成功，請確認內容後再儲存！');
-        }catch(err){alert('❌ 載入失敗，請確認是正確的假單備份檔案');}
-      };
-      reader.readAsText(f);
-    };
-    document.body.appendChild(inp);inp.click();document.body.removeChild(inp);
-  }
-
-  return{init:init,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
 })();
 
-/* ════ 廚工請假交接單 ════ */
 var LEAVE_COOK=(function(){
-  var KEY='xiaoBudiLeaveCook';
+  var KEY='xiaoBudiLeaveCookV2';
+  var COOK_NAMES=['黃郁婷'];
   var DEFAULT_MEAL='1. 早餐：5 杯米，格線 10\n2. 午餐：8 杯米，兩只手指頭\n3. 點心：3 杯米，格線 6\n4. 托育人員餐點部分';
-  function getSaved(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
-  function setSaved(d){
-    var lsOk=false;
-    try{localStorage.setItem(KEY,JSON.stringify(d));lsOk=true;}catch(e){}
-    if(!lsOk&&typeof _xbdDB!=='undefined')_xbdDB.showErr('⚠️ 假單儲存失敗！資料已備份至 IndexedDB，重開頁面即可復原');
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));
-  }
-  function v(id){var el=document.getElementById(id);return el?(el.value||''):''}
-  function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+  var curName='',curFid='',curStep='hub';
+  var TX='#b85040',BGC='#fdeae5',BDC='#e88c7a';
 
-  function init(){
-    var wrap=document.getElementById('leaveCookWrap');
-    if(!wrap)return;
-    var d=getSaved();
-    wrap.innerHTML=renderForm(d);
-    /* IDB 救援：若 localStorage 空白，異步嘗試從 IndexedDB 復原 */
-    if((!d||!Object.keys(d).length)&&typeof _xbdDB!=='undefined'){
-      _xbdDB.get(KEY,function(raw){
-        if(!raw)return;
-        try{var rd=JSON.parse(raw);if(rd&&Object.keys(rd).length){setSaved(rd);wrap.innerHTML=renderForm(rd);}}catch(ex){}
+  function getAll(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
+  function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
+  function getForms(name){return getAll()[name]||{};}
+  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);}
+  function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
+  function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
+  function _wrap(){return document.getElementById('leaveCookWrap');}
+
+  function renderHub(){
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
+    COOK_NAMES.forEach(function(name){
+      var count=Object.keys(getForms(name)).length;
+      h+='<button onclick="LEAVE_COOK.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
+      h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
+      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
+      h+='<span style="color:#ccc;font-size:1.2rem;">›</span></button>';
+    });
+    h+='</div>';return h;
+  }
+
+  function renderList(){
+    var forms=getForms(curName);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[b].createdAt||0)-(forms[a].createdAt||0);});
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
+    h+='<button onclick="LEAVE_COOK.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
+    h+='<span style="font-weight:800;color:'+TX+';">👤 '+curName+'</span>';
+    h+='<button onclick="LEAVE_COOK.newForm()" style="padding:8px 16px;background:'+BDC+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增假單</button>';
+    h+='</div>';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無假單記錄<br><br><button onclick="LEAVE_COOK.newForm()" style="padding:12px 24px;background:'+BDC+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份假單</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=forms[fid];var hd=d.header||{};
+        var dateStr=hd.date?hd.date.replace(/-/g,'/'):'（未填日期）';
+        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+BDC+';">';
+        h+='<div style="padding:14px;cursor:pointer;" onclick="LEAVE_COOK.editForm(\''+fid+'\')">';
+        h+='<div style="font-weight:800;font-size:.95rem;color:'+TX+';">'+dateStr+'　'+(hd.leaveType||'')+'</div>';
+        if(hd.from||hd.to){h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">'+(hd.from?hd.from.replace('T',' ').slice(0,16):'')+'～'+(hd.to?hd.to.replace('T',' ').slice(0,16):'')+'</div>';}
+        h+='</div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="LEAVE_COOK.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+BDC+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="LEAVE_COOK.printFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE_COOK.deleteFid(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='</div></div>';
       });
     }
+    h+='</div>';return h;
   }
 
   function renderForm(data){
     var hd=data.header||{};
-    var TX='#b85040';
     var h='<div style="padding:12px 14px 6px;">';
-
-    /* ── 基本資料 ── */
+    h+='<button onclick="LEAVE_COOK.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:10px;">📋 基本資料</div>';
     h+='<div style="margin-bottom:8px;"><div class="lf-flbl">交接日期</div><input type="date" id="cDate" class="df-inp" value="'+(hd.date||'')+'"></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名（簽名）</div><input type="text" id="cName" class="df-inp" value="'+(hd.name||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="cName" class="df-inp" value="'+(hd.name||curName).replace(/"/g,'&quot;')+'" readonly style="background:#f5f5f5;color:#666;"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="cLeaveType" class="df-inp">';
     ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
     h+='</select></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="cFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="cFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="cToD" class="df-inp" style="flex:3;" value="'+(hd.to||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="cToT" class="df-inp" style="flex:2;" value="'+((hd.to||'').split(/[T ]/)[1]||'')+'"></div></div></div>';
-    h+='<div style="margin-bottom:8px;"><div class="lf-flbl">請假人職務／班別</div>';
-    h+='<div class="lf-ck-row">';
-    ['主任','副主任','行政','主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="cRole_'+r+'" '+(((hd.roles||[]).indexOf(r)>=0)?'checked':'')+'>'+r+'</label>';});
-    h+='</div>';
-    h+='<div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="cUnit" class="df-inp" placeholder="填寫班別" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'" style="flex:1;"></div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;"><input type="date" id="cFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'"><input type="time" id="cFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;"><input type="date" id="cToD" class="df-inp" style="flex:3;" value="'+(hd.to||'').split(/[T ]/)[0]+'"><input type="time" id="cToT" class="df-inp" style="flex:2;" value="'+((hd.to||'').split(/[T ]/)[1]||'')+'"></div></div></div>';
+    h+='<div style="margin-bottom:8px;"><div class="lf-flbl">請假人職務／班別</div><div class="lf-ck-row">';
+    ['主任','副主任','行政','主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="cRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="cUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="cSub" class="df-inp" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div><input type="text" id="cMgr" class="df-inp" value="'+(hd.mgr||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="cCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="cCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="cCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
+    h+='<div class="lf-row">';
+    h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
+    var _mSig=data.sigMgr||'';
+    if(_mSig){h+='<img id="cMgrSigImg" src="'+_mSig+'" onclick="LEAVE_COOK._openMgrSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE_COOK._openMgrSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="cMgrSigBtn" onclick="LEAVE_COOK._openMgrSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="cMgrSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
-    h+='<div style="margin-top:8px;"><div class="lf-flbl">主任簽名</div><input type="text" id="cDir" class="df-inp" value="'+(hd.dir||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='</div>';
-
-    /* ── 規定 ── */
+    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
+    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;">';}
+    else{h+='<div style="color:#bbb;font-size:.78rem;">（尚未有主任簽名）</div>';}
+    h+='</div></div></div>';
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:8px;">📌 請假職務代理人規定如下</div>';
     h+='<ol style="padding-left:18px;font-size:.8rem;color:#444;line-height:1.7;margin:0;">';
-    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。',
-     '其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。',
-     '行政主管簽章並影印留存','公開告知相關人員',
-     '填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置',
-     '以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){h+='<li>'+t+'</li>';});
+    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){h+='<li>'+t+'</li>';});
     h+='</ol></div>';
-
-    /* ── 每日事務 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:8px;">🍳 每日事務</div>';
-    [['cBreakfast','早餐'],['cFruit','水果'],['cLunch','午餐'],['cSnack','點心'],['cTrash','倒垃圾時間']].forEach(function(f){
+    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:8px;">🍱 每日事務</div>';
+    [['cBreakfast','早餐備餐'],['cFruit','水果'],['cLunch','午餐備餐'],['cSnack','點心'],['cTrash','垃圾']].forEach(function(f){
       h+='<div style="margin-bottom:8px;"><div class="lf-flbl">'+f[1]+'</div><input type="text" id="'+f[0]+'" class="df-inp" value="'+(data[f[0]]||'').replace(/"/g,'&quot;')+'"></div>';
     });
     h+='</div>';
-
-    /* ── 備餐注意事項 ── */
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">🍚 備餐注意事項</div>';
-    h+='<textarea id="cMealNote" class="df-ta" style="min-height:90px;">'+(data.mealNote!=null?data.mealNote:DEFAULT_MEAL)+'</textarea></div>';
-
-    /* ── 代理人事後交接 ── */
+    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">📝 備餐注意事項</div>';
+    h+='<textarea id="cMealNote" class="df-ta" style="min-height:100px;" placeholder="備餐注意事項…">'+(data.mealNote!==undefined?data.mealNote:DEFAULT_MEAL)+'</textarea></div>';
     h+='<div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">📝 代理人事後交接</div>';
-    h+='<textarea id="cHandover" class="df-ta" style="min-height:100px;" placeholder="代理人事後交接說明…">'+(data.handover||'')+'</textarea></div>';
-
-    /* ── 按鈕 ── */
-    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
-    h+='<button class="lf-save-btn" onclick="LEAVE_COOK.saveForm()">💾 儲存</button>';
-    h+='<button class="lf-dl-btn" onclick="LEAVE_COOK.download()">🖨️ 列印</button>';
-    h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="LEAVE_COOK.downloadFile()">📥 下載存檔</button>';
-    h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="LEAVE_COOK.exportData()">📤 匯出資料</button>';
-    h+='<button class="lf-dl-btn" style="background:#6a4fc8;" onclick="LEAVE_COOK.importData()">📂 載入備份</button>';
-    h+='</div></div>';
-    return h;
+    h+='<div style="font-size:.78rem;font-weight:700;color:'+TX+';margin-bottom:6px;">📋 代理人事後交接</div>';
+    h+='<textarea id="cHandover" class="df-ta" style="min-height:100px;" placeholder="代理人事後交接內容…">'+(data.handover||'')+'</textarea></div>';
+    h+='<div class="lf-btns" style="flex-wrap:wrap;"><button class="lf-save-btn lf-cook-save" onclick="LEAVE_COOK.saveForm()">💾 儲存</button><button class="lf-dl-btn" onclick="LEAVE_COOK.download()">🖨️ 列印</button></div>';
+    h+='</div>';return h;
   }
 
-  function collectData(){
-    var roles=[];
-    ['主任','副主任','行政','主管','其它'].forEach(function(r){if(vcb('cRole_'+r))roles.push(r);});
-    return {
-      header:{
-        date:v('cDate'),name:v('cName'),leaveType:v('cLeaveType'),
-        from:(v('cFromD')||'')+(v('cFromT')?'T'+v('cFromT'):''),
-        to:(v('cToD')||'')+(v('cToT')?'T'+v('cToT'):''),
-        roles:roles,unit:v('cUnit'),sub:v('cSub'),mgr:v('cMgr'),dir:v('cDir')
-      },
-      cBreakfast:v('cBreakfast'),cFruit:v('cFruit'),cLunch:v('cLunch'),
-      cSnack:v('cSnack'),cTrash:v('cTrash'),
-      mealNote:v('cMealNote'),handover:v('cHandover')
-    };
+  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();}
+  function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
+  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='c'+Date.now();
+    var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
+    var d={header:{name:curName,date:yy},mealNote:DEFAULT_MEAL,createdAt:Date.now()};
+    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
+    saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  function editForm(fid){
+    curFid=fid;var d=getForms(curName)[fid]||{};
+    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
+    curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function _openMgrSig(){
+    var d=getForms(curName)[curFid]||{};
+    _sigPad.open('部門主管簽名',d.sigMgr||'',function(dataURL){
+      d.sigMgr=dataURL;saveFid(curName,curFid,collectData(d));
+      var img=document.getElementById('cMgrSigImg');var btn=document.getElementById('cMgrSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
+    });
   }
 
-  function saveForm(){
-    setSaved(collectData());
-    var btn=document.querySelector('#leaveCookWrap .lf-save-btn');
-    if(btn){var old=btn.textContent;btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent=old;},1500);}
+  function collectData(ex){
+    var existing=ex||getForms(curName)[curFid]||{};
+    var roles=[];['主任','副主任','行政','主管','其它'].forEach(function(r){if(vcb('cRole_'+r))roles.push(r);});
+    return {header:{date:v('cDate'),name:curName,leaveType:v('cLeaveType'),from:(v('cFromD')||'')+(v('cFromT')?'T'+v('cFromT'):''),to:(v('cToD')||'')+(v('cToT')?'T'+v('cToT'):''),roles:roles,unit:v('cUnit'),sub:v('cSub'),certBaby:vcb('cCertBaby'),certNo:v('cCertNo'),certEdu:vcb('cCertEdu')},cBreakfast:v('cBreakfast'),cFruit:v('cFruit'),cLunch:v('cLunch'),cSnack:v('cSnack'),cTrash:v('cTrash'),mealNote:v('cMealNote'),handover:v('cHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||''};
   }
+  function saveForm(){var d=collectData();saveFid(curName,curFid,d);var btn=document.querySelector('#leaveCookWrap .lf-cook-save');if(btn){btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}}
 
   function fmtDate(s){if(!s)return '___年__月__日';var d=new Date(s);if(isNaN(d))return s;return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';}
-  function fmtDateTime(s){
-    if(!s)return '___年__月__日　__時__分';
-    var d=new Date(s);if(isNaN(d))return s;
-    var h=d.getHours(),m=d.getMinutes();
-    return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日　'+(h<10?'0':'')+h+'時'+(m<10?'0':'')+m+'分';
-  }
+  function fmtDateTime(s){if(!s)return '___年__月__日　__時__分';var d=new Date(s);if(isNaN(d))return s;var h=d.getHours(),m=d.getMinutes();return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日　'+(h<10?'0':'')+h+'時'+(m<10?'0':'')+m+'分';}
   function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:9px;font-size:8pt;">'+(ok?'✓':'')+'</span>';}
 
-  function _buildHTML(){
-    saveForm();
-    var data=getSaved();var hd=data.header||{};
-    var bgC='#fdeae5';var bdC='#e88c7a';var txC='#b85040';
-    var logoEl=document.querySelector('.hero-logo');
-    var logoSrc=logoEl?logoEl.src:'';
-
-    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假職務代理交接單（廚工）</title><style>';
-    p+='*{box-sizing:border-box;margin:0;padding:0;}';
-    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-    p+='.hdr{display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2.5px solid '+bdC+';padding-bottom:8px;margin-bottom:10px;}';
-    p+='.hdr img{height:52px;width:auto;}';
-    p+='.hdr-txt{text-align:center;}';
-    p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:'+txC+';}';
-    p+='.hdr-txt .t2{font-size:10pt;font-weight:700;color:#444;margin-top:3px;}';
-    p+='table{width:100%;border-collapse:collapse;margin-bottom:7px;font-size:8.5pt;}';
-    p+='td{border:1px solid #bbb;padding:4px 7px;vertical-align:middle;}';
-    p+='.th{background:'+bgC+';color:'+txC+';font-weight:700;white-space:nowrap;}';
-    p+='.rules{font-size:7.8pt;margin:0 0 8px;line-height:1.55;}';
-    p+='.rules b{font-size:8.2pt;display:block;margin-bottom:2px;}';
-    p+='.rules ol{padding-left:15px;margin:0;}';
-    p+='.sec{border:1.5px solid '+bdC+';border-radius:8px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.sec-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:9pt;padding:5px 12px;border-left:4px solid '+bdC+';}';
-    p+='.sec-bd{padding:8px 12px;min-height:55px;font-size:8.5pt;white-space:pre-wrap;}';
-    p+='.sig-row{display:flex;justify-content:flex-end;gap:60px;margin-top:8px;}';
-    p+='.sig-item{display:flex;align-items:flex-end;gap:5px;font-size:9pt;}';
-    p+='.sig-line{border-bottom:1px solid #000;width:90px;min-height:16px;}';
-    p+='@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}';
-    p+='</style></head><body>';
-
-    /* 標題 */
-    p+='<div class="hdr">';
-    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
-    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（廚工）</div></div>';
-    p+='</div>';
-
-    /* 表頭 */
-    p+='<table>';
-    p+='<tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
-    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td>';
-    p+='<td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td>';
-    p+='<td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
+  function _buildHTML(data){
+    var hd=data.header||{};
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假職務代理交接單（廚工）</title><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.hdr{display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2.5px solid '+BDC+';padding-bottom:8px;margin-bottom:10px;}.hdr img{height:52px;width:auto;}.hdr-txt{text-align:center;}.hdr-txt .t1{font-size:13pt;font-weight:900;color:'+TX+';}.hdr-txt .t2{font-size:10pt;font-weight:700;color:#444;margin-top:3px;}table{width:100%;border-collapse:collapse;margin-bottom:7px;font-size:8.5pt;}td{border:1px solid #bbb;padding:4px 7px;vertical-align:middle;}.th{background:'+BGC+';color:'+TX+';font-weight:700;white-space:nowrap;}.rules{font-size:7.8pt;margin:0 0 8px;line-height:1.55;}.rules b{font-size:8.2pt;display:block;margin-bottom:2px;}.rules ol{padding-left:15px;margin:0;}.sec{border:1.5px solid '+BDC+';border-radius:8px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}.sec-hd{background:'+BGC+';color:'+TX+';font-weight:800;font-size:9pt;padding:5px 12px;}.sec-bd{padding:8px 12px;min-height:55px;font-size:8.5pt;white-space:pre-wrap;}@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}</style></head><body>';
+    p+='<div class="hdr">';if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（廚工）</div></div></div>';
+    p+='<table><tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
+    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return ck((hd.roles||[]).indexOf(r)>=0)+r;}).join('　');
-    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td>';
-    p+='<td class="th">代理人<br>簽名</td><td colspan="3">'+(hd.sub||'')+'</td></tr>';
-    p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(hd.mgr||'')+'</td>';
-    p+='<td class="th">主任<br>簽名</td><td colspan="3">'+(hd.dir||'')+'</td></tr>';
-    p+='</table>';
-
-    /* 規定 */
+    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
+    p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(data.sigMgr?'<img src="'+data.sigMgr+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td><td class="th">主任<br>簽名</td><td colspan="3">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
-    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。',
-     '其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。',
-     '行政主管簽章並影印留存','公開告知相關人員',
-     '填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置',
-     '以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});
-    p+='</ol></div>';
-
-    /* 每日事務 */
-    p+='<table style="margin-bottom:8px;">';
-    p+='<tr><td class="th" rowspan="5" style="width:18px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
-    p+='<td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">早餐：</span>'+(data.cBreakfast||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">水果：</span>'+(data.cFruit||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">午餐：</span>'+(data.cLunch||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">點心：</span>'+(data.cSnack||'')+'</td></tr>';
-    p+='<tr><td><span style="color:'+txC+';font-size:7.5pt;font-weight:700;">倒垃圾時間：</span>'+(data.cTrash||'')+'</td></tr>';
+    ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
+    p+='<table style="margin-bottom:8px;"><tr><td class="th" rowspan="5" style="width:18px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
+    [['早餐備餐',data.cBreakfast],['水果',data.cFruit],['午餐備餐',data.cLunch],['點心',data.cSnack],['垃圾',data.cTrash]].forEach(function(r,i){
+      p+=(i===0?'':'<tr>')+' <td><span style="color:'+TX+';font-size:7.5pt;font-weight:700;">'+r[0]+'：</span>'+(r[1]||'')+'</td></tr>';
+    });
     p+='</table>';
-
-    /* 備餐注意事項 */
-    p+='<div class="sec"><div class="sec-hd">備餐注意事項</div><div class="sec-bd">'+(data.mealNote!=null?data.mealNote:DEFAULT_MEAL).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>')+'</div></div>';
-    /* 代理人事後交接 */
-    p+='<div class="sec"><div class="sec-hd">代理人事後交接</div><div class="sec-bd" style="min-height:90px;">'+(data.handover||'&nbsp;')+'</div></div>';
-
-    /* 簽名 */
-    p+='<div class="sig-row">';
-    p+='<div class="sig-item">代理人簽名：<div class="sig-line"></div></div>';
-    p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;任：<div class="sig-line"></div></div>';
-    p+='</div>';
-    p+='</body></html>';
-    return {html:p,name:(hd.name||''),date:(hd.date||'')};
+    p+='<div class="sec"><div class="sec-hd">備餐注意事項</div><div class="sec-bd">'+(data.mealNote||DEFAULT_MEAL)+'</div></div>';
+    p+='<div class="sec"><div class="sec-hd">代理人事後交接</div><div class="sec-bd" style="min-height:80px;">'+(data.handover||'&nbsp;')+'</div></div>';
+    p+='</body></html>';return p;
   }
+  function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
+  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
+  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  function download(){
-    var r=_buildHTML();
-    var w=window.open('','_blank');
-    w.document.write(r.html);w.document.close();
-    setTimeout(function(){w.print();},600);
-  }
-
-  function downloadFile(){
-    var r=_buildHTML();
-    var dp=(r.date||'').replace(/-/g,'').slice(0,8)||new Date().toISOString().slice(0,10).replace(/-/g,'');
-    var fname='請假交接單_廚工_'+(r.name||'')+'_'+dp+'.html';
-    var blob=new Blob([r.html],{type:'text/html;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download=fname;
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }
-
-  function exportData(){
-    var d=getSaved();
-    var name=(d.header&&d.header.name)||'廚工';
-    var blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json;charset=utf-8'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;a.download='請假資料_廚工_'+name+'.json';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  }
-
-  function importData(){
-    var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
-    inp.onchange=function(){
-      var f=inp.files[0];if(!f)return;
-      var reader=new FileReader();
-      reader.onload=function(e){
-        try{
-          var d=JSON.parse(e.target.result);
-          setSaved(d);
-          var wrap=document.getElementById('leaveCookWrap');
-          if(wrap) wrap.innerHTML=renderForm(getSaved());
-          alert('✅ 資料載入成功，請確認內容後再儲存！');
-        }catch(err){alert('❌ 載入失敗，請確認是正確的假單備份檔案');}
-      };
-      reader.readAsText(f);
-    };
-    document.body.appendChild(inp);inp.click();document.body.removeChild(inp);
-  }
-
-  return{init:init,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -9231,7 +9053,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:30--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 01:11--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
