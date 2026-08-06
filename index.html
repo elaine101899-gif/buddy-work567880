@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070010';
+  var BUILD='202608070017';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6940,12 +6940,30 @@ var INCIDENT=(function(){
     h+='<div class="df-sec"><div class="df-lbl">📓 檢討與改進</div><textarea id="iReviewNote" class="df-ta" placeholder="請填寫檢討與改進內容…" style="min-height:80px;">'+pe(d.iReviewNote||'')+'</textarea></div>';
     /* 簽名 */
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
-    h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">填表人姓名</div><input type="text" id="iFiller" class="df-inp" value="'+esc(d.iFiller||'')+'"></div>';
-    h+='<div style="margin-bottom:10px;"><div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;"><span style="font-size:.72rem;color:#666;">填表人簽名</span><button onclick="INCIDENT._clearSig()" type="button" style="padding:2px 10px;background:#f5f5f5;border:1px solid #ddd;border-radius:6px;font-size:.7rem;color:#666;cursor:pointer;">清除</button></div><canvas id="iFillerSigCanvas" width="600" height="120" style="border:1.5px solid #ddd;border-radius:8px;background:#fff;touch-action:none;display:block;width:100%;max-width:100%;cursor:crosshair;"></canvas></div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">主任</div><input type="text" id="iDirector" class="df-inp" value="'+esc(d.iDirector||'')+'"></div>';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">結案日期</div><input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'"></div>';
-    h+='</div></div>';
+    var _fSig=d.iFillerSig||'';
+    var _dSig=d.iDirectorSig||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    h+='<div style="margin-bottom:14px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">填表人簽名</div>';
+    if(_fSig){
+      h+='<div style="display:flex;align-items:center;gap:10px;">';
+      h+='<img id="iFillerSigImg" src="'+_fSig+'" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;">';
+      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" style="padding:7px 14px;border-radius:12px;border:1.5px solid var(--teal);background:#e8f7f4;color:var(--teal);font-size:.8rem;font-weight:700;cursor:pointer;">重新簽名</button>';
+      h+='</div>';
+    } else {
+      h+='<button id="iFillerSigBtn" onclick="INCIDENT._openFillerSig()" type="button" class="cln-sig-btn" style="width:100%;padding:12px;border-radius:12px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.85rem;cursor:pointer;">✍️ 點此簽名</button>';
+      h+='<img id="iFillerSigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:6px;">';
+    }
+    h+='</div>';
+    h+='<div style="margin-bottom:14px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">主任簽名（金佩樺）</div>';
+    if(_dSig){
+      h+='<img id="iDirectorSigImg" src="'+_dSig+'" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;">';
+    } else {
+      h+='<div id="iDirectorSigImg" style="color:#bbb;font-size:.8rem;">（SIGLIB 尚未有金佩樺的簽名）</div>';
+    }
+    h+='</div>';
+    h+='<div style="flex:1;min-width:140px;margin-bottom:8px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">結案日期</div><input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'"></div>';
+    h+='</div>';
     /* 受傷記錄詳細 */
     h+='<div class="df-sec"><div class="df-lbl">🗂 受傷記錄（詳細）</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">受傷日期</div>';
@@ -7014,7 +7032,7 @@ var INCIDENT=(function(){
     ['iLoc','iType','iImm','iBodyPart','iInjA','iInjB','iFB','iParent','iReview'].forEach(function(name){d[name]=gcb(name);});
     if(_iPhotos[1])d.photo1=_iPhotos[1];
     if(_iPhotos[2])d.photo2=_iPhotos[2];
-    var sigCvs=document.getElementById('iFillerSigCanvas');if(sigCvs){var blank=document.createElement('canvas');blank.width=sigCvs.width;blank.height=sigCvs.height;d.iFillerSig=(sigCvs.toDataURL()!==blank.toDataURL())?sigCvs.toDataURL('image/png'):'';};
+    var _ex=db[curCls][curFid]||{};if(_ex.iFillerSig)d.iFillerSig=_ex.iFillerSig;if(_ex.iDirectorSig)d.iDirectorSig=_ex.iDirectorSig;
     return d;
   }
 
@@ -7042,12 +7060,12 @@ var INCIDENT=(function(){
     var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     db[curCls][curFid]={cls:curCls,createdAt:Date.now(),read:false,iDate:yy,iAccDate:yy};
     _iPhotos={1:null,2:null};curStep='form';
-    _wrap().innerHTML=renderForm(db[curCls][curFid]);_initSig(db[curCls][curFid]);
+    _wrap().innerHTML=renderForm(db[curCls][curFid]);_loadDirSig();
   }
   function editForm(fid){
     curFid=fid;var d=db[curCls][fid]||{};
     _iPhotos={1:d.photo1||null,2:d.photo2||null};
-    curStep='form';_wrap().innerHTML=renderForm(d);_initSig(d);
+    curStep='form';_wrap().innerHTML=renderForm(d);_loadDirSig();
   }
 
   /* ─── 儲存 / 閱畢 / 刪除 ─── */
@@ -7216,8 +7234,8 @@ var INCIDENT=(function(){
     p+='<tr><td class="th">檢討與改進</td><td colspan="3"><div class="inpbox" style="min-height:36px;">'+esc2(d.iReviewNote||'')+'</div></td></tr>';
     p+='</table>';
     p+='<div class="sig-row" style="margin-top:8px;">';
-    p+='<div class="sig-item" style="flex:2;max-width:240px;"><div style="border-bottom:1px solid #aaa;min-height:50px;min-width:160px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px;">'+(d.iFillerSig?'<img src="'+d.iFillerSig+'" style="max-height:48px;max-width:180px;object-fit:contain;">':'')+'</div><div style="font-size:8pt;text-align:center;">填表人：'+esc2(d.iFiller||'')+'</div></div>';
-    p+='<div class="sig-item"><div class="sig-line">'+esc2(d.iDirector||'')+'</div><div>主任</div></div>';
+    p+='<div class="sig-item" style="flex:2;max-width:240px;"><div style="border-bottom:1px solid #aaa;min-height:50px;min-width:160px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px;">'+(d.iFillerSig?'<img src="'+d.iFillerSig+'" style="max-height:48px;max-width:180px;object-fit:contain;">':'')+'</div><div style="font-size:8pt;text-align:center;">填表人</div></div>';
+    p+='<div class="sig-item" style="flex:2;max-width:240px;"><div style="border-bottom:1px solid #aaa;min-height:50px;min-width:160px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px;">'+(d.iDirectorSig?'<img src="'+d.iDirectorSig+'" style="max-height:48px;max-width:180px;object-fit:contain;">':'')+'</div><div style="font-size:8pt;text-align:center;">主任（金佩樺）</div></div>';
     p+='<div class="sig-item"><div class="sig-line">'+esc2(d.iCloseDate||'')+'</div><div>結案日期</div></div>';
     p+='</div></div></div>';
     p+='<div class="card"><div class="card-hd">🗂 受傷記錄（詳細）</div><div class="card-body"><table class="dt">';
@@ -7233,23 +7251,23 @@ var INCIDENT=(function(){
     return p;
   }
 
-  var _sigDrawing=false;
-  function _initSig(d){
-    var cvs=document.getElementById('iFillerSigCanvas');if(!cvs)return;
-    var ctx=cvs.getContext('2d');
-    ctx.strokeStyle='#1a1a1a';ctx.lineWidth=2;ctx.lineCap='round';ctx.lineJoin='round';
-    if(d&&d.iFillerSig){var img=new Image();img.onload=function(){ctx.drawImage(img,0,0,cvs.width,cvs.height);};img.src=d.iFillerSig;}
-    function pos(e){var r=cvs.getBoundingClientRect(),sc=cvs.width/r.width;var t=e.touches?e.touches[0]:e;return{x:(t.clientX-r.left)*sc,y:(t.clientY-r.top)*sc};}
-    cvs.onmousedown=function(e){_sigDrawing=true;var p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};
-    cvs.onmousemove=function(e){if(!_sigDrawing)return;var p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();};
-    cvs.onmouseup=cvs.onmouseleave=function(){_sigDrawing=false;};
-    cvs.ontouchstart=function(e){e.preventDefault();_sigDrawing=true;var p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);};
-    cvs.ontouchmove=function(e){e.preventDefault();if(!_sigDrawing)return;var p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke();};
-    cvs.ontouchend=function(){_sigDrawing=false;};
+  function _openFillerSig(){
+    var d=db[curCls][curFid]||{};
+    _sigPad.open('填表人簽名',d.iFillerSig||'',function(dataURL){
+      d.iFillerSig=dataURL;
+      var img=document.getElementById('iFillerSigImg');
+      var btn=document.getElementById('iFillerSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}
+      if(btn){btn.textContent='重新簽名';btn.style.cssText='padding:7px 14px;border-radius:12px;border:1.5px solid var(--teal);background:#e8f7f4;color:var(--teal);font-size:.8rem;font-weight:700;cursor:pointer;';}
+    });
   }
-  function _clearSig(){var cvs=document.getElementById('iFillerSigCanvas');if(!cvs)return;cvs.getContext('2d').clearRect(0,0,cvs.width,cvs.height);}
 
-  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download,_clearSig:_clearSig};
+  function _loadDirSig(){
+    if(typeof SIGLIB==='undefined')return;
+    var sig=SIGLIB.get('金佩樺');
+    if(sig&&db[curCls][curFid]){db[curCls][curFid].iDirectorSig=sig;}
+  }
+  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download,_openFillerSig:_openFillerSig};
 })();
 
 
@@ -9176,7 +9194,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:10--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 00:17--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
