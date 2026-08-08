@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608070121';
+  var BUILD='202608081051';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6936,11 +6936,33 @@ var INCIDENT=(function(){
   }
 
   /* ─── 導覽 ─── */
+  function _loadPhotosFromIDB(cb){
+    if(typeof _xbdDB==='undefined'){if(cb)cb();return;}
+    _xbdDB.get(KEY,function(raw){
+      if(raw){try{
+        var idb=JSON.parse(raw);
+        ['baby','crawl','run'].forEach(function(cls){
+          if(!idb[cls])return;
+          Object.keys(idb[cls]).forEach(function(fid){
+            if(!db[cls][fid])db[cls][fid]=idb[cls][fid];
+            else{
+              if(idb[cls][fid].photo1)db[cls][fid].photo1=idb[cls][fid].photo1;
+              if(idb[cls][fid].photo2)db[cls][fid].photo2=idb[cls][fid].photo2;
+            }
+          });
+        });
+      }catch(e){}}
+      if(cb)cb();
+    });
+  }
   function init(){
     curStep='hub';curFid='';
     loadLocal();
     var w=_wrap();if(!w)return;
     w.innerHTML=renderHub();
+    _loadPhotosFromIDB(function(){
+      if(curStep==='hub'&&_wrap())_wrap().innerHTML=renderHub();
+    });
     ['baby','crawl','run'].forEach(function(cls){
       loadFb(cls,function(){if(curStep==='hub')w.innerHTML=renderHub();});
     });
@@ -9093,7 +9115,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/07 01:21--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 10:51--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
