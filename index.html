@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608081117';
+  var BUILD='202608081132';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3330,6 +3330,35 @@ var ASR = (function() {
       }
       checkDraft();
     },50);
+    /* 若此表單目前無照片，從 IDB 補回（應對 setYrTh 覆蓋或 IDB 回調尚未完成的時序問題） */
+    if(typeof _xbdDB!=='undefined'){
+      var _oKey=selYear+'_'+selTheme+'_'+selT+selC+wno;
+      var _oTid=selT,_oCid=selC,_oWno=wno;
+      _xbdDB.get('asrDB',function(raw){
+        if(!raw)return;
+        try{
+          var rd=JSON.parse(raw);
+          if(!rd||!rd.reports||!rd.reports[_oKey])return;
+          var idbRep=rd.reports[_oKey];
+          if(!idbRep.photos)return;
+          var idbHasPh=Object.keys(idbRep.photos).some(function(ai){var ph=idbRep.photos[ai];return ph&&(ph[0]||ph[1]);});
+          if(!idbHasPh)return;
+          if(fCtx.tid!==_oTid||fCtx.cid!==_oCid||fCtx.wno!==_oWno)return;
+          var curHasPh=Object.keys(fCtx.photos).some(function(ai){var ph=fCtx.photos[ai];return ph&&(ph[0]||ph[1]);});
+          if(curHasPh)return;
+          fCtx.photos=idbRep.photos;
+          if(idbRep.cropStates)crpSt=idbRep.cropStates;
+          asrDB.reports[_oKey]=idbRep;
+          Object.keys(fCtx.photos).forEach(function(ai){
+            var ph=fCtx.photos[ai]||[null,null];
+            var sl0=document.getElementById('asrSla'+ai);
+            var sl1=document.getElementById('asrSlb'+ai);
+            if(sl0&&ph[0])sl0.innerHTML=mkCrpBg(parseInt(ai),0,ph[0],crpSt[ai+'_0']||null);
+            if(sl1&&ph[1])sl1.innerHTML=mkCrpBg(parseInt(ai),1,ph[1],crpSt[ai+'_1']||null);
+          });
+        }catch(e){}
+      });
+    }
   }
   function hp(ai,si,input){
     if(!input.files||!input.files[0])return;
@@ -3445,7 +3474,7 @@ var ASR = (function() {
       else asrDB.teachers=[];
       if(pl.children) asrDB.children=JSON.parse(JSON.stringify(pl.children));
       else asrDB.children={};
-      try{var _r=localStorage.getItem('asrDB');if(_r){var _d=JSON.parse(_r);if(_d.reports)asrDB.reports=_d.reports;}}catch(e){}
+      /* asrLoad() 已將 localStorage + IDB 的紀錄合併到 asrDB.reports，不需再覆蓋 */
       /* 自動選今天最近的主題 */
       var tw=findCurrentThWk(yr);
       th=tw.th||1;
@@ -9194,7 +9223,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:17--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:32--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
