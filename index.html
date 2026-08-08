@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608081057';
+  var BUILD='202608081103';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5414,9 +5414,18 @@ var LEAVE=(function(){
       h+='<div style="font-size:.78rem;font-weight:700;color:#666;margin-bottom:8px;">'+clsNames[cls]+'</div>';
       h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
       groups[cls].forEach(function(t){
+        var tForms=getTeacherForms(t.id);
+        var tFids=Object.keys(tForms);
+        var tUnread=tFids.filter(function(fid){return !tForms[fid].read;}).length;
         h+='<button onclick="LEAVE.openTeacher(\''+t.id+'\')" style="padding:14px;background:#fff;border:none;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:4px solid '+clsBd(cls)+';text-align:left;">';
         h+='<div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+t.name+'</div>';
-        h+='<div style="font-size:.72rem;color:#888;margin-top:3px;">'+clsLabel(cls)+'</div>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">';
+        h+='<div style="font-size:.72rem;color:#888;">'+clsLabel(cls)+'</div>';
+        if(tFids.length>0){
+          if(tUnread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:700;">未閱 '+tUnread+'</div>';
+          else h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:700;">全部已閱</div>';
+        }
+        h+='</div>';
         h+='</button>';
       });
       h+='</div></div>';
@@ -5459,21 +5468,27 @@ var LEAVE=(function(){
       h+='<div style="display:flex;flex-direction:column;gap:10px;">';
       fids.forEach(function(fid){
         var fd=forms[fid];
+        var isRead=!!fd.read;
         var hdr=fd.header||{};
         var leaveType=hdr.leaveType||'─';
         var fromDate=(hdr.from||'').split('T')[0]||'─';
         var toDate=(hdr.to||'').split('T')[0]||'─';
         var createdDate=fd.createdAt?new Date(fd.createdAt).toLocaleDateString('zh-TW'):'─';
-        h+='<div style="background:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid '+clsBd(cls)+';">';
+        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid '+clsBd(cls)+';overflow:hidden;">';
+        h+='<div style="padding:14px 16px;">';
         h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;cursor:pointer;" onclick="LEAVE.editForm(\''+fid+'\')">';
         h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+leaveType+(hdr.name?'　'+hdr.name:'')+'</div>';
         h+='<div style="font-size:.78rem;color:#666;margin-top:3px;">'+fromDate+' ～ '+toDate+'</div></div>';
-        h+='<div style="font-size:.7rem;color:#aaa;white-space:nowrap;">建立：'+createdDate+'</div>';
+        h+='<div style="display:flex;align-items:center;gap:6px;">';
+        h+='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='<span style="font-size:.7rem;color:#aaa;white-space:nowrap;">'+createdDate+'</span>';
+        h+='</div></div>';
         h+='</div>';
-        h+='<div style="display:flex;gap:8px;margin-top:10px;">';
-        h+='<button onclick="LEAVE.editForm(\''+fid+'\')" style="flex:1;padding:7px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="LEAVE.printForm(\''+fid+'\')" style="flex:1;padding:7px;background:#555;color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
-        h+='<button onclick="LEAVE.deleteForm(\''+fid+'\')" style="padding:7px 12px;background:#e57373;color:#fff;border:none;border-radius:8px;font-size:.82rem;cursor:pointer;">🗑</button>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="LEAVE.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="LEAVE.printForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="LEAVE.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
+        h+='<button onclick="LEAVE.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
         h+='</div></div>';
       });
       h+='</div>';
@@ -5593,8 +5608,16 @@ var LEAVE=(function(){
     /* ── 簽名 ── */
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="lSigSub" class="df-inp" value="'+(saved.sigSub||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">主任</div><input type="text" id="lSigDir" class="df-inp" value="'+(saved.sigDir||'').replace(/"/g,'&quot;')+'"></div>';
+    var _sSig=saved.sigSub||'';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div>';
+    if(_sSig){h+='<img id="lSubSigImg" src="'+_sSig+'" onclick="LEAVE._openSubSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE._openSubSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="lSubSigBtn" onclick="LEAVE._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="lSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    h+='</div>';
+    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
+    var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('主任'):'';
+    if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;">';}
+    else{h+='<div style="color:#bbb;font-size:.78rem;">（SIGLIB 尚未有主任簽名）</div>';}
+    h+='</div>';
     h+='</div></div>';
 
     /* ── 按鈕 ── */
@@ -5717,7 +5740,9 @@ var LEAVE=(function(){
     var existing=forms[lFid]||{};
     var data={
       header:collectHdr(),children:collectChildren(),
-      postHandover:v('lPostHandover'),sigSub:v('lSigSub'),sigDir:v('lSigDir'),
+      postHandover:v('lPostHandover'),
+      sigSub:existing.sigSub||'',
+      sigDir:((typeof SIGLIB!=='undefined')&&SIGLIB.get('主任'))||existing.sigDir||'',
       createdAt:existing.createdAt||Date.now()
     };
     saveLocal(lTid,lFid,data);
@@ -5847,8 +5872,15 @@ var LEAVE=(function(){
 
     /* 簽名 */
     p+='<div class="sig-row">';
-    p+='<div class="sig-item">代理人簽名：<div class="sig-line">'+(data.sigSub||'')+'</div></div>';
-    p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;&nbsp;任：<div class="sig-line">'+(data.sigDir||'')+'</div></div>';
+    p+='<div class="sig-item">代理人簽名：';
+    if(data.sigSub&&data.sigSub.startsWith('data:')){p+='<img src="'+data.sigSub+'" style="height:32px;width:auto;vertical-align:middle;">';}
+    else{p+='<div class="sig-line">'+(data.sigSub||'')+'</div>';}
+    p+='</div>';
+    p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;&nbsp;任：';
+    var _pDirSig=data.sigDir||(typeof SIGLIB!=='undefined'?SIGLIB.get('主任'):'');
+    if(_pDirSig&&_pDirSig.startsWith('data:')){p+='<img src="'+_pDirSig+'" style="height:32px;width:auto;vertical-align:middle;">';}
+    else{p+='<div class="sig-line"></div>';}
+    p+='</div>';
     p+='</div>';
     p+='</body></html>';
     return {html:p, name:(hdr.name||''), date:(hdr.date||'')};
@@ -5922,7 +5954,26 @@ var LEAVE=(function(){
     document.body.appendChild(inp);inp.click();document.body.removeChild(inp);
   }
 
-  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData};
+  function _openSubSig(){
+    var d=getTeacherForms(lTid)[lFid]||{};
+    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL){
+      d.sigSub=dataURL;
+      var merged=Object.assign({},d,{header:collectHdr(),children:collectChildren(),postHandover:v('lPostHandover')});
+      saveLocal(lTid,lFid,merged);pushFb(lTid,lFid,merged);renderBody();
+    });
+  }
+
+  function toggleRead(fid){
+    var all=getAll();
+    if(!all[lTid]||!all[lTid][fid])return;
+    all[lTid][fid].read=!all[lTid][fid].read;
+    try{localStorage.setItem(_KEY,JSON.stringify(all));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
+    try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+lTid+'/'+fid+'/read').set(all[lTid][fid].read);}catch(e){}
+    showList();
+  }
+
+  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig};
 })();
 
 /* ════ 主管人員請假交接單 ════ */
@@ -9143,7 +9194,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 10:57--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:03--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
