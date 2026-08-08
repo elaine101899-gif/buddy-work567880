@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608081103';
+  var BUILD='202608081107';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5787,37 +5787,37 @@ var LEAVE=(function(){
 
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假職務代理交接單</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
-    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-    p+='.hdr{display:flex;align-items:center;justify-content:center;gap:12px;border-bottom:2.5px solid '+bdC+';padding-bottom:8px;margin-bottom:10px;}';
-    p+='.hdr img{height:52px;width:auto;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:8pt;padding:8px 12px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;justify-content:center;gap:10px;border-bottom:2px solid '+bdC+';padding-bottom:5px;margin-bottom:7px;}';
+    p+='.hdr img{height:40px;width:auto;}';
     p+='.hdr-txt{text-align:center;}';
-    p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:'+txC+';}';
-    p+='.hdr-txt .t2{font-size:10pt;font-weight:700;color:#444;margin-top:3px;}';
-    p+='table.info{width:100%;border-collapse:collapse;margin-bottom:6px;font-size:8.5pt;}';
-    p+='table.info td{border:1px solid #bbb;padding:3px 7px;vertical-align:middle;}';
+    p+='.hdr-txt .t1{font-size:11pt;font-weight:900;color:'+txC+';}';
+    p+='.hdr-txt .t2{font-size:9pt;font-weight:700;color:#444;margin-top:2px;}';
+    p+='table.info{width:100%;border-collapse:collapse;margin-bottom:5px;font-size:7.8pt;}';
+    p+='table.info td{border:1px solid #bbb;padding:2px 5px;vertical-align:middle;}';
     p+='.th{background:'+bgC+';color:'+txC+';font-weight:700;white-space:nowrap;}';
-    p+='.rules{font-size:7.8pt;margin:0 0 8px;line-height:1.55;}';
-    p+='.rules b{font-size:8.2pt;display:block;margin-bottom:2px;}';
-    p+='.rules ol{padding-left:15px;margin:0;}';
+    p+='.rules{font-size:7pt;margin:0 0 5px;line-height:1.4;}';
+    p+='.rules b{font-size:7.5pt;display:block;margin-bottom:1px;}';
+    p+='.rules ol{padding-left:14px;margin:0;}';
     p+='.rules li{margin-bottom:0;}';
-    p+='.card{border:1.5px solid '+bdC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.card-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:10.5pt;padding:6px 14px;border-left:4px solid '+bdC+';}';
-    p+='.card-body{padding:7px 12px 8px;}';
-    p+='.row2{display:flex;gap:10px;margin-bottom:5px;}';
+    p+='.card{border:1px solid '+bdC+';border-radius:7px;overflow:hidden;margin-bottom:4px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:9pt;padding:3px 10px;border-left:3px solid '+bdC+';}';
+    p+='.card-body{padding:5px 10px 5px;}';
+    p+='.row2{display:flex;gap:8px;margin-bottom:3px;}';
     p+='.col{flex:1;min-width:0;}';
-    p+='.lbl{font-size:7pt;font-weight:700;color:#666;margin-bottom:1px;}';
-    p+='.val{font-size:8.5pt;margin-bottom:3px;}';
-    p+='.inp{border-bottom:1px solid #bbb;min-height:13px;font-size:8.5pt;padding:1px 2px;margin-bottom:2px;}';
-    p+='.inpbox{border:1px solid #ccc;border-radius:5px;min-height:26px;font-size:8.5pt;padding:3px 5px;margin-bottom:3px;white-space:pre-wrap;}';
-    p+='.div{border:none;border-top:1px dashed #ddd;margin:5px 0;}';
-    p+='.ckbox{display:inline-block;width:10px;height:10px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:9px;font-size:8pt;}';
-    p+='.post-card{border:1.5px solid #ccc;border-radius:10px;overflow:hidden;margin-bottom:8px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.post-hd{background:#f3f3f3;color:#333;font-weight:800;font-size:9pt;padding:6px 14px;border-left:4px solid #bbb;}';
-    p+='.post-body{padding:7px 12px;min-height:90px;font-size:8.5pt;white-space:pre-wrap;}';
-    p+='.sig-row{display:flex;justify-content:flex-end;gap:60px;margin-top:6px;}';
-    p+='.sig-item{display:flex;align-items:flex-end;gap:5px;font-size:9pt;}';
-    p+='.sig-line{border-bottom:1px solid #000;width:90px;min-height:16px;}';
-    p+='@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}';
+    p+='.lbl{font-size:6.5pt;font-weight:700;color:#666;margin-bottom:0;}';
+    p+='.val{font-size:7.8pt;margin-bottom:2px;}';
+    p+='.inp{border-bottom:1px solid #bbb;min-height:11px;font-size:7.8pt;padding:1px 2px;margin-bottom:1px;}';
+    p+='.inpbox{border:1px solid #ccc;border-radius:4px;min-height:18px;font-size:7.8pt;padding:2px 4px;margin-bottom:2px;white-space:pre-wrap;}';
+    p+='.div{border:none;border-top:1px dashed #ddd;margin:3px 0;}';
+    p+='.ckbox{display:inline-block;width:9px;height:9px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:8px;font-size:7pt;}';
+    p+='.post-card{border:1px solid #ccc;border-radius:7px;overflow:hidden;margin-bottom:5px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.post-hd{background:#f3f3f3;color:#333;font-weight:800;font-size:8pt;padding:3px 10px;border-left:3px solid #bbb;}';
+    p+='.post-body{padding:5px 10px;min-height:55px;font-size:7.8pt;white-space:pre-wrap;}';
+    p+='.sig-row{display:flex;justify-content:flex-end;gap:50px;margin-top:5px;}';
+    p+='.sig-item{display:flex;align-items:flex-end;gap:4px;font-size:8pt;}';
+    p+='.sig-line{border-bottom:1px solid #000;width:80px;min-height:14px;}';
+    p+='@media print{body{padding:4px 8px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body>';
 
     function ck(ok){return '<span class="ckbox">'+(ok?'✓':'')+'</span>';}
@@ -9194,7 +9194,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:03--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:07--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
