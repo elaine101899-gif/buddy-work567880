@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608081144';
+  var BUILD='202608102143';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5202,7 +5202,7 @@ var DIARY=(function(){
 
     var css='@page{size:A4 portrait;margin:8mm 10mm;}'
       +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
-      +'html,body{height:281mm;overflow:hidden;}'
+      +'html{color-scheme:light;}html,body{height:281mm;overflow:hidden;}'
       +'body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#f4f4f8;padding:10px;}'
       +'.wrap{max-width:780px;margin:0 auto;height:calc(281mm - 20px);display:flex;flex-direction:column;}'
       +'.phd{background:'+clsColor+';color:'+clsTxColor+';padding:9px 16px;border-radius:10px 10px 0 0;border-left:5px solid '+clsBdColor+';flex-shrink:0;}'
@@ -5239,7 +5239,7 @@ var DIARY=(function(){
       +'.sf{border-bottom:1px solid #aaa;width:100px;display:inline-block;height:12px;}'
       +'@media print{.pbtn{display:none!important;}body{padding:0;background:#fff;}.wrap{max-width:100%;height:281mm;}}';
 
-    var h='<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8">';
+    var h='<!DOCTYPE html><html lang="zh-TW"><head><meta charset="UTF-8"><meta name="color-scheme" content="light">';
     h+='<title>教保日誌 '+day.ymd+' '+CLSLABEL[cls]+'</title><style>'+css+'</style></head><body><div class="wrap">';
     /* ── Header ── */
     h+='<div class="phd"><div class="phd-t">🎵 小布迪音樂藝術托嬰中心　教保日誌</div>';
@@ -5247,7 +5247,7 @@ var DIARY=(function(){
     h+=({'114':'115年上半年','115':'115年下半年','116':'117年'}[dYr]||dYr+'學年')+' 第'+dTh+'主題 第'+dWk+'週　主題：'+wkTheme+'</div></div>';
     h+='<div class="body">';
     /* ── 活動資訊 ── */
-    h+='<div class="sec"><div class="sec-lbl">活動資訊</div>';
+    h+='<div class="sec">';
     h+='<div style="margin-bottom:4px;">';
     if(act.dom)h+='<span class="dom-tag">'+act.dom+'</span>';
     if(studentName)h+='<span class="stu-tag">👤 '+studentName+'</span>';
@@ -9229,7 +9229,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/08 11:44--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:43--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
