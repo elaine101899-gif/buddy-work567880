@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608102143';
+  var BUILD='202608102147';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5218,11 +5218,12 @@ var DIARY=(function(){
       +'.step-ol li{display:flex;gap:7px;padding:4px 0;border-bottom:1px solid #f5f5f5;font-size:.78rem;color:#333;line-height:1.45;align-items:flex-start;}'
       +'.step-ol li:last-child{border-bottom:none;}'
       +'.sno{min-width:19px;height:19px;background:'+clsBdColor+';color:#fff;border-radius:50%;font-size:.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}'
-      /* 照片＋省思 並排區 */
-      +'.bot-row{display:flex;flex:1;overflow:hidden;border-bottom:1px solid #f0f0f5;min-height:0;}'
-      +'.photos-col{width:46%;padding:7px 10px;border-right:1px solid #f0f0f5;flex-shrink:0;display:flex;flex-direction:column;}'
-      +'.ref-col{flex:1;padding:7px 12px;display:flex;flex-direction:column;overflow:hidden;}'
-      +'.ref-col .sec-val{flex:1;white-space:pre-wrap;overflow:hidden;font-size:.78rem;line-height:1.5;}'
+      /* 照片（上）＋省思（下）直排區 */
+      +'.bot-row{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0;}'
+      +'.photos-top{flex:0 0 52%;padding:6px 10px;border-bottom:1px solid #f0f0f5;display:flex;flex-direction:column;min-height:0;}'
+      +'.photos-horiz{display:flex;flex-direction:row;gap:8px;flex:1;min-height:0;}'
+      +'.ref-bot{flex:1;padding:6px 12px;display:flex;flex-direction:column;overflow:hidden;}'
+      +'.ref-bot .sec-val{flex:1;white-space:pre-wrap;overflow:hidden;font-size:.78rem;line-height:1.5;}'
       +'.photos-vert{display:flex;flex-direction:column;gap:8px;flex:1;}'
       +'.photo-item{flex:1;display:flex;flex-direction:column;gap:3px;min-height:0;}'
       +'.photo-lbl{font-size:.62rem;font-weight:700;color:#4cb8c2;text-align:center;flex-shrink:0;}'
@@ -5287,9 +5288,9 @@ var DIARY=(function(){
       h+='</div></div>';
       h+='<div class="sec" style="flex:1;overflow:hidden;"><div class="sec-lbl">活動省思</div><div class="sec-val" style="white-space:pre-wrap;">'+(data.reflection||'').replace(/</g,'&lt;')+'</div></div>';
     }else{
-      /* 一般活動：照片（左）＋活動省思（右）並排撐滿剩餘高度 */
+      /* 一般活動：照片（上）＋活動省思（下）堆疊 */
       h+='<div class="bot-row">';
-      h+='<div class="photos-col"><div class="sec-lbl">活動照片</div><div class="photos-vert">';
+      h+='<div class="photos-top"><div class="sec-lbl">活動照片</div><div class="photos-horiz">';
       for(var _j=0;_j<2;_j++){
         var _ph2=dPhotos[_j]||''; var _cs2=dCrpSt[_j];
         h+='<div class="photo-item">';
@@ -5303,7 +5304,7 @@ var DIARY=(function(){
         h+='</div>';
       }
       h+='</div></div>';
-      h+='<div class="ref-col"><div class="sec-lbl">活動省思</div><div class="sec-val">'+(data.reflection||'').replace(/</g,'&lt;')+'</div></div>';
+      h+='<div class="ref-bot"><div class="sec-lbl">活動省思</div><div class="sec-val">'+(data.reflection||'').replace(/</g,'&lt;')+'</div></div>';
       h+='</div>';
     }
     /* ── 簽名列 ── */
@@ -9229,7 +9230,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:43--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:47--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
