@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608102204';
+  var BUILD='202608102208';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5650,7 +5650,7 @@ var LEAVE=(function(){
     else{h+='<button id="lSubSigBtn" onclick="LEAVE._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="lSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
-    var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('主任'):'';
+    var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';
     if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;">';}
     else{h+='<div style="color:#bbb;font-size:.78rem;">（SIGLIB 尚未有主任簽名）</div>';}
     h+='</div>';
@@ -5778,7 +5778,7 @@ var LEAVE=(function(){
       header:collectHdr(),children:collectChildren(),
       postHandover:v('lPostHandover'),
       sigSub:existing.sigSub||'',
-      sigDir:((typeof SIGLIB!=='undefined')&&SIGLIB.get('主任'))||existing.sigDir||'',
+      sigDir:((typeof SIGLIB!=='undefined')&&SIGLIB.get('金佩樺'))||existing.sigDir||'',
       createdAt:existing.createdAt||Date.now()
     };
     saveLocal(lTid,lFid,data);
@@ -5919,7 +5919,7 @@ var LEAVE=(function(){
     else{p+='<div class="sig-line">'+(data.sigSub||'')+'</div>';}
     p+='</div>';
     p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;&nbsp;任：';
-    var _pDirSig=data.sigDir||(typeof SIGLIB!=='undefined'?SIGLIB.get('主任'):'');
+    var _pDirSig=data.sigDir||(typeof SIGLIB!=='undefined'?SIGLIB.get('金佩樺'):'');
     if(_pDirSig&&_pDirSig.startsWith('data:')){p+='<img src="'+_pDirSig+'" style="height:32px;width:auto;vertical-align:middle;">';}
     else{p+='<div class="sig-line"></div>';}
     p+='</div>';
@@ -9236,7 +9236,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 22:04--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 22:08--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
