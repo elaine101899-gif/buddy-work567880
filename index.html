@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608102147';
+  var BUILD='202608102158';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5829,31 +5829,32 @@ var LEAVE=(function(){
     p+='.hdr-txt{text-align:center;}';
     p+='.hdr-txt .t1{font-size:11pt;font-weight:900;color:'+txC+';}';
     p+='.hdr-txt .t2{font-size:9pt;font-weight:700;color:#444;margin-top:2px;}';
-    p+='table.info{width:100%;border-collapse:collapse;margin-bottom:5px;font-size:7.8pt;}';
-    p+='table.info td{border:1px solid #bbb;padding:2px 5px;vertical-align:middle;}';
+    p+='table.info{width:100%;border-collapse:collapse;margin-bottom:3px;font-size:7.5pt;}';
+    p+='table.info td{border:1px solid #bbb;padding:1px 4px;vertical-align:middle;}';
     p+='.th{background:'+bgC+';color:'+txC+';font-weight:700;white-space:nowrap;}';
-    p+='.rules{font-size:7pt;margin:0 0 5px;line-height:1.4;}';
-    p+='.rules b{font-size:7.5pt;display:block;margin-bottom:1px;}';
-    p+='.rules ol{padding-left:14px;margin:0;}';
+    p+='.rules{font-size:6.5pt;margin:0 0 3px;line-height:1.3;}';
+    p+='.rules b{font-size:7pt;display:block;margin-bottom:0;}';
+    p+='.rules ol{padding-left:13px;margin:0;}';
     p+='.rules li{margin-bottom:0;}';
-    p+='.card{border:1px solid '+bdC+';border-radius:7px;overflow:hidden;margin-bottom:4px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.card-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:9pt;padding:3px 10px;border-left:3px solid '+bdC+';}';
-    p+='.card-body{padding:5px 10px 5px;}';
-    p+='.row2{display:flex;gap:8px;margin-bottom:3px;}';
+    p+='.cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:3px;}';
+    p+='.card{border:1px solid '+bdC+';border-radius:5px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:8pt;padding:2px 8px;border-left:3px solid '+bdC+';}';
+    p+='.card-body{padding:3px 7px 3px;}';
+    p+='.row2{display:flex;gap:5px;margin-bottom:1px;}';
     p+='.col{flex:1;min-width:0;}';
-    p+='.lbl{font-size:6.5pt;font-weight:700;color:#666;margin-bottom:0;}';
-    p+='.val{font-size:7.8pt;margin-bottom:2px;}';
-    p+='.inp{border-bottom:1px solid #bbb;min-height:11px;font-size:7.8pt;padding:1px 2px;margin-bottom:1px;}';
-    p+='.inpbox{border:1px solid #ccc;border-radius:4px;min-height:18px;font-size:7.8pt;padding:2px 4px;margin-bottom:2px;white-space:pre-wrap;}';
-    p+='.div{border:none;border-top:1px dashed #ddd;margin:3px 0;}';
-    p+='.ckbox{display:inline-block;width:9px;height:9px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:8px;font-size:7pt;}';
-    p+='.post-card{border:1px solid #ccc;border-radius:7px;overflow:hidden;margin-bottom:5px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.post-hd{background:#f3f3f3;color:#333;font-weight:800;font-size:8pt;padding:3px 10px;border-left:3px solid #bbb;}';
-    p+='.post-body{padding:5px 10px;min-height:55px;font-size:7.8pt;white-space:pre-wrap;}';
-    p+='.sig-row{display:flex;justify-content:flex-end;gap:50px;margin-top:5px;}';
+    p+='.lbl{font-size:6pt;font-weight:700;color:#666;margin-bottom:0;}';
+    p+='.val{font-size:7pt;margin-bottom:1px;}';
+    p+='.inp{border-bottom:1px solid #bbb;min-height:9px;font-size:7pt;padding:0 2px;margin-bottom:1px;}';
+    p+='.inpbox{border:1px solid #ccc;border-radius:3px;min-height:13px;font-size:7pt;padding:1px 3px;margin-bottom:1px;white-space:pre-wrap;}';
+    p+='.div{border:none;border-top:1px dashed #ddd;margin:1px 0;}';
+    p+='.ckbox{display:inline-block;width:8px;height:8px;border:1px solid #666;margin-right:2px;vertical-align:middle;text-align:center;line-height:7px;font-size:6pt;}';
+    p+='.post-card{border:1px solid #ccc;border-radius:5px;overflow:hidden;margin-bottom:3px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.post-hd{background:#f3f3f3;color:#333;font-weight:800;font-size:7.5pt;padding:2px 8px;border-left:3px solid #bbb;}';
+    p+='.post-body{padding:3px 8px;min-height:35px;font-size:7.5pt;white-space:pre-wrap;}';
+    p+='.sig-row{display:flex;justify-content:flex-end;gap:50px;margin-top:3px;}';
     p+='.sig-item{display:flex;align-items:flex-end;gap:4px;font-size:8pt;}';
     p+='.sig-line{border-bottom:1px solid #000;width:80px;min-height:14px;}';
-    p+='@media print{body{padding:4px 8px;}@page{margin:8mm;size:A4 portrait;}}';
+    p+='@media print{body{padding:3px 6px;}@page{margin:6mm;size:A4 portrait;}}';
     p+='</style></head><body>';
 
     function ck(ok){return '<span class="ckbox">'+(ok?'✓':'')+'</span>';}
@@ -5883,7 +5884,8 @@ var LEAVE=(function(){
     p+='<li>填寫完畢在請假前三天讓代理人（需含早晚值及打掃）實際了解物品擺放位置</li>';
     p+='<li>以下幼兒交接事項說明請每一欄清楚填寫</li></ol></div>';
 
-    /* 幼兒卡片 */
+    /* 幼兒卡片（兩欄並排） */
+    p+='<div class="cards-grid">';
     kids.forEach(function(kid){
       var dp=kid.diaper||[];
       var mt=(kid.milk&&kid.milk.type)||[];
@@ -5902,6 +5904,7 @@ var LEAVE=(function(){
       if(kid.notes){p+='<div class="div"></div><div class="lbl">其它說明</div><div class="inpbox">'+kid.notes+'</div>';}
       p+='</div></div>';
     });
+    p+='</div>'; /* end cards-grid */
 
     /* 事後交接 */
     p+='<div class="post-card"><div class="post-hd">代理人代班事後交接</div><div class="post-body">'+(data.postHandover||'&nbsp;')+'</div></div>';
@@ -9230,7 +9233,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:47--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:58--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
