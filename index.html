@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608102158';
+  var BUILD='202608102204';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5838,6 +5838,7 @@ var LEAVE=(function(){
     p+='.rules li{margin-bottom:0;}';
     p+='.cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:3px;}';
     p+='.card{border:1px solid '+bdC+';border-radius:5px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-full{grid-column:1 / -1;}';
     p+='.card-hd{background:'+bgC+';color:'+txC+';font-weight:800;font-size:8pt;padding:2px 8px;border-left:3px solid '+bdC+';}';
     p+='.card-body{padding:3px 7px 3px;}';
     p+='.row2{display:flex;gap:5px;margin-bottom:1px;}';
@@ -5884,13 +5885,15 @@ var LEAVE=(function(){
     p+='<li>填寫完畢在請假前三天讓代理人（需含早晚值及打掃）實際了解物品擺放位置</li>';
     p+='<li>以下幼兒交接事項說明請每一欄清楚填寫</li></ol></div>';
 
-    /* 幼兒卡片（兩欄並排） */
+    /* 幼兒卡片（兩欄並排，奇數張時最後一張橫跨兩欄） */
     p+='<div class="cards-grid">';
-    kids.forEach(function(kid){
+    var _kidOdd=kids.length%2!==0;
+    kids.forEach(function(kid,_ki){
       var dp=kid.diaper||[];
       var mt=(kid.milk&&kid.milk.type)||[];
       var mc=(kid.milk&&kid.milk.cc)||[];
-      p+='<div class="card"><div class="card-hd">'+(kid.name||'')+'</div><div class="card-body">';
+      var _fullSpan=_kidOdd&&_ki===kids.length-1;
+      p+='<div class="card'+(_fullSpan?' card-full':'')+'"><div class="card-hd">'+(kid.name||'')+'</div><div class="card-body">';
       p+='<div class="row2">';
       p+='<div class="col"><div class="lbl">飲食食慾狀況</div><div class="val">'+ck(kid.food==='正常')+'正常　'+ck(kid.food==='量多')+'量多　'+ck(kid.food==='量少')+'量少</div><div class="lbl">過敏食物</div><div class="inp">'+(kid.allergy||'&nbsp;')+'</div></div>';
       p+='<div class="col"><div class="lbl">睡眠狀況</div><div class="val">'+ck(kid.sleep==='淺睡')+'淺睡　'+ck(kid.sleep==='深睡')+'深睡</div><div class="lbl">睡眠特殊嗜好</div><div class="inp">'+(kid.sleepNote||'&nbsp;')+'</div></div>';
@@ -9233,7 +9236,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 21:58--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/10 22:04--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
