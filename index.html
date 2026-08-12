@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608120900';
+  var BUILD='202608120903';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5602,7 +5602,7 @@ var LEAVE=(function(){
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">打掃區域</div><input type="text" id="lHdrClean" class="df-inp" value="'+(hdr.clean||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="lHdrLeaveType" class="df-inp">';
-    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){
+    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'].forEach(function(lt){
       h+='<option value="'+lt+'"'+(hdr.leaveType===lt?' selected':'')+'>'+lt+'</option>';
     });
     h+='</select></div>';
@@ -6108,7 +6108,7 @@ var LEAVE_BOSS=(function(){
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="bName" class="df-inp" value="'+(hd.name||curName).replace(/"/g,'&quot;')+'" readonly style="background:#f5f5f5;color:#666;"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="bLeaveType" class="df-inp">';
-    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
+    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
     h+='</select></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
@@ -6429,7 +6429,7 @@ var LEAVE_FLEX=(function(){
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="fName" class="df-inp" value="'+(hd.name||curName).replace(/"/g,'&quot;')+'" readonly style="background:#f5f5f5;color:#666;"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="fLeaveType" class="df-inp">';
-    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
+    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
     h+='</select></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;"><input type="date" id="fFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'"><input type="time" id="fFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
@@ -6623,7 +6623,7 @@ var LEAVE_COOK=(function(){
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="cName" class="df-inp" value="'+(hd.name||curName).replace(/"/g,'&quot;')+'" readonly style="background:#f5f5f5;color:#666;"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="cLeaveType" class="df-inp">';
-    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
+    ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'].forEach(function(lt){h+='<option'+(hd.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
     h+='</select></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;"><input type="date" id="cFromD" class="df-inp" style="flex:3;" value="'+(hd.from||'').split(/[T ]/)[0]+'"><input type="time" id="cFromT" class="df-inp" style="flex:2;" value="'+((hd.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
@@ -8412,7 +8412,7 @@ var TEMP=(function(){
 })();
 
 /* ── 體溫管理 ── */
-var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','其他'];
+var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'];
 var BODYTEMP_SYMPTOMS=['發燒','咳嗽','喉嚨痛','流鼻涕','頭痛'];
 var BODYTEMP=(function(){
   var curT=SIGNERS[0], curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
@@ -9236,7 +9236,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/12 09:00--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/12 09:03--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
