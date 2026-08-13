@@ -9,8 +9,8 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='202608120903';
-  if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
+  var BUILD='<!--1786580370-->';
+  if(!BUILD||BUILD.indexOf('1786580370')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
     location.replace(u+'?_v='+BUILD);
@@ -7847,6 +7847,10 @@ var BEDDING=(function(){
 
   function key(){return curC+'_'+curY+'_'+curM;}
   function getChildNames(tid){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var kids=(pl.children&&pl.children[tid])||[];
+    if(kids.length)return kids.map(function(c){return c.name;});
     if(typeof asrDB==='undefined'||!asrDB.children||!asrDB.children[tid])return [];
     return asrDB.children[tid].map(function(c){return c.name;});
   }
@@ -9236,7 +9240,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--08/12 09:03--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130819--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
