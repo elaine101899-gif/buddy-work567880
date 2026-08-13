@@ -1415,6 +1415,8 @@ body.adm .sync-setup{display:block;}
 .cln-note{min-width:130px;font-size:1rem;padding:7px 8px;}
 .cln-txt-sm{width:64px;}
 .cln-add-btn{margin-top:8px;background:#eef2fb;color:var(--navy);border:1px dashed var(--border);border-radius:8px;padding:8px 14px;font-size:.8rem;cursor:pointer;}
+.cln-del-btn{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 4px;opacity:.6;}
+.cln-del-btn:hover{opacity:1;}
 .cln-num{width:42px;border:1px solid var(--border);border-radius:6px;padding:4px 2px;font-size:.76rem;text-align:center;box-sizing:border-box;}
 .pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .pick-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:16px 6px;cursor:pointer;text-align:center;}
@@ -7893,6 +7895,8 @@ var BEDDING=(function(){
     var names=getChildNames(curC);
     var nameSet={};
     names.forEach(function(n){nameSet[n]=true;});
+    var hidden={};
+    (rec.hiddenRosterNames||[]).forEach(function(n){hidden[n]=true;});
     /* 移除已不在排班裡的 fromRoster 孩子 */
     var before=rec.rows.length;
     rec.rows=rec.rows.filter(function(r){return !r.fromRoster||nameSet[r.name];});
@@ -7901,7 +7905,7 @@ var BEDDING=(function(){
     rec.rows.forEach(function(r){existing[r.name]=true;});
     var changed=false;
     names.forEach(function(n){
-      if(!existing[n]){rec.rows.push({name:n,d:['','','','',''],note:'',fromRoster:true});changed=true;}
+      if(!existing[n]&&!hidden[n]){rec.rows.push({name:n,d:['','','','',''],note:'',fromRoster:true});changed=true;}
     });
     return d1||d2||changed;
   }
@@ -7998,7 +8002,7 @@ var BEDDING=(function(){
     h+='</div></div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
     h+='<div class="df-lbl">'+findClsLabel()+' 寢具清潔紀錄 — '+curY+'年'+curM+'月<button class="cln-sig-btn" style="float:right;" onclick="BEDDING.download()">📥 下載本月表單</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th></tr></thead><tbody>';
+    h+='<table class="cln-table"><thead><tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th><th></th></tr></thead><tbody>';
     rec.rows.forEach(function(row,ri){
       h+='<tr>';
       if(row.fromRoster){h+='<td>'+(row.name||'')+'</td>';}
@@ -8014,6 +8018,7 @@ var BEDDING=(function(){
         h+='</select></td>';
       }
       h+='<td><input type="text" class="cln-txt cln-note" value="'+(row.note||'').replace(/"/g,'&quot;')+'" onchange="BEDDING.setCell('+ri+',\'note\',-1,this.value)"></td>';
+      h+='<td><button class="cln-del-btn" onclick="BEDDING.deleteRow('+ri+')" title="刪除此列">🗑️</button></td>';
       h+='</tr>';
     });
     h+='<tr><td style="font-weight:700;color:var(--navy);">托育人員簽章</td>';
@@ -8055,6 +8060,23 @@ var BEDDING=(function(){
     save();render();
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/bedding/records/'+key()+'/rows').set(rec.rows);
+  }
+  function deleteRow(ri){
+    var rec=getRec();
+    var row=rec.rows[ri];
+    if(!row)return;
+    if(row.fromRoster&&row.name){
+      if(!rec.hiddenRosterNames)rec.hiddenRosterNames=[];
+      if(rec.hiddenRosterNames.indexOf(row.name)===-1)rec.hiddenRosterNames.push(row.name);
+    }
+    rec.rows.splice(ri,1);
+    save();render();
+    var fb=_fbInit();
+    if(fb){
+      var base='xiaobuddyClean/bedding/records/'+key();
+      fb.ref(base+'/rows').set(rec.rows);
+      fb.ref(base+'/hiddenRosterNames').set(rec.hiddenRosterNames||[]);
+    }
   }
   function changeCls(v){curC=v;render();}
   function changeYM(){
