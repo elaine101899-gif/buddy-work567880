@@ -9,8 +9,8 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='<!--1786581161-->';
-  if(!BUILD||BUILD.indexOf('1786581161')>-1)return;
+  var BUILD='<!--1786581477-->';
+  if(!BUILD||BUILD.indexOf('1786581477')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
     location.replace(u+'?_v='+BUILD);
@@ -7136,6 +7136,24 @@ var INCIDENT=(function(){
     curFid=fid;var d=db[curCls][fid]||{};
     _iPhotos={1:d.photo1||null,2:d.photo2||null};
     curStep='form';_wrap().innerHTML=renderForm(d);_loadDirSig();
+    /* 若本機缺少照片，從 Firebase 補抓 */
+    if(!_iPhotos[1]||!_iPhotos[2]){
+      try{var fb=_fbInit();if(fb){
+        fb.ref(FB_PATH+'/'+curCls+'/'+fid).once('value',function(snap){
+          var fd=snap.val();if(!fd)return;
+          var updated=false;
+          if(fd.photo1&&!_iPhotos[1]){_iPhotos[1]=fd.photo1;db[curCls][fid].photo1=fd.photo1;updated=true;}
+          if(fd.photo2&&!_iPhotos[2]){_iPhotos[2]=fd.photo2;db[curCls][fid].photo2=fd.photo2;updated=true;}
+          if(updated){
+            saveAll();
+            var b1=document.getElementById('iPhoto1Box');
+            var b2=document.getElementById('iPhoto2Box');
+            if(_iPhotos[1]&&b1)b1.innerHTML='<img src="'+_iPhotos[1]+'" style="width:100%;height:100%;object-fit:contain;">';
+            if(_iPhotos[2]&&b2)b2.innerHTML='<img src="'+_iPhotos[2]+'" style="width:100%;height:100%;object-fit:contain;">';
+          }
+        });
+      }}catch(e){}
+    }
   }
 
   /* ─── 儲存 / 閱畢 / 刪除 ─── */
@@ -9294,7 +9312,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130832--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130837--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
