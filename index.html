@@ -9,8 +9,8 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='<!--1786580370-->';
-  if(!BUILD||BUILD.indexOf('1786580370')>-1)return;
+  var BUILD='<!--BUILD_TS-->';
+  if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
     location.replace(u+'?_v='+BUILD);
@@ -7891,13 +7891,19 @@ var BEDDING=(function(){
   function reconcileRoster(rec){
     var d1=dedupeRows(rec);
     var names=getChildNames(curC);
+    var nameSet={};
+    names.forEach(function(n){nameSet[n]=true;});
+    /* 移除已不在排班裡的 fromRoster 孩子 */
+    var before=rec.rows.length;
+    rec.rows=rec.rows.filter(function(r){return !r.fromRoster||nameSet[r.name];});
+    var d2=(rec.rows.length!==before);
     var existing={};
     rec.rows.forEach(function(r){existing[r.name]=true;});
     var changed=false;
     names.forEach(function(n){
       if(!existing[n]){rec.rows.push({name:n,d:['','','','',''],note:'',fromRoster:true});changed=true;}
     });
-    return d1||changed;
+    return d1||d2||changed;
   }
   function findClsLabel(){for(var i=0;i<BEDDING_CLASSES.length;i++)if(BEDDING_CLASSES[i].id===curC)return BEDDING_CLASSES[i].label;return '';}
 
@@ -9240,7 +9246,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130819--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--APP_VERSION--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
