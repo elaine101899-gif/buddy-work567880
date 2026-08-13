@@ -9,8 +9,8 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='<!--1786581477-->';
-  if(!BUILD||BUILD.indexOf('1786581477')>-1)return;
+  var BUILD='<!--1786581881-->';
+  if(!BUILD||BUILD.indexOf('1786581881')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
     location.replace(u+'?_v='+BUILD);
@@ -6767,30 +6767,12 @@ var INCIDENT=(function(){
     try{localStorage.setItem(KEY,JSON.stringify(light));}catch(e){}
     if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(db));
   }
-  function _compressSync(src,cb){
-    var img=new Image();
-    img.onload=function(){
-      var MAX=800,w=img.naturalWidth,h=img.naturalHeight;
-      var sc=Math.min(1,MAX/Math.max(w,h));
-      var cw=Math.round(w*sc),ch=Math.round(h*sc);
-      var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;
-      cvs.getContext('2d').drawImage(img,0,0,cw,ch);
-      cb(cvs.toDataURL('image/jpeg',0.6));
-    };
-    img.onerror=function(){cb(src);};
-    img.src=src;
-  }
   function pushFb(cls,fid,data){
     try{
       var fb=_fbInit();if(!fb)return;
       var payload={};
-      Object.keys(data).forEach(function(k){if(k!=='photo1'&&k!=='photo2')payload[k]=data[k];});
-      var pending=2;
-      function maybeSet(){if(--pending===0)fb.ref(FB_PATH+'/'+cls+'/'+fid).set(payload);}
-      if(data.photo1){_compressSync(data.photo1,function(s){payload.photo1=s;maybeSet();});}
-      else{maybeSet();}
-      if(data.photo2){_compressSync(data.photo2,function(s){payload.photo2=s;maybeSet();});}
-      else{maybeSet();}
+      Object.keys(data).forEach(function(k){payload[k]=data[k];});
+      fb.ref(FB_PATH+'/'+cls+'/'+fid).set(payload);
     }catch(e){}
   }
   function loadFb(cls,cb){
@@ -9312,7 +9294,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130837--></div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;"><!--2.202608130844--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
