@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818042023';
+  var BUILD='20260818042738';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5368,6 +5368,7 @@ var LEAVE=(function(){
   var _OLD_KEY='xiaoBudiLeave';
   var _FB_PATH='xiaobuddyLeave';
   var _lFbRef=null;
+  var _lFbCache={};
 
   function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':c==='baby'?'寶寶班':c;}
   function clsBg(c){return c==='run'?'var(--run-bg)':c==='crawl'?'var(--crawl-bg)':'var(--baby-bg)';}
@@ -5397,7 +5398,7 @@ var LEAVE=(function(){
       return v2;
     }catch(e){return {};}
   }
-  function getTeacherForms(tid){return getAll()[tid]||{};}
+  function getTeacherForms(tid){return getAll()[tid]||_lFbCache[tid]||{};}
   function saveLocal(tid,fid,data){
     try{
       var all=getAll();
@@ -5423,6 +5424,7 @@ var LEAVE=(function(){
       ref.on('value',function(snap){
         var d=snap.val()||{};
         if(Object.keys(d).length){
+          _lFbCache[tid]=d;
           try{
             var all=getAll();
             if(!all[tid])all[tid]={};
@@ -5432,7 +5434,7 @@ var LEAVE=(function(){
         } else {
           /* Firebase 是空的但本機有資料 → 補推到 Firebase */
           try{
-            var localForms=getTeacherForms(tid);
+            var localForms=getAll()[tid]||{};
             Object.keys(localForms).forEach(function(fid){
               fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(localForms[fid]);
             });
@@ -9318,7 +9320,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181220</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181227</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
