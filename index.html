@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818040602';
+  var BUILD='20260818041055';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5367,6 +5367,7 @@ var LEAVE=(function(){
   var _KEY='xiaoBudiLeaveV2';
   var _OLD_KEY='xiaoBudiLeave';
   var _FB_PATH='xiaobuddyLeave';
+  var _lFbRef=null;
 
   function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':c==='baby'?'寶寶班':c;}
   function clsBg(c){return c==='run'?'var(--run-bg)':c==='crawl'?'var(--crawl-bg)':'var(--baby-bg)';}
@@ -5409,11 +5410,17 @@ var LEAVE=(function(){
   function pushFb(tid,fid,data){
     try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data);}catch(e){}
   }
+  function _detachLeaveFb(){
+    if(_lFbRef){try{_lFbRef.off('value');}catch(e){}_lFbRef=null;}
+  }
   function loadFb(tid,cb){
     try{
       var fb=_fbInit();
       if(!fb){cb(getTeacherForms(tid));return;}
-      fb.ref(_FB_PATH+'/'+tid).once('value',function(snap){
+      _detachLeaveFb();
+      var ref=fb.ref(_FB_PATH+'/'+tid);
+      _lFbRef=ref;
+      ref.on('value',function(snap){
         var d=snap.val()||{};
         if(Object.keys(d).length){
           try{
@@ -5423,9 +5430,10 @@ var LEAVE=(function(){
             localStorage.setItem(_KEY,JSON.stringify(all));
           }catch(e){}
         }
-        cb(getTeacherForms(tid));
+        if(cb){cb(getTeacherForms(tid));cb=null;}
+        else if(!lFid){showList();}
       });
-    }catch(e){cb(getTeacherForms(tid));}
+    }catch(e){cb&&cb(getTeacherForms(tid));}
   }
 
   function getKids(tid){
@@ -5441,6 +5449,7 @@ var LEAVE=(function(){
 
   /* ── 老師按鈕 Grid ── */
   function init(){
+    _detachLeaveFb();
     lTid='';lFid='';
     var w=document.getElementById('leaveWrap');
     if(!w)return;
@@ -9301,7 +9310,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181206</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181210</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
