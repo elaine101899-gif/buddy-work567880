@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818045503';
+  var BUILD='20260818050542';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5408,26 +5408,26 @@ var LEAVE=(function(){
       if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
     }catch(e){}
   }
-  function _showLeaveSyncStatus(ok){
+  function _showLeaveSyncStatus(ok,msg){
     var el=document.getElementById('_leaveSyncStatus');
     if(!el)return;
-    el.textContent=ok?'☁️ 雲端同步成功':'⚠️ 雲端同步失敗，稍後重試';
+    el.textContent=ok?'☁️ 雲端同步成功':'⚠️ 同步失敗:'+(msg||'');
     el.style.color=ok?'#2a7a4f':'#c0392b';
-    setTimeout(function(){if(el)el.textContent='';},3000);
+    el.style.fontWeight='bold';
   }
   function pushFb(tid,fid,data){
     try{
       var fb=_fbInit();
-      if(!fb){_showLeaveSyncStatus(false);return;}
+      if(!fb){_showLeaveSyncStatus(false,'Firebase未初始化');return;}
       fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(err){
-        _showLeaveSyncStatus(!err);
+        _showLeaveSyncStatus(!err,err?(err.code||err.message||JSON.stringify(err)):'');
         if(err){
           setTimeout(function(){
-            try{var fb2=_fbInit();if(fb2)fb2.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(e2){_showLeaveSyncStatus(!e2);});}catch(e){}
+            try{var fb2=_fbInit();if(fb2)fb2.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(e2){_showLeaveSyncStatus(!e2,e2?(e2.code||e2.message):'');});}catch(e){}
           },5000);
         }
       });
-    }catch(e){_showLeaveSyncStatus(false);}
+    }catch(e){_showLeaveSyncStatus(false,e.message||'例外錯誤');}
   }
   function _detachLeaveFb(){
     if(_lFbRef){try{_lFbRef.off('value');}catch(e){}_lFbRef=null;}
@@ -9344,7 +9344,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/18 12:55</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/18 13:05</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
