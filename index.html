@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818042738';
+  var BUILD='20260818044221';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5423,6 +5423,8 @@ var LEAVE=(function(){
       _lFbRef=ref;
       ref.on('value',function(snap){
         var d=snap.val()||{};
+        var _dbg=document.getElementById('_leaveDbg');
+        if(_dbg)_dbg.textContent='Firebase:'+Object.keys(d).length+'筆 路徑:'+_FB_PATH+'/'+tid;
         if(Object.keys(d).length){
           _lFbCache[tid]=d;
           try{
@@ -5525,6 +5527,7 @@ var LEAVE=(function(){
     var fids=Object.keys(forms).sort(function(a,b){return (forms[b].createdAt||0)-(forms[a].createdAt||0);});
     var cls=teacher?teacher.cls:'run';
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div id="_leaveDbg" style="font-size:11px;color:#999;margin-bottom:6px;padding:4px 8px;background:#f5f5f5;border-radius:4px;">等待Firebase...</div>';
     h+='<button onclick="LEAVE.newForm()" style="width:100%;padding:14px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增假單</button>';
     if(!fids.length){
       h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無假單記錄</div>';
@@ -9320,7 +9323,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181227</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181242</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
