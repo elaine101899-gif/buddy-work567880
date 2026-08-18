@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818044826';
+  var BUILD='20260818045240';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5408,17 +5408,26 @@ var LEAVE=(function(){
       if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
     }catch(e){}
   }
+  function _showLeaveSyncStatus(ok){
+    var el=document.getElementById('_leaveSyncStatus');
+    if(!el)return;
+    el.textContent=ok?'☁️ 雲端同步成功':'⚠️ 雲端同步失敗，稍後重試';
+    el.style.color=ok?'#2a7a4f':'#c0392b';
+    setTimeout(function(){if(el)el.textContent='';},3000);
+  }
   function pushFb(tid,fid,data){
     try{
       var fb=_fbInit();
-      if(!fb)return;
-      fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data).catch(function(){
-        /* 推送失敗後 5 秒重試一次 */
-        setTimeout(function(){
-          try{var fb2=_fbInit();if(fb2)fb2.ref(_FB_PATH+'/'+tid+'/'+fid).set(data);}catch(e){}
-        },5000);
+      if(!fb){_showLeaveSyncStatus(false);return;}
+      fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(err){
+        _showLeaveSyncStatus(!err);
+        if(err){
+          setTimeout(function(){
+            try{var fb2=_fbInit();if(fb2)fb2.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(e2){_showLeaveSyncStatus(!e2);});}catch(e){}
+          },5000);
+        }
       });
-    }catch(e){}
+    }catch(e){_showLeaveSyncStatus(false);}
   }
   function _detachLeaveFb(){
     if(_lFbRef){try{_lFbRef.off('value');}catch(e){}_lFbRef=null;}
@@ -5701,6 +5710,7 @@ var LEAVE=(function(){
     /* ── 按鈕 ── */
     h+='<div class="lf-btns" style="flex-wrap:wrap;">';
     h+='<button class="lf-save-btn" onclick="LEAVE.saveForm()">💾 儲存</button>';
+    h+='<div id="_leaveSyncStatus" style="width:100%;font-size:12px;margin-top:4px;min-height:18px;"></div>';
     h+='<button class="lf-dl-btn" onclick="LEAVE.download()">🖨️ 列印</button>';
     h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="LEAVE.downloadFile()">📥 下載存檔</button>';
     h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="LEAVE.exportData()">📤 匯出資料</button>';
@@ -9334,7 +9344,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181248</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181252</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
