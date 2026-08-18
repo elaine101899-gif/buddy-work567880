@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818044614';
+  var BUILD='20260818044826';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5409,7 +5409,16 @@ var LEAVE=(function(){
     }catch(e){}
   }
   function pushFb(tid,fid,data){
-    try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data);}catch(e){}
+    try{
+      var fb=_fbInit();
+      if(!fb)return;
+      fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data).catch(function(){
+        /* 推送失敗後 5 秒重試一次 */
+        setTimeout(function(){
+          try{var fb2=_fbInit();if(fb2)fb2.ref(_FB_PATH+'/'+tid+'/'+fid).set(data);}catch(e){}
+        },5000);
+      });
+    }catch(e){}
   }
   function _detachLeaveFb(){
     if(_lFbRef){try{_lFbRef.off('value');}catch(e){}_lFbRef=null;}
@@ -9325,7 +9334,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181246</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181248</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
