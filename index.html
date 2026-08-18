@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818050542';
+  var BUILD='20260818050850';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5409,17 +5409,23 @@ var LEAVE=(function(){
     }catch(e){}
   }
   function _showLeaveSyncStatus(ok,msg){
+    var txt=ok?'☁️ 雲端同步成功':'⚠️ 同步失敗:'+(msg||'');
+    var toast=document.createElement('div');
+    toast.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);background:'+(ok?'#1a7a4f':'#c0392b')+';color:#fff;padding:10px 22px;border-radius:10px;z-index:99999;font-size:14px;font-weight:bold;max-width:90%;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,.25);';
+    toast.textContent=txt;
+    document.body.appendChild(toast);
+    setTimeout(function(){if(toast.parentNode)toast.parentNode.removeChild(toast);},6000);
     var el=document.getElementById('_leaveSyncStatus');
-    if(!el)return;
-    el.textContent=ok?'☁️ 雲端同步成功':'⚠️ 同步失敗:'+(msg||'');
-    el.style.color=ok?'#2a7a4f':'#c0392b';
-    el.style.fontWeight='bold';
+    if(el){el.textContent=txt;el.style.color=ok?'#1a7a4f':'#c0392b';el.style.fontWeight='bold';}
   }
   function pushFb(tid,fid,data){
     try{
       var fb=_fbInit();
       if(!fb){_showLeaveSyncStatus(false,'Firebase未初始化');return;}
+      var _done=false;
+      var _timer=setTimeout(function(){if(!_done){_done=true;_showLeaveSyncStatus(false,'連線逾時');}},8000);
       fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(data,function(err){
+        if(_done)return;_done=true;clearTimeout(_timer);
         _showLeaveSyncStatus(!err,err?(err.code||err.message||JSON.stringify(err)):'');
         if(err){
           setTimeout(function(){
@@ -9344,7 +9350,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/18 13:05</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/18 13:08</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
