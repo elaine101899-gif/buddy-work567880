@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818041055';
+  var BUILD='20260818042023';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5429,6 +5429,14 @@ var LEAVE=(function(){
             Object.keys(d).forEach(function(fid){all[tid][fid]=d[fid];});
             localStorage.setItem(_KEY,JSON.stringify(all));
           }catch(e){}
+        } else {
+          /* Firebase 是空的但本機有資料 → 補推到 Firebase */
+          try{
+            var localForms=getTeacherForms(tid);
+            Object.keys(localForms).forEach(function(fid){
+              fb.ref(_FB_PATH+'/'+tid+'/'+fid).set(localForms[fid]);
+            });
+          }catch(e){}
         }
         if(cb){cb(getTeacherForms(tid));cb=null;}
         else if(!lFid){showList();}
@@ -9310,7 +9318,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181210</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v115下 08181220</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
