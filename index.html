@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260818050850';
+  var BUILD='20260819035815';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4721,7 +4721,7 @@ var DIARY=(function(){
           if(!diaryDB.entries[k]){
             diaryDB.entries[k]=e;changed=true;
           } else {
-            ['studentId','resource','steps','reflection'].forEach(function(f){
+            ['studentId','resource','steps','photos','cropStates','reflection'].forEach(function(f){
               if(e[f]!==undefined&&JSON.stringify(diaryDB.entries[k][f])!==JSON.stringify(e[f])){
                 diaryDB.entries[k][f]=e[f];changed=true;
               }
@@ -5132,6 +5132,8 @@ var DIARY=(function(){
         studentId:_eD.studentId||'',
         resource:_eD.resource||'',
         steps:_eD.steps||[],
+        photos:_eD.photos||[],
+        cropStates:_eD.cropStates||{},
         reflection:_eD.reflection||''
       });
     }
@@ -9350,7 +9352,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/18 13:08</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/19 11:58</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
