@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260819040923';
+  var BUILD='20260819041444';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4673,10 +4673,19 @@ var DIARY=(function(){
 
   function dbSave(){
     var json=JSON.stringify(diaryDB);
-    try{localStorage.setItem('diaryDB',json);}
-    catch(e){dToast('⚠️ 儲存失敗：裝置空間不足，資料已備份至 IndexedDB，重開頁面即可復原');}
-    /* 同時備份至 IndexedDB（配額大，不受 iOS 清除限制） */
+    /* 1. 完整資料（含照片）優先存到 IndexedDB，配額遠大於 localStorage */
     if(typeof _xbdDB!=='undefined') _xbdDB.set('diaryDB',json);
+    /* 2. localStorage 只存文字版（不含照片 base64），避免超出 5MB 配額 */
+    try{
+      var light=JSON.parse(json);
+      Object.keys(light.entries||{}).forEach(function(k){
+        var e=light.entries[k];
+        if(!e) return;
+        if(e.photos) e.photos=[];
+        if(e.cropStates) e.cropStates={};
+      });
+      localStorage.setItem('diaryDB',JSON.stringify(light));
+    }catch(e){}
   }
   function dbLoad(){
     var lsHasData=false;
@@ -9356,7 +9365,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/19 12:09</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/19 12:14</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
