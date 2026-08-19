@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260819035815';
+  var BUILD='20260819040923';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4589,12 +4589,16 @@ var DIARY=(function(){
 
   function dMkCrpBg(idx,src,st){
     /* 先用保存值初始化；_dApplySlotCrops 會在 DOM 渲染後修正為精確值 */
-    var s=(st&&st.cx!==undefined)?{bsz:130,bpx:50,bpy:50}:(st||{bsz:130,bpx:50,bpy:50});
-    if(st&&st.bsz)s=st;
+    /* 有 cx（新格式裁切）→ 暫用 cover；有 bsz（舊格式）→ 直接用；無裁切 → cover */
+    var hasCx=(st&&st.cx!==undefined);
+    var hasBsz=(st&&typeof st.bsz==='number');
+    var bszStr=hasBsz?(st.bsz+'%'):'cover';
+    var bpxStr=hasBsz?((st.bpx||50)+'%'):'50%';
+    var bpyStr=hasBsz?((st.bpy||50)+'%'):'50%';
     return '<div onclick="event.stopPropagation();DIARY.dCrpOpen('+idx+')" '+
       'style="position:absolute;inset:0;cursor:pointer;'+
-      'background-image:url('+src+');background-size:'+(s.bsz||130)+'%;'+
-      'background-position:'+(s.bpx||50)+'% '+(s.bpy||50)+'%;background-repeat:no-repeat;">'+
+      'background-image:url('+src+');background-size:'+bszStr+';'+
+      'background-position:'+bpxStr+' '+bpyStr+';background-repeat:no-repeat;">'+
       '<span style="position:absolute;bottom:4px;left:50%;transform:translateX(-50%);'+
       'background:rgba(0,0,0,.5);color:white;font-size:.65rem;border-radius:4px;padding:2px 8px;pointer-events:none;">✂️ 點擊調整</span>'+
       '</div>'+
@@ -9352,7 +9356,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/19 11:58</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/19 12:09</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
