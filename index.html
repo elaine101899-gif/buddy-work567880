@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260825014314';
+  var BUILD='20260825014630';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4777,8 +4777,8 @@ var DIARY=(function(){
     var _pl=window['_asrPreload'+_autoYr]||window._asrPreload||{};
     var _teachers=_pl.teachers||((typeof asrDB!=='undefined')?asrDB.teachers:null)||[];
     var _children=_pl.children||((typeof asrDB!=='undefined')?asrDB.children:null)||{};
-    // 爬爬班也包含寶寶班的孩子
-    var clsList=cls==='crawl'?['crawl','baby']:[cls];
+    // 各班只顯示自己班的孩子
+    var clsList=[cls];
     var ts=_teachers.filter(function(t){
       if(clsList.indexOf(t.cls)<0)return false;
       if(cls==='run'&&t.name==='黃苡綸')return false; // 黃苡綸的學生不列入
@@ -9369,7 +9369,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/25 09:43</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/25 09:46</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
