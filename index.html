@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260826045535';
+  var BUILD='20260826050300';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6101,13 +6101,88 @@ var LEAVE=(function(){
   return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig};
 })();
 
+/* ════ 主管／機動／廚工 假單 Firebase 同步共用工具 ════
+   結構：{FB_PATH}/{人員姓名}/{fid} = 假單資料
+   attach() 掛即時監聽並合併回 localStorage；push() 上傳單筆；remove() 刪除單筆 */
+var _LSFB=(function(){
+  var _refs={};              /* path -> firebase ref（供 detach 用） */
+  var _cache={};             /* path -> 記憶體備援（localStorage 寫入失敗時仍可讀） */
+
+  function cacheOf(path){return _cache[path]||{};}
+
+  function detach(path){
+    if(_refs[path]){try{_refs[path].off('value');}catch(e){}delete _refs[path];}
+  }
+
+  /* 讀 localStorage（失敗時回退記憶體快取） */
+  function readLocal(KEY,path){
+    try{
+      var d=JSON.parse(localStorage.getItem(KEY)||'{}');
+      if(d&&Object.keys(d).length)return d;
+    }catch(e){}
+    return cacheOf(path);
+  }
+
+  /* 掛上即時監聽。onUpdate 會在雲端資料變動時被呼叫，讓畫面重繪 */
+  function attach(path,KEY,onUpdate){
+    var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
+    if(!fb)return;
+    detach(path);
+    var ref=fb.ref(path);
+    _refs[path]=ref;
+    ref.on('value',function(snap){
+      var remote=snap.val()||{};
+      if(Object.keys(remote).length){
+        _cache[path]=remote;
+        /* 合併進 localStorage：以雲端為準逐筆覆蓋，保留本機獨有的假單 */
+        try{
+          var all={};
+          try{all=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+          Object.keys(remote).forEach(function(nm){
+            if(!all[nm])all[nm]={};
+            Object.keys(remote[nm]).forEach(function(fid){all[nm][fid]=remote[nm][fid];});
+          });
+          localStorage.setItem(KEY,JSON.stringify(all));
+          if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(all));
+        }catch(e){}
+      } else {
+        /* 雲端是空的但本機有資料 → 補推上去，避免舊資料只留在單一裝置 */
+        try{
+          var local=JSON.parse(localStorage.getItem(KEY)||'{}');
+          Object.keys(local).forEach(function(nm){
+            Object.keys(local[nm]||{}).forEach(function(fid){
+              fb.ref(path+'/'+nm+'/'+fid).set(local[nm][fid]);
+            });
+          });
+        }catch(e){}
+      }
+      if(onUpdate)onUpdate();
+    });
+  }
+
+  function push(path,name,fid,data){
+    var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
+    if(!fb)return;
+    try{fb.ref(path+'/'+name+'/'+fid).set(data);}catch(e){}
+  }
+
+  function remove(path,name,fid){
+    var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
+    if(!fb)return;
+    try{fb.ref(path+'/'+name+'/'+fid).remove();}catch(e){}
+  }
+
+  return{attach:attach,detach:detach,push:push,remove:remove,readLocal:readLocal};
+})();
+
 /* ════ 主管人員請假交接單 ════ */
 var LEAVE_BOSS=(function(){
   var KEY='xiaoBudiLeaveBossV2';
+  var FB_PATH='xiaobuddyLeaveBoss';
   var BOSS_NAMES=['金佩樺','黃苡綸'];
   var curName='',curFid='',curStep='hub';
 
-  function getAll(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
+  function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){
     try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}
     if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));
@@ -6116,6 +6191,7 @@ var LEAVE_BOSS=(function(){
   function saveFid(name,fid,data){
     var all=getAll();if(!all[name])all[name]={};
     all[name][fid]=data;setAll(all);
+    _LSFB.push(FB_PATH,name,fid,data);
   }
   function v(id){var el=document.getElementById(id);return el?(el.value||''):''}
   function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
@@ -6270,10 +6346,17 @@ var LEAVE_BOSS=(function(){
   }
 
   /* ─── 導覽 ─── */
+  /* 雲端資料變動時重繪目前畫面（編輯表單中不打斷，避免蓋掉未存的輸入） */
+  function _onFbUpdate(){
+    var w=_wrap();if(!w)return;
+    if(curStep==='hub')w.innerHTML=renderHub();
+    else if(curStep==='list')w.innerHTML=renderList();
+  }
   function init(){
     curStep='hub';curName='';curFid='';
     var w=_wrap();if(!w)return;
     w.innerHTML=renderHub();
+    _LSFB.attach(FB_PATH,KEY,_onFbUpdate);
   }
   function openPerson(name){
     curName=name;curFid='';curStep='list';
@@ -6300,11 +6383,13 @@ var LEAVE_BOSS=(function(){
   function deleteFid(fid){
     if(!confirm('確定要刪除這份假單嗎？'))return;
     var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);
+    _LSFB.remove(FB_PATH,curName,fid);
     _wrap().innerHTML=renderList();
   }
   function toggleRead(fid){
     var all=getAll();if(!all[curName]||!all[curName][fid])return;
     all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
     _wrap().innerHTML=renderList();
   }
 
@@ -6438,14 +6523,15 @@ var LEAVE_BOSS=(function(){
 /* ════ 機動人員請假交接單 ════ */
 var LEAVE_FLEX=(function(){
   var KEY='xiaoBudiLeaveFlexV2';
+  var FB_PATH='xiaobuddyLeaveFlex';
   var FLEX_NAMES=['黃鈺雯','陳芓妍'];
   var curName='',curFid='',curStep='hub';
   var TX='#3d7030',BGC='#e8f0e5',BDC='#7aaa6a';
 
-  function getAll(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
+  function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
-  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);}
+  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
   function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
   function _wrap(){return document.getElementById('leaveFlexWrap');}
@@ -6558,7 +6644,13 @@ var LEAVE_FLEX=(function(){
     h+='</div>';return h;
   }
 
-  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();}
+  /* 雲端資料變動時重繪目前畫面（編輯表單中不打斷，避免蓋掉未存的輸入） */
+  function _onFbUpdate(){
+    var w=_wrap();if(!w)return;
+    if(curStep==='hub')w.innerHTML=renderHub();
+    else if(curStep==='list')w.innerHTML=renderList();
+  }
+  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();_LSFB.attach(FB_PATH,KEY,_onFbUpdate);}
   function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
   function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
   function backToList(){curStep='list';_wrap().innerHTML=renderList();}
@@ -6574,10 +6666,11 @@ var LEAVE_FLEX=(function(){
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
   }
-  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
   function toggleRead(fid){
     var all=getAll();if(!all[curName]||!all[curName][fid])return;
     all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
     _wrap().innerHTML=renderList();
   }
   function _openMgrSig(){
@@ -6631,15 +6724,16 @@ var LEAVE_FLEX=(function(){
 
 var LEAVE_COOK=(function(){
   var KEY='xiaoBudiLeaveCookV2';
+  var FB_PATH='xiaobuddyLeaveCook';
   var COOK_NAMES=['黃郁婷','林素珍'];
   var DEFAULT_MEAL='1. 早餐：5 杯米，格線 10\n2. 午餐：8 杯米，兩只手指頭\n3. 點心：3 杯米，格線 6\n4. 托育人員餐點部分';
   var curName='',curFid='',curStep='hub';
   var TX='#b85040',BGC='#fdeae5',BDC='#e88c7a';
 
-  function getAll(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {};}}
+  function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
-  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);}
+  function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
   function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
   function _wrap(){return document.getElementById('leaveCookWrap');}
@@ -6749,7 +6843,13 @@ var LEAVE_COOK=(function(){
     h+='</div>';return h;
   }
 
-  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();}
+  /* 雲端資料變動時重繪目前畫面（編輯表單中不打斷，避免蓋掉未存的輸入） */
+  function _onFbUpdate(){
+    var w=_wrap();if(!w)return;
+    if(curStep==='hub')w.innerHTML=renderHub();
+    else if(curStep==='list')w.innerHTML=renderList();
+  }
+  function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();_LSFB.attach(FB_PATH,KEY,_onFbUpdate);}
   function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
   function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
   function backToList(){curStep='list';_wrap().innerHTML=renderList();}
@@ -6765,10 +6865,11 @@ var LEAVE_COOK=(function(){
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
   }
-  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_wrap().innerHTML=renderList();}
+  function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
   function toggleRead(fid){
     var all=getAll();if(!all[curName]||!all[curName][fid])return;
     all[curName][fid].read=!all[curName][fid].read;setAll(all);
+    _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
     _wrap().innerHTML=renderList();
   }
   function _openMgrSig(){
@@ -9375,7 +9476,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 12:55</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:03</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
