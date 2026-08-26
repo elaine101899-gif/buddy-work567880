@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260826052054';
+  var BUILD='20260826053634';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6906,10 +6906,12 @@ var LEAVE_COOK=(function(){
     p+='<tr><td class="th">主任<br>簽名</td><td colspan="5">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:28px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
     ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
-    /* 每日事務：固定欄寬的三欄表格（直式標題／項目名稱／填寫內容），避免各列寬度不一 */
-    p+='<table style="margin-bottom:8px;table-layout:fixed;"><tr><td class="th" rowspan="5" style="width:22px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
-    [['早餐備餐',data.cBreakfast],['水果',data.cFruit],['午餐備餐',data.cLunch],['點心',data.cSnack],['垃圾',data.cTrash]].forEach(function(r,i){
-      p+=(i===0?'':'<tr>')+'<td class="th" style="width:74px;text-align:center;">'+r[0]+'</td><td style="white-space:pre-wrap;word-break:break-all;">'+(r[1]||'')+'</td></tr>';
+    /* 每日事務：標題橫放一列＋單純兩欄。不用 writing-mode／rowspan／table-layout:fixed，
+       這些在 iOS Safari 與桌機列印引擎的表現差異很大，會把表格撐成整頁 */
+    p+='<table style="margin-bottom:8px;page-break-inside:avoid;break-inside:avoid;">';
+    p+='<tr><td class="th" colspan="2" style="text-align:center;letter-spacing:2px;">每日事務</td></tr>';
+    [['早餐備餐',data.cBreakfast],['水果',data.cFruit],['午餐備餐',data.cLunch],['點心',data.cSnack],['垃圾',data.cTrash]].forEach(function(r){
+      p+='<tr><td class="th" style="width:80px;text-align:center;">'+r[0]+'</td><td style="white-space:pre-wrap;">'+(r[1]||'')+'</td></tr>';
     });
     p+='</table>';
     p+='<div class="sec"><div class="sec-hd">備餐注意事項</div><div class="sec-bd">'+(data.mealNote||DEFAULT_MEAL)+'</div></div>';
@@ -9478,7 +9480,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:20</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:36</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
