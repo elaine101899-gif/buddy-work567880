@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260826050300';
+  var BUILD='20260826051546';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6900,14 +6900,16 @@ var LEAVE_COOK=(function(){
     p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（廚工）</div></div></div>';
     p+='<table><tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
     p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
-    var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return ck((hd.roles||[]).indexOf(r)>=0)+r;}).join('　');
+    /* 每個選項各自不換行，避免「主管」被拆成兩行 */
+    var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return '<span style="white-space:nowrap;">'+ck((hd.roles||[]).indexOf(r)>=0)+r+'</span>';}).join('　');
     p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
     p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(data.sigMgr?'<img src="'+data.sigMgr+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td><td class="th">主任<br>簽名</td><td colspan="3">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
     ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
-    p+='<table style="margin-bottom:8px;"><tr><td class="th" rowspan="5" style="width:18px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
+    /* 每日事務：固定欄寬的三欄表格（直式標題／項目名稱／填寫內容），避免各列寬度不一 */
+    p+='<table style="margin-bottom:8px;table-layout:fixed;"><tr><td class="th" rowspan="5" style="width:22px;writing-mode:vertical-lr;text-align:center;letter-spacing:2px;">每日事務</td>';
     [['早餐備餐',data.cBreakfast],['水果',data.cFruit],['午餐備餐',data.cLunch],['點心',data.cSnack],['垃圾',data.cTrash]].forEach(function(r,i){
-      p+=(i===0?'':'<tr>')+' <td><span style="color:'+TX+';font-size:7.5pt;font-weight:700;">'+r[0]+'：</span>'+(r[1]||'')+'</td></tr>';
+      p+=(i===0?'':'<tr>')+'<td class="th" style="width:74px;text-align:center;">'+r[0]+'</td><td style="white-space:pre-wrap;word-break:break-all;">'+(r[1]||'')+'</td></tr>';
     });
     p+='</table>';
     p+='<div class="sec"><div class="sec-hd">備餐注意事項</div><div class="sec-bd">'+(data.mealNote||DEFAULT_MEAL)+'</div></div>';
@@ -9476,7 +9478,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:03</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:15</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
