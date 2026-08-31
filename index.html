@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260826053634';
+  var BUILD='20260831025914';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6899,7 +6899,7 @@ var LEAVE_COOK=(function(){
     p+='<div class="hdr">';if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
     p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">請假職務代理交接單（廚工）</div></div></div>';
     p+='<table class="thd"><tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
-    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
+    p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 <span style="white-space:nowrap;">'+fmtDateTime(hd.from)+'</span>　至 <span style="white-space:nowrap;">'+fmtDateTime(hd.to)+'</span></td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     /* 每個選項各自不換行，避免「主管」被拆成兩行 */
     var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return '<span style="white-space:nowrap;">'+ck((hd.roles||[]).indexOf(r)>=0)+r+'</span>';}).join('　');
     p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
@@ -9480,7 +9480,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/26 13:36</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/31 10:59</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
