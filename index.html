@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260831031924';
+  var BUILD='20260831032840';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -311,31 +311,36 @@ body {
 .act-grow  { background:var(--grow-bg); border-color:var(--grow-bd); }
 
 .act-domain {
-  font-size:.6rem; font-weight:700; letter-spacing:1px;
+  font-size:calc(.6rem * var(--tc-scale,1)); font-weight:700; letter-spacing:1px;
   color:var(--gray); margin-bottom:3px; text-transform:uppercase;
 }
-.act-name { font-size:.88rem; font-weight:700; color:var(--navy); margin-bottom:4px; }
+.act-name { font-size:calc(.88rem * var(--tc-scale,1)); font-weight:700; color:var(--navy); margin-bottom:4px; }
 .act-indicator {
-  display:inline-block; font-size:.66rem; font-weight:600;
+  display:inline-block; font-size:calc(.66rem * var(--tc-scale,1)); font-weight:600;
   background:rgba(0,0,0,.06); border-radius:4px;
   padding:1px 7px; margin-bottom:7px; color:var(--navy);
   letter-spacing:.3px;
 }
 .act-content {
-  font-size:.74rem; color:#111; line-height:1.7;
+  font-size:calc(.74rem * var(--tc-scale,1)); color:#111; line-height:1.7;
   margin-bottom:8px;
   padding-top:7px; border-top:1px solid rgba(0,0,0,.07);
   background:#fff; padding:6px 8px; border-radius:6px;
 }
 .act-materials-label {
-  font-size:.62rem; font-weight:700; color:var(--teal);
+  font-size:calc(.62rem * var(--tc-scale,1)); font-weight:700; color:var(--teal);
   text-transform:uppercase; letter-spacing:.6px; margin-bottom:4px;
 }
 .mat-tags { display:flex; flex-wrap:wrap; gap:3px; }
 .mat-tag {
   background:rgba(255,255,255,.8); border:1px solid rgba(0,0,0,.1);
   border-radius:4px; padding:2px 7px;
-  font-size:.67rem; color:var(--navy);
+  font-size:calc(.67rem * var(--tc-scale,1)); color:var(--navy);
+}
+/* 後台手打／貼上時常夾帶 <span style="font-size:..">，強制吃父層字級，避免同一格大小不一 */
+.act-name *, .act-content *, .act-indicator *, .act-date *, .mat-tag *{
+  font-size:inherit !important; font-family:inherit !important;
+  line-height:inherit !important; background:transparent !important;
 }
 
 /* ── Materials Box ── */
@@ -388,7 +393,7 @@ body {
 
 /* Activity date */
 .act-date {
-  font-size:.82rem; font-weight:700; color:var(--teal);
+  font-size:calc(.82rem * var(--tc-scale,1)); font-weight:700; color:var(--teal);
   margin-bottom:4px; letter-spacing:.5px;
 }
 
@@ -437,15 +442,16 @@ body {
 
 
 
-/* Larger base font */
+/* Larger base font（此區塊在前面的定義之後，是實際生效的字級；
+   乘上 --tc-scale 讓組長可在後台調整教學課程字級） */
 body { font-size:16px; }
-.act-name      { font-size:1rem; }
-.act-domain    { font-size:.72rem; }
-.act-indicator { font-size:.76rem; }
-.act-content   { font-size:.84rem; }
-.mat-tag       { font-size:.76rem; }
-.act-materials-label { font-size:.72rem; }
-.mat-list li   { font-size:.8rem; }
+.act-name      { font-size:calc(1rem   * var(--tc-scale,1)); }
+.act-domain    { font-size:calc(.72rem * var(--tc-scale,1)); }
+.act-indicator { font-size:calc(.76rem * var(--tc-scale,1)); }
+.act-content   { font-size:calc(.84rem * var(--tc-scale,1)); }
+.mat-tag       { font-size:calc(.76rem * var(--tc-scale,1)); }
+.act-materials-label { font-size:calc(.72rem * var(--tc-scale,1)); }
+.mat-list li   { font-size:calc(.8rem  * var(--tc-scale,1)); }
 .week-info h2  { font-size:1.1rem; }
 .class-head    { font-size:1.05rem; }
 
@@ -1475,6 +1481,13 @@ function _fbInit(){
 </div>
 <div class="adm-bar" id="aBar">
   <span>&#x270F; 組長編輯模式 <span class="atag" id="aCnt">已修改 0 處</span></span>
+  <span class="atag" style="display:inline-flex;align-items:center;gap:4px;">
+    課程字級
+    <button class="abtn" style="padding:2px 8px;" onclick="TCFONT.bump(-0.05)" title="縮小">A&#x2212;</button>
+    <b id="tcFontLbl" style="min-width:38px;display:inline-block;text-align:center;">100%</b>
+    <button class="abtn" style="padding:2px 8px;" onclick="TCFONT.bump(0.05)" title="放大">A&#x2b;</button>
+    <button class="abtn" style="padding:2px 8px;" onclick="TCFONT.reset()" title="回到預設">&#x21ba;</button>
+  </span>
   <button class="abtn abtn-e" onclick="ADM.ex()">&#x2B07; 匯出更新版</button>
   <button class="abtn abtn-x" onclick="ADM.quit()">&#x2715; 退出</button>
 </div>
@@ -2071,6 +2084,52 @@ function YR(yr) {
   if (pn) pn.classList.add('on');
 }
 
+/* ════ 教學課程字級調整（組長設定，Firebase 同步到每支手機） ════ */
+var TCFONT=(function(){
+  var KEY='tcFontScale';
+  var FB='xiaobuddyClean/teachFontScale';
+  var MIN=0.8,MAX=1.6,STEP=0.05;
+  var scale=1;
+  var _attached=false;
+
+  function clamp(v){v=Math.round(v*100)/100;return Math.max(MIN,Math.min(MAX,v));}
+  function paint(){
+    document.documentElement.style.setProperty('--tc-scale',scale);
+    var lbl=document.getElementById('tcFontLbl');
+    if(lbl)lbl.textContent=Math.round(scale*100)+'%';
+  }
+  function get(){return scale;}
+  function set(v,push){
+    scale=clamp(v);
+    paint();
+    try{localStorage.setItem(KEY,String(scale));}catch(e){}
+    if(push){
+      var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
+      if(fb){try{fb.ref(FB).set(scale);}catch(e){}}
+    }
+  }
+  function bump(d){set(scale+d,true);}
+  function reset(){set(1,true);}
+
+  function attachFb(){
+    if(_attached)return;
+    var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
+    if(!fb)return;
+    _attached=true;
+    fb.ref(FB).on('value',function(snap){
+      var v=snap.val();
+      if(typeof v==='number'&&v>0){scale=clamp(v);paint();try{localStorage.setItem(KEY,String(scale));}catch(e){}}
+    });
+  }
+  function load(){
+    try{var r=parseFloat(localStorage.getItem(KEY));if(r>0)scale=clamp(r);}catch(e){}
+    paint();
+    attachFb();
+  }
+  load();
+  return{load:load,get:get,set:set,bump:bump,reset:reset};
+})();
+
 /* ── Admin ── */
 var ADM = (function() {
   var PIN = '2025'; var on = false; var ch = 0;
@@ -2093,9 +2152,31 @@ var ADM = (function() {
     document.getElementById('aFab').style.background = '#e8a030';
     document.getElementById('aFab').onclick = function(){ quit(); };
     var f = document.querySelectorAll('[data-edit]'), i;
-    for (i = 0; i < f.length; i++) { f[i].contentEditable = 'true'; f[i].addEventListener('input', onCh); }
+    for (i = 0; i < f.length; i++) { f[i].contentEditable = 'true'; f[i].addEventListener('input', onCh); f[i].addEventListener('paste', onPaste); }
     var a = document.querySelectorAll('.activity');
     for (i = 0; i < a.length; i++) { setupM(a[i]); }
+  }
+  /* 直接貼上會夾帶來源的 <span style="font-size:..">，導致同一格字體大小不一。
+     這裡攔截貼上，只取純文字。 */
+  function onPaste(e){
+    e.preventDefault();
+    var t=(e.clipboardData||window.clipboardData).getData('text/plain')||'';
+    t=t.replace(/\r/g,'');
+    /* execCommand 可能「支援但執行失敗」（回傳 false），所以看實際回傳值再決定是否走備援 */
+    var done=false;
+    try{done=document.execCommand('insertText',false,t);}catch(ex){done=false;}
+    if(!done){
+      var sel=window.getSelection();
+      if(sel&&sel.rangeCount){
+        var r=sel.getRangeAt(0);r.deleteContents();
+        var node=document.createTextNode(t);
+        r.insertNode(node);r.setStartAfter(node);r.setEndAfter(node);
+        sel.removeAllRanges();sel.addRange(r);
+      } else if(e.target){
+        e.target.textContent=(e.target.textContent||'')+t;
+      }
+    }
+    if(e.target)onCh({target:e.target});
   }
   function onCh(e) {
     var act=null; var p=e.target;
@@ -2137,7 +2218,7 @@ var ADM = (function() {
     document.getElementById('aFab').style.background='';
     document.getElementById('aFab').onclick=function(){sp();};
     var f=document.querySelectorAll('[data-edit]'),i;
-    for(i=0;i<f.length;i++){f[i].contentEditable='false';f[i].removeEventListener('input',onCh);}
+    for(i=0;i<f.length;i++){f[i].contentEditable='false';f[i].removeEventListener('input',onCh);f[i].removeEventListener('paste',onPaste);}
     var ab=document.querySelectorAll('.add-mat');
     for(i=0;i<ab.length;i++){ab[i].parentNode.removeChild(ab[i]);}
     var ed=document.querySelectorAll('.activity.edited');
@@ -2183,7 +2264,7 @@ var ADM = (function() {
   }
   function setupNew(container){
     var f=container.querySelectorAll('[data-edit]'),i;
-    for(i=0;i<f.length;i++){f[i].contentEditable='true';f[i].addEventListener('input',onCh);}
+    for(i=0;i<f.length;i++){f[i].contentEditable='true';f[i].addEventListener('input',onCh);f[i].addEventListener('paste',onPaste);}
     var a=container.querySelectorAll('.activity');
     for(i=0;i<a.length;i++){setupM(a[i]);}
   }
@@ -9480,7 +9561,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/31 11:19</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/31 11:28</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
