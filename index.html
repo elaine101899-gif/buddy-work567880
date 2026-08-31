@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260831033353';
+  var BUILD='20260831033822';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5075,7 +5075,7 @@ var DIARY=(function(){
         }
       }
     }
-    dCtx={dayNo:dayNo,cls:cls,dayData:dayData,act:act,wkObj:wkObj};
+    dCtx={dayNo:dayNo,cls:cls,dayData:dayData,act:act,wkObj:wkObj,origName:_origActName};
     var isGrowth=(act.dom==='成長紀錄');
     var growthLabels=['📏 身高','⚖️ 體重','🔵 頭圍','📊 成長數據'];
     var photoCount=isGrowth?4:2;
@@ -5159,7 +5159,8 @@ var DIARY=(function(){
 
   function resetToTpl(){
     if(!dCtx)return;
-    var _def=_dActDB[dCtx.act.name]||{};
+    /* 與顯示時同一套查表順序：先用 TEACHSYNC 覆蓋後的名稱，找不到再用課表原始名稱 */
+    var _def=_dActDB[dCtx.act.name]||_dActDB[dCtx.origName]||{};
     if(!_def.res&&(!_def.steps||!_def.steps.length)){dToast('此活動沒有預設範本');return;}
     var r=document.getElementById('dFResource');
     if(r&&_def.res)r.value=_def.res;
@@ -9568,7 +9569,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/31 11:33</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">08/31 11:38</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
