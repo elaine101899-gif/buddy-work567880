@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907060540';
+  var BUILD='20260907061037';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4818,8 +4818,6 @@ var DIARY=(function(){
         }catch(ex){}
       });
     }
-    /* 先用本機資料套用一次（畫面立即正確），旗標留到雲端同步後再封存 */
-    _patchWk4Baby(false);
     var _fbDL=_fbInit();
     if(_fbDL){
       _fbDL.ref('xiaobuddyClean/diarySync').on('value',function(snap){
@@ -4842,72 +4840,10 @@ var DIARY=(function(){
           var main=document.getElementById('diaryMain');
           if(main&&main.style.display!=='none'&&typeof renderDays==='function')renderDays();
         }
-        /* 雲端資料合併完才套用一次性教案修正，避免被其他裝置的舊內容蓋回去 */
-        if(!_wk4PatchSynced){_wk4PatchSynced=true;_patchWk4Baby(true);}
       });
-    } else {
-      /* 沒有 Firebase 時，直接以本機資料完成修正 */
-      setTimeout(function(){_patchWk4Baby(true);},1000);
     }
   }
 
-  /* ── 一次性教案修正：115下 第4、5週（寶寶／爬爬／跑跑三班） ──
-     這幾格先前存過的「教學資源／引導步驟」是舊活動留下的內容，
-     直接換成最新教案範本；省思、照片、觀察學生一律保留不動。
-     seal=true 時（雲端已同步完成）才寫入完成旗標，之後不再執行。 */
-  var _PATCH_FLAG='_diaryPatch115W45_v4';
-  var _wk4PatchSynced=false;
-  var _PATCH_WEEKS=[4,5];
-  function _patchWk4Baby(seal){
-    try{if(localStorage.getItem(_PATCH_FLAG))return;}catch(e){}
-    var th=allThemes['115']&&allThemes['115'][1];
-    if(!th||!th.acts)return;
-    var fb=_fbInit();
-    var changed=false;
-    var CLSES=['baby','crawl','run'];
-    for(var wi=0;wi<_PATCH_WEEKS.length;wi++){
-      var wk=_PATCH_WEEKS[wi];
-      if(!th.acts[wk])continue;
-      for(var ci=0;ci<CLSES.length;ci++){
-        var cls=CLSES[ci];
-        var list=th.acts[wk][cls]||[];
-        for(var i=0;i<list.length;i++){
-          var base=_dActDB[list[i].name]||{};
-          var def=(base.byCls&&base.byCls[cls])||base;
-          if(!def.res&&!(def.steps&&def.steps.length))continue;
-          var key=dbKey('115',1,wk,i+1,cls);
-          var e=diaryDB.entries[key];
-          if(!e)continue;
-          var newRes=def.res||'';
-          var newSteps=(def.steps||[]).slice();
-          if(e.resource===newRes&&JSON.stringify(e.steps)===JSON.stringify(newSteps))continue;
-          e.resource=newRes;
-          e.steps=newSteps;
-          changed=true;
-          if(fb){
-            try{fb.ref('xiaobuddyClean/diarySync/'+key.replace(/\//g,'_')).set({
-              studentId:e.studentId||'',
-              resource:e.resource,
-              steps:e.steps,
-              photos:e.photos||[],
-              cropStates:e.cropStates||{},
-              reflection:e.reflection||''
-            });}catch(ex){}
-          }
-        }
-      }
-    }
-    if(changed){
-      dbSave();
-      /* 這支也會在 DIARY 模組初始化途中被呼叫，當下 DIARY 尚未賦值，
-         因此改用模組內部的 renderDays，並包起來避免中斷後面的封存 */
-      try{
-        var main=document.getElementById('diaryMain');
-        if(main&&main.style.display!=='none'&&typeof renderDays==='function')renderDays();
-      }catch(ex){}
-    }
-    if(seal){try{localStorage.setItem(_PATCH_FLAG,'1');}catch(e){}}
-  }
   function dbKey(yr,th,wk,day,cls){return yr+'_'+th+'_'+wk+'_'+day+'_'+cls;}
 
   function parseDays(dates){
@@ -9679,7 +9615,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:05</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:10</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
