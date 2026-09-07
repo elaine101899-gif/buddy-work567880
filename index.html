@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907055821';
+  var BUILD='20260907060540';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9532,8 +9532,11 @@ var PHONEVISIT=(function(){
     var css='@page{size:A4 landscape;margin:6mm 8mm;}';
     css+='*{box-sizing:border-box;}';
     css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:9pt;color:#2C2820;margin:0;background:#fff;}';
-    css+='.pv-page{page-break-after:always;display:flex;flex-direction:column;height:calc(210mm - 12mm);}';
+    /* 高度比可列印區（210-12=198mm）少 3mm：若設成剛好等高，
+       列印時的次像素捨入會把整塊推到下一頁，造成「一點點跑到第二頁」 */
+    css+='.pv-page{page-break-after:always;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;height:calc(210mm - 15mm);}';
     css+='.pv-page:last-child{page-break-after:avoid;}';
+    css+='.pv-tbl tr{page-break-inside:avoid;break-inside:avoid;}';
     // 頁首 ── 無印：細底線取代彩色粗線
     css+='.pg-header{display:flex;align-items:center;gap:4mm;padding-bottom:3mm;margin-bottom:2.5mm;}';
     css+='.pg-logo{flex-shrink:0;}';
@@ -9561,14 +9564,30 @@ var PHONEVISIT=(function(){
     if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
     w.document.write(html);w.document.close();
     w.onload=function(){
-      var maxH=w.document.body.scrollHeight/w.document.querySelectorAll('.pv-page').length;
-      // content area ≈ 556px (210mm-12mm at 96dpi)
-      var capH=556;
-      w.document.querySelectorAll('.pv-page').forEach(function(pg){
-        var h=pg.scrollHeight;
-        if(h>capH){pg.style.zoom=(capH/h).toFixed(3);}
-      });
-      w.print();
+      /* 縮放「容器內的元素」而不是 .pv-page 本身：
+         .pv-page 是固定高度，若直接縮放它，容器與內容會一起等比縮小，
+         內容仍然溢出同樣的比例，多出來的部分就會被擠到下一頁。 */
+      var fit=function(){
+        var pages=w.document.querySelectorAll('.pv-page');
+        for(var i=0;i<pages.length;i++){
+          var pg=pages[i],kids=pg.children,k;
+          for(k=0;k<kids.length;k++)kids[k].style.zoom='';   /* 先還原再量，避免重複縮放 */
+          var cap=pg.clientHeight;                            /* 可列印區高度 */
+          /* 容器是固定高度、內含 flex:1 的表格，直接量 scrollHeight 會等於容器高度，
+             量不到真正需要的高度；先暫時放開高度取得自然高度再還原 */
+          var prevH=pg.style.height;
+          pg.style.height='auto';
+          var natural=pg.scrollHeight;
+          pg.style.height=prevH;
+          if(cap>0&&natural>cap){
+            var z=(cap/natural*0.98).toFixed(3);              /* 留安全邊界，避免捨入又溢一行 */
+            for(k=0;k<kids.length;k++)kids[k].style.zoom=z;
+          }
+        }
+      };
+      fit();
+      /* 圖片／字型可能晚一步載入而改變高度，稍後再量一次才列印 */
+      setTimeout(function(){fit();w.print();},350);
     };
   }
 
@@ -9660,7 +9679,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 13:58</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:05</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
