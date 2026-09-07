@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907061611';
+  var BUILD='20260907062521';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9467,10 +9467,13 @@ var PHONEVISIT=(function(){
     if(!pages){alert('民國'+yr+'年'+mn+'月沒有電訪紀錄');return;}
     var css='@page{size:A4 landscape;margin:6mm 8mm;}';
     css+='*{box-sizing:border-box;}';
-    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:9pt;color:#2C2820;margin:0;background:#fff;}';
-    /* 高度比可列印區（210-12=198mm）少 3mm：若設成剛好等高，
-       列印時的次像素捨入會把整塊推到下一頁，造成「一點點跑到第二頁」 */
-    css+='.pv-page{page-break-after:always;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;height:calc(210mm - 15mm);}';
+    /* 固定排版寬度＝可列印寬度（297-16=281mm）。
+       否則在手機上彈出視窗只有約 390px 寬，文字換行變多、內容變高，
+       依螢幕量出來的縮放比例會和實際列印的排版對不上。 */
+    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:9pt;color:#2C2820;margin:0;background:#fff;width:281mm;}';
+    /* 可列印高度為 210-12=198mm，但 Safari 列印會自行加上頁首／頁尾（網址、頁碼），
+       會再吃掉一段高度；這裡預留 26mm，確保一個班級一定放得進同一頁。 */
+    css+='.pv-page{page-break-after:always;page-break-inside:avoid;break-inside:avoid;display:flex;flex-direction:column;height:calc(210mm - 26mm);}';
     css+='.pv-page:last-child{page-break-after:avoid;}';
     css+='.pv-tbl tr{page-break-inside:avoid;break-inside:avoid;}';
     // 頁首 ── 無印：細底線取代彩色粗線
@@ -9626,7 +9629,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
