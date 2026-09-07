@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907061037';
+  var BUILD='20260907061611';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9499,32 +9499,43 @@ var PHONEVISIT=(function(){
     var w=window.open('','_blank','width=1200,height=860');
     if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
     w.document.write(html);w.document.close();
-    w.onload=function(){
-      /* 縮放「容器內的元素」而不是 .pv-page 本身：
-         .pv-page 是固定高度，若直接縮放它，容器與內容會一起等比縮小，
-         內容仍然溢出同樣的比例，多出來的部分就會被擠到下一頁。 */
-      var fit=function(){
-        var pages=w.document.querySelectorAll('.pv-page');
-        for(var i=0;i<pages.length;i++){
-          var pg=pages[i],kids=pg.children,k;
-          for(k=0;k<kids.length;k++)kids[k].style.zoom='';   /* 先還原再量，避免重複縮放 */
-          var cap=pg.clientHeight;                            /* 可列印區高度 */
-          /* 容器是固定高度、內含 flex:1 的表格，直接量 scrollHeight 會等於容器高度，
+    /* 縮放「容器內的元素」而不是 .pv-page 本身：
+       .pv-page 是固定高度，若直接縮放它，容器與內容會一起等比縮小，
+       內容仍然溢出同樣的比例，多出來的部分就會被擠到下一頁。 */
+    var fit=function(){
+      var pages=w.document.querySelectorAll('.pv-page');
+      for(var i=0;i<pages.length;i++){
+        var pg=pages[i],kids=pg.children,k;
+        var cap=pg.clientHeight;                         /* 可列印區高度 */
+        if(!cap)continue;
+        var prevH=pg.style.height,z=1;
+        /* 逐次收斂：套用縮放後再量一次，仍然溢出就再縮，
+           各裝置字型高度不同，一次算出的比例未必夠 */
+        for(var pass=0;pass<6;pass++){
+          for(k=0;k<kids.length;k++)kids[k].style.zoom=(z===1?'':z.toFixed(3));
+          /* 容器固定高度且內含 flex:1 的表格，直接量 scrollHeight 會等於容器高度，
              量不到真正需要的高度；先暫時放開高度取得自然高度再還原 */
-          var prevH=pg.style.height;
           pg.style.height='auto';
-          var natural=pg.scrollHeight;
+          var h=pg.scrollHeight;
           pg.style.height=prevH;
-          if(cap>0&&natural>cap){
-            var z=(cap/natural*0.98).toFixed(3);              /* 留安全邊界，避免捨入又溢一行 */
-            for(k=0;k<kids.length;k++)kids[k].style.zoom=z;
-          }
+          if(h<=cap)break;
+          z=z*cap/h*0.98;                                /* 留安全邊界，避免捨入又溢一行 */
         }
-      };
-      fit();
-      /* 圖片／字型可能晚一步載入而改變高度，稍後再量一次才列印 */
-      setTimeout(function(){fit();w.print();},350);
+      }
     };
+    /* 不依賴 w.onload：document.write 後 load 事件可能已經觸發過，
+       指派 onload 就再也不會被呼叫，縮放與列印都不會執行 */
+    var printed=false;
+    var doPrint=function(){
+      if(printed)return;printed=true;
+      try{fit();}catch(e){}                            /* 縮放失敗也要能列印，不可中斷 */
+      setTimeout(function(){
+        try{fit();}catch(e){}                          /* 圖片／字型晚載入會改變高度，列印前再量一次 */
+        try{w.print();}catch(e){}
+      },250);
+    };
+    if(w.document.readyState==='complete')setTimeout(doPrint,80);
+    else{w.onload=doPrint;setTimeout(doPrint,900);}   /* 雙保險，onload 沒觸發也會列印 */
   }
 
   function printForms(){
@@ -9615,7 +9626,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:10</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:16</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
