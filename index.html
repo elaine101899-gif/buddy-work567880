@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260903045810';
+  var BUILD='20260907055348';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9291,8 +9291,17 @@ var PHONEVISIT=(function(){
     // save
     h+='<button class="pv-save-btn" onclick="PHONEVISIT.save()">💾 儲存記錄</button>';
     h+='</div>';
-    // records section
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:8px;margin-top:4px;" id="pv-rec-lbl">歷史記錄</div>';
+    // records section（可切換年月查看，預設當月）
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;margin-top:4px;">';
+    h+='<span id="pv-rec-lbl" style="font-size:.8rem;color:#888;">歷史記錄</span>';
+    h+='<span style="flex:1;"></span>';
+    h+='<select id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:.8rem;background:#fff;">';
+    for(var ry2=ry;ry2>=ry-2;ry2--) h+='<option value="'+ry2+'"'+(ry2===ry?' selected':'')+'>'+ry2+' 年</option>';
+    h+='</select>';
+    h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:.8rem;background:#fff;">';
+    for(var rm2=1;rm2<=12;rm2++) h+='<option value="'+rm2+'"'+(rm2===rm?' selected':'')+'>'+rm2+' 月</option>';
+    h+='</select>';
+    h+='</div>';
     h+='<div id="pv-records"></div>';
     return h;
   }
@@ -9301,10 +9310,12 @@ var PHONEVISIT=(function(){
     var el=document.getElementById('pv-records');
     var lbl=document.getElementById('pv-rec-lbl');
     if(!el) return;
-    /* 只顯示當月紀錄 */
+    /* 顯示選定年月的紀錄（預設當月，可由上方選單切換） */
     var now=new Date();
-    var curRoc=now.getFullYear()-1911;
-    var curMo=now.getMonth()+1;
+    var yrEl=document.getElementById('pv-rec-yr');
+    var mnEl=document.getElementById('pv-rec-mn');
+    var curRoc=yrEl&&yrEl.value?parseInt(yrEl.value):(now.getFullYear()-1911);
+    var curMo=mnEl&&mnEl.value?parseInt(mnEl.value):(now.getMonth()+1);
     var curMonthPfx=curRoc+'.'+(curMo<10?'0':'')+curMo+'.';
     var recs=[];
     Object.keys(db).forEach(function(id){
@@ -9315,7 +9326,7 @@ var PHONEVISIT=(function(){
       recs.push({id:id,r:r});
     });
     recs.sort(function(a,b){return (b.r.ts||0)-(a.r.ts||0);});
-    if(lbl) lbl.textContent='本月記錄'+(curChild?' — '+curChild.name:'')+'（'+curRoc+'年'+curMo+'月，共'+recs.length+'筆）';
+    if(lbl) lbl.textContent=curRoc+'年'+curMo+'月記錄'+(curChild?' — '+curChild.name:'')+'（共'+recs.length+'筆）';
     if(!recs.length){el.innerHTML='<div style="color:#bbb;text-align:center;padding:16px 0;font-size:.85rem;">尚無記錄</div>';return;}
     var h='';
     recs.forEach(function(item){
@@ -9634,11 +9645,13 @@ var PHONEVISIT=(function(){
     w.onload=function(){w.print();};
   }
 
-  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly};
+  function onRecMonthChange(){renderRecords();}
+
+  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange};
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/03 12:58</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 13:53</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
