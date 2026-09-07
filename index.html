@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907055348';
+  var BUILD='20260907055821';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9220,13 +9220,21 @@ var PHONEVISIT=(function(){
   function nowTimeStr(){var d=new Date();return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
 
   function getKids(cls){
-    var res=[];
-    (asrDB.teachers||[]).forEach(function(t){
-      if(t.cls===cls){
-        (asrDB.children[t.id]||[]).forEach(function(c){
-          res.push({id:c.id,name:c.name,teacherId:t.id,teacherName:t.name});
-        });
-      }
+    /* 永遠用正確學期的 preload 名單，避免 localStorage 舊學期資料干擾 */
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||((typeof asrDB!=='undefined')?asrDB.teachers:null)||[];
+    var children=pl.children||((typeof asrDB!=='undefined')?asrDB.children:null)||{};
+    var res=[],seenId={},seenName={};
+    teachers.forEach(function(t){
+      if(t.cls!==cls)return;
+      (children[t.id]||[]).forEach(function(c){
+        var nm=c.name&&c.name.trim();
+        /* 同一位幼兒可能同時掛在兩位帶班老師底下，只取一次避免選單重複 */
+        if(!c.id||!nm||seenId[c.id]||seenName[nm])return;
+        seenId[c.id]=true;seenName[nm]=true;
+        res.push({id:c.id,name:nm,teacherId:t.id,teacherName:t.name});
+      });
     });
     return res;
   }
@@ -9321,7 +9329,8 @@ var PHONEVISIT=(function(){
     Object.keys(db).forEach(function(id){
       var r=db[id];
       if(r.cls!==curCls) return;
-      if(curChild && (r.childId!==curChild.id||r.teacherId!==curChild.teacherId)) return;
+      /* 只比對幼兒本身：帶班老師異動過的孩子，舊紀錄仍要看得到 */
+      if(curChild && r.childId!==curChild.id) return;
       if(!r.date||r.date.indexOf(curMonthPfx)!==0) return;
       recs.push({id:id,r:r});
     });
@@ -9651,7 +9660,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 13:53</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 13:58</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
