@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260911035243';
+  var BUILD='20260911081140';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1586,6 +1586,11 @@ function _fbInit(){
         <div><div style="font-weight:800;font-size:1rem;color:#b04030;">事故單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">幼兒事故事件記錄</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('enterovirus')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c0392b;">
+        <span style="font-size:1.8rem;">&#x1F9A0;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#c0392b;">腸病毒個案異常表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">個案發病、就醫與返園紀錄</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
       <div onclick="GO('clean')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
         <span style="font-size:1.8rem;">&#x1F9F9;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#30588a;">清潔表單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">環境清潔紀錄</div></div>
@@ -1684,6 +1689,15 @@ function _fbInit(){
     <span class="btitle">&#x1F6A8; 幼兒事故單</span>
   </div>
   <div id="incidentWrap" style="padding-bottom:40px;"></div>
+</div>
+
+<!-- ═══ ENTEROVIRUS CASE FORM ═══ -->
+<div class="pg" id="pg-enterovirus">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <span class="btitle">&#x1F9A0; 腸病毒個案異常表</span>
+  </div>
+  <div id="enterovirusWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ CLEANING FORM ═══ -->
@@ -2054,6 +2068,7 @@ function GO(id) {
   if (id === 'leave-menu') { /* 靜態頁，不需初始化 */ }
   if (id === 'leave-cook') { if (typeof LEAVE_COOK !== 'undefined') LEAVE_COOK.init(); }
   if (id === 'incident') { if (typeof INCIDENT !== 'undefined') INCIDENT.init(); }
+  if (id === 'enterovirus') { if (typeof ENTEROVIRUS !== 'undefined') ENTEROVIRUS.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -7710,6 +7725,542 @@ var INCIDENT=(function(){
   return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download,_openFillerSig:_openFillerSig};
 })();
 
+/* ════ 腸病毒個案異常表 ════ */
+var ENTEROVIRUS=(function(){
+  var KEY='xiaoBudiEnterovirusV1',FB_PATH='xiaobuddyEnterovirus';
+  var curCls='run',curFid='',curStep='hub';
+  var db={baby:{},crawl:{},run:{}};
+  var _ePhoto=null;
+
+  function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':'寶寶班';}
+  function clsBd(c){return c==='run'?'var(--run-bd)':c==='crawl'?'var(--crawl-bd)':'var(--baby-bd)';}
+  function clsIcon(c){return c==='run'?'🏃':c==='crawl'?'🐛':'🍼';}
+
+  function loadLocal(){
+    try{var v=JSON.parse(localStorage.getItem(KEY)||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
+    catch(e){db={baby:{},crawl:{},run:{}};}
+  }
+  function _wrap(){return document.getElementById('enterovirusWrap');}
+  function saveAll(){
+    var light={baby:{},crawl:{},run:{}};
+    ['baby','crawl','run'].forEach(function(cls){
+      Object.keys(db[cls]).forEach(function(fid){
+        var d=db[cls][fid],noP={};
+        Object.keys(d).forEach(function(k){if(k!=='photo1')noP[k]=d[k];});
+        light[cls][fid]=noP;
+      });
+    });
+    try{localStorage.setItem(KEY,JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(db));
+  }
+  function pushFb(cls,fid,data){
+    try{
+      var fb=_fbInit();if(!fb)return;
+      var payload={};
+      Object.keys(data).forEach(function(k){payload[k]=data[k];});
+      fb.ref(FB_PATH+'/'+cls+'/'+fid).set(payload);
+    }catch(e){}
+  }
+  function loadFb(cls,cb){
+    try{var fb=_fbInit();if(!fb){cb();return;}
+      fb.ref(FB_PATH+'/'+cls).once('value',function(snap){
+        var d=snap.val()||{};
+        Object.keys(d).forEach(function(fid){
+          if(!db[cls][fid])db[cls][fid]=d[fid];
+          else Object.keys(d[fid]).forEach(function(k){
+            if(k==='photo1'&&db[cls][fid][k])return; /* 本機有照片優先 */
+            db[cls][fid][k]=d[fid][k];
+          });
+        });
+        saveAll();cb();
+      });
+    }catch(e){cb();}
+  }
+
+  function v(id){var e=document.getElementById(id);return e?(e.value||''):'';}
+  function gcb(name){var es=document.querySelectorAll('input[name="'+name+'"]:checked');var r=[];es.forEach(function(e){r.push(e.value);});return r;}
+  function chk(name,val,arr){var checked=arr&&arr.indexOf(val)!==-1;return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:6px;font-size:.85rem;cursor:pointer;"><input type="checkbox" name="'+name+'" value="'+val+'"'+(checked?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
+  function rad(name,val,cur){return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:.85rem;cursor:pointer;"><input type="radio" name="'+name+'" value="'+val+'"'+(cur===val?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+
+  /* ─── 首頁（班級選擇）─── */
+  function renderHub(){
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增腸病毒個案異常表</div>';
+    ['baby','crawl','run'].forEach(function(cls){
+      var items=db[cls]||{};
+      var total=Object.keys(items).length;
+      var unread=Object.keys(items).filter(function(fid){return !items[fid].read;}).length;
+      h+='<button onclick="ENTEROVIRUS.openClass(\''+cls+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+clsBd(cls)+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
+      h+='<div><div style="font-weight:800;font-size:1rem;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</div>';
+      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+total+' 份個案異常表</div></div>';
+      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
+      else if(total>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='</button>';
+    });
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 列表（指定班別）─── */
+  function renderList(){
+    var cls=curCls;
+    var items=db[cls]||{};
+    var fids=Object.keys(items).sort(function(a,b){return (items[b].createdAt||0)-(items[a].createdAt||0);});
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
+    h+='<button onclick="ENTEROVIRUS.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
+    h+='<span style="font-weight:800;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</span>';
+    h+='<button onclick="ENTEROVIRUS.newForm()" style="padding:8px 16px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增</button>';
+    h+='</div>';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無個案異常表記錄<br><br><button onclick="ENTEROVIRUS.newForm()" style="padding:12px 24px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=items[fid];
+        var dateStr=d.eOnsetDate||d.eDate||'（未填日期）';
+        var childName=d.eChildName||'（未填名稱）';
+        var isRead=!!d.read;
+        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+clsBd(cls)+';">';
+        h+='<div style="padding:14px;cursor:pointer;" onclick="ENTEROVIRUS.editForm(\''+fid+'\')">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+esc(childName)+'</div>';
+        h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">發病日期：'+esc(dateStr)+'</div>';
+        if(d.eDiagnosis){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;">'+esc(d.eDiagnosis)+'</div>';}
+        h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="ENTEROVIRUS.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="ENTEROVIRUS.downloadFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="ENTEROVIRUS.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
+        h+='<button onclick="ENTEROVIRUS.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 表單 ─── */
+  function renderForm(d){
+    var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
+    h+='<button onclick="ENTEROVIRUS.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
+    /* 基本資料 */
+    h+='<div class="df-sec"><div class="df-lbl">📋 基本資料</div>';
+    (function(){
+      if(typeof asrDB==='undefined')return;
+      var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+      h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">快速選擇幼兒</div>';
+      h+='<select id="eChildSel" class="df-inp" style="width:100%;" onchange="ENTEROVIRUS.onChildSel()">';
+      h+='<option value="">── 選擇幼兒（自動填入姓名、班級、托育人員）──</option>';
+      var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+      var teachers=pl.teachers||asrDB.teachers||[];
+      [curCls].forEach(function(cls){
+        teachers.filter(function(t){return t.cls===cls;}).forEach(function(t){
+          var kids=(pl.children&&pl.children[t.id])||asrDB.children[t.id]||[];
+          kids.forEach(function(c){h+='<option value="'+c.id+'|'+t.id+'">【'+clsLabelMap[cls]+'】'+c.name+'</option>';});
+        });
+      });
+      h+='</select></div>';
+    })();
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">填表日期</div><input type="date" id="eDate" class="df-inp" value="'+esc(d.eDate||'')+'"></div>';
+    h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">嬰幼兒姓名</div><input type="text" id="eChildName" class="df-inp" placeholder="請填寫" value="'+esc(d.eChildName||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">年齡</div><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="eAge" class="df-inp" style="width:52px;" min="0" max="3" placeholder="0" value="'+esc(d.eAge||'')+'"><span style="font-size:.82rem;">歲</span><input type="number" id="eAgeMonth" class="df-inp" style="width:52px;" min="0" max="11" placeholder="0" value="'+esc(d.eAgeMonth||'')+'"><span style="font-size:.82rem;">月</span></div></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">班級</div><input type="text" id="eCls" class="df-inp" value="'+esc(d.eCls||'')+'"></div>';
+    h+='<div style="flex:2;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">班級托育人員</div><input type="text" id="eTeacher" class="df-inp" value="'+esc(d.eTeacher||'')+'"></div>';
+    h+='</div></div>';
+    /* 發病情形 */
+    h+='<div class="df-sec"><div class="df-lbl">🤒 發病情形</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">發病日期</div><input type="date" id="eOnsetDate" class="df-inp" value="'+esc(d.eOnsetDate||'')+'"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">發現者</div><input type="text" id="eFoundBy" class="df-inp" value="'+esc(d.eFoundBy||'')+'"></div>';
+    h+='<div style="flex:1;min-width:110px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">體溫（°C）</div><input type="text" id="eTemp" class="df-inp" placeholder="36.5" value="'+esc(d.eTemp||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;min-width:40px;">發燒：</span>'+rad('eFever','有',d.eFever)+rad('eFever','無',d.eFever)+'</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">症狀部位</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    ['口腔潰瘍/水泡','手部紅疹/水泡','腳部紅疹/水泡','臀部/膝蓋紅疹水泡','其他'].forEach(function(vv){h+=chk('eSymptomPart',vv,d.eSymptomPart);});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eSymptomOther" class="df-inp" value="'+esc(d.eSymptomOther||'')+'"></div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">其他伴隨症狀</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    ['食慾不振','精神不濟','嘔吐','腹瀉','其他'].forEach(function(vv){h+=chk('eOtherSymp',vv,d.eOtherSymp);});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eOtherSympOther" class="df-inp" value="'+esc(d.eOtherSympOther||'')+'"></div>';
+    h+='</div>';
+    /* 就醫情形 */
+    h+='<div class="df-sec"><div class="df-lbl">🏥 就醫情形</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">就醫日期</div><input type="date" id="eMedDate" class="df-inp" value="'+esc(d.eMedDate||'')+'"></div>';
+    h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">醫院/診所名稱</div><input type="text" id="eHospName" class="df-inp" value="'+esc(d.eHospName||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">醫師診斷結果</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    h+=rad('eDiagnosis','疑似腸病毒',d.eDiagnosis)+rad('eDiagnosis','確診腸病毒',d.eDiagnosis)+rad('eDiagnosis','非腸病毒',d.eDiagnosis)+rad('eDiagnosis','其他',d.eDiagnosis);
+    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">型別／其他說明：</span><input type="text" id="eDiagnosisOther" class="df-inp" value="'+esc(d.eDiagnosisOther||'')+'"></div>';
+    h+='</div>';
+    /* 通報衛生單位 */
+    h+='<div class="df-sec"><div class="df-lbl">📢 通報衛生單位</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;min-width:60px;">已通報：</span>'+rad('eReported','有',d.eReported)+rad('eReported','無',d.eReported)+'</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">通報日期</div><input type="date" id="eReportDate" class="df-inp" value="'+esc(d.eReportDate||'')+'"></div>';
+    h+='<div style="flex:2;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">通報對象／單位</div><input type="text" id="eReportUnit" class="df-inp" value="'+esc(d.eReportUnit||'')+'"></div>';
+    h+='</div></div>';
+    /* 隔離與返園 */
+    h+='<div class="df-sec"><div class="df-lbl">🏠 隔離與返園</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">建議隔離至</div><input type="date" id="eIsolateUntil" class="df-inp" value="'+esc(d.eIsolateUntil||'')+'"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">實際返園日期</div><input type="date" id="eReturnDate" class="df-inp" value="'+esc(d.eReturnDate||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">返園條件</div><div style="display:flex;flex-wrap:wrap;">';
+    ['症狀緩解','體溫正常24小時以上','檢附診斷證明'].forEach(function(vv){h+=chk('eReturnCond',vv,d.eReturnCond);});
+    h+='</div></div>';
+    /* 班級應變 */
+    h+='<div class="df-sec"><div class="df-lbl">🧴 班級應變措施</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">該班本週新增病例數：</span><input type="number" id="eWeeklyCases" class="df-inp" style="width:70px;" min="0" value="'+esc(d.eWeeklyCases||'')+'">';
+    h+='<span style="font-size:.82rem;white-space:nowrap;margin-left:10px;">達停班標準通報教育局：</span>'+rad('eSuspend','是',d.eSuspend)+rad('eSuspend','否',d.eSuspend)+'</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">加強消毒項目</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    ['玩具消毒','桌椅消毒','門把消毒','寢具更換','其他'].forEach(function(vv){h+=chk('eDisinfect',vv,d.eDisinfect);});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eDisinfectOther" class="df-inp" value="'+esc(d.eDisinfectOther||'')+'"></div>';
+    h+='</div>';
+    /* 家長聯繫 */
+    h+='<div class="df-sec"><div class="df-lbl">📞 家長聯繫</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<input type="date" id="eContactDate" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.eContactDate||'')+'">';
+    h+='<input type="number" id="eContactHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.eContactHour||'')+'"><span style="font-size:.82rem;">時</span>';
+    h+='<input type="number" id="eContactMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.eContactMin||'')+'"><span style="font-size:.82rem;">分</span>';
+    h+='</div>';
+    h+='<div style="display:flex;flex-wrap:wrap;margin-bottom:8px;">'+rad('eContactMethod','電話',d.eContactMethod)+rad('eContactMethod','當面',d.eContactMethod)+rad('eContactMethod','其他',d.eContactMethod)+'</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">聯繫內容</div><textarea id="eContactContent" class="df-ta" placeholder="請填寫聯繫內容…" style="min-height:70px;">'+pe(d.eContactContent||'')+'</textarea>';
+    h+='<div style="font-size:.72rem;color:#666;margin:8px 0 3px;">家長反應</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    ['已知悉並配合','需再觀察','其他'].forEach(function(vv){h+=chk('eParentReact',vv,d.eParentReact);});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eParentReactOther" class="df-inp" value="'+esc(d.eParentReactOther||'')+'"></div>';
+    h+='</div>';
+    /* 備註 */
+    h+='<div class="df-sec"><div class="df-lbl">📝 備註</div><textarea id="eNote" class="df-ta" placeholder="其他補充說明…" style="min-height:70px;">'+pe(d.eNote||'')+'</textarea></div>';
+    /* 照片 */
+    h+='<div class="df-sec"><div class="df-lbl">📷 症狀照片（選填）</div>';
+    h+='<div id="ePhoto1Box" style="min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;" onclick="ENTEROVIRUS.uploadPhoto()">';
+    if(_ePhoto||d.photo1){h+='<img src="'+(_ePhoto||d.photo1)+'" style="width:100%;height:100%;object-fit:contain;">';}
+    else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+    h+='</div>';
+    h+='<input type="file" id="ePhotoInput" accept="image/*" style="display:none">';
+    h+='</div>';
+    /* 簽名 */
+    h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
+    var _fSig=d.eFillerSig||'';
+    var _dSig=d.eDirectorSig||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;">';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">填表人簽名</div>';
+    if(_fSig){
+      h+='<img id="eFillerSigImg" src="'+_fSig+'" onclick="ENTEROVIRUS._openFillerSig()" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:4px;">';
+      h+='<button id="eFillerSigBtn" onclick="ENTEROVIRUS._openFillerSig()" type="button" style="padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';
+    } else {
+      h+='<button id="eFillerSigBtn" onclick="ENTEROVIRUS._openFillerSig()" type="button" style="width:100%;padding:16px 8px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此<br>簽名</button>';
+      h+='<img id="eFillerSigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:4px;">';
+    }
+    h+='</div>';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">主任簽名（金佩樺）</div>';
+    if(_dSig){
+      h+='<img id="eDirectorSigImg" src="'+_dSig+'" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;">';
+    } else {
+      h+='<div id="eDirectorSigImg" style="color:#bbb;font-size:.78rem;">（尚未存簽名）</div>';
+    }
+    h+='</div>';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">結案/追蹤日期</div>';
+    h+='<input type="date" id="eCloseDate" class="df-inp" value="'+esc(d.eCloseDate||'')+'">';
+    h+='</div>';
+    h+='</div></div>';
+    /* 按鈕 */
+    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
+    h+='<button class="lf-save-btn ef-save-btn" onclick="ENTEROVIRUS.saveForm()">💾 儲存</button>';
+    h+='<button class="lf-dl-btn" onclick="ENTEROVIRUS.download()">🖨️ 列印</button>';
+    h+='</div>';
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 收集表單資料 ─── */
+  function collectData(){
+    var d=JSON.parse(JSON.stringify(db[curCls][curFid]||{}));
+    ['eDate','eChildName','eAge','eAgeMonth','eCls','eTeacher',
+     'eOnsetDate','eFoundBy','eTemp','eSymptomOther','eOtherSympOther',
+     'eMedDate','eHospName','eDiagnosisOther',
+     'eReportDate','eReportUnit',
+     'eIsolateUntil','eReturnDate',
+     'eWeeklyCases','eDisinfectOther',
+     'eContactDate','eContactHour','eContactMin','eContactContent','eParentReactOther',
+     'eNote','eCloseDate'
+    ].forEach(function(id){d[id]=v(id);});
+    ['eFever','eDiagnosis','eReported','eSuspend','eContactMethod'].forEach(function(name){
+      var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
+    });
+    ['eSymptomPart','eOtherSymp','eReturnCond','eDisinfect','eParentReact'].forEach(function(name){d[name]=gcb(name);});
+    if(_ePhoto)d.photo1=_ePhoto;
+    var _ex=db[curCls][curFid]||{};if(_ex.eFillerSig)d.eFillerSig=_ex.eFillerSig;if(_ex.eDirectorSig)d.eDirectorSig=_ex.eDirectorSig;
+    return d;
+  }
+
+  /* ─── 導覽 ─── */
+  function _loadPhotosFromIDB(cb){
+    if(typeof _xbdDB==='undefined'){if(cb)cb();return;}
+    _xbdDB.get(KEY,function(raw){
+      if(raw){try{
+        var idb=JSON.parse(raw);
+        ['baby','crawl','run'].forEach(function(cls){
+          if(!idb[cls])return;
+          Object.keys(idb[cls]).forEach(function(fid){
+            if(!db[cls][fid])db[cls][fid]=idb[cls][fid];
+            else if(idb[cls][fid].photo1)db[cls][fid].photo1=idb[cls][fid].photo1;
+          });
+        });
+      }catch(e){}}
+      if(cb)cb();
+    });
+  }
+  function init(){
+    curStep='hub';curFid='';
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderHub();
+    _loadPhotosFromIDB(function(){
+      if(curStep==='hub'&&_wrap())_wrap().innerHTML=renderHub();
+    });
+    ['baby','crawl','run'].forEach(function(cls){
+      loadFb(cls,function(){if(curStep==='hub')w.innerHTML=renderHub();});
+    });
+  }
+  function openClass(cls){
+    curCls=cls;curFid='';curStep='list';
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderList();
+    loadFb(cls,function(){if(curStep==='list'&&curCls===cls)w.innerHTML=renderList();});
+  }
+  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var today=new Date();
+    var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
+    db[curCls][curFid]={cls:curCls,createdAt:Date.now(),read:false,eDate:yy,eOnsetDate:yy};
+    _ePhoto=null;curStep='form';
+    _wrap().innerHTML=renderForm(db[curCls][curFid]);_loadDirSig();
+  }
+  function editForm(fid){
+    curFid=fid;var d=db[curCls][fid]||{};
+    _ePhoto=d.photo1||null;
+    curStep='form';_wrap().innerHTML=renderForm(d);_loadDirSig();
+    /* 若本機缺少照片，從 Firebase 補抓 */
+    if(!_ePhoto){
+      try{var fb=_fbInit();if(fb){
+        fb.ref(FB_PATH+'/'+curCls+'/'+fid).once('value',function(snap){
+          var fd=snap.val();if(!fd)return;
+          if(fd.photo1&&!_ePhoto){
+            _ePhoto=fd.photo1;db[curCls][fid].photo1=fd.photo1;saveAll();
+            var b1=document.getElementById('ePhoto1Box');
+            if(b1)b1.innerHTML='<img src="'+_ePhoto+'" style="width:100%;height:100%;object-fit:contain;">';
+          }
+        });
+      }}catch(e){}
+    }
+  }
+
+  /* ─── 儲存 / 閱畢 / 刪除 ─── */
+  function saveForm(){
+    var d=collectData();d.cls=curCls;
+    var ex=db[curCls][curFid]||{};
+    d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;d.updatedAt=Date.now();
+    db[curCls][curFid]=d;saveAll();pushFb(curCls,curFid,d);
+    var btn=document.querySelector('#enterovirusWrap .ef-save-btn');
+    if(btn){btn.textContent='✅ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}
+  }
+  function toggleRead(fid){
+    if(!db[curCls][fid])return;
+    db[curCls][fid].read=!db[curCls][fid].read;
+    saveAll();pushFb(curCls,fid,db[curCls][fid]);
+    _wrap().innerHTML=renderList();
+  }
+  function deleteForm(fid){
+    if(!confirm('確定要刪除這份個案異常表嗎？此操作無法復原。'))return;
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+curCls+'/'+fid).remove();}catch(e){}
+    delete db[curCls][fid];saveAll();
+    _wrap().innerHTML=renderList();
+  }
+  function downloadFid(fid){
+    var d=db[curCls][fid];if(!d)return;
+    _doPrint(_buildHTML(d,d.photo1||null));
+    if(!d.read){d.read=true;saveAll();pushFb(curCls,fid,d);if(curStep==='list')_wrap().innerHTML=renderList();}
+  }
+
+  /* ─── 照片上傳 ─── */
+  function uploadPhoto(){
+    var inp=document.getElementById('ePhotoInput');if(!inp)return;
+    inp.onchange=function(){
+      var f=inp.files[0];if(!f)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        _compressPhoto(e.target.result,function(compressed){
+          _ePhoto=compressed;
+          var d=collectData();d.photo1=_ePhoto;
+          d.cls=curCls;var ex=db[curCls][curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+          db[curCls][curFid]=d;saveAll();pushFb(curCls,curFid,d);
+          var box=document.getElementById('ePhoto1Box');
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+        });
+      };
+      reader.readAsDataURL(f);
+    };
+    inp.click();
+  }
+
+  /* ─── 列印 ─── */
+  function download(){
+    saveForm();var d=db[curCls][curFid]||{};
+    _doPrint(_buildHTML(d,_ePhoto||d.photo1));
+  }
+  function _doPrint(h){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
+    else{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
+      setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+    }
+  }
+
+  /* ─── 快速選幼兒 ─── */
+  function onChildSel(){
+    var sel=document.getElementById('eChildSel');if(!sel||!sel.value)return;
+    var parts=sel.value.split('|'),cid=parts[0],tid=parts[1];
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:[])||[];
+    var t=teachers.filter(function(x){return x.id===tid;})[0];
+    var kids=t?((pl.children&&pl.children[t.id])||(typeof asrDB!=='undefined'?asrDB.children[t.id]:[])||[]):[];
+    var c=kids.filter(function(x){return x.id===cid;})[0];
+    if(!c||!t)return;
+    var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+    var nameEl=document.getElementById('eChildName'),clsEl=document.getElementById('eCls'),teacherEl=document.getElementById('eTeacher');
+    if(nameEl)nameEl.value=c.name;if(clsEl)clsEl.value=clsLabelMap[t.cls]||t.cls;if(teacherEl)teacherEl.value=t.name;
+  }
+
+  /* ─── 列印 HTML ─── */
+  function _buildHTML(d,ph1){
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var AC='#c0392b',AL='#fdeae7';
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>腸病毒個案異常表</title><style>';
+    p+='*{box-sizing:border-box;margin:0;padding:0;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:8.5pt;padding:10px 14px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:8px;margin-bottom:10px;}';
+    p+='.hdr img{height:54px;width:auto;}';
+    p+='.hdr-txt{flex:1;text-align:center;}';
+    p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:#2d3057;}';
+    p+='.hdr-txt .t2{font-size:10.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
+    p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:9pt;padding:5px 12px;letter-spacing:.5px;}';
+    p+='.card-body{padding:6px 10px;}';
+    p+='table.dt{width:100%;border-collapse:collapse;font-size:8.5pt;}';
+    p+='table.dt td{border:1px solid #ddd;padding:3px 7px;vertical-align:top;}';
+    p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
+    p+='.inpbox{border:1px solid #ddd;border-radius:5px;min-height:28px;font-size:8.5pt;padding:3px 6px;white-space:pre-wrap;}';
+    p+='.ck-row{display:flex;flex-wrap:wrap;gap:2px 10px;font-size:8pt;margin:2px 0;}';
+    p+='.photos{display:flex;gap:10px;margin-top:6px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.pbox{flex:1;min-height:180px;border:1.5px solid #ddd;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;}';
+    p+='.pbox img{width:100%;height:100%;object-fit:contain;}';
+    p+='.sig-row{display:flex;justify-content:space-around;margin-top:4px;}';
+    p+='.sig-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:8pt;}';
+    p+='.sig-line{border-bottom:1px solid #aaa;width:80px;min-height:14px;}';
+    p+='@media print{body{padding:6px 10px;}@page{margin:10mm;size:A4 portrait;}}';
+    p+='</style></head><body>';
+    p+='<div class="hdr">';
+    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">🦠 腸病毒個案異常表</div></div>';
+    p+='</div>';
+    function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #888;border-radius:2px;margin-right:3px;vertical-align:middle;text-align:center;line-height:9px;font-size:7pt;">'+(ok?'✓':'')+'</span>';}
+    function cks(arr,val){return ck(arr&&arr.indexOf(val)!==-1);}
+    function rs(cur,val){return ck(cur===val);}
+    function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    p+='<div class="card"><div class="card-hd">📋 基本資料</div><div class="card-body">';
+    p+='<table class="dt">';
+    p+='<tr><td class="th" style="width:15%;">填表日期</td><td style="width:35%;">'+esc2(d.eDate||'')+'</td><td class="th" style="width:15%;">嬰幼兒姓名</td><td>'+esc2(d.eChildName||'')+'</td></tr>';
+    p+='<tr><td class="th">年齡</td><td>'+esc2(d.eAge||'__')+'歲 '+esc2(d.eAgeMonth||'__')+'月</td><td class="th">班級</td><td>'+esc2(d.eCls||'')+'</td></tr>';
+    p+='<tr><td class="th">班級托育人員</td><td colspan="3">'+esc2(d.eTeacher||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div class="card"><div class="card-hd">🤒 發病情形</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:15%;">發病日期</td><td>'+esc2(d.eOnsetDate||'')+'</td><td class="th" style="width:12%;">發現者</td><td>'+esc2(d.eFoundBy||'')+'</td></tr>';
+    p+='<tr><td class="th">體溫</td><td>'+esc2(d.eTemp||'')+' °C</td><td class="th">發燒</td><td>'+rs(d.eFever,'有')+'有　'+rs(d.eFever,'無')+'無</td></tr>';
+    p+='<tr><td class="th">症狀部位</td><td colspan="3">';
+    ['口腔潰瘍/水泡','手部紅疹/水泡','腳部紅疹/水泡','臀部/膝蓋紅疹水泡','其他'].forEach(function(vv){p+=cks(d.eSymptomPart,vv)+vv+' ';});
+    p+='　其他：'+esc2(d.eSymptomOther||'')+'</td></tr>';
+    p+='<tr><td class="th">其他伴隨症狀</td><td colspan="3">';
+    ['食慾不振','精神不濟','嘔吐','腹瀉','其他'].forEach(function(vv){p+=cks(d.eOtherSymp,vv)+vv+' ';});
+    p+='　其他：'+esc2(d.eOtherSympOther||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div class="card"><div class="card-hd">🏥 就醫情形</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:15%;">就醫日期</td><td>'+esc2(d.eMedDate||'')+'</td><td class="th" style="width:18%;">醫院/診所名稱</td><td>'+esc2(d.eHospName||'')+'</td></tr>';
+    p+='<tr><td class="th">醫師診斷</td><td colspan="3">'+rs(d.eDiagnosis,'疑似腸病毒')+'疑似腸病毒　'+rs(d.eDiagnosis,'確診腸病毒')+'確診腸病毒　'+rs(d.eDiagnosis,'非腸病毒')+'非腸病毒　'+rs(d.eDiagnosis,'其他')+'其他　型別/說明：'+esc2(d.eDiagnosisOther||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div style="display:flex;gap:7px;margin-bottom:7px;">';
+    p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📢 通報衛生單位</div><div class="card-body" style="font-size:8pt;">';
+    p+='已通報：'+rs(d.eReported,'有')+'有　'+rs(d.eReported,'無')+'無<br>通報日期：'+esc2(d.eReportDate||'')+'<br>通報對象：'+esc2(d.eReportUnit||'')+'</div></div>';
+    p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">🏠 隔離與返園</div><div class="card-body" style="font-size:8pt;">';
+    p+='隔離至：'+esc2(d.eIsolateUntil||'')+'<br>返園日期：'+esc2(d.eReturnDate||'')+'<br>返園條件：';
+    ['症狀緩解','體溫正常24小時以上','檢附診斷證明'].forEach(function(vv){p+=cks(d.eReturnCond,vv)+vv+' ';});
+    p+='</div></div></div>';
+    p+='<div class="card"><div class="card-hd">🧴 班級應變措施</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:22%;">該班本週新增病例數</td><td>'+esc2(d.eWeeklyCases||'0')+' 例</td><td class="th" style="width:22%;">達停班標準通報教育局</td><td>'+rs(d.eSuspend,'是')+'是　'+rs(d.eSuspend,'否')+'否</td></tr>';
+    p+='<tr><td class="th">加強消毒項目</td><td colspan="3">';
+    ['玩具消毒','桌椅消毒','門把消毒','寢具更換','其他'].forEach(function(vv){p+=cks(d.eDisinfect,vv)+vv+' ';});
+    p+='　其他：'+esc2(d.eDisinfectOther||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div class="card"><div class="card-hd">📞 家長聯繫</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:18%;">聯繫時間</td><td colspan="3">'+esc2(d.eContactDate||'')+'　'+esc2(d.eContactHour||'__')+'時 '+esc2(d.eContactMin||'__')+'分　方式：'+rs(d.eContactMethod,'電話')+'電話 '+rs(d.eContactMethod,'當面')+'當面 '+rs(d.eContactMethod,'其他')+'其他</td></tr>';
+    p+='<tr><td class="th">聯繫內容</td><td colspan="3"><div class="inpbox" style="min-height:40px;">'+esc2(d.eContactContent||'')+'</div></td></tr>';
+    p+='<tr><td class="th">家長反應</td><td colspan="3">';
+    ['已知悉並配合','需再觀察','其他'].forEach(function(vv){p+=cks(d.eParentReact,vv)+vv+' ';});
+    p+='　其他：'+esc2(d.eParentReactOther||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div class="card"><div class="card-hd">📝 備註</div><div class="card-body"><div class="inpbox" style="min-height:40px;">'+esc2(d.eNote||'')+'</div></div></div>';
+    p+='<div class="card"><div class="card-hd">📷 症狀照片</div><div class="card-body"><div class="photos">';
+    p+='<div class="pbox">'+(ph1?'<img src="'+ph1+'">':'<div style="color:#ccc;font-size:8pt;text-align:center;">無照片</div>')+'</div>';
+    p+='</div></div></div>';
+    p+='<div class="card"><div class="card-body">';
+    p+='<div class="sig-row">';
+    p+='<div class="sig-item" style="flex:2;max-width:240px;"><div style="border-bottom:1px solid #aaa;min-height:50px;min-width:160px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px;">'+(d.eFillerSig?'<img src="'+d.eFillerSig+'" style="max-height:48px;max-width:180px;object-fit:contain;">':'')+'</div><div style="font-size:8pt;text-align:center;">填表人</div></div>';
+    p+='<div class="sig-item" style="flex:2;max-width:240px;"><div style="border-bottom:1px solid #aaa;min-height:50px;min-width:160px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:2px;">'+(d.eDirectorSig?'<img src="'+d.eDirectorSig+'" style="max-height:48px;max-width:180px;object-fit:contain;">':'')+'</div><div style="font-size:8pt;text-align:center;">主任（金佩樺）</div></div>';
+    p+='<div class="sig-item"><div class="sig-line">'+esc2(d.eCloseDate||'')+'</div><div>結案/追蹤日期</div></div>';
+    p+='</div></div></div>';
+    p+='</body></html>';
+    return p;
+  }
+
+  function _openFillerSig(){
+    var d=db[curCls][curFid]||{};
+    _sigPad.open('填表人簽名',d.eFillerSig||'',function(dataURL){
+      d.eFillerSig=dataURL;
+      var img=document.getElementById('eFillerSigImg');
+      var btn=document.getElementById('eFillerSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}
+      if(btn){btn.textContent='重新簽名';btn.style.cssText='padding:7px 14px;border-radius:12px;border:1.5px solid var(--teal);background:#e8f7f4;color:var(--teal);font-size:.8rem;font-weight:700;cursor:pointer;';}
+    });
+  }
+
+  function _loadDirSig(){
+    if(typeof SIGLIB==='undefined')return;
+    var sig=SIGLIB.get('金佩樺');
+    if(sig&&db[curCls][curFid]){db[curCls][curFid].eDirectorSig=sig;}
+  }
+  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download,_openFillerSig:_openFillerSig};
+})();
+
+
 
 /* ── 清潔表單：共用簽名畫板 ── */
 /* ── 清潔表單：老師常用簽名庫 ── */
@@ -9720,7 +10271,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 11:52</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 16:11</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
