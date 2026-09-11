@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260911032337';
+  var BUILD='20260911035243';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1539,42 +1539,6 @@ function _fbInit(){
         <div class="hcard-arr">&#x203A;</div>
       </div>
     </div>
-    <div class="hcard c-grn" onclick="GO('leave-menu')">
-      <div class="hcard-in">
-        <div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F4DD;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Leave Form</div>
-          <div class="hcard-title">&#x1F4CB; 請假交接單</div>
-          <div class="hcard-desc">請假申請與交接事項記錄<br>填寫 &#xB7; 提交</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
-    </div>
-    <div class="hcard c-ros" onclick="GO('incident')">
-      <div class="hcard-in">
-        <div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x26A0;&#xFE0F;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Incident Report</div>
-          <div class="hcard-title">&#x1F6A8; 事故單</div>
-          <div class="hcard-desc">幼兒事故事件記錄<br>填寫 &#xB7; 提交</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
-    </div>
-    <div class="hcard c-blu" onclick="GO('clean')">
-      <div class="hcard-in">
-        <div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F9F9;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Cleaning Form</div>
-          <div class="hcard-title">&#x1F9FC; 清潔表單</div>
-          <div class="hcard-desc">環境清潔紀錄<br>填寫 &#xB7; 提交</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
-    </div>
     <div class="hcard c-amb" onclick="GO('bodytemp')">
       <div class="hcard-in">
         <div class="hcard-bar"></div>
@@ -1587,14 +1551,14 @@ function _fbInit(){
         <div class="hcard-arr">&#x203A;</div>
       </div>
     </div>
-    <div class="hcard c-sky" onclick="GO('phonevisit')">
+    <div class="hcard c-grn" onclick="GO('forms-menu')">
       <div class="hcard-in">
         <div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F4DE;</span></div>
+        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F5C2;&#xFE0F;</span></div>
         <div class="hcard-body">
-          <div class="hcard-lbl">Phone Visit Form</div>
-          <div class="hcard-title">&#x1F4DE; 電訪表</div>
-          <div class="hcard-desc">家長電訪記錄<br>選班級 &#xB7; 選幼兒 &#xB7; 全機同步</div>
+          <div class="hcard-lbl">Various Forms</div>
+          <div class="hcard-title">&#x1F5C2;&#xFE0F; 各式表單</div>
+          <div class="hcard-desc">請假交接單 &#xB7; 事故單 &#xB7; 清潔表單 &#xB7; 電訪表</div>
         </div>
         <div class="hcard-arr">&#x203A;</div>
       </div>
@@ -1602,10 +1566,43 @@ function _fbInit(){
   </div>
   <div class="site-foot">&#xa9; 小布迪音樂藝術托嬰中心 &#xB7; 115年</div>
 </div>
+
+<!-- ═══ FORMS MENU（各式表單） ═══ -->
+<div class="pg" id="pg-forms-menu">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <span class="btitle">&#x1F5C2;&#xFE0F; 各式表單</span>
+  </div>
+  <div style="padding:20px 16px;">
+    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇表單</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div onclick="GO('leave-menu')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7aaa6a;">
+        <span style="font-size:1.8rem;">&#x1F4DD;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#3d7030;">請假交接單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">請假申請與交接事項記錄</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="GO('incident')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d88a80;">
+        <span style="font-size:1.8rem;">&#x26A0;&#xFE0F;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#b04030;">事故單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">幼兒事故事件記錄</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="GO('clean')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
+        <span style="font-size:1.8rem;">&#x1F9F9;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#30588a;">清潔表單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">環境清潔紀錄</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="GO('phonevisit')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6aa8c8;">
+        <span style="font-size:1.8rem;">&#x1F4DE;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">電訪表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">家長電訪記錄，全機同步</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ═══ LEAVE MENU ═══ -->
 <div class="pg" id="pg-leave-menu">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">&#x1F4CB; 請假交接單</span>
   </div>
   <div style="padding:20px 16px;">
@@ -1683,7 +1680,7 @@ function _fbInit(){
 <!-- ═══ INCIDENT REPORT ═══ -->
 <div class="pg" id="pg-incident">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">&#x1F6A8; 幼兒事故單</span>
   </div>
   <div id="incidentWrap" style="padding-bottom:40px;"></div>
@@ -1692,7 +1689,7 @@ function _fbInit(){
 <!-- ═══ CLEANING FORM ═══ -->
 <div class="pg" id="pg-clean">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">&#x1F9FC; 清潔表單</span>
   </div>
   <div id="cleanHub" class="cards-wrap" style="padding:14px 12px;">
@@ -1756,7 +1753,7 @@ function _fbInit(){
 <!-- ═══ PHONE VISIT FORM ═══ -->
 <div class="pg" id="pg-phonevisit">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">&#x1F4DE; 電訪表</span>
     <button class="bbtn" onclick="PHONEVISIT.printMonthly()" style="margin-left:auto;background:#e3f2fd;color:#1565c0;border:1.5px solid #90caf9;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月紀錄</button>
     <button class="bbtn" onclick="PHONEVISIT.printForms()" style="background:#e8f5e9;color:#2e7d32;border:1.5px solid #81c784;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F5A8; 空白表</button>
@@ -9723,7 +9720,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 11:23</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 11:52</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
