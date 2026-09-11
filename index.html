@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260911082518';
+  var BUILD='20260911083507';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -7730,7 +7730,7 @@ var ENTEROVIRUS=(function(){
   var KEY='xiaoBudiEnterovirusV1',FB_PATH='xiaobuddyEnterovirus';
   var curCls='run',curFid='',curStep='hub';
   var db={baby:{},crawl:{},run:{}};
-  var _ePhoto=null;
+  var _ePhotos={1:null,2:null};
 
   function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':'寶寶班';}
   function clsBd(c){return c==='run'?'var(--run-bd)':c==='crawl'?'var(--crawl-bd)':'var(--baby-bd)';}
@@ -7746,7 +7746,7 @@ var ENTEROVIRUS=(function(){
     ['baby','crawl','run'].forEach(function(cls){
       Object.keys(db[cls]).forEach(function(fid){
         var d=db[cls][fid],noP={};
-        Object.keys(d).forEach(function(k){if(k!=='photo1')noP[k]=d[k];});
+        Object.keys(d).forEach(function(k){if(k!=='photo1'&&k!=='photo2')noP[k]=d[k];});
         light[cls][fid]=noP;
       });
     });
@@ -7768,7 +7768,7 @@ var ENTEROVIRUS=(function(){
         Object.keys(d).forEach(function(fid){
           if(!db[cls][fid])db[cls][fid]=d[fid];
           else Object.keys(d[fid]).forEach(function(k){
-            if(k==='photo1'&&db[cls][fid][k])return; /* 本機有照片優先 */
+            if((k==='photo1'||k==='photo2')&&db[cls][fid][k])return; /* 本機有照片優先 */
             db[cls][fid][k]=d[fid][k];
           });
         });
@@ -7828,7 +7828,7 @@ var ENTEROVIRUS=(function(){
         h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
         h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+esc(childName)+'</div>';
         h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">發病日期：'+esc(dateStr)+'</div>';
-        if(d.eDiagnosis){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;">'+esc(d.eDiagnosis)+'</div>';}
+        if(d.eSymptomPart&&d.eSymptomPart.length){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;">'+esc(d.eSymptomPart.join('、'))+'</div>';}
         h+='</div>';
         h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
         h+='</div></div>';
@@ -7891,16 +7891,6 @@ var ENTEROVIRUS=(function(){
     ['食慾不振','精神不濟','嘔吐','腹瀉','其他'].forEach(function(vv){h+=chk('eOtherSymp',vv,d.eOtherSymp);});
     h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eOtherSympOther" class="df-inp" value="'+esc(d.eOtherSympOther||'')+'"></div>';
     h+='</div>';
-    /* 就醫情形 */
-    h+='<div class="df-sec"><div class="df-lbl">🏥 就醫情形</div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">就醫日期</div><input type="date" id="eMedDate" class="df-inp" value="'+esc(d.eMedDate||'')+'"></div>';
-    h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">醫院/診所名稱</div><input type="text" id="eHospName" class="df-inp" value="'+esc(d.eHospName||'')+'"></div>';
-    h+='</div>';
-    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">醫師診斷結果</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
-    h+=rad('eDiagnosis','疑似腸病毒',d.eDiagnosis)+rad('eDiagnosis','確診腸病毒',d.eDiagnosis)+rad('eDiagnosis','非腸病毒',d.eDiagnosis)+rad('eDiagnosis','其他',d.eDiagnosis);
-    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">型別／其他說明：</span><input type="text" id="eDiagnosisOther" class="df-inp" value="'+esc(d.eDiagnosisOther||'')+'"></div>';
-    h+='</div>';
     /* 通報衛生單位 */
     h+='<div class="df-sec"><div class="df-lbl">📢 通報衛生單位</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;min-width:60px;">已通報：</span>'+rad('eReported','有',d.eReported)+rad('eReported','無',d.eReported)+'</div>';
@@ -7917,14 +7907,6 @@ var ENTEROVIRUS=(function(){
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">返園條件</div><div style="display:flex;flex-wrap:wrap;">';
     ['症狀緩解','體溫正常24小時以上','檢附診斷證明'].forEach(function(vv){h+=chk('eReturnCond',vv,d.eReturnCond);});
     h+='</div></div>';
-    /* 班級應變 */
-    h+='<div class="df-sec"><div class="df-lbl">🧴 班級應變措施</div>';
-    h+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">該班本週新增病例數：</span><input type="number" id="eWeeklyCases" class="df-inp" style="width:70px;" min="0" value="'+esc(d.eWeeklyCases||'')+'">';
-    h+='<span style="font-size:.82rem;white-space:nowrap;margin-left:10px;">達停班標準通報教育局：</span>'+rad('eSuspend','是',d.eSuspend)+rad('eSuspend','否',d.eSuspend)+'</div>';
-    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">加強消毒項目</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
-    ['玩具消毒','桌椅消毒','門把消毒','寢具更換','其他'].forEach(function(vv){h+=chk('eDisinfect',vv,d.eDisinfect);});
-    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他說明：</span><input type="text" id="eDisinfectOther" class="df-inp" value="'+esc(d.eDisinfectOther||'')+'"></div>';
-    h+='</div>';
     /* 家長聯繫 */
     h+='<div class="df-sec"><div class="df-lbl">📞 家長聯繫</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
@@ -7942,11 +7924,16 @@ var ENTEROVIRUS=(function(){
     h+='<div class="df-sec"><div class="df-lbl">📝 備註</div><textarea id="eNote" class="df-ta" placeholder="其他補充說明…" style="min-height:70px;">'+pe(d.eNote||'')+'</textarea></div>';
     /* 照片 */
     h+='<div class="df-sec"><div class="df-lbl">📷 症狀照片（選填）</div>';
-    h+='<div id="ePhoto1Box" style="min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;" onclick="ENTEROVIRUS.uploadPhoto()">';
-    if(_ePhoto||d.photo1){h+='<img src="'+(_ePhoto||d.photo1)+'" style="width:100%;height:100%;object-fit:contain;">';}
-    else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+    h+='<div style="display:flex;gap:12px;">';
+    [1,2].forEach(function(n){
+      h+='<div id="ePhoto'+n+'Box" style="flex:1;min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;" onclick="ENTEROVIRUS.uploadPhoto('+n+')">';
+      if(_ePhotos[n]||d['photo'+n]){h+='<img src="'+(_ePhotos[n]||d['photo'+n])+'" style="width:100%;height:100%;object-fit:contain;">';}
+      else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳<br>照片 '+n+'</div>';}
+      h+='</div>';
+    });
     h+='</div>';
-    h+='<input type="file" id="ePhotoInput" accept="image/*" style="display:none">';
+    h+='<input type="file" id="ePhotoInput1" accept="image/*" style="display:none">';
+    h+='<input type="file" id="ePhotoInput2" accept="image/*" style="display:none">';
     h+='</div>';
     /* 簽名 */
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
@@ -7990,18 +7977,17 @@ var ENTEROVIRUS=(function(){
     var d=JSON.parse(JSON.stringify(db[curCls][curFid]||{}));
     ['eDate','eChildName','eAge','eAgeMonth','eCls','eTeacher',
      'eOnsetDate','eFoundBy','eTemp','eSymptomOther','eOtherSympOther',
-     'eMedDate','eHospName','eDiagnosisOther',
      'eReportDate','eReportUnit',
      'eIsolateUntil','eReturnDate',
-     'eWeeklyCases','eDisinfectOther',
      'eContactDate','eContactHour','eContactMin','eContactContent','eParentReactOther',
      'eNote','eCloseDate'
     ].forEach(function(id){d[id]=v(id);});
-    ['eFever','eDiagnosis','eReported','eSuspend','eContactMethod'].forEach(function(name){
+    ['eFever','eReported','eContactMethod'].forEach(function(name){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
     });
-    ['eSymptomPart','eOtherSymp','eReturnCond','eDisinfect','eParentReact'].forEach(function(name){d[name]=gcb(name);});
-    if(_ePhoto)d.photo1=_ePhoto;
+    ['eSymptomPart','eOtherSymp','eReturnCond','eParentReact'].forEach(function(name){d[name]=gcb(name);});
+    if(_ePhotos[1])d.photo1=_ePhotos[1];
+    if(_ePhotos[2])d.photo2=_ePhotos[2];
     var _ex=db[curCls][curFid]||{};if(_ex.eFillerSig)d.eFillerSig=_ex.eFillerSig;if(_ex.eDirectorSig)d.eDirectorSig=_ex.eDirectorSig;
     return d;
   }
@@ -8016,7 +8002,10 @@ var ENTEROVIRUS=(function(){
           if(!idb[cls])return;
           Object.keys(idb[cls]).forEach(function(fid){
             if(!db[cls][fid])db[cls][fid]=idb[cls][fid];
-            else if(idb[cls][fid].photo1)db[cls][fid].photo1=idb[cls][fid].photo1;
+            else{
+              if(idb[cls][fid].photo1)db[cls][fid].photo1=idb[cls][fid].photo1;
+              if(idb[cls][fid].photo2)db[cls][fid].photo2=idb[cls][fid].photo2;
+            }
           });
         });
       }catch(e){}}
@@ -8048,22 +8037,26 @@ var ENTEROVIRUS=(function(){
     var today=new Date();
     var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     db[curCls][curFid]={cls:curCls,createdAt:Date.now(),read:false,eDate:yy,eOnsetDate:yy};
-    _ePhoto=null;curStep='form';
+    _ePhotos={1:null,2:null};curStep='form';
     _wrap().innerHTML=renderForm(db[curCls][curFid]);_loadDirSig();
   }
   function editForm(fid){
     curFid=fid;var d=db[curCls][fid]||{};
-    _ePhoto=d.photo1||null;
+    _ePhotos={1:d.photo1||null,2:d.photo2||null};
     curStep='form';_wrap().innerHTML=renderForm(d);_loadDirSig();
     /* 若本機缺少照片，從 Firebase 補抓 */
-    if(!_ePhoto){
+    if(!_ePhotos[1]||!_ePhotos[2]){
       try{var fb=_fbInit();if(fb){
         fb.ref(FB_PATH+'/'+curCls+'/'+fid).once('value',function(snap){
           var fd=snap.val();if(!fd)return;
-          if(fd.photo1&&!_ePhoto){
-            _ePhoto=fd.photo1;db[curCls][fid].photo1=fd.photo1;saveAll();
-            var b1=document.getElementById('ePhoto1Box');
-            if(b1)b1.innerHTML='<img src="'+_ePhoto+'" style="width:100%;height:100%;object-fit:contain;">';
+          var updated=false;
+          if(fd.photo1&&!_ePhotos[1]){_ePhotos[1]=fd.photo1;db[curCls][fid].photo1=fd.photo1;updated=true;}
+          if(fd.photo2&&!_ePhotos[2]){_ePhotos[2]=fd.photo2;db[curCls][fid].photo2=fd.photo2;updated=true;}
+          if(updated){
+            saveAll();
+            var b1=document.getElementById('ePhoto1Box'),b2=document.getElementById('ePhoto2Box');
+            if(_ePhotos[1]&&b1)b1.innerHTML='<img src="'+_ePhotos[1]+'" style="width:100%;height:100%;object-fit:contain;">';
+            if(_ePhotos[2]&&b2)b2.innerHTML='<img src="'+_ePhotos[2]+'" style="width:100%;height:100%;object-fit:contain;">';
           }
         });
       }}catch(e){}
@@ -8093,23 +8086,23 @@ var ENTEROVIRUS=(function(){
   }
   function downloadFid(fid){
     var d=db[curCls][fid];if(!d)return;
-    _doPrint(_buildHTML(d,d.photo1||null));
+    _doPrint(_buildHTML(d,d.photo1||null,d.photo2||null));
     if(!d.read){d.read=true;saveAll();pushFb(curCls,fid,d);if(curStep==='list')_wrap().innerHTML=renderList();}
   }
 
   /* ─── 照片上傳 ─── */
-  function uploadPhoto(){
-    var inp=document.getElementById('ePhotoInput');if(!inp)return;
+  function uploadPhoto(n){
+    var inp=document.getElementById('ePhotoInput'+n);if(!inp)return;
     inp.onchange=function(){
       var f=inp.files[0];if(!f)return;
       var reader=new FileReader();
       reader.onload=function(e){
         _compressPhoto(e.target.result,function(compressed){
-          _ePhoto=compressed;
-          var d=collectData();d.photo1=_ePhoto;
+          _ePhotos[n]=compressed;
+          var d=collectData();if(_ePhotos[1])d.photo1=_ePhotos[1];if(_ePhotos[2])d.photo2=_ePhotos[2];
           d.cls=curCls;var ex=db[curCls][curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curCls][curFid]=d;saveAll();pushFb(curCls,curFid,d);
-          var box=document.getElementById('ePhoto1Box');
+          var box=document.getElementById('ePhoto'+n+'Box');
           if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
         });
       };
@@ -8121,7 +8114,7 @@ var ENTEROVIRUS=(function(){
   /* ─── 列印 ─── */
   function download(){
     saveForm();var d=db[curCls][curFid]||{};
-    _doPrint(_buildHTML(d,_ePhoto||d.photo1));
+    _doPrint(_buildHTML(d,_ePhotos[1]||d.photo1,_ePhotos[2]||d.photo2));
   }
   function _doPrint(h){
     var w=null;try{w=window.open('','_blank');}catch(e){}
@@ -8152,7 +8145,7 @@ var ENTEROVIRUS=(function(){
   }
 
   /* ─── 列印 HTML ─── */
-  function _buildHTML(d,ph1){
+  function _buildHTML(d,ph1,ph2){
     var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
     var AC='#c0392b',AL='#fdeae7';
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>腸病毒個案異常表</title><style>';
@@ -8203,10 +8196,6 @@ var ENTEROVIRUS=(function(){
     ['食慾不振','精神不濟','嘔吐','腹瀉','其他'].forEach(function(vv){p+=cks(d.eOtherSymp,vv)+vv+' ';});
     p+='　其他：'+esc2(d.eOtherSympOther||'')+'</td></tr>';
     p+='</table></div></div>';
-    p+='<div class="card"><div class="card-hd">🏥 就醫情形</div><div class="card-body"><table class="dt">';
-    p+='<tr><td class="th" style="width:15%;">就醫日期</td><td>'+esc2(d.eMedDate||'')+'</td><td class="th" style="width:18%;">醫院/診所名稱</td><td>'+esc2(d.eHospName||'')+'</td></tr>';
-    p+='<tr><td class="th">醫師診斷</td><td colspan="3">'+rs(d.eDiagnosis,'疑似腸病毒')+'疑似腸病毒　'+rs(d.eDiagnosis,'確診腸病毒')+'確診腸病毒　'+rs(d.eDiagnosis,'非腸病毒')+'非腸病毒　'+rs(d.eDiagnosis,'其他')+'其他　型別/說明：'+esc2(d.eDiagnosisOther||'')+'</td></tr>';
-    p+='</table></div></div>';
     p+='<div style="display:flex;gap:7px;margin-bottom:7px;">';
     p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📢 通報衛生單位</div><div class="card-body" style="font-size:8pt;">';
     p+='已通報：'+rs(d.eReported,'有')+'有　'+rs(d.eReported,'無')+'無<br>通報日期：'+esc2(d.eReportDate||'')+'<br>通報對象：'+esc2(d.eReportUnit||'')+'</div></div>';
@@ -8214,12 +8203,6 @@ var ENTEROVIRUS=(function(){
     p+='隔離至：'+esc2(d.eIsolateUntil||'')+'<br>返園日期：'+esc2(d.eReturnDate||'')+'<br>返園條件：';
     ['症狀緩解','體溫正常24小時以上','檢附診斷證明'].forEach(function(vv){p+=cks(d.eReturnCond,vv)+vv+' ';});
     p+='</div></div></div>';
-    p+='<div class="card"><div class="card-hd">🧴 班級應變措施</div><div class="card-body"><table class="dt">';
-    p+='<tr><td class="th" style="width:22%;">該班本週新增病例數</td><td>'+esc2(d.eWeeklyCases||'0')+' 例</td><td class="th" style="width:22%;">達停班標準通報教育局</td><td>'+rs(d.eSuspend,'是')+'是　'+rs(d.eSuspend,'否')+'否</td></tr>';
-    p+='<tr><td class="th">加強消毒項目</td><td colspan="3">';
-    ['玩具消毒','桌椅消毒','門把消毒','寢具更換','其他'].forEach(function(vv){p+=cks(d.eDisinfect,vv)+vv+' ';});
-    p+='　其他：'+esc2(d.eDisinfectOther||'')+'</td></tr>';
-    p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📞 家長聯繫</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:18%;">聯繫時間</td><td colspan="3">'+esc2(d.eContactDate||'')+'　'+esc2(d.eContactHour||'__')+'時 '+esc2(d.eContactMin||'__')+'分　方式：'+rs(d.eContactMethod,'電話')+'電話 '+rs(d.eContactMethod,'當面')+'當面 '+rs(d.eContactMethod,'其他')+'其他</td></tr>';
     p+='<tr><td class="th">聯繫內容</td><td colspan="3"><div class="inpbox" style="min-height:40px;">'+esc2(d.eContactContent||'')+'</div></td></tr>';
@@ -8230,6 +8213,7 @@ var ENTEROVIRUS=(function(){
     p+='<div class="card"><div class="card-hd">📝 備註</div><div class="card-body"><div class="inpbox" style="min-height:40px;">'+esc2(d.eNote||'')+'</div></div></div>';
     p+='<div class="card"><div class="card-hd">📷 症狀照片</div><div class="card-body"><div class="photos">';
     p+='<div class="pbox">'+(ph1?'<img src="'+ph1+'">':'<div style="color:#ccc;font-size:8pt;text-align:center;">無照片</div>')+'</div>';
+    p+='<div class="pbox">'+(ph2?'<img src="'+ph2+'">':'<div style="color:#ccc;font-size:8pt;text-align:center;">無照片</div>')+'</div>';
     p+='</div></div></div>';
     p+='<div class="card"><div class="card-body">';
     p+='<div class="sig-row">';
@@ -10271,7 +10255,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 16:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 16:35</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
