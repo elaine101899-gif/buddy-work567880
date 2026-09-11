@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260907062521';
+  var BUILD='20260911025117';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2627,6 +2627,7 @@ function printSummaryB(cls) {
   <!-- 表單底部按鈕（固定） -->
   <div id="diaryBar" style="display:none;" class="df-bar">
     <button class="df-save-btn" onclick="DIARY.saveForm()">&#x1F4BE; 儲存</button>
+    <button class="df-dl-btn" onclick="DIARY.printEntry()">&#x1F5A8;&#xFE0F; 列印</button>
     <button class="df-dl-btn" onclick="DIARY.downloadEntry()">&#x1F4E5; 下載日誌</button>
   </div>
 </div>
@@ -5309,7 +5310,59 @@ var DIARY=(function(){
     });
   }
 
+  /* 直接列印（與下載共用同一份 A4 單頁版面） */
+  function printEntry(){
+    if(!dCtx)return;
+    saveForm();
+    _showDiarySigPicker(function(sigName,sigURL){
+      var html=_buildEntryHTML(sigName,sigURL,true);
+      var w=null;
+      try{w=window.open('','_blank','width=900,height=1100');}catch(e){}
+      if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
+      w.document.write(html);w.document.close();
+      /* 內容若超出一頁就整體縮小，確保全部印在同一張 A4 */
+      var fit=function(){
+        var wrap=w.document.querySelector('.wrap');
+        if(!wrap)return;
+        var cap=wrap.clientHeight;
+        if(!cap)return;
+        var kids=wrap.children,k,z=1,prevH=wrap.style.height;
+        for(var pass=0;pass<6;pass++){
+          for(k=0;k<kids.length;k++)kids[k].style.zoom=(z===1?'':z.toFixed(3));
+          wrap.style.height='auto';
+          var h=wrap.scrollHeight;
+          wrap.style.height=prevH;
+          if(h<=cap)break;
+          z=z*cap/h*0.98;
+        }
+      };
+      /* document.write 後 load 事件可能已觸發過，指派 onload 會永遠不執行 */
+      var printed=false;
+      var doPrint=function(){
+        if(printed)return;printed=true;
+        try{fit();}catch(e){}
+        setTimeout(function(){
+          try{fit();}catch(e){}
+          try{w.print();}catch(e){}
+        },250);
+      };
+      if(w.document.readyState==='complete')setTimeout(doPrint,80);
+      else{w.onload=doPrint;setTimeout(doPrint,900);}
+    });
+  }
+
   function _doDownloadEntry(sigName,sigURL){
+    var h=_buildEntryHTML(sigName,sigURL,false);
+    var day=dCtx.dayData,cls=dCtx.cls;
+    var blob=new Blob([h],{type:'text/html'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;
+    a.download='教保日誌_'+day.fn+'_'+cls+'.html';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
+  /* forPrint=true 時省略檔案裡的列印按鈕，並預留 Safari 列印頁首／頁尾的高度 */
+  function _buildEntryHTML(sigName,sigURL,forPrint){
     var key=dbKey(dYr,dTh,dWk,dCtx.dayNo,dCtx.cls);
     var data=diaryDB.entries[key]||{};
     var act=dCtx.act||{};
@@ -5327,11 +5380,15 @@ var DIARY=(function(){
     var steps=data.steps||[];
     var p0=dPhotos[0]||'';var p1=dPhotos[1]||'';
 
+    /* 可列印高度為 297-16=281mm。直接列印時 Safari 會自行加上頁首／頁尾（網址、頁碼），
+       會再吃掉一段高度；若設成剛好等高，次像素捨入也會把內容擠到第二頁。
+       因此列印模式預留 20mm，確保整份日誌印在同一張 A4。 */
+    var pageH=forPrint?'261mm':'281mm';
     var css='@page{size:A4 portrait;margin:8mm 10mm;}'
       +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'
-      +'html{color-scheme:light;}html,body{height:281mm;overflow:hidden;}'
+      +'html{color-scheme:light;}html,body{height:'+pageH+';overflow:hidden;}'
       +'body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#f4f4f8;padding:10px;}'
-      +'.wrap{max-width:780px;margin:0 auto;height:calc(281mm - 20px);display:flex;flex-direction:column;}'
+      +'.wrap{max-width:780px;margin:0 auto;height:calc('+pageH+' - 20px);display:flex;flex-direction:column;}'
       +'.phd{background:'+clsColor+';color:'+clsTxColor+';padding:9px 16px;border-radius:10px 10px 0 0;border-left:5px solid '+clsBdColor+';flex-shrink:0;}'
       +'.phd-t{font-size:.9rem;font-weight:800;letter-spacing:1px;margin-bottom:3px;}'
       +'.phd-s{font-size:.72rem;opacity:.9;line-height:1.55;}'
@@ -5452,14 +5509,10 @@ var DIARY=(function(){
     h+='</div>';
     h+='</div>';
     h+='</div>';
-    h+='<button onclick="window.print()" class="pbtn" style="display:block;margin:10px auto;padding:9px 28px;background:'+clsColor+';color:#fff;border:none;border-radius:24px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    /* 直接列印時不需要頁面上的列印按鈕（會自動跳出列印視窗） */
+    if(!forPrint)h+='<button onclick="window.print()" class="pbtn" style="display:block;margin:10px auto;padding:9px 28px;background:'+clsColor+';color:#fff;border:none;border-radius:24px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
     h+='</div></body></html>';
-
-    var blob=new Blob([h],{type:'text/html'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');a.href=url;
-    a.download='教保日誌_'+day.fn+'_'+cls+'.html';
-    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    return h;
   }
 
   /* ── 初始化 ── */
@@ -5473,7 +5526,7 @@ var DIARY=(function(){
     openForm:openForm,backToList:backToList,
     addStep:addStep,removeStep:removeStep,resetToTpl:resetToTpl,loadPhoto:loadPhoto,
     dCrpOpen:dCrpOpen,dCrpDone:dCrpDone,dDelPhoto:dDelPhoto,
-    saveForm:saveForm,downloadEntry:downloadEntry,
+    saveForm:saveForm,downloadEntry:downloadEntry,printEntry:printEntry,
     download:downloadEntry /* 向後相容 */
   };
 })();
@@ -9629,7 +9682,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/07 14:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 10:51</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
