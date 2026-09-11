@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260911025956';
+  var BUILD='20260911030727';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4830,7 +4830,17 @@ var DIARY=(function(){
           if(!diaryDB.entries[k]){
             diaryDB.entries[k]=e;changed=true;
           } else {
-            ['studentId','resource','steps','photos','cropStates','reflection'].forEach(function(f){
+            /* 用存檔時間戳判斷哪份較新，而不是無條件讓雲端覆蓋本機：
+               若本機這筆有比雲端更新的時間戳（代表剛編輯過、但推送尚未成功），
+               保留本機內容，並把本機版本再次推上雲端補齊，而不是被舊的雲端資料蓋掉。
+               沒有時間戳的舊資料（尚未套用此機制）維持原本「雲端優先」的行為。 */
+            var localTs=diaryDB.entries[k]._ts||0;
+            var remoteTs=e._ts||0;
+            if(localTs>remoteTs){
+              if(typeof _pushDiaryEntry==='function')_pushDiaryEntry(k,0);
+              return;
+            }
+            ['studentId','resource','steps','photos','cropStates','reflection','_ts'].forEach(function(f){
               if(e[f]!==undefined&&JSON.stringify(diaryDB.entries[k][f])!==JSON.stringify(e[f])){
                 diaryDB.entries[k][f]=e[f];changed=true;
               }
@@ -5240,28 +5250,54 @@ var DIARY=(function(){
       steps:collectSteps(),
       photos:dPhotos.slice(),
       cropStates:JSON.parse(JSON.stringify(dCrpSt)),
-      reflection:refEl?refEl.value:''
+      reflection:refEl?refEl.value:'',
+      _ts:Date.now() /* 存檔時間戳：同步時用來判斷本機和雲端哪份較新，避免舊資料把新修改蓋掉 */
     };
     dbSave();
-    var _fbD=_fbInit();
-    if(_fbD){
-      var _eD=diaryDB.entries[key];
-      _fbD.ref('xiaobuddyClean/diarySync/'+key.replace(/\//g,'_')).set({
-        studentId:_eD.studentId||'',
-        resource:_eD.resource||'',
-        steps:_eD.steps||[],
-        photos:_eD.photos||[],
-        cropStates:_eD.cropStates||{},
-        reflection:_eD.reflection||''
-      });
-    }
+    _pushDiaryEntry(key,0);
     dToast('✓ 已儲存');
   }
-  function dToast(m){
+  /* 推上雲端；失敗會重試，重試仍失敗才提示（原本失敗完全無聲，
+     導致雲端停留舊版，隔天重新整理時舊版又把本機剛存的內容蓋掉） */
+  function _pushDiaryEntry(key,retryCount){
+    var _fbD=_fbInit();
+    if(!_fbD)return;
+    var _eD=diaryDB.entries[key];
+    if(!_eD)return;
+    var payload={
+      studentId:_eD.studentId||'',
+      resource:_eD.resource||'',
+      steps:_eD.steps||[],
+      photos:_eD.photos||[],
+      cropStates:_eD.cropStates||{},
+      reflection:_eD.reflection||'',
+      _ts:_eD._ts||Date.now()
+    };
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;done=true;
+      if(retryCount<1){setTimeout(function(){_pushDiaryEntry(key,retryCount+1);},4000);}
+      else{dToast('⚠️ 日誌同步逾時，請檢查網路後重新儲存一次',true);}
+    },8000);
+    try{
+      _fbD.ref('xiaobuddyClean/diarySync/'+key.replace(/\//g,'_')).set(payload,function(err){
+        if(done)return;done=true;clearTimeout(timer);
+        if(err){
+          if(retryCount<1){setTimeout(function(){_pushDiaryEntry(key,retryCount+1);},4000);}
+          else{dToast('⚠️ 日誌同步失敗：'+(err.code||err.message||'請檢查網路後重新儲存'),true);}
+        }
+      });
+    }catch(e){
+      clearTimeout(timer);
+      if(retryCount<1){setTimeout(function(){_pushDiaryEntry(key,retryCount+1);},4000);}
+      else{dToast('⚠️ 日誌同步失敗，請檢查網路後重新儲存一次',true);}
+    }
+  }
+  function dToast(m,isErr){
     var t=document.createElement('div');
-    t.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;background:#4a7c59;color:white;padding:10px 16px;border-radius:10px;font-weight:700;font-size:.78rem;box-shadow:0 4px 14px rgba(0,0,0,.25)';
+    t.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;background:'+(isErr?'#c0392b':'#4a7c59')+';color:white;padding:10px 16px;border-radius:10px;font-weight:700;font-size:.78rem;box-shadow:0 4px 14px rgba(0,0,0,.25);max-width:80%;';
     t.textContent=m;document.body.appendChild(t);
-    setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2500);
+    setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},isErr?6000:2500);
   }
   function backToList(){renderDays();}
 
@@ -9683,7 +9719,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 10:59</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/11 11:07</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
