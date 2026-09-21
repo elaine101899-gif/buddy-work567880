@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260921143735';
+  var BUILD='20260921145722';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -314,6 +314,17 @@ body {
   font-size:calc(.6rem * var(--tc-scale,1)); font-weight:700; letter-spacing:1px;
   color:var(--gray); margin-bottom:3px; text-transform:uppercase;
 }
+.act-domain.domain-editable { cursor:pointer; text-decoration:underline dotted; }
+.act-domain.domain-editable:hover { color:var(--navy); }
+.domain-pick-menu {
+  position:absolute; z-index:9999; background:#fff; border:1px solid #ddd; border-radius:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18); padding:4px; min-width:110px;
+}
+.domain-pick-item {
+  padding:7px 10px; font-size:.8rem; font-weight:600; color:var(--navy);
+  border-radius:6px; cursor:pointer; white-space:nowrap;
+}
+.domain-pick-item:hover { background:#f0f0f0; }
 .act-name { font-size:calc(.88rem * var(--tc-scale,1)); font-weight:700; color:var(--navy); margin-bottom:4px; }
 .act-indicator {
   display:inline-block; font-size:calc(.66rem * var(--tc-scale,1)); font-weight:600;
@@ -2163,6 +2174,61 @@ var TCFONT=(function(){
 })();
 
 /* ── Admin ── */
+/* ── 六大領域 ↔ 顏色 對照表（供領域手動切換用） ── */
+var DOM_CLASS_MAP = {
+  '語言溝通':'act-lang','社會情緒':'act-soc',
+  '身體動作發展':'act-body','身體動作':'act-body',
+  '認知探索':'act-cog','生活自理':'act-life',
+  '成長紀錄':'act-grow','休息':'act-rest',
+  '國定假日':'act-holiday'
+};
+var DOM_ALL_CLASSES = ['act-lang','act-soc','act-body','act-cog','act-life','act-grow','act-rest','act-holiday'];
+var DOM_PICK_OPTIONS = ['語言溝通','社會情緒','身體動作發展','認知探索','生活自理','成長紀錄'];
+function _domClassFor(dom){ return DOM_CLASS_MAP[dom] || 'act-cog'; }
+function _closeDomainMenu(){
+  var m = document.getElementById('domainPickMenu');
+  if (m) m.parentNode.removeChild(m);
+  document.removeEventListener('click', _domainMenuOutsideClick, true);
+}
+function _domainMenuOutsideClick(e){
+  var m = document.getElementById('domainPickMenu');
+  if (m && !m.contains(e.target)) _closeDomainMenu();
+}
+function _applyDomainChange(domEl, newDom){
+  var act = domEl.closest('.activity');
+  if (!act) return;
+  DOM_ALL_CLASSES.forEach(function(c){ act.classList.remove(c); });
+  act.classList.add(_domClassFor(newDom));
+  domEl.textContent = newDom;
+  if (!act.classList.contains('edited')) {
+    act.classList.add('edited');
+    if (typeof ADM !== 'undefined' && ADM.bumpCount) ADM.bumpCount();
+  }
+  if (typeof TEACHSYNC !== 'undefined') TEACHSYNC.pushField(act, 'dom', newDom);
+}
+function pickDomain(domEl, evt){
+  if (evt) evt.stopPropagation();
+  _closeDomainMenu();
+  var menu = document.createElement('div');
+  menu.id = 'domainPickMenu';
+  menu.className = 'domain-pick-menu';
+  DOM_PICK_OPTIONS.forEach(function(dom){
+    var item = document.createElement('div');
+    item.className = 'domain-pick-item';
+    item.textContent = dom;
+    item.onclick = function(e){
+      e.stopPropagation();
+      _applyDomainChange(domEl, dom);
+      _closeDomainMenu();
+    };
+    menu.appendChild(item);
+  });
+  document.body.appendChild(menu);
+  var r = domEl.getBoundingClientRect();
+  menu.style.top = (window.scrollY + r.bottom + 4) + 'px';
+  menu.style.left = (window.scrollX + r.left) + 'px';
+  setTimeout(function(){ document.addEventListener('click', _domainMenuOutsideClick, true); }, 0);
+}
 var ADM = (function() {
   var PIN = '2025'; var on = false; var ch = 0;
   function sp() {
@@ -2187,7 +2253,10 @@ var ADM = (function() {
     for (i = 0; i < f.length; i++) { f[i].contentEditable = 'true'; f[i].addEventListener('input', onCh); f[i].addEventListener('paste', onPaste); }
     var a = document.querySelectorAll('.activity');
     for (i = 0; i < a.length; i++) { setupM(a[i]); }
+    var dEls = document.querySelectorAll('.act-domain'), di;
+    for (di = 0; di < dEls.length; di++) { dEls[di].classList.add('domain-editable'); dEls[di].addEventListener('click', onDomainClick); }
   }
+  function onDomainClick(e){ pickDomain(e.currentTarget, e); }
   /* 直接貼上會夾帶來源的 <span style="font-size:..">，導致同一格字體大小不一。
      這裡攔截貼上，只取純文字。 */
   function onPaste(e){
@@ -2255,6 +2324,9 @@ var ADM = (function() {
     for(i=0;i<ab.length;i++){ab[i].parentNode.removeChild(ab[i]);}
     var ed=document.querySelectorAll('.activity.edited');
     for(i=0;i<ed.length;i++){ed[i].classList.remove('edited');}
+    var dEls=document.querySelectorAll('.act-domain'),di;
+    for(di=0;di<dEls.length;di++){dEls[di].classList.remove('domain-editable');dEls[di].removeEventListener('click',onDomainClick);}
+    _closeDomainMenu();
     ch=0;
   }
   function ex() {
@@ -2299,12 +2371,16 @@ var ADM = (function() {
     for(i=0;i<f.length;i++){f[i].contentEditable='true';f[i].addEventListener('input',onCh);f[i].addEventListener('paste',onPaste);}
     var a=container.querySelectorAll('.activity');
     for(i=0;i<a.length;i++){setupM(a[i]);}
+    var dEls=container.querySelectorAll('.act-domain'),di;
+    for(di=0;di<dEls.length;di++){dEls[di].classList.add('domain-editable');dEls[di].addEventListener('click',onDomainClick);}
   }
   document.addEventListener('DOMContentLoaded',function(){
     var inp=document.getElementById('pinI');
     if(inp){inp.addEventListener('keydown',function(e){if(e.keyCode===13)cp();});}
   });
-  return {sp:sp,hp:hp,cp:cp,quit:quit,ex:ex,setupNew:setupNew};
+  function bumpCount(){ ch++; var el=document.getElementById('aCnt'); if(el)el.textContent='已修改 '+ch+' 處'; }
+  function isOn(){ return on; }
+  return {sp:sp,hp:hp,cp:cp,quit:quit,ex:ex,setupNew:setupNew,bumpCount:bumpCount,isOn:isOn};
 })();
 
 /* ════ 列印各班總表 ════ */
@@ -9798,6 +9874,11 @@ var TEACHSYNC=(function(){
       if(item.content!=null&&contentEl&&contentEl.textContent!==item.content)contentEl.textContent=item.content;
       var indEl=el.querySelector('.act-indicator');
       if(item.ind!=null&&indEl&&indEl.textContent!==item.ind)indEl.textContent=item.ind;
+      var domEl=el.querySelector('.act-domain');
+      if(item.dom!=null&&domEl&&domEl.textContent!==item.dom){
+        if(typeof DOM_ALL_CLASSES!=='undefined'){DOM_ALL_CLASSES.forEach(function(c){el.classList.remove(c);});el.classList.add(_domClassFor(item.dom));}
+        domEl.textContent=item.dom;
+      }
       if(item.mats){
         var mb=el.querySelector('.mat-tags');
         if(mb){
@@ -10361,7 +10442,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 14:37</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 14:57</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
