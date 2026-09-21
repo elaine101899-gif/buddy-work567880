@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260921130447';
+  var BUILD='20260921131355';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1807,8 +1807,8 @@ function _fbInit(){
   <div class="yr-pnl" id="yp-115">
     <div class="yr-info">115年下半年（2026–2027）&#xB7; 規劃中</div>
     <div class="t6">
-      <div class="tcard" onclick="GO('weekB')" style="cursor:pointer"><div class="tno">第一主題</div><div class="tname">弟弟到底像誰</div><div class="tchips"><span class="chip chip-p">規劃中</span><span class="chip chip-w">8週</span></div></div>
-      <div class="tcard" onclick="GO('weekB')" style="cursor:pointer"><div class="tno">第二主題</div><div class="tname">叩叩叩，誰家的信？</div><div class="tchips"><span class="chip chip-p">規劃中</span><span class="chip chip-w">9週</span></div></div>
+      <div class="tcard" onclick="GOWeekB(1)" style="cursor:pointer"><div class="tno">第一主題</div><div class="tname">弟弟到底像誰</div><div class="tchips"><span class="chip chip-p">規劃中</span><span class="chip chip-w">8週</span></div></div>
+      <div class="tcard" onclick="GOWeekB(2)" style="cursor:pointer"><div class="tno">第二主題</div><div class="tname">叩叩叩，誰家的信？</div><div class="tchips"><span class="chip chip-p">規劃中</span><span class="chip chip-w">9週</span></div></div>
       <div class="tcard plan"><div class="tno">第三主題</div><div class="tname">待規劃</div><div class="tchips"><span class="chip chip-p">待規劃</span></div></div>
       <div class="tcard plan"><div class="tno">第四主題</div><div class="tname">待規劃</div><div class="tchips"><span class="chip chip-p">待規劃</span></div></div>
       <div class="tcard plan"><div class="tno">第五主題</div><div class="tname">待規劃</div><div class="tchips"><span class="chip chip-p">待規劃</span></div></div>
@@ -1918,16 +1918,30 @@ function SWB(n) {
 }
 
 var _weekBRendered = false;
+var _weekBRenderedTh = null;
+var _weekBForceTh = null;
+function GOWeekB(th) {
+  _weekBForceTh = th;
+  if (_weekBRenderedTh !== th) {
+    _weekBRendered = false;
+    var navEl = document.getElementById('weekNavB'); if (navEl) navEl.innerHTML = '';
+    var mainEl = document.getElementById('mainB'); if (mainEl) mainEl.innerHTML = '';
+  }
+  GO('weekB');
+}
 function renderWeekB() {
   if (_weekBRendered) return;
   _weekBRendered = true;
 
-  var _thNoB = findCurrentThWk('115').th || 1;
+  var _thNoB = _weekBForceTh || findCurrentThWk('115').th || 1;
+  _weekBRenderedTh = _thNoB;
   var thData = allThemes['115'][_thNoB] || {name:"待規劃",weeks:[],acts:{}};
   var btitleEl = document.querySelector('#pg-weekB .btitle');
   if (btitleEl) btitleEl.textContent = '115年下半年 第'+['','一','二','三','四','五','六'][_thNoB]+'主題 — '+thData.name;
 
   /* ── 1. 複製 site-header，更新學期資訊 ── */
+  var existingHdr = document.querySelector('#pg-weekB .site-header');
+  if (existingHdr) existingHdr.parentNode.removeChild(existingHdr);
   var srcHdr = document.querySelector('#pg-week .site-header');
   if (srcHdr) {
     var newHdr = srcHdr.cloneNode(true);
@@ -1949,6 +1963,8 @@ function renderWeekB() {
   }
 
   /* ── 3. 加入列印總表列 ── */
+  var existingPrintBar = document.querySelector('#pg-weekB .summary-print-bar');
+  if (existingPrintBar) existingPrintBar.parentNode.removeChild(existingPrintBar);
   var printBar = document.createElement('div');
   printBar.className = 'summary-print-bar';
   printBar.innerHTML = '<span>&#x1F5A8; 列印總表：</span>'
@@ -2064,7 +2080,7 @@ function GO(id) {
   if (t) { t.classList.add('on'); window.scrollTo(0,0); }
   if (id === 'week') { var _curYr=(new Date()>=new Date(2026,7,1))?'115':'114'; YR(_curYr); var _tw=findCurrentThWk(_curYr); SW(_tw.wk||1); }
   if (id === 'week5') { SW5(9); }
-  if (id === 'weekB') { renderWeekB(); var _twB=findCurrentThWk('115'); SWB(_twB.wk||1); }
+  if (id === 'weekB') { renderWeekB(); if (_weekBForceTh) { SWB(1); } else { var _twB=findCurrentThWk('115'); SWB(_twB.wk||1); } }
   if (id === 'teach') { YR((new Date()>=new Date(2026,7,1))?'115':'114'); }
   if (id === 'diary') { if (typeof DIARY !== 'undefined') DIARY.openDiary(); }
   if (id === 'leave') { if (typeof LEAVE !== 'undefined') LEAVE.init(); }
@@ -10345,7 +10361,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 13:04</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 13:13</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
