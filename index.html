@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260921151139';
+  var BUILD='20260921152551';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1599,7 +1599,7 @@ function _fbInit(){
       </div>
       <div onclick="GO('enterovirus')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c0392b;">
         <span style="font-size:1.8rem;">&#x1F9A0;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#c0392b;">腸病毒個案異常表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">個案發病、就醫與返園紀錄</div></div>
+        <div><div style="font-weight:800;font-size:1rem;color:#c0392b;">個案異常表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">個案發病、就醫與返園紀錄</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
       <div onclick="GO('clean')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
@@ -1706,7 +1706,7 @@ function _fbInit(){
 <div class="pg" id="pg-enterovirus">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F9A0; 腸病毒個案異常表</span>
+    <span class="btitle">&#x1F9A0; 個案異常表</span>
   </div>
   <div id="enterovirusWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -7952,7 +7952,7 @@ var ENTEROVIRUS=(function(){
   /* ─── 首頁（班級選擇）─── */
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增腸病毒個案異常表</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增個案異常表</div>';
     ['baby','crawl','run'].forEach(function(cls){
       var items=db[cls]||{};
       var total=Object.keys(items).length;
@@ -8042,6 +8042,7 @@ var ENTEROVIRUS=(function(){
     h+='</div></div>';
     /* 發病情形 */
     h+='<div class="df-sec"><div class="df-lbl">🤒 發病情形</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">個案類型</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px;">'+rad('eDiseaseType','腸病毒',d.eDiseaseType)+rad('eDiseaseType','RSV',d.eDiseaseType)+rad('eDiseaseType','新冠肺炎',d.eDiseaseType)+'</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
     h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">發病日期</div><input type="date" id="eOnsetDate" class="df-inp" value="'+esc(d.eOnsetDate||'')+'"></div>';
     h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">發現者</div><input type="text" id="eFoundBy" class="df-inp" value="'+esc(d.eFoundBy||'')+'"></div>';
@@ -8146,7 +8147,7 @@ var ENTEROVIRUS=(function(){
      'eContactDate','eContactHour','eContactMin','eContactContent','eParentReactOther',
      'eNote','eCloseDate'
     ].forEach(function(id){d[id]=v(id);});
-    ['eFever','eReported','eContactMethod'].forEach(function(name){
+    ['eFever','eReported','eContactMethod','eDiseaseType'].forEach(function(name){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
     });
     ['eSymptomPart','eOtherSymp','eReturnCond','eParentReact'].forEach(function(name){d[name]=gcb(name);});
@@ -8330,7 +8331,7 @@ var ENTEROVIRUS=(function(){
   function _buildHTML(d,ph1,ph2){
     var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
     var AC='#d6538a',AL='#fbe8f0';
-    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>腸病毒個案異常表</title><style>';
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>個案異常表</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
     p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:8.5pt;padding:10px 14px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
     p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:8px;margin-bottom:10px;}';
@@ -8356,7 +8357,7 @@ var ENTEROVIRUS=(function(){
     p+='</style></head><body><div class="wrap2p">';
     p+='<div class="hdr">';
     if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
-    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">🦠 腸病毒個案異常表</div></div>';
+    p+='<div class="hdr-txt"><div class="t1">臺南市私立小布迪音樂藝術托嬰中心</div><div class="t2">🦠 個案異常表</div></div>';
     p+='</div>';
     function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #888;border-radius:2px;margin-right:3px;vertical-align:middle;text-align:center;line-height:9px;font-size:7pt;">'+(ok?'✓':'')+'</span>';}
     function cks(arr,val){return ck(arr&&arr.indexOf(val)!==-1);}
@@ -8369,6 +8370,7 @@ var ENTEROVIRUS=(function(){
     p+='<tr><td class="th">班級托育人員</td><td colspan="3">'+esc2(d.eTeacher||'')+'</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">🤒 發病情形</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:15%;">個案類型</td><td colspan="3">'+rs(d.eDiseaseType,'腸病毒')+'腸病毒　'+rs(d.eDiseaseType,'RSV')+'RSV　'+rs(d.eDiseaseType,'新冠肺炎')+'新冠肺炎</td></tr>';
     p+='<tr><td class="th" style="width:15%;">發病日期</td><td>'+esc2(d.eOnsetDate||'')+'</td><td class="th" style="width:12%;">發現者</td><td>'+esc2(d.eFoundBy||'')+'</td></tr>';
     p+='<tr><td class="th">體溫</td><td>'+esc2(d.eTemp||'')+' °C</td><td class="th">發燒</td><td>'+rs(d.eFever,'有')+'有　'+rs(d.eFever,'無')+'無</td></tr>';
     p+='<tr><td class="th">症狀部位</td><td colspan="3">';
@@ -10442,7 +10444,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 15:11</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 15:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
