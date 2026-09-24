@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924165421';
+  var BUILD='20260924190759';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1460,14 +1460,16 @@ var COMPANIES={
   bambino:{id:'bambino',name:'邦比諾音樂托嬰中心',short:'邦比諾'}
 };
 /* 只有這些功能已經做成「跟著公司走」；其他表單暫時只服務小布迪，避免邦比諾誤寫到小布迪的雲端資料 */
-var _XBD_ONLY_PAGES=['diary','bodytemp','clean','leave','leave-teacher','leave-menu','leave-cook','leave-flex','leave-boss','incident','enterovirus','phonevisit'];
+/* 所有 Firebase 存取都已經透過 _fbInit() 統一依公司自動隔離，這裡不用再封鎖任何頁面 */
+var _XBD_ONLY_PAGES=[];
 window._XBD_asrPreload114=window._asrPreload114;
 window._XBD_asrPreload115=window._asrPreload115;
 window._BAMBINO_asrPreload114={teachers:[],children:{},removed:[]};
 window._BAMBINO_asrPreload115={teachers:[],children:{},removed:[]};
 var CURRENT_COMPANY=null;
 try{CURRENT_COMPANY=localStorage.getItem('xbdCompany')||null;}catch(e){}
-function _rosterFbBase(){return CURRENT_COMPANY==='bambino'?'xiaobuddyBambino/roster':'xiaobuddyClean/roster';}
+/* 公司前綴現在統一由 _fbInit() 的 ref() 自動處理，這裡固定回傳同一個未加前綴的路徑即可 */
+function _rosterFbBase(){return 'xiaobuddyClean/roster';}
 function applyCompany(companyId){
   CURRENT_COMPANY=companyId;
   try{localStorage.setItem('xbdCompany',companyId);}catch(e){}
@@ -1524,7 +1526,7 @@ var FIREBASE_CONFIG={
   appId: "1:576363360016:web:10921f0949b60f0609ff95"
 };
 var _fbDb=null;
-function _fbInit(){
+function _fbInitRaw(){
   if(_fbDb)return _fbDb;
   if(typeof firebase==='undefined')return null;
   try{
@@ -1532,6 +1534,24 @@ function _fbInit(){
     _fbDb=firebase.database();
   }catch(e){_fbDb=null;}
   return _fbDb;
+}
+/* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋 */
+var _FB_SHARED_PATHS=['xiaobuddyClean/teachSync'];
+function _fbCompanyPrefix(path){
+  if(typeof CURRENT_COMPANY==='undefined'||CURRENT_COMPANY!=='bambino')return path;
+  for(var i=0;i<_FB_SHARED_PATHS.length;i++){
+    if(path===_FB_SHARED_PATHS[i]||path.indexOf(_FB_SHARED_PATHS[i]+'/')===0)return path;
+  }
+  return 'xiaobuddyBambino/'+path;
+}
+/* 全站所有模組都透過 _fbInit().ref(path) 存取 Firebase，這裡統一在最中心的地方
+   幫邦比諾的路徑加上公司前綴，每個模組完全不用個別修改，天生就會依公司分開存。 */
+function _fbInit(){
+  var raw=_fbInitRaw();
+  if(!raw)return null;
+  return{
+    ref:function(path){return raw.ref(_fbCompanyPrefix(path));}
+  };
 }
 
 /* ── ROSTER：老師/幼兒名單雲端同步（讓「＋新增老師/幼兒」跨裝置生效） ──
@@ -10794,7 +10814,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:54</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 19:07</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
