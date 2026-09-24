@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924193220';
+  var BUILD='20260924195256';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1488,7 +1488,14 @@ function applyCompany(companyId){
   document.querySelectorAll('.hero-name').forEach(function(el){el.textContent=info.name;});
   document.title=info.name;
   if(typeof refreshSigners==='function')refreshSigners();
-  if(typeof _refreshBeddingClasses==='function')_refreshBeddingClasses();
+  /* 清潔表單/寢具/溫濕度的空間班級清單改成後台雲端管理。init() 掛上常駐監聽器，
+     讓其他裝置新增/刪除空間時能即時同步過來；forceSync() 換公司當下再強制重抓一次，
+     道理跟下面 ROSTER.forceSync 一樣：常駐監聽器對已經掛過的公司不會重新觸發，
+     不強制重抓會暫時看到另一家公司的清單。 */
+  if(typeof SPACES!=='undefined'){
+    if(SPACES.init)SPACES.init();
+    if(SPACES.forceSync)SPACES.forceSync();
+  }
   /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
@@ -9086,21 +9093,13 @@ function _cleanPrintOrDownload(html){
   }
 }
 
-/* ── 清潔表單：環境清潔 ── */
-var CLEAN_FORMS=[
-  {id:'priv',label:'私人區域、活動空間',items:['地板','門窗','活動教室1','辦公桌']},
-  {id:'baby',label:'寶寶班',items:['地板','門窗','護理台','垃圾桶','嬰兒床','安撫椅']},
-  {id:'crawl',label:'爬爬班（有廁所）',items:['地板','門窗','護理台','垃圾桶','幫寶椅','馬桶、洗手台、地板']},
-  {id:'run1',label:'跑跑班（有廁所）',items:['地板','門窗','護理台','垃圾桶','小桌子','馬桶、洗手台、地板']},
-  {id:'run2',label:'跑跑班（無廁所）',items:['地板','門窗','小桌子','書櫃','棉被櫃／打開通風']},
-  {id:'kitchen',label:'廚房',items:['瓦斯爐','櫃子','流理臺','垃圾桶','小門','抽油煙機']},
-  {id:'stairs',label:'樓梯間、各樓層走廊',items:['一樓樓梯','二樓樓梯','三樓樓梯','二樓走廊','三樓走廊','洗曬衣服']},
-  {id:'toilet1f',label:'一樓廁所',items:['地板','洗手檯','小馬桶','大馬桶','大水槽']},
-  {id:'outdoor',label:'戶外',items:['地板','鞋櫃','兒童遊戲設施','洗手檯']}
-];
+/* ── 清潔表單：環境清潔 ──
+   空間清單不再寫死，改由 SPACES 模組從雲端載入（後台新增／刪除），
+   每台裝置都會同步看到最新的清潔區域。 */
+var CLEAN_FORMS=[];
 
 var CLEAN=(function(){
-  var curF=CLEAN_FORMS[0].id, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
+  var curF=CLEAN_FORMS[0]?CLEAN_FORMS[0].id:null, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var curStep='hub';
   var db={records:{}};
   var _fbAttached=false;
@@ -9186,9 +9185,53 @@ var CLEAN=(function(){
   function renderAreaHub(wrap){
     var h='';
     h+='<div class="df-sec"><div class="df-lbl">🧹 選擇清潔區域</div>';
-    h+=_pickGridHTML(CLEAN_FORMS.map(function(fm){return{value:fm.id,label:fm.label};}),'CLEAN.selectForm');
+    if(CLEAN_FORMS.length){
+      h+=_pickGridHTML(CLEAN_FORMS.map(function(fm){return{value:fm.id,label:fm.label};}),'CLEAN.selectForm');
+    }else{
+      h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 4px;">尚無清潔區域，請在下方新增</div>';
+    }
+    h+='</div>';
+    h+='<div class="df-sec"><div class="df-lbl">⚙️ 清潔區域管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除空間後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+    if(CLEAN_FORMS.length){
+      h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
+      CLEAN_FORMS.forEach(function(fm){
+        h+='<div style="display:flex;align-items:center;justify-content:space-between;background:#f7f7fa;border-radius:8px;padding:8px 10px;">';
+        h+='<span style="font-size:.85rem;">'+fm.label+'</span>';
+        h+='<button onclick="CLEAN.removeSpace(\''+fm.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button>';
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    h+='<input class="df-inp" id="cleanNewLabel" placeholder="新空間名稱，例如：三樓辦公室" style="margin-bottom:6px;">';
+    h+='<input class="df-inp" id="cleanNewItems" placeholder="清潔項目，用逗號分隔，例如：地板,門窗,垃圾桶" style="margin-bottom:6px;">';
+    h+='<button class="asr-add-btn" onclick="CLEAN.addSpace()">&#xFF0B; 新增清潔區域</button>';
     h+='</div>';
     wrap.innerHTML=h;
+  }
+  function addSpace(){
+    var labelEl=document.getElementById('cleanNewLabel'), itemsEl=document.getElementById('cleanNewItems');
+    var label=(labelEl&&labelEl.value||'').trim();
+    if(!label){alert('請輸入空間名稱');return;}
+    var itemsRaw=(itemsEl&&itemsEl.value||'').trim();
+    var items=itemsRaw?itemsRaw.split(/[,，]/).map(function(s){return s.trim();}).filter(Boolean):['地板','門窗','垃圾桶'];
+    SPACES.add('clean',{label:label,items:items},function(ok){
+      if(!ok)alert('新增失敗，請檢查網路後再試');
+    });
+    render();
+  }
+  function removeSpace(id){
+    if(!confirm('確定要刪除這個清潔區域？（已填寫的紀錄不會被刪除）'))return;
+    SPACES.remove('clean',id,function(ok){
+      if(!ok)alert('刪除失敗，請檢查網路後再試');
+    });
+    render();
+  }
+  function resetForms(){
+    if(!CLEAN_FORMS.some(function(f){return f.id===curF;})){
+      curF=CLEAN_FORMS[0]?CLEAN_FORMS[0].id:null;
+      curStep='hub';
+    }
+    render();
   }
   function selectForm(id){curF=id;curStep='detail';render();}
   function backToAreaHub(){curStep='hub';render();}
@@ -9308,60 +9351,21 @@ var CLEAN=(function(){
 
   function init(){show('hub');}
 
-  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType};
+  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType,addSpace:addSpace,removeSpace:removeSpace,resetForms:resetForms};
 })();
 
-/* ── 清潔表單：班級寢具 ── */
-var BEDDING_CLASSES=window._newTermActive?[
-  {id:'t001',label:'寶寶1班（陳巧芳）'},
-  {id:'t009',label:'寶寶2班（吳婉寧）'},
-  {id:'t002',label:'爬爬1班（梁欣萍）'},
-  {id:'t010',label:'爬爬2班（徐華家）'},
-  /* 班級編號沿用 t011，保留該班既有的寢具清潔紀錄；帶班老師已換為周香瑩 */
-  {id:'t011',label:'爬爬3班（周香瑩）'},
-  {id:'t003',label:'跑跑1班（蔡季涵）'},
-  {id:'t006',label:'跑跑2班（杜雯捷）'},
-  {id:'t005',label:'跑跑3班（鄭亞柔）'},
-  {id:'t007',label:'跑跑4班（林筠蓉）'},
-  {id:'t012',label:'跑跑5班（陳珮如）'}
-]:[
-  {id:'t001',label:'爬爬班（陳巧芳）'},
-  {id:'t002',label:'爬爬班（梁欣萍）'},
-  {id:'t003',label:'跑跑1班（蔡季涵）'},
-  {id:'t006',label:'跑跑2班（杜雯捷）'},
-  {id:'t005',label:'跑跑3班（鄭亞柔）'}
-];
-var BEDDING_LEVELS=window._newTermActive?[
-  {id:'baby',label:'寶寶班',classIds:['t001','t009']},
-  {id:'crawl',label:'爬爬班',classIds:['t002','t010','t011']},
-  {id:'run',label:'跑跑班',classIds:['t003','t006','t005','t007','t012']}
-]:[
-  {id:'baby',label:'寶寶班',classIds:[]},
-  {id:'crawl',label:'爬爬班',classIds:['t001','t002']},
-  {id:'run',label:'跑跑班',classIds:['t003','t006','t005']}
-];
-/* 邦比諾寢具班級：只有邱淳郁、珮淋兩位老師，都在跑跑班 */
-window._BAMBINO_BEDDING_CLASSES=[
-  {id:'tB01',label:'跑跑班（邱淳郁）'},
-  {id:'tB02',label:'跑跑班（珮淋）'}
-];
-window._BAMBINO_BEDDING_LEVELS=[
+/* ── 清潔表單：班級寢具 ──
+   班級清單不再寫死，改由 SPACES 模組從雲端載入（後台新增／刪除），
+   每台裝置都會同步看到最新的班級。三個年段分類（寶寶/爬爬/跑跑班）是固定結構，
+   只有底下各自的班級內容是動態的。 */
+var BEDDING_CLASSES=[];
+var BEDDING_LEVELS=[
   {id:'baby',label:'寶寶班',classIds:[]},
   {id:'crawl',label:'爬爬班',classIds:[]},
-  {id:'run',label:'跑跑班',classIds:['tB01','tB02']}
+  {id:'run',label:'跑跑班',classIds:[]}
 ];
-window._XBD_BEDDING_CLASSES=BEDDING_CLASSES.slice();
-window._XBD_BEDDING_LEVELS=BEDDING_LEVELS.slice();
-function _refreshBeddingClasses(){
-  var isBambino=typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino';
-  var srcC=isBambino?window._BAMBINO_BEDDING_CLASSES:window._XBD_BEDDING_CLASSES;
-  var srcL=isBambino?window._BAMBINO_BEDDING_LEVELS:window._XBD_BEDDING_LEVELS;
-  BEDDING_CLASSES.length=0;srcC.forEach(function(x){BEDDING_CLASSES.push(x);});
-  BEDDING_LEVELS.length=0;srcL.forEach(function(x){BEDDING_LEVELS.push(x);});
-  if(typeof BEDDING!=='undefined'&&BEDDING.resetClasses)BEDDING.resetClasses();
-}
 var BEDDING=(function(){
-  var curC=BEDDING_CLASSES[0].id, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
+  var curC=BEDDING_CLASSES[0]?BEDDING_CLASSES[0].id:null, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var curStep='hub';
   var db={records:{}};
   var _fbAttached=false;
@@ -9494,9 +9498,49 @@ var BEDDING=(function(){
   function renderClsHub(wrap){
     var h='';
     h+='<div class="df-sec"><div class="df-lbl">🛏️ 選擇班級</div>';
-    h+=_pickGridHTML(BEDDING_CLASSES.map(function(c){return{value:c.id,label:c.label};}),'BEDDING.selectCls');
+    if(BEDDING_CLASSES.length){
+      h+=_pickGridHTML(BEDDING_CLASSES.map(function(c){return{value:c.id,label:c.label};}),'BEDDING.selectCls');
+    }else{
+      h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 4px;">尚無班級，請在下方新增</div>';
+    }
+    h+='</div>';
+    h+='<div class="df-sec"><div class="df-lbl">⚙️ 班級管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除班級後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+    if(BEDDING_CLASSES.length){
+      h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
+      BEDDING_CLASSES.forEach(function(c){
+        var lvLbl='';
+        for(var i=0;i<BEDDING_LEVELS.length;i++)if(BEDDING_LEVELS[i].classIds.indexOf(c.id)!==-1)lvLbl=BEDDING_LEVELS[i].label;
+        h+='<div style="display:flex;align-items:center;justify-content:space-between;background:#f7f7fa;border-radius:8px;padding:8px 10px;">';
+        h+='<span style="font-size:.85rem;">'+c.label+(lvLbl?'　<span style="color:#999;">（'+lvLbl+'）</span>':'')+'</span>';
+        h+='<button onclick="BEDDING.removeSpace(\''+c.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button>';
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    h+='<input class="df-inp" id="bedNewLabel" placeholder="新班級名稱，例如：跑跑班（邱淳郁）" style="margin-bottom:6px;">';
+    h+='<select class="df-inp" id="bedNewLevel" style="margin-bottom:6px;">';
+    BEDDING_LEVELS.forEach(function(lv){h+='<option value="'+lv.id+'">'+lv.label+'</option>';});
+    h+='</select>';
+    h+='<button class="asr-add-btn" onclick="BEDDING.addSpace()">&#xFF0B; 新增班級</button>';
     h+='</div>';
     wrap.innerHTML=h;
+  }
+  function addSpace(){
+    var labelEl=document.getElementById('bedNewLabel'), levelEl=document.getElementById('bedNewLevel');
+    var label=(labelEl&&labelEl.value||'').trim();
+    if(!label){alert('請輸入班級名稱');return;}
+    var level=(levelEl&&levelEl.value)||'baby';
+    SPACES.add('bedding',{label:label,level:level},function(ok){
+      if(!ok)alert('新增失敗，請檢查網路後再試');
+    });
+    render();
+  }
+  function removeSpace(id){
+    if(!confirm('確定要刪除這個班級？（已填寫的紀錄不會被刪除）'))return;
+    SPACES.remove('bedding',id,function(ok){
+      if(!ok)alert('刪除失敗，請檢查網路後再試');
+    });
+    render();
   }
   function selectCls(id){curC=id;curStep='detail';render();}
   function backToClsHub(){curStep='hub';render();}
@@ -9661,16 +9705,21 @@ var BEDDING=(function(){
     _fillTimer=setInterval(autoFillFriday,5*60*1000);
   }
   function resetClasses(){
-    curC=BEDDING_CLASSES[0]?BEDDING_CLASSES[0].id:null;
-    curStep='hub';
+    if(!BEDDING_CLASSES.some(function(c){return c.id===curC;})){
+      curC=BEDDING_CLASSES[0]?BEDDING_CLASSES[0].id:null;
+      curStep='hub';
+    }
+    render();
   }
-  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel,resetClasses:resetClasses};
+  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel,resetClasses:resetClasses,addSpace:addSpace,removeSpace:removeSpace};
 })();
 
-/* ── 清潔表單：環境溫濕度 ── */
+/* ── 清潔表單：環境溫濕度 ──
+   教室清單不再寫死，改由 SPACES 模組從雲端載入（後台新增／刪除），
+   每台裝置都會同步看到最新的教室。冰箱溫度不是空間清單，維持固定。 */
 var TEMP_KINDS=[
   {id:'fridge',label:'冰箱溫度',rows:['冷藏','冷凍'],sigLabels:['紀錄人員','主管簽名']},
-  {id:'room',label:'教室環境溫濕度',rows:['溫度','濕度'],sigLabels:['紀錄者','主管簽章'],rooms:['寶寶班','爬爬班','跑跑A班','跑跑B班']}
+  {id:'room',label:'教室環境溫濕度',rows:['溫度','濕度'],sigLabels:['紀錄者','主管簽章'],rooms:[]}
 ];
 var TEMP=(function(){
   var curK=TEMP_KINDS[0].id, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
@@ -9799,7 +9848,46 @@ var TEMP=(function(){
     h+='<div class="df-sec"><div class="df-lbl">🌡️ 選擇項目</div>';
     h+=_pickGridHTML(flatOptions().map(function(o){return{value:o.kind+'|'+o.room,label:o.label};}),'TEMP.selectOption');
     h+='</div>';
+    var roomKind=null;
+    for(var i=0;i<TEMP_KINDS.length;i++)if(TEMP_KINDS[i].rooms)roomKind=TEMP_KINDS[i];
+    if(roomKind){
+      h+='<div class="df-sec"><div class="df-lbl">⚙️ 教室管理（教室環境溫濕度）<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除教室後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+      if(roomKind.rooms.length){
+        h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
+        roomKind.rooms.forEach(function(r,ri){
+          h+='<div style="display:flex;align-items:center;justify-content:space-between;background:#f7f7fa;border-radius:8px;padding:8px 10px;">';
+          h+='<span style="font-size:.85rem;">'+r+'</span>';
+          h+='<button onclick="TEMP.removeSpace('+ri+')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button>';
+          h+='</div>';
+        });
+        h+='</div>';
+      }else{
+        h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 10px;">尚無教室，請在下方新增</div>';
+      }
+      h+='<input class="df-inp" id="tmpNewRoom" placeholder="新教室名稱，例如：跑跑班" style="margin-bottom:6px;">';
+      h+='<button class="asr-add-btn" onclick="TEMP.addSpace()">&#xFF0B; 新增教室</button>';
+      h+='</div>';
+    }
     wrap.innerHTML=h;
+  }
+  function addSpace(){
+    var el=document.getElementById('tmpNewRoom');
+    var label=(el&&el.value||'').trim();
+    if(!label){alert('請輸入教室名稱');return;}
+    SPACES.add('temp',{label:label},function(ok){
+      if(!ok)alert('新增失敗，請檢查網路後再試');
+    });
+    render();
+  }
+  function removeSpace(idxOrId){
+    if(!confirm('確定要刪除這個教室？（已填寫的紀錄不會被刪除）'))return;
+    var ids=SPACES.idsOf('temp');
+    var id=ids[idxOrId];
+    if(!id)return;
+    SPACES.remove('temp',id,function(ok){
+      if(!ok)alert('刪除失敗，請檢查網路後再試');
+    });
+    render();
   }
   function selectOption(val){
     var parts=val.split('|');
@@ -9963,7 +10051,98 @@ var TEMP=(function(){
     _cleanPrintOrDownload(_cleanBuildCompactPrintHTML('環境溫濕度月報表 '+curY+'年'+curM+'月',body,flatOptions().length));
   }
   function init(){curStep='hub';load();render();}
-  return{init:init,selectOption:selectOption,backToOptHub:backToOptHub,changeKind:changeKind,changeRoom:changeRoom,changeYM:changeYM,setVal:setVal,cycleOffType:cycleOffType,openSig:openSig,download:download,downloadMonth:downloadMonth};
+  function resetKinds(){
+    var opts=flatOptions();
+    if(!opts.some(function(o){return o.kind===curK&&o.room===curRoom;})){
+      curStep='hub';
+    }
+    render();
+  }
+  return{init:init,selectOption:selectOption,backToOptHub:backToOptHub,changeKind:changeKind,changeRoom:changeRoom,changeYM:changeYM,setVal:setVal,cycleOffType:cycleOffType,openSig:openSig,download:download,downloadMonth:downloadMonth,addSpace:addSpace,removeSpace:removeSpace,resetKinds:resetKinds};
+})();
+
+/* ── 空間／班級後台：清潔表單、寢具表、溫濕度教室的「空間、班級」清單統一由這裡
+   雲端同步管理（跟新增老師一樣，加/刪之後所有裝置即時同步看到）。
+   每間公司各自獨立的清單，靠 _fbInit() 中央的公司前綴自動隔開，這裡不用額外處理。 */
+var SPACES=(function(){
+  var lists={clean:{},bedding:{},temp:{}};
+  var attached={};
+  function _path(kind){return 'xiaobuddyClean/spaces/'+kind;}
+  function _rebuild(kind){
+    if(kind==='clean'){
+      CLEAN_FORMS.length=0;
+      Object.keys(lists.clean).forEach(function(id){
+        var v=lists.clean[id]||{};
+        CLEAN_FORMS.push({id:id,label:v.label||'（未命名）',items:(v.items&&v.items.length)?v.items:['地板','門窗','垃圾桶']});
+      });
+      if(typeof CLEAN!=='undefined'&&CLEAN.resetForms)CLEAN.resetForms();
+    } else if(kind==='bedding'){
+      BEDDING_CLASSES.length=0;
+      BEDDING_LEVELS.forEach(function(lv){lv.classIds=[];});
+      Object.keys(lists.bedding).forEach(function(id){
+        var v=lists.bedding[id]||{};
+        BEDDING_CLASSES.push({id:id,label:v.label||'（未命名）'});
+        var lv=null;
+        for(var i=0;i<BEDDING_LEVELS.length;i++)if(BEDDING_LEVELS[i].id===v.level)lv=BEDDING_LEVELS[i];
+        if(!lv)lv=BEDDING_LEVELS[0];
+        if(lv)lv.classIds.push(id);
+      });
+      if(typeof BEDDING!=='undefined'&&BEDDING.resetClasses)BEDDING.resetClasses();
+    } else if(kind==='temp'){
+      var roomKind=null;
+      for(var j=0;j<TEMP_KINDS.length;j++)if(TEMP_KINDS[j].rooms)roomKind=TEMP_KINDS[j];
+      if(roomKind){
+        roomKind.rooms.length=0;
+        Object.keys(lists.temp).forEach(function(id){roomKind.rooms.push((lists.temp[id]||{}).label||'（未命名）');});
+      }
+      if(typeof TEMP!=='undefined'&&TEMP.resetKinds)TEMP.resetKinds();
+    }
+  }
+  function _attach(kind){
+    var company=CURRENT_COMPANY;
+    var key=company+'_'+kind;
+    if(attached[key])return;
+    var fb=_fbInit();
+    if(!fb)return;
+    attached[key]=true;
+    fb.ref(_path(kind)).on('value',function(snap){
+      if(CURRENT_COMPANY!==company)return;
+      lists[kind]=snap.val()||{};
+      _rebuild(kind);
+    });
+  }
+  function init(){['clean','bedding','temp'].forEach(_attach);}
+  function forceSync(cb){
+    var fb=_fbInit();
+    if(!fb){if(cb)cb(false);return;}
+    var kinds=['clean','bedding','temp'],remaining=kinds.length,ok=true;
+    kinds.forEach(function(kind){
+      fb.ref(_path(kind)).once('value').then(function(snap){
+        lists[kind]=snap.val()||{};
+        _rebuild(kind);
+        remaining--; if(remaining===0&&cb)cb(ok);
+      }).catch(function(){
+        ok=false; remaining--; if(remaining===0&&cb)cb(ok);
+      });
+    });
+  }
+  function add(kind,obj,cb){
+    var id='sp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var fb=_fbInit();
+    if(fb)fb.ref(_path(kind)+'/'+id).set(obj,function(err){if(cb)cb(!err);});
+    else if(cb)cb(false);
+    lists[kind][id]=obj;
+    _rebuild(kind);
+  }
+  function remove(kind,id,cb){
+    var fb=_fbInit();
+    if(fb)fb.ref(_path(kind)+'/'+id).remove(function(err){if(cb)cb(!err);});
+    else if(cb)cb(false);
+    delete lists[kind][id];
+    _rebuild(kind);
+  }
+  function idsOf(kind){return Object.keys(lists[kind]||{});}
+  return{init:init,forceSync:forceSync,add:add,remove:remove,idsOf:idsOf};
 })();
 
 /* ── 體溫管理 ── */
@@ -10851,7 +11030,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924193220</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924195256</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
