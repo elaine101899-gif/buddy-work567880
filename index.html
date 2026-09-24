@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924164943';
+  var BUILD='20260924165421';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1471,16 +1471,16 @@ function _rosterFbBase(){return CURRENT_COMPANY==='bambino'?'xiaobuddyBambino/ro
 function applyCompany(companyId){
   CURRENT_COMPANY=companyId;
   try{localStorage.setItem('xbdCompany',companyId);}catch(e){}
+  /* 課程內容（allThemes）兩間公司共用同一份，不隨公司切換——邦比諾的課程
+     直接沿用小布迪，以後課程異動兩邊會一起變。只有老師/幼兒名單各自獨立。 */
   if(companyId==='bambino'){
     window._asrPreload=window._BAMBINO_asrPreload114;
     window._asrPreload114=window._BAMBINO_asrPreload114;
     window._asrPreload115=window._BAMBINO_asrPreload115;
-    if(typeof window._BAMBINO_allThemes!=='undefined')window.allThemes=window._BAMBINO_allThemes;
   }else{
     window._asrPreload=window._XBD_asrPreload114;
     window._asrPreload114=window._XBD_asrPreload114;
     window._asrPreload115=window._XBD_asrPreload115;
-    if(typeof window._XBD_allThemes!=='undefined')window.allThemes=window._XBD_allThemes;
   }
   var info=COMPANIES[companyId]||COMPANIES.xbd;
   document.querySelectorAll('.hero-name').forEach(function(el){el.textContent=info.name;});
@@ -3061,12 +3061,7 @@ var allThemes={
     }},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
   "116":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}}
 };
-window._XBD_allThemes=allThemes;
-window._BAMBINO_allThemes={
-  "114":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
-  "115":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
-  "116":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}}
-};
+/* allThemes 兩間公司共用，不需要為邦比諾另外準備一份 */
 /* ── 115下半年第一主題 寶寶班 週1-4 完整活動資料 ── */
 (function(){
   var acts=allThemes['115'][1].acts;
@@ -10799,7 +10794,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:49</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:54</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
