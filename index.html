@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924191848';
+  var BUILD='20260924192609';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1488,6 +1488,7 @@ function applyCompany(companyId){
   document.querySelectorAll('.hero-name').forEach(function(el){el.textContent=info.name;});
   document.title=info.name;
   if(typeof refreshSigners==='function')refreshSigners();
+  if(typeof _refreshBeddingClasses==='function')_refreshBeddingClasses();
   /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
@@ -8793,7 +8794,8 @@ function _computeSigners(){
   var yr=window._newTermActive?'115':'114';
   var pl=window['_asrPreload'+yr]||window._asrPreload||{};
   var names=(pl.teachers||[]).map(function(t){return t.name;});
-  var extra=window._newTermActive?STAFF_EXTRA_115:STAFF_EXTRA_114;
+  var isBambino=typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino';
+  var extra=isBambino?[]:(window._newTermActive?STAFF_EXTRA_115:STAFF_EXTRA_114);
   var seen={},out=[];
   names.concat(extra).forEach(function(n){if(!seen[n]){seen[n]=true;out.push(n);}});
   return out;
@@ -9327,6 +9329,26 @@ var BEDDING_LEVELS=window._newTermActive?[
   {id:'crawl',label:'爬爬班',classIds:['t001','t002']},
   {id:'run',label:'跑跑班',classIds:['t003','t006','t005']}
 ];
+/* 邦比諾寢具班級：只有邱淳郁、珮淋兩位老師，都在跑跑班 */
+window._BAMBINO_BEDDING_CLASSES=[
+  {id:'tB01',label:'跑跑班（邱淳郁）'},
+  {id:'tB02',label:'跑跑班（珮淋）'}
+];
+window._BAMBINO_BEDDING_LEVELS=[
+  {id:'baby',label:'寶寶班',classIds:[]},
+  {id:'crawl',label:'爬爬班',classIds:[]},
+  {id:'run',label:'跑跑班',classIds:['tB01','tB02']}
+];
+window._XBD_BEDDING_CLASSES=BEDDING_CLASSES.slice();
+window._XBD_BEDDING_LEVELS=BEDDING_LEVELS.slice();
+function _refreshBeddingClasses(){
+  var isBambino=typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino';
+  var srcC=isBambino?window._BAMBINO_BEDDING_CLASSES:window._XBD_BEDDING_CLASSES;
+  var srcL=isBambino?window._BAMBINO_BEDDING_LEVELS:window._XBD_BEDDING_LEVELS;
+  BEDDING_CLASSES.length=0;srcC.forEach(function(x){BEDDING_CLASSES.push(x);});
+  BEDDING_LEVELS.length=0;srcL.forEach(function(x){BEDDING_LEVELS.push(x);});
+  if(typeof BEDDING!=='undefined'&&BEDDING.resetClasses)BEDDING.resetClasses();
+}
 var BEDDING=(function(){
   var curC=BEDDING_CLASSES[0].id, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var curStep='hub';
@@ -9627,7 +9649,11 @@ var BEDDING=(function(){
     if(_fillTimer)clearInterval(_fillTimer);
     _fillTimer=setInterval(autoFillFriday,5*60*1000);
   }
-  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel};
+  function resetClasses(){
+    curC=BEDDING_CLASSES[0]?BEDDING_CLASSES[0].id:null;
+    curStep='hub';
+  }
+  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel,resetClasses:resetClasses};
 })();
 
 /* ── 清潔表單：環境溫濕度 ── */
@@ -10814,7 +10840,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 19:18</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924192609</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
