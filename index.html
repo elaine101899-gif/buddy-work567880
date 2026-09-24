@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924214033';
+  var BUILD='20260924215156';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1549,6 +1549,10 @@ function applyCompany(companyId){
     if(SPACES.init)SPACES.init();
     if(SPACES.forceSync)SPACES.forceSync();
   }
+  /* 教保日誌、簽名庫是頁面第一次載入時才會掛一次雲端監聽器，不會像清潔表單那樣
+     每次進頁面就重掛，所以要在這裡主動呼叫，換公司才會重新綁到正確的公司路徑。 */
+  if(typeof DIARY!=='undefined'&&DIARY.reattach)DIARY.reattach();
+  if(typeof SIGLIB!=='undefined'&&SIGLIB.reattach)SIGLIB.reattach();
   /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
@@ -5029,6 +5033,8 @@ var DIARY=(function(){
   var dCrpSt={};
   var dCrpCtx={idx:null,iW:0,iH:0,vpW:0,vpH:0};
   var diaryDB={entries:{}};
+  var _fbDLAttachedCompany=null;
+  var _fbDLRef=null;
 
   var CLSLABEL={run:'🏃 跑跑班',crawl:'🐛 爬爬班',baby:'👶 寶寶班'};
   var CLSCOLOR={run:'#e5eaf5',crawl:'#e8f0e5',baby:'#fdeae5'};
@@ -5329,6 +5335,9 @@ var DIARY=(function(){
     }catch(e){}
   }
   function dbLoad(){
+    /* 換公司要先把記憶體裡的日誌清空，不然沒有本機快取可覆蓋時，
+       畫面會一直卡著上一家公司的日誌內容 */
+    if(_fbDLAttachedCompany!==CURRENT_COMPANY){diaryDB={entries:{}};}
     var lsHasData=false;
     try{var r=localStorage.getItem(_ckey('diaryDB'));if(r){var d=JSON.parse(r);if(d&&d.entries){diaryDB=d;lsHasData=true;}}}catch(e){}
     /* IDB 救援：永遠嘗試從 IDB 補回照片（dbSave 每次都存 IDB，localStorage 滿了也不影響 IDB）
@@ -5366,8 +5375,11 @@ var DIARY=(function(){
       });
     }
     var _fbDL=_fbInit();
-    if(_fbDL){
-      _fbDL.ref('xiaobuddyClean/diarySync').on('value',function(snap){
+    if(_fbDL&&_fbDLAttachedCompany!==CURRENT_COMPANY){
+      if(_fbDLRef){try{_fbDLRef.off('value');}catch(e){}}
+      _fbDLAttachedCompany=CURRENT_COMPANY;
+      _fbDLRef=_fbDL.ref('xiaobuddyClean/diarySync');
+      _fbDLRef.on('value',function(snap){
         var incoming=snap.val()||{};
         var changed=false;
         Object.keys(incoming).forEach(function(k){
@@ -6104,6 +6116,7 @@ var DIARY=(function(){
   dTh=_twInit.th; dWk=_twInit.wk;
 
   return {
+    reattach:dbLoad,
     openDiary:openDiary,renderDays:renderDays,setWk:setWk,onThChange:onThChange,onWkChange:onWkChange,
     openForm:openForm,backToList:backToList,
     addStep:addStep,removeStep:removeStep,resetToTpl:resetToTpl,loadPhoto:loadPhoto,
@@ -8828,14 +8841,19 @@ function refreshSigners(){
 }
 var SIGLIB=(function(){
   var db={sigs:{}};
-  var _fbAttached=false;
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
   function encodeKey(name){return String(name).replace(/[.#$\[\]\/]/g,'_');}
   function attachFb(){
-    if(_fbAttached)return;
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    _fbAttached=true;
-    fb.ref('xiaobuddyClean/sigLib').on('value',function(snap){
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    /* 換公司要整批換掉簽名庫，不能只加不減，不然邦比諾會一直看到小布迪的簽名 */
+    db={sigs:{}};
+    _fbRef=fb.ref('xiaobuddyClean/sigLib');
+    _fbRef.on('value',function(snap){
       var incoming=snap.val()||{};
       // 合併而非覆蓋：Firebase 的資料加進來，本地獨有的簽名保留
       Object.keys(incoming).forEach(function(k){db.sigs[k]=incoming[k];});
@@ -8864,7 +8882,7 @@ var SIGLIB=(function(){
   }
   function names(){return SIGNERS.slice();}
   load();
-  return{get:get,set:set,del:del,names:names};
+  return{get:get,set:set,del:del,names:names,reattach:load};
 })();
 
 var _sigPad=(function(){
@@ -9104,7 +9122,8 @@ var CLEAN=(function(){
   var curF=CLEAN_FORMS[0]?CLEAN_FORMS[0].id:null, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var curStep='hub';
   var db={records:{}};
-  var _fbAttached=false;
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
 
   function key(){return curF+'_'+curY+'_'+curM;}
   function daysInMonth(y,m){return new Date(y+1911,m,0).getDate();}
@@ -9143,11 +9162,16 @@ var CLEAN=(function(){
     save();
   }
   function attachFb(){
-    if(_fbAttached)return;
+    /* 用「目前公司」而不是一次性布林值當守門條件：換公司後如果不重新掛監聽器，
+       這個常駐連線會一直停在上一家公司的路徑上，永遠看不到新公司自己的資料。 */
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    _fbAttached=true;
-    fb.ref('xiaobuddyClean/clean').on('value',function(snap){
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _autoFilled=false;
+    _fbRef=fb.ref('xiaobuddyClean/clean');
+    _fbRef.on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('cleanDB'),JSON.stringify(db));}catch(e){}
@@ -9370,7 +9394,8 @@ var BEDDING=(function(){
   var curC=BEDDING_CLASSES[0]?BEDDING_CLASSES[0].id:null, curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var curStep='hub';
   var db={records:{}};
-  var _fbAttached=false;
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
 
   function key(){return curC+'_'+curY+'_'+curM;}
   function getChildNames(tid){
@@ -9460,11 +9485,14 @@ var BEDDING=(function(){
     save();
   }
   function attachFb(){
-    if(_fbAttached)return;
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    _fbAttached=true;
-    fb.ref('xiaobuddyClean/bedding').on('value',function(snap){
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _autoFilled=false;
+    _fbRef=fb.ref('xiaobuddyClean/bedding');
+    _fbRef.on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('beddingDB'),JSON.stringify(db));}catch(e){}
@@ -9728,7 +9756,8 @@ var TEMP=(function(){
   var curRoom='';
   var curStep='hub';
   var db={records:{}};
-  var _fbAttached=false;
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
 
   function flatOptions(){
     var opts=[];
@@ -9805,11 +9834,14 @@ var TEMP=(function(){
     save();
   }
   function attachFb(){
-    if(_fbAttached)return;
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    _fbAttached=true;
-    fb.ref('xiaobuddyClean/temp').on('value',function(snap){
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _autoFilled=false;
+    _fbRef=fb.ref('xiaobuddyClean/temp');
+    _fbRef.on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('tempDB'),JSON.stringify(db));}catch(e){}
@@ -10153,7 +10185,8 @@ var BODYTEMP_SYMPTOMS=['發燒','咳嗽','喉嚨痛','流鼻涕','頭痛'];
 var BODYTEMP=(function(){
   var curT=SIGNERS[0], curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
   var db={records:{}};
-  var _fbAttached=false;
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
 
   function key(){return curT+'_'+curY+'_'+curM;}
   function recKey(t){return t+'_'+curY+'_'+curM;}
@@ -10220,11 +10253,14 @@ var BODYTEMP=(function(){
     save();
   }
   function attachFb(){
-    if(_fbAttached)return;
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    _fbAttached=true;
-    fb.ref('xiaobuddyClean/bodytemp').on('value',function(snap){
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _autoFilled=false;
+    _fbRef=fb.ref('xiaobuddyClean/bodytemp');
+    _fbRef.on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('bodytempDB'),JSON.stringify(db));}catch(e){}
@@ -10545,7 +10581,8 @@ var TEACHSYNC=(function(){
 var PHONEVISIT=(function(){
   var db={};
   var fb=null;
-  var listening=false;
+  var listeningCompany=null;
+  var _pvFbRef=null;
   var curCls='baby';
   var curChild=null; // {id, name, teacherId, teacherName}
 
@@ -10699,9 +10736,12 @@ var PHONEVISIT=(function(){
     var root=document.getElementById('pv-root');
     if(root) root.innerHTML=buildForm();
     renderRecords();
-    if(fb&&!listening){
-      listening=true;
-      fb.ref('xiaobuddyClean/phonevisit').on('value',function(snap){
+    if(fb&&listeningCompany!==CURRENT_COMPANY){
+      if(_pvFbRef){try{_pvFbRef.off('value');}catch(e){}}
+      listeningCompany=CURRENT_COMPANY;
+      db={};
+      _pvFbRef=fb.ref('xiaobuddyClean/phonevisit');
+      _pvFbRef.on('value',function(snap){
         db=snap.val()||{};
         renderRecords();
       });
@@ -11032,7 +11072,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:40</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:51</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
