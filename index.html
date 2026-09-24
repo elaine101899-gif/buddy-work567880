@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924202905';
+  var BUILD='20260924203301';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -68,6 +68,47 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f7f5f2;min-height:100vh;}
 .c-blu  .hcard-bar{background:#4a7fd0;} .c-blu  .hcard-lbl{color:#4a7fd0;} .c-blu  .hcard-img{background:#e8eefb;}
 .c-amb  .hcard-bar{background:#d9822c;} .c-amb  .hcard-lbl{color:#d9822c;} .c-amb  .hcard-img{background:#fcf1e3;}
 .c-sky  .hcard-bar{background:#2b90d9;} .c-sky  .hcard-lbl{color:#2b90d9;} .c-sky  .hcard-img{background:#e3f2fc;}
+
+/* ── 選擇公司頁：可愛入口卡 ── */
+.comp-cards-wrap{padding:6px 20px 36px;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+.comp-card{
+  position:relative;border-radius:28px;padding:20px 18px;cursor:pointer;
+  display:flex;align-items:center;gap:16px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  border:3px solid rgba(255,255,255,.7);
+  transform:scale(1);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s;
+  animation:compCardIn .5s cubic-bezier(.34,1.56,.64,1) both;
+  -webkit-tap-highlight-color:transparent;
+}
+.comp-card:active{transform:scale(.96);}
+.comp-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.16);transform:translateY(-2px);}
+.comp-card.comp-xbd{background:linear-gradient(135deg,#eafcfb 0%,#c7f0ee 100%);}
+.comp-card.comp-bam{background:linear-gradient(135deg,#fffaeb 0%,#ffe9a8 100%);}
+.comp-card:nth-child(2){animation-delay:.12s;}
+.comp-card-logo{
+  width:74px;height:74px;border-radius:50%;background:white;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.14);
+  animation:compLogoFloat 2.8s ease-in-out infinite;
+}
+.comp-card-logo img{width:56px;height:56px;object-fit:contain;}
+.comp-card-body{flex:1;min-width:0;}
+.comp-card-eyebrow{font-size:.64rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;opacity:.65;margin-bottom:3px;}
+.comp-card-title{font-size:1.14rem;font-weight:900;color:#2d3057;margin-bottom:3px;}
+.comp-card-desc{font-size:.76rem;color:#6a6a78;}
+.comp-card-arr{font-size:1.5rem;color:rgba(0,0,0,.2);flex-shrink:0;transition:transform .2s;}
+.comp-card:hover .comp-card-arr{transform:translateX(4px);}
+.comp-xbd .comp-card-eyebrow,.comp-xbd .comp-card-arr{color:#2a9aa6;}
+.comp-bam .comp-card-eyebrow,.comp-bam .comp-card-arr{color:#c99a12;}
+@keyframes compCardIn{from{opacity:0;transform:translateY(18px) scale(.94);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes compLogoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
+
+/* ── 選公司 → 進入首頁：轉場動畫 ── */
+#pg-company.pg-leaving{animation:pgFadeScaleOut .36s ease forwards;}
+#pg-home.pg-entering{animation:pgFadeScaleIn .45s cubic-bezier(.22,1,.36,1) both;}
+@keyframes pgFadeScaleOut{from{opacity:1;transform:scale(1);}to{opacity:0;transform:scale(1.05);}}
+@keyframes pgFadeScaleIn{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
 /* ── 電訪表 ── */
 .pv-cls-tabs{display:flex;gap:8px;margin-bottom:14px;}
 .pv-cls-tab{flex:1;padding:8px 4px;border:2px solid #ddd;border-radius:8px;background:#f7f7f7;font-size:.85rem;color:#666;cursor:pointer;text-align:center;transition:all .2s;}
@@ -1510,8 +1551,23 @@ function applyCompany(companyId){
   });
 }
 function pickCompany(companyId){
-  applyCompany(companyId);
-  GO('home');
+  var cur=document.getElementById('pg-company');
+  if(cur&&cur.classList.contains('on')){
+    cur.classList.add('pg-leaving');
+    setTimeout(function(){
+      cur.classList.remove('pg-leaving');
+      applyCompany(companyId);
+      GO('home');
+      var home=document.getElementById('pg-home');
+      if(home){
+        home.classList.add('pg-entering');
+        setTimeout(function(){home.classList.remove('pg-entering');},500);
+      }
+    },340);
+  }else{
+    applyCompany(companyId);
+    GO('home');
+  }
 }
 document.addEventListener('DOMContentLoaded',function(){
   if(CURRENT_COMPANY){
@@ -1737,34 +1793,29 @@ var ROSTER=(function(){
 <div class="pg on" id="pg-company">
   <div class="hero">
     <div class="hero-logo-wrap">
-      <div style="font-size:44px;line-height:104px;">🏢</div>
+      <div style="font-size:44px;line-height:104px;">🪐</div>
     </div>
-    <div class="hero-name">請選擇公司</div>
-    <div class="hero-sub">Select Your Center</div>
+    <div class="hero-name">邦迪小宇宙</div>
+    <div class="hero-sub">✨ 選一個入口，開始今天的冒險 ✨</div>
   </div>
-  <div class="cards-wrap">
-    <div class="cards-lbl">請選擇要進入的托嬰中心</div>
-    <div class="hcard c-teal" onclick="pickCompany('xbd')">
-      <div class="hcard-in">
-        <div class="hcard-bar"></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Center A</div>
-          <div class="hcard-title">🏫 小布迪音樂藝術托嬰中心</div>
-          <div class="hcard-desc">進入小布迪的系統</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
+  <div class="comp-cards-wrap">
+    <div class="comp-card comp-xbd" onclick="pickCompany('xbd')">
+      <div class="comp-card-logo"><img id="compLogoXbd" alt=""></div>
+      <div class="comp-card-body">
+        <div class="comp-card-eyebrow">Center A</div>
+        <div class="comp-card-title">小布迪音樂藝術托嬰中心</div>
+        <div class="comp-card-desc">進入小布迪的系統</div>
       </div>
+      <div class="comp-card-arr">&#x203A;</div>
     </div>
-    <div class="hcard c-ora" onclick="pickCompany('bambino')">
-      <div class="hcard-in">
-        <div class="hcard-bar"></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Center B</div>
-          <div class="hcard-title">🏫 邦比諾音樂托嬰中心</div>
-          <div class="hcard-desc">進入邦比諾的系統</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
+    <div class="comp-card comp-bam" onclick="pickCompany('bambino')">
+      <div class="comp-card-logo"><img id="compLogoBam" alt=""></div>
+      <div class="comp-card-body">
+        <div class="comp-card-eyebrow">Center B</div>
+        <div class="comp-card-title">邦比諾音樂托嬰中心</div>
+        <div class="comp-card-desc">進入邦比諾的系統</div>
       </div>
+      <div class="comp-card-arr">&#x203A;</div>
     </div>
   </div>
 </div>
@@ -1776,6 +1827,13 @@ var ROSTER=(function(){
     </div>
     <div class="hero-name">小布迪音樂藝術托嬰中心</div>
     <div class="hero-sub">Babycare Infant Care Center</div>
+    <script>
+    (function(){
+      var xbdSrc=document.getElementById('heroLogoImg').src;
+      var cx=document.getElementById('compLogoXbd'); if(cx)cx.src=xbdSrc;
+      var cb=document.getElementById('compLogoBam'); if(cb&&window._BAMBINO_LOGO_SRC)cb.src=window._BAMBINO_LOGO_SRC;
+    })();
+    </script>
   </div>
   <div class="cards-wrap">
     <div class="cards-lbl">請選擇功能</div>
@@ -10949,7 +11007,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 20:29</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 20:33</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
