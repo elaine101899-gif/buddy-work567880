@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924211653';
+  var BUILD='20260924212523';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1136,6 +1136,9 @@ body.admin .add-mat {
 .atag{font-size:.67rem;background:rgba(255,255,255,.15);border-radius:4px;padding:2px 6px;}
 .abtn{padding:6px 13px;border:none;border-radius:8px;font-size:.77rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 .abtn-e{background:#4cb8c2;color:white;} .abtn-x{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.25);}
+/* 清潔表單/寢具/溫濕度的「空間、班級管理」平常不用一直顯示，收進組長後台（點右下角鑰匙解鎖）才會出現 */
+.spaces-admin{display:none;}
+body.adm .spaces-admin{display:block;}
 body.adm [data-edit]{outline:2px dashed rgba(76,184,194,.5);border-radius:4px;cursor:text;min-height:1em;}
 body.adm [data-edit]:hover{outline:2px solid #4cb8c2;background:rgba(76,184,194,.05);}
 body.adm [data-edit]:focus{outline:2px solid #4cb8c2;background:rgba(76,184,194,.08);}
@@ -9172,7 +9175,7 @@ var CLEAN=(function(){
       h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 4px;">尚無清潔區域，請在下方新增</div>';
     }
     h+='</div>';
-    h+='<div class="df-sec"><div class="df-lbl">⚙️ 清潔區域管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除空間後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+    h+='<div class="df-sec spaces-admin"><div class="df-lbl">⚙️ 清潔區域管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除空間後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
     if(CLEAN_FORMS.length){
       h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
       CLEAN_FORMS.forEach(function(fm){
@@ -9485,7 +9488,7 @@ var BEDDING=(function(){
       h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 4px;">尚無班級，請在下方新增</div>';
     }
     h+='</div>';
-    h+='<div class="df-sec"><div class="df-lbl">⚙️ 班級管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除班級後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+    h+='<div class="df-sec spaces-admin"><div class="df-lbl">⚙️ 班級管理<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除班級後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
     if(BEDDING_CLASSES.length){
       h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
       BEDDING_CLASSES.forEach(function(c){
@@ -9832,7 +9835,7 @@ var TEMP=(function(){
     var roomKind=null;
     for(var i=0;i<TEMP_KINDS.length;i++)if(TEMP_KINDS[i].rooms)roomKind=TEMP_KINDS[i];
     if(roomKind){
-      h+='<div class="df-sec"><div class="df-lbl">⚙️ 教室管理（教室環境溫濕度）<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除教室後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
+      h+='<div class="df-sec spaces-admin"><div class="df-lbl">⚙️ 教室管理（教室環境溫濕度）<button class="cln-sig-btn" style="float:right;background:#4a90c0" onclick="SPACES.forceSync()" title="如果新增/刪除教室後沒有出現，按這裡強制重新抓取">&#x1F504; 立即同步</button></div>';
       if(roomKind.rooms.length){
         h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
         roomKind.rooms.forEach(function(r,ri){
@@ -11011,7 +11014,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
