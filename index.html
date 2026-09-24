@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260921160900';
+  var BUILD='20260924144807';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1476,6 +1476,80 @@ function _fbInit(){
   }catch(e){_fbDb=null;}
   return _fbDb;
 }
+
+/* ── ROSTER：老師/幼兒名單雲端同步（讓「＋新增老師/幼兒」跨裝置生效） ──
+   內建名單（_asrPreload114 / _asrPreload115）維持原樣當底稿，
+   雲端 xiaobuddyClean/roster/{yr}/teachers|children 存的是「新增的部分」，
+   兩者合併後直接寫回 window._asrPreload{yr}，全站模組讀到的都是合併結果。 */
+var ROSTER=(function(){
+  var base={}; /* 內建底稿的深拷貝快照，合併時不會被越疊越多 */
+  var attached={};
+  function _snapshotBase(){
+    ['114','115'].forEach(function(yr){
+      var src=window['_asrPreload'+yr];
+      if(src)base[yr]=JSON.parse(JSON.stringify(src));
+    });
+  }
+  function _merge(yr,cloud){
+    var b=base[yr];
+    if(!b)return;
+    var teachers=b.teachers.slice();
+    var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
+    var cloudT=(cloud&&cloud.teachers)||{};
+    Object.keys(cloudT).forEach(function(id){
+      if(!tIds[id]){teachers.push(cloudT[id]);tIds[id]=true;}
+    });
+    var children={};
+    Object.keys(b.children||{}).forEach(function(tid){children[tid]=b.children[tid].slice();});
+    var cloudC=(cloud&&cloud.children)||{};
+    Object.keys(cloudC).forEach(function(tid){
+      if(!children[tid])children[tid]=[];
+      var cIds={}; children[tid].forEach(function(c){cIds[c.id]=true;});
+      Object.keys(cloudC[tid]).forEach(function(cid){
+        if(!cIds[cid]){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
+      });
+    });
+    window['_asrPreload'+yr]={teachers:teachers,children:children,removed:b.removed||[]};
+    if(typeof refreshSigners==='function')refreshSigners();
+  }
+  function _attach(yr){
+    if(attached[yr])return;
+    var fb=_fbInit();
+    if(!fb)return;
+    attached[yr]=true;
+    fb.ref('xiaobuddyClean/roster/'+yr).on('value',function(snap){
+      _merge(yr,snap.val());
+    });
+  }
+  function init(){
+    _snapshotBase();
+    _attach('114');
+    _attach('115');
+  }
+  function addTeacher(yr,teacher){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacher.id).set(teacher);
+    /* 樂觀更新：不等雲端回應，先讓本機其他模組立刻看到 */
+    var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
+    if(!cur.teachers.some(function(t){return t.id===teacher.id;})){
+      cur.teachers=cur.teachers.concat([teacher]);
+      window['_asrPreload'+yr]=cur;
+      if(typeof refreshSigners==='function')refreshSigners();
+    }
+  }
+  function addChild(yr,teacherId,child){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+child.id).set(child);
+    var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
+    if(!cur.children[teacherId])cur.children[teacherId]=[];
+    if(!cur.children[teacherId].some(function(c){return c.id===child.id;})){
+      cur.children[teacherId]=cur.children[teacherId].concat([child]);
+      window['_asrPreload'+yr]=cur;
+    }
+  }
+  document.addEventListener('DOMContentLoaded',init);
+  return{init:init,addTeacher:addTeacher,addChild:addChild};
+})();
 </script>
 
 <!-- Admin FAB -->
@@ -3412,16 +3486,21 @@ var ASR = (function() {
     var n=(document.getElementById('inpTN').value||'').trim();
     var c=document.getElementById('inpTC').value;
     if(!n){alert('請輸入姓名');return;}
-    asrDB.teachers.push({id:'t'+Date.now(),name:n,cls:c});
+    var newTeacher={id:'t'+Date.now(),name:n,cls:c};
+    asrDB.teachers.push(newTeacher);
     asrSave();cm('T');rdrT();toast('已新增 '+n);
+    /* 同步寫入雲端名單，讓所有裝置（適齡適性/請假/事故單/體溫/簽名庫等）都看得到這位老師 */
+    if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher);
   }
   function okC(){
     var n=(document.getElementById('inpCN').value||'').trim();
     var a=document.getElementById('inpCA').value;
     if(!n){alert('請輸入姓名');return;}
     if(!asrDB.children[selT])asrDB.children[selT]=[];
-    asrDB.children[selT].push({id:'c'+Date.now(),name:n,age:a});
+    var newChild={id:'c'+Date.now(),name:n,age:a};
+    asrDB.children[selT].push(newChild);
     asrSave();cm('C');rdrC();toast('已新增 '+n);
+    if(typeof ROSTER!=='undefined')ROSTER.addChild(selYear,selT,newChild);
   }
   function openF(wno){
     var teacher=null,child=null,wk=null,i;
@@ -8431,9 +8510,27 @@ var ENTEROVIRUS=(function(){
 
 
 /* ── 清潔表單：共用簽名畫板 ── */
-/* ── 清潔表單：老師常用簽名庫 ── */
+/* ── 清潔表單：老師常用簽名庫 ──
+   SIGNERS 現在改為「主名單老師 + 不在班表裡的行政/廚房等人員」動態組成，
+   主名單新增老師時透過 refreshSigners() 自動同步進來，不用手動維護。 */
 window._newTermActive=(new Date()>=new Date(2026,7,1));
-var SIGNERS=window._newTermActive?['陳巧芳','吳婉寧','梁欣萍','徐華家','柯楷倫','周香瑩','蔡季涵','杜雯捷','鄭亞柔','林筠蓉','陳珮如','洪逸惠','金佩樺','黃郁婷','陳芓妍','黃苡綸']:['陳巧芳','梁欣萍','蔡季涵','鄭亞柔','杜雯捷','林筠蓉','黃苡綸','洪逸惠','金佩樺','黃郁婷','陳芓妍'];
+var STAFF_EXTRA_115=['洪逸惠','金佩樺','黃郁婷','陳芓妍','黃苡綸'];
+var STAFF_EXTRA_114=['林筠蓉','黃苡綸','洪逸惠','金佩樺','黃郁婷','陳芓妍'];
+function _computeSigners(){
+  var yr=window._newTermActive?'115':'114';
+  var pl=window['_asrPreload'+yr]||window._asrPreload||{};
+  var names=(pl.teachers||[]).map(function(t){return t.name;});
+  var extra=window._newTermActive?STAFF_EXTRA_115:STAFF_EXTRA_114;
+  var seen={},out=[];
+  names.concat(extra).forEach(function(n){if(!seen[n]){seen[n]=true;out.push(n);}});
+  return out;
+}
+var SIGNERS=_computeSigners();
+function refreshSigners(){
+  var fresh=_computeSigners();
+  SIGNERS.length=0;
+  fresh.forEach(function(n){SIGNERS.push(n);});
+}
 var SIGLIB=(function(){
   var db={sigs:{}};
   var _fbAttached=false;
@@ -10444,7 +10541,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/21 16:09</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 14:48</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
