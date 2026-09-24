@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924204406';
+  var BUILD='20260924211653';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1527,7 +1527,10 @@ function applyCompany(companyId){
     window._asrPreload115=window._XBD_asrPreload115;
   }
   var info=COMPANIES[companyId]||COMPANIES.xbd;
-  document.querySelectorAll('.hero-name').forEach(function(el){el.textContent=info.name;});
+  /* 只更新選好公司「之後」的頁面標題（例如首頁），選公司畫面本身的「邦迪小宇宙」
+     是固定品牌標題，不能被這裡蓋掉——不然選過一次公司後，回到選公司畫面就會
+     一直顯示上次選的公司名稱，而不是邦迪小宇宙。 */
+  document.querySelectorAll('.pg:not(#pg-company) .hero-name').forEach(function(el){el.textContent=info.name;});
   document.title=info.name;
   var heroLogoImg=document.getElementById('heroLogoImg');
   if(heroLogoImg){
@@ -2416,6 +2419,7 @@ function GO(id) {
   for (i = 0; i < pgs.length; i++) { pgs[i].classList.remove('on'); }
   var t = document.getElementById('pg-' + id);
   if (t) { t.classList.add('on'); window.scrollTo(0,0); }
+  if (id === 'company') { document.title='邦迪小宇宙'; }
   if (id === 'week') { var _curYr=(new Date()>=new Date(2026,7,1))?'115':'114'; YR(_curYr); var _tw=findCurrentThWk(_curYr); SW(_tw.wk||1); }
   if (id === 'week5') { SW5(9); }
   if (id === 'weekB') { renderWeekB(); if (_weekBForceTh) { SWB(1); } else { var _twB=findCurrentThWk('115'); SWB(_twB.wk||1); } }
@@ -11007,7 +11011,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 20:44</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:16</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
