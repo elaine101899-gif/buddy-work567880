@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924152956';
+  var BUILD='20260924153622';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1493,20 +1493,24 @@ var ROSTER=(function(){
   function _merge(yr,cloud){
     var b=base[yr];
     if(!b)return;
-    var teachers=b.teachers.slice();
+    var removedT=(cloud&&cloud.removedTeachers)||{};
+    var removedC=(cloud&&cloud.removedChildren)||{};
+    var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
     var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
     var cloudT=(cloud&&cloud.teachers)||{};
     Object.keys(cloudT).forEach(function(id){
-      if(!tIds[id]){teachers.push(cloudT[id]);tIds[id]=true;}
+      if(!tIds[id]&&!removedT[id]){teachers.push(cloudT[id]);tIds[id]=true;}
     });
     var children={};
-    Object.keys(b.children||{}).forEach(function(tid){children[tid]=b.children[tid].slice();});
+    Object.keys(b.children||{}).forEach(function(tid){
+      children[tid]=b.children[tid].filter(function(c){return !removedC[c.id];});
+    });
     var cloudC=(cloud&&cloud.children)||{};
     Object.keys(cloudC).forEach(function(tid){
       if(!children[tid])children[tid]=[];
       var cIds={}; children[tid].forEach(function(c){cIds[c.id]=true;});
       Object.keys(cloudC[tid]).forEach(function(cid){
-        if(!cIds[cid]){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
+        if(!cIds[cid]&&!removedC[cid]){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
     window['_asrPreload'+yr]={teachers:teachers,children:children,removed:b.removed||[]};
@@ -1569,8 +1573,33 @@ var ROSTER=(function(){
       window['_asrPreload'+yr]=cur;
     }
   }
+  function removeTeacher(yr,teacherId,cb){
+    var fb=_fbInit();
+    if(fb){
+      fb.ref('xiaobuddyClean/roster/'+yr+'/removedTeachers/'+teacherId).set(true,function(err){ if(cb)cb(!err); });
+      fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacherId).remove();
+    }else if(cb)cb(false);
+    var cur=window['_asrPreload'+yr];
+    if(cur){
+      cur.teachers=cur.teachers.filter(function(t){return t.id!==teacherId;});
+      window['_asrPreload'+yr]=cur;
+      if(typeof refreshSigners==='function')refreshSigners();
+    }
+  }
+  function removeChild(yr,teacherId,childId,cb){
+    var fb=_fbInit();
+    if(fb){
+      fb.ref('xiaobuddyClean/roster/'+yr+'/removedChildren/'+childId).set(true,function(err){ if(cb)cb(!err); });
+      fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+childId).remove();
+    }else if(cb)cb(false);
+    var cur=window['_asrPreload'+yr];
+    if(cur&&cur.children[teacherId]){
+      cur.children[teacherId]=cur.children[teacherId].filter(function(c){return c.id!==childId;});
+      window['_asrPreload'+yr]=cur;
+    }
+  }
   document.addEventListener('DOMContentLoaded',init);
-  return{init:init,addTeacher:addTeacher,addChild:addChild,forceSync:forceSync};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync};
 })();
 </script>
 
@@ -4655,6 +4684,9 @@ var ASR = (function() {
       asrDB.teachers=asrDB.teachers.filter(function(t){return t.id!==tid;});
       if(selT===tid){selT=null;selC=null;document.getElementById('childSec').style.display='none';document.getElementById('weekSec').style.display='none';}
       asrSave();rdrT();toast('已刪除');
+      if(typeof ROSTER!=='undefined')ROSTER.removeTeacher(selYear,tid,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能還看得到，請點「立即同步」重試');
+      });
     }
   }
   function delC(cid){
@@ -4663,6 +4695,9 @@ var ASR = (function() {
       asrDB.children[selT]=cs.filter(function(c){return c.id!==cid;});
       if(selC===cid){selC=null;document.getElementById('weekSec').style.display='none';}
       asrSave();rdrC();toast('已刪除');
+      if(typeof ROSTER!=='undefined')ROSTER.removeChild(selYear,selT,cid,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能還看得到，請點「立即同步」重試');
+      });
     }
   }
   return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster};
@@ -10598,7 +10633,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:29</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:36</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
