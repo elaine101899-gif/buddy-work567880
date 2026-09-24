@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924202519';
+  var BUILD='20260924202905';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2892,20 +2892,6 @@ function printSummaryB(cls) {
     <span class="asr-yrth-name" id="thNameLbl">・ 小丑魚和貝貝</span>
   </div>
   <div class="asr-wrap">
-<!-- Cloud Sync Setup (admin only) -->
-<div class="sync-setup" id="syncSetup">
-  <h4>&#x2601;&#xFE0F; 雲端同步設定 <span class="sync-badge sync-badge-off" id="syncBadge">&#x25CF; 未連線</span></h4>
-  <div style="font-size:.72rem;color:#8a8a9a;margin-bottom:10px;line-height:1.5">
-    免費申請 <strong>jsonbin.io</strong> → 建立 Bin → 填入下方<br>
-    設定後所有老師資料自動雲端同步，所有人即時看到更新
-  </div>
-  <input class="sync-input" id="syncApiKey" type="password" placeholder="API Key（X-Master-Key）">
-  <input class="sync-input" id="syncBinId" placeholder="Bin ID">
-  <button class="sync-btn" onclick="SYNC.save()">&#x2713; 儲存設定</button>
-  <button class="sync-btn" style="background:#8a8a9a;margin-left:6px" onclick="SYNC.test()">&#x21BA; 測試連線</button>
-  <div class="sync-status" id="syncStatus"></div>
-</div>
-
     <div class="asr-section-hd">
       <span>&#x1F469;&#x200D;&#x1F3EB; 托育人員</span>
       <button class="asr-add-btn" id="btnAddT">&#xFF0B; 新增老師</button>
@@ -4908,88 +4894,6 @@ var ASR = (function() {
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
   return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetWeekPhotos:resetWeekPhotos};
-})();
-
-</script>
-<script>
-
-/* ════ 雲端同步 (JSONBin) ════ */
-var SYNC = (function() {
-  var CFG_KEY = 'asrSyncCfg';
-  var cfg = null;
-
-  function loadCfg() {
-    try { var raw=localStorage.getItem(CFG_KEY); if(raw) cfg=JSON.parse(raw); } catch(e) {}
-    return cfg;
-  }
-
-  function showBadge(ok) {
-    var b=document.getElementById('syncBadge'); if(!b) return;
-    if(ok){ b.className='sync-badge sync-badge-on'; b.innerHTML='&#x25CF; &#x96F2;&#x7AEF;&#x540C;&#x6B65;&#x4E2D;'; }
-    else  { b.className='sync-badge sync-badge-off'; b.innerHTML='&#x25CF; &#x672A;&#x9023;&#x7DDA;'; }
-  }
-
-  function showStatus(msg, ok) {
-    var s=document.getElementById('syncStatus'); if(!s) return;
-    s.style.display='block';
-    s.className='sync-status '+(ok?'sync-ok':'sync-err');
-    s.textContent=msg;
-    setTimeout(function(){s.style.display='none';},4000);
-  }
-
-  function save() {
-    var key=(document.getElementById('syncApiKey').value||'').trim();
-    var bid=(document.getElementById('syncBinId').value||'').trim();
-    if(!key||!bid){showStatus('\u8ACB\u586B\u5165 API Key \u548C Bin ID',false);return;}
-    cfg={apiKey:key,binId:bid};
-    try{localStorage.setItem(CFG_KEY,JSON.stringify(cfg));}catch(e){}
-    test();
-  }
-
-  function test() {
-    var c=loadCfg(); if(!c){showStatus('\u8ACB\u5148\u5132\u5B58\u8A2D\u5B9A',false);return;}
-    fetch('https://api.jsonbin.io/v3/b/'+c.binId+'/latest',{headers:{'X-Master-Key':c.apiKey}})
-    .then(function(r){return r.json();}).then(function(data){
-      if(data.record){showStatus('\u2705 \u9023\u7DDA\u6210\u529F\uff01',true);showBadge(true);}
-      else{showStatus('\u9023\u7DDA\u5931\u6557\uff0C\u8ACB\u78BA\u8A8D ID',false);}
-    }).catch(function(){showStatus('\u9023\u7DDA\u5931\u6557',false);});
-  }
-
-  function pushData() {
-    var c=loadCfg(); if(!c) return;
-    fetch('https://api.jsonbin.io/v3/b/'+c.binId,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':c.apiKey},
-      body:JSON.stringify({teachers:asrDB.teachers,children:asrDB.children})
-    }).catch(function(){});
-  }
-
-  function pullData(callback) {
-    var c=loadCfg(); if(!c){if(callback)callback(false);return;}
-    fetch('https://api.jsonbin.io/v3/b/'+c.binId+'/latest',{headers:{'X-Master-Key':c.apiKey}})
-    .then(function(r){return r.json();}).then(function(data){
-      if(data.record){
-        var d=data.record;
-        if(d.teachers)asrDB.teachers=d.teachers;
-        if(d.children)asrDB.children=d.children;
-        showBadge(true);
-        if(callback)callback(true);
-      } else {if(callback)callback(false);}
-    }).catch(function(){if(callback)callback(false);});
-  }
-
-  document.addEventListener('DOMContentLoaded',function(){
-    loadCfg();
-    if(cfg){
-      var ki=document.getElementById('syncApiKey');
-      var bi=document.getElementById('syncBinId');
-      if(ki)ki.value=cfg.apiKey;
-      if(bi)bi.value=cfg.binId;
-      pullData(function(ok){if(ok&&typeof rdrT==='function')rdrT();});
-    }
-  });
-
-  return {save:save,test:test,push:pushData,pull:pullData};
 })();
 
 </script>
@@ -11045,7 +10949,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 20:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 20:29</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
