@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924212523';
+  var BUILD='20260924214033';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1553,7 +1553,12 @@ function applyCompany(companyId){
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
   if(typeof ROSTER!=='undefined'&&ROSTER.forceSync)ROSTER.forceSync(function(){
-    if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+    /* 換公司要整批覆蓋名單（resetForCompany），不能只用 refreshRoster 做加法，
+       不然上一家公司的老師/幼兒會一直留在畫面上，變成兩間公司的人混在一起。 */
+    if(typeof ASR!=='undefined'){
+      if(ASR.resetForCompany)ASR.resetForCompany();
+      else if(ASR.refreshRoster)ASR.refreshRoster();
+    }
   });
 }
 function pickCompany(companyId){
@@ -3399,7 +3404,7 @@ var asrDB = { teachers:[], children:{}, reports:{} };
 function asrSave() {
   var json=JSON.stringify(asrDB);
   /* 1. 完整資料（含照片）優先存到 IndexedDB，配額遠大於 localStorage */
-  if(typeof _xbdDB!=='undefined') _xbdDB.set('asrDB',json);
+  if(typeof _xbdDB!=='undefined') _xbdDB.set(_ckey('asrDB'),json);
   /* 2. localStorage 只存文字版（不含照片 base64），避免超出 5MB 配額 */
   try {
     var light=JSON.parse(json);
@@ -3411,7 +3416,7 @@ function asrSave() {
         var a=r.acts[ak]; if(a){delete a.photo1; delete a.photo2;}
       });
     });
-    localStorage.setItem('asrDB',JSON.stringify(light));
+    localStorage.setItem(_ckey('asrDB'),JSON.stringify(light));
   } catch(e) {
     /* localStorage 完全無法寫入（極少見）：照片已存 IDB，不影響紀錄 */
     var t=document.createElement('div');
@@ -3433,7 +3438,7 @@ function asrLoad() {
   }
   /* 2. 從 localStorage 合併使用者自行新增的老師／幼兒，並還原紀錄 */
   try {
-    var raw = localStorage.getItem('asrDB');
+    var raw = localStorage.getItem(_ckey('asrDB'));
     if (raw) {
       var d = JSON.parse(raw);
       if (d.teachers) {
@@ -3461,7 +3466,7 @@ function asrLoad() {
   /* 3. 非同步從 IDB 補回遺漏的報告（asrSave 每次都存 IDB，localStorage 滿了也不影響 IDB）
         用 IDB 的 reports 覆蓋 localStorage 的，因為 IDB 永遠是最新版本 */
   if (typeof _xbdDB !== 'undefined') {
-    _xbdDB.get('asrDB', function(raw) {
+    _xbdDB.get(_ckey('asrDB'), function(raw) {
       if (!raw) return;
       try {
         var rd = JSON.parse(raw);
@@ -3591,9 +3596,9 @@ asrLoad();
 /* IDB 救援：若 localStorage 的 asrDB 空白，異步從 IndexedDB 復原 */
 (function(){
   var lsHasData=false;
-  try{var _r=localStorage.getItem('asrDB');if(_r){var _d=JSON.parse(_r);if(_d&&_d.reports&&Object.keys(_d.reports).length)lsHasData=true;}}catch(e){}
+  try{var _r=localStorage.getItem(_ckey('asrDB'));if(_r){var _d=JSON.parse(_r);if(_d&&_d.reports&&Object.keys(_d.reports).length)lsHasData=true;}}catch(e){}
   if(!lsHasData){
-    _xbdDB.get('asrDB',function(raw){
+    _xbdDB.get(_ckey('asrDB'),function(raw){
       if(!raw)return;
       try{
         var d=JSON.parse(raw);
@@ -3605,7 +3610,7 @@ asrLoad();
         /* 還原紀錄 */
         asrDB.reports=d.reports;
         /* 重新寫回 localStorage */
-        try{localStorage.setItem('asrDB',raw);}catch(ex){}
+        try{localStorage.setItem(_ckey('asrDB'),raw);}catch(ex){}
         /* 若 ASR 已掛載則重新渲染 */
         if(typeof ASR!=='undefined'&&ASR.refresh)ASR.refresh();
       }catch(ex){}
@@ -3623,6 +3628,19 @@ var ASR = (function() {
     t.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;background:#2d7a3a;color:white;padding:10px 16px;border-radius:10px;font-weight:700;font-size:.78rem;box-shadow:0 4px 14px rgba(0,0,0,.25)';
     t.textContent=m; document.body.appendChild(t);
     setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2800);
+  }
+  function resetForCompany(){
+    /* 換公司時名單要「整批換掉」，不能像 refreshRoster() 那樣只做加法——
+       不然小布迪的老師/幼兒會一直留在陣列裡，邦比諾的名單只是疊加上去，
+       變成兩間公司的人混在一起。這裡比照 setYrTh() 切換學期時的做法，
+       直接用目前公司的 _asrPreload 整份覆蓋掉 asrDB.teachers/children。 */
+    var pl=window['_asrPreload'+selYear]||{};
+    asrDB.teachers=pl.teachers?pl.teachers.slice():[];
+    asrDB.children=pl.children?JSON.parse(JSON.stringify(pl.children)):{};
+    selT=null;selC=null;
+    var childSec=document.getElementById('childSec'); if(childSec)childSec.style.display='none';
+    var weekSec=document.getElementById('weekSec'); if(weekSec)weekSec.style.display='none';
+    rdrT();
   }
   function refreshRoster(){
     /* setYrTh() 只在切換學期那一刻把 _asrPreload 複製進 asrDB，
@@ -3920,7 +3938,7 @@ var ASR = (function() {
     if(typeof _xbdDB!=='undefined'){
       var _oKey=selYear+'_'+selTheme+'_'+selT+selC+wno;
       var _oTid=selT,_oCid=selC,_oWno=wno;
-      _xbdDB.get('asrDB',function(raw){
+      _xbdDB.get(_ckey('asrDB'),function(raw){
         if(!raw)return;
         try{
           var rd=JSON.parse(raw);
@@ -4958,7 +4976,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetWeekPhotos:resetWeekPhotos};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos};
 })();
 
 </script>
@@ -5297,7 +5315,7 @@ var DIARY=(function(){
   function dbSave(){
     var json=JSON.stringify(diaryDB);
     /* 1. 完整資料（含照片）優先存到 IndexedDB，配額遠大於 localStorage */
-    if(typeof _xbdDB!=='undefined') _xbdDB.set('diaryDB',json);
+    if(typeof _xbdDB!=='undefined') _xbdDB.set(_ckey('diaryDB'),json);
     /* 2. localStorage 只存文字版（不含照片 base64），避免超出 5MB 配額 */
     try{
       var light=JSON.parse(json);
@@ -5307,16 +5325,16 @@ var DIARY=(function(){
         if(e.photos) e.photos=[];
         if(e.cropStates) e.cropStates={};
       });
-      localStorage.setItem('diaryDB',JSON.stringify(light));
+      localStorage.setItem(_ckey('diaryDB'),JSON.stringify(light));
     }catch(e){}
   }
   function dbLoad(){
     var lsHasData=false;
-    try{var r=localStorage.getItem('diaryDB');if(r){var d=JSON.parse(r);if(d&&d.entries){diaryDB=d;lsHasData=true;}}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('diaryDB'));if(r){var d=JSON.parse(r);if(d&&d.entries){diaryDB=d;lsHasData=true;}}}catch(e){}
     /* IDB 救援：永遠嘗試從 IDB 補回照片（dbSave 每次都存 IDB，localStorage 滿了也不影響 IDB）
        用 IDB 的 entries 逐筆比對：有照片而 localStorage 沒有的，用 IDB 補回 */
     if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get('diaryDB',function(raw){
+      _xbdDB.get(_ckey('diaryDB'),function(raw){
         if(!raw)return;
         try{
           var rd=JSON.parse(raw);
@@ -5324,7 +5342,7 @@ var DIARY=(function(){
           if(!lsHasData){
             /* localStorage 完全沒資料，直接從 IDB 全部恢復 */
             diaryDB=rd;
-            try{localStorage.setItem('diaryDB',raw);}catch(ex){}
+            try{localStorage.setItem(_ckey('diaryDB'),raw);}catch(ex){}
             var main=document.getElementById('diaryMain');
             if(main&&main.style.display!=='none'&&typeof renderDays==='function') renderDays();
           } else {
@@ -5375,7 +5393,7 @@ var DIARY=(function(){
           }
         });
         if(changed){
-          try{localStorage.setItem('diaryDB',JSON.stringify(diaryDB));}catch(ex){}
+          try{localStorage.setItem(_ckey('diaryDB'),JSON.stringify(diaryDB));}catch(ex){}
           var main=document.getElementById('diaryMain');
           if(main&&main.style.display!=='none'&&typeof renderDays==='function')renderDays();
         }
@@ -6113,10 +6131,10 @@ var LEAVE=(function(){
   /* ── 資料讀寫 ── */
   function getAll(){
     try{
-      var v2=JSON.parse(localStorage.getItem(_KEY)||'{}');
+      var v2=JSON.parse(localStorage.getItem(_ckey(_KEY))||'{}');
       if(!Object.keys(v2).length){
         /* 舊格式遷移：{tid:formData} → {tid:{f0:formData}} */
-        var old=JSON.parse(localStorage.getItem(_OLD_KEY)||'{}');
+        var old=JSON.parse(localStorage.getItem(_ckey(_OLD_KEY))||'{}');
         if(Object.keys(old).length){
           var mig={};
           Object.keys(old).forEach(function(tid){
@@ -6125,7 +6143,7 @@ var LEAVE=(function(){
             }
           });
           if(Object.keys(mig).length){
-            try{localStorage.setItem(_KEY,JSON.stringify(mig));}catch(e){}
+            try{localStorage.setItem(_ckey(_KEY),JSON.stringify(mig));}catch(e){}
             return mig;
           }
         }
@@ -6139,8 +6157,8 @@ var LEAVE=(function(){
       var all=getAll();
       if(!all[tid])all[tid]={};
       all[tid][fid]=data;
-      localStorage.setItem(_KEY,JSON.stringify(all));
-      if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
+      localStorage.setItem(_ckey(_KEY),JSON.stringify(all));
+      if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(_KEY),JSON.stringify(all));
     }catch(e){}
   }
   function _showLeaveSyncStatus(ok,msg){
@@ -6190,7 +6208,7 @@ var LEAVE=(function(){
             var all=getAll();
             if(!all[tid])all[tid]={};
             Object.keys(d).forEach(function(fid){all[tid][fid]=d[fid];});
-            localStorage.setItem(_KEY,JSON.stringify(all));
+            localStorage.setItem(_ckey(_KEY),JSON.stringify(all));
           }catch(e){}
         } else {
           /* Firebase 是空的但本機有資料 → 補推到 Firebase */
@@ -6347,8 +6365,8 @@ var LEAVE=(function(){
       var all=getAll();
       if(all[lTid]&&all[lTid][fid]){
         delete all[lTid][fid];
-        localStorage.setItem(_KEY,JSON.stringify(all));
-        if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
+        localStorage.setItem(_ckey(_KEY),JSON.stringify(all));
+        if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(_KEY),JSON.stringify(all));
       }
     }catch(e){}
     try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+lTid+'/'+fid).remove();}catch(e){}
@@ -6802,8 +6820,8 @@ var LEAVE=(function(){
     var all=getAll();
     if(!all[lTid]||!all[lTid][fid])return;
     all[lTid][fid].read=!all[lTid][fid].read;
-    try{localStorage.setItem(_KEY,JSON.stringify(all));}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(_KEY,JSON.stringify(all));
+    try{localStorage.setItem(_ckey(_KEY),JSON.stringify(all));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(_KEY),JSON.stringify(all));
     try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+lTid+'/'+fid+'/read').set(all[lTid][fid].read);}catch(e){}
     showList();
   }
@@ -8821,26 +8839,26 @@ var SIGLIB=(function(){
       var incoming=snap.val()||{};
       // 合併而非覆蓋：Firebase 的資料加進來，本地獨有的簽名保留
       Object.keys(incoming).forEach(function(k){db.sigs[k]=incoming[k];});
-      try{localStorage.setItem('sigLibDB',JSON.stringify(db));}catch(e){}
+      try{localStorage.setItem(_ckey('sigLibDB'),JSON.stringify(db));}catch(e){}
       if(typeof _sigPad!=='undefined'&&_sigPad.refreshChips)_sigPad.refreshChips();
     });
   }
   function load(){
-    try{var r=localStorage.getItem('sigLibDB');if(r){var d=JSON.parse(r);if(d&&d.sigs)db=d;}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('sigLibDB'));if(r){var d=JSON.parse(r);if(d&&d.sigs)db=d;}}catch(e){}
     attachFb();
   }
   function get(name){return db.sigs[encodeKey(name)]||'';}
   function set(name,dataURL){
     var k=encodeKey(name);
     db.sigs[k]=dataURL;
-    try{localStorage.setItem('sigLibDB',JSON.stringify(db));}catch(e){}
+    try{localStorage.setItem(_ckey('sigLibDB'),JSON.stringify(db));}catch(e){}
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/sigLib/'+k).set(dataURL);
   }
   function del(name){
     var k=encodeKey(name);
     delete db.sigs[k];
-    try{localStorage.setItem('sigLibDB',JSON.stringify(db));}catch(e){}
+    try{localStorage.setItem(_ckey('sigLibDB'),JSON.stringify(db));}catch(e){}
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/sigLib/'+k).remove();
   }
@@ -9132,16 +9150,16 @@ var CLEAN=(function(){
     fb.ref('xiaobuddyClean/clean').on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
-      try{localStorage.setItem('cleanDB',JSON.stringify(db));}catch(e){}
+      try{localStorage.setItem(_ckey('cleanDB'),JSON.stringify(db));}catch(e){}
       if(!_autoFilled){_autoFilled=true;autoFillToday();}
       render();
     });
   }
 
   function load(){
-    try{var r=localStorage.getItem('cleanDB');if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('cleanDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
     if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get('cleanDB',function(raw){
+      _xbdDB.get(_ckey('cleanDB'),function(raw){
         if(!raw)return;
         try{
           var rd=JSON.parse(raw);
@@ -9155,8 +9173,8 @@ var CLEAN=(function(){
   }
   function save(){
     var json=JSON.stringify(db);
-    try{localStorage.setItem('cleanDB',json);}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set('cleanDB',json);
+    try{localStorage.setItem(_ckey('cleanDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('cleanDB'),json);
   }
 
   function render(){
@@ -9449,16 +9467,16 @@ var BEDDING=(function(){
     fb.ref('xiaobuddyClean/bedding').on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
-      try{localStorage.setItem('beddingDB',JSON.stringify(db));}catch(e){}
+      try{localStorage.setItem(_ckey('beddingDB'),JSON.stringify(db));}catch(e){}
       if(!_autoFilled){_autoFilled=true;autoFillFriday();}
       render();
     });
   }
 
   function load(){
-    try{var r=localStorage.getItem('beddingDB');if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('beddingDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
     if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get('beddingDB',function(raw){
+      _xbdDB.get(_ckey('beddingDB'),function(raw){
         if(!raw)return;
         try{var rd=JSON.parse(raw);if(!rd||!rd.records)return;if(!db.records||!Object.keys(db.records).length){db=rd;render();}}catch(e){}
       });
@@ -9468,8 +9486,8 @@ var BEDDING=(function(){
   }
   function save(){
     var json=JSON.stringify(db);
-    try{localStorage.setItem('beddingDB',json);}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set('beddingDB',json);
+    try{localStorage.setItem(_ckey('beddingDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('beddingDB'),json);
   }
 
   function render(){
@@ -9794,16 +9812,16 @@ var TEMP=(function(){
     fb.ref('xiaobuddyClean/temp').on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
-      try{localStorage.setItem('tempDB',JSON.stringify(db));}catch(e){}
+      try{localStorage.setItem(_ckey('tempDB'),JSON.stringify(db));}catch(e){}
       if(!_autoFilled){_autoFilled=true;autoFillToday();}
       render();
     });
   }
 
   function load(){
-    try{var r=localStorage.getItem('tempDB');if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('tempDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
     if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get('tempDB',function(raw){
+      _xbdDB.get(_ckey('tempDB'),function(raw){
         if(!raw)return;
         try{var rd=JSON.parse(raw);if(!rd||!rd.records)return;if(!db.records||!Object.keys(db.records).length){db=rd;render();}}catch(e){}
       });
@@ -9813,8 +9831,8 @@ var TEMP=(function(){
   }
   function save(){
     var json=JSON.stringify(db);
-    try{localStorage.setItem('tempDB',json);}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set('tempDB',json);
+    try{localStorage.setItem(_ckey('tempDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('tempDB'),json);
   }
 
   function render(){
@@ -10209,15 +10227,15 @@ var BODYTEMP=(function(){
     fb.ref('xiaobuddyClean/bodytemp').on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
-      try{localStorage.setItem('bodytempDB',JSON.stringify(db));}catch(e){}
+      try{localStorage.setItem(_ckey('bodytempDB'),JSON.stringify(db));}catch(e){}
       if(!_autoFilled){_autoFilled=true;autoFillToday();}
       render();
     });
   }
   function load(){
-    try{var r=localStorage.getItem('bodytempDB');if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    try{var r=localStorage.getItem(_ckey('bodytempDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
     if(typeof _xbdDB!=='undefined'){
-      _xbdDB.get('bodytempDB',function(raw){
+      _xbdDB.get(_ckey('bodytempDB'),function(raw){
         if(!raw)return;
         try{var rd=JSON.parse(raw);if(!rd||!rd.records)return;if(!db.records||!Object.keys(db.records).length){db=rd;render();}}catch(e){}
       });
@@ -10227,8 +10245,8 @@ var BODYTEMP=(function(){
   }
   function save(){
     var json=JSON.stringify(db);
-    try{localStorage.setItem('bodytempDB',json);}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set('bodytempDB',json);
+    try{localStorage.setItem(_ckey('bodytempDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('bodytempDB'),json);
   }
 
   var curView='hub';
@@ -11014,7 +11032,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:40</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
