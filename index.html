@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924195256';
+  var BUILD='20260924200001';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2953,6 +2953,7 @@ function printSummaryB(cls) {
       <option value="crawl">爬爬班</option>
       <option value="run" selected>跑跑班</option>
     </select>
+    <input class="asr-mi" id="inpTBedCls" type="text" placeholder="班別（選填，例如：寶寶一班；會自動建立寢具表班級）">
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="ASR.cm('T')">取消</button>
       <button class="asr-mok" onclick="ASR.okT()">新增</button>
@@ -3594,7 +3595,7 @@ var ASR = (function() {
       h+='<div class="asr-person'+(isSel?' sel':'')+'" data-tid="'+t.id+'">';
       h+='<div class="asr-avatar">'+t.name.slice(-1)+'</div>';
       h+='<div class="asr-pname">'+t.name+'</div>';
-      h+='<div class="asr-page">'+(CLS[t.cls]||t.cls)+'</div>';
+      h+='<div class="asr-page">'+(CLS[t.cls]||t.cls)+(t.bedCls?'　·　'+t.bedCls:'')+'</div>';
       h+='<button class="asr-del-btn" data-del-tid="'+t.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delT(this.getAttribute(\'data-del-tid\'))">&#x2715; 刪除</button>';
       h+='</div>';
     }
@@ -3696,14 +3697,22 @@ var ASR = (function() {
   function okT(){
     var n=(document.getElementById('inpTN').value||'').trim();
     var c=document.getElementById('inpTC').value;
+    var bedCls=(document.getElementById('inpTBedCls').value||'').trim();
     if(!n){alert('請輸入姓名');return;}
     var newTeacher={id:'t'+Date.now(),name:n,cls:c};
+    if(bedCls)newTeacher.bedCls=bedCls;
     asrDB.teachers.push(newTeacher);
     asrSave();cm('T');rdrT();toast('已新增 '+n);
     /* 同步寫入雲端名單，讓所有裝置（適齡適性/請假/事故單/體溫/簽名庫等）都看得到這位老師 */
     if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher,function(ok){
       if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
     });
+    /* 有填班別的話，順手在寢具表建立對應班級，不用再跑一趟寢具表後台手動新增 */
+    if(bedCls&&typeof SPACES!=='undefined'&&SPACES.add){
+      SPACES.add('bedding',{label:bedCls+'（'+n+'）',level:c},function(ok){
+        if(!ok)toast('⚠️ 寢具班級同步失敗，請至寢具表後台手動新增');
+      });
+    }
   }
   function okC(){
     var n=(document.getElementById('inpCN').value||'').trim();
@@ -4210,7 +4219,7 @@ var ASR = (function() {
     /* Render saved teachers on load */
     rdrT();
     var bT=document.getElementById('btnAddT');
-    if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
+    if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
     var bC=document.getElementById('btnAddC');
     if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
     var bResetWk=document.getElementById('btnResetWeekPhotos');
@@ -11030,7 +11039,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924195256</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924200001</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
