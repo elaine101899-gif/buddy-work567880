@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924155203';
+  var BUILD='20260924160342';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2773,6 +2773,7 @@ function printSummaryB(cls) {
       <div class="asr-section-hd">
         <span id="childSecTitle">&#x1F476; 幼兒名冊</span>
         <button class="asr-add-btn" id="btnAddC">&#xFF0B; 新增幼兒</button>
+        <button class="asr-add-btn" id="btnResetWeekPhotos" style="background:#c04a4a" title="清空這位老師全班某一週的照片、還原成最新課程內容（不會動到心得/家長回饋文字）">&#x1F5D1;&#xFE0F; 清空本週照片</button>
       </div>
       <div class="asr-grid" id="childGrid"></div>
     </div>
@@ -3577,14 +3578,10 @@ var ASR = (function() {
       if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
     });
   }
-  function openF(wno){
-    var teacher=null,child=null,wk=null,i;
-    for(i=0;i<asrDB.teachers.length;i++){if(asrDB.teachers[i].id===selT){teacher=asrDB.teachers[i];break;}}
-    var cs=asrDB.children[selT]||[];
-    for(i=0;i<cs.length;i++){if(cs[i].id===selC){child=cs[i];break;}}
-    for(i=0;i<wkData.weeks.length;i++){if(wkData.weeks[i].no===wno){wk=wkData.weeks[i];break;}}
-    var cls=teacher?teacher.cls:'run';
-    var existing=asrDB.reports[selYear+"_"+selTheme+"_"+selT+selC+wno]||{};
+  /* 取得某一主題週/班別「目前真正應該顯示」的課程內容，含 TEACHSYNC（後台針對特定日期的
+     手動覆蓋）套用後的結果。openF()（開表單）跟 cpPhoto()（複製照片給其他小孩）都要用
+     同一套邏輯計算，避免兩邊算出不一樣的內容，複製後跟原本畫面對不起來。 */
+  function _getBaseActs(wno,cls,wk){
     var baseActs=(wkData.acts[wno]&&wkData.acts[wno][cls])?wkData.acts[wno][cls]:[];
     if(typeof TEACHSYNC!=='undefined'&&wk&&wk.dates){
       /* 在 ASR 模組內就地解析日期（parseDays 在 DIARY 模組，無法跨作用域呼叫） */
@@ -3611,6 +3608,17 @@ var ASR = (function() {
         return act;
       });
     }
+    return baseActs;
+  }
+  function openF(wno){
+    var teacher=null,child=null,wk=null,i;
+    for(i=0;i<asrDB.teachers.length;i++){if(asrDB.teachers[i].id===selT){teacher=asrDB.teachers[i];break;}}
+    var cs=asrDB.children[selT]||[];
+    for(i=0;i<cs.length;i++){if(cs[i].id===selC){child=cs[i];break;}}
+    for(i=0;i<wkData.weeks.length;i++){if(wkData.weeks[i].no===wno){wk=wkData.weeks[i];break;}}
+    var cls=teacher?teacher.cls:'run';
+    var existing=asrDB.reports[selYear+"_"+selTheme+"_"+selT+selC+wno]||{};
+    var baseActs=_getBaseActs(wno,cls,wk);
     /* existing.acts 是這個小孩「上次開啟時」的課程快照，老師可能有針對這個小孩客製化過
        活動名稱/指標，所以預設沿用。但如果這筆紀錄其實完全是空骨架（沒寫心得、沒有家長回饋、
        沒有任何照片），代表根本沒人真的填過，這種情況一律改用目前最新的課程內容，
@@ -3764,7 +3772,10 @@ var ASR = (function() {
     // 找老師的班別
     var myTeacher=(asrDB.teachers||[]).filter(function(t){return t.id===fCtx.tid;})[0];
     var cls=myTeacher?myTeacher.cls:'run';
-    var baseActs=(wkData.acts[fCtx.wno]&&wkData.acts[fCtx.wno][cls])?wkData.acts[fCtx.wno][cls]:[];
+    var _cpWk=null;
+    for(var _wi=0;_wi<wkData.weeks.length;_wi++){if(wkData.weeks[_wi].no===fCtx.wno){_cpWk=wkData.weeks[_wi];break;}}
+    /* 跟 openF() 用同一套邏輯算 baseActs（含 TEACHSYNC 覆蓋），避免複製後跟原本畫面顯示的不一致 */
+    var baseActs=_getBaseActs(fCtx.wno,cls,_cpWk);
     var slotLabel=si===0?'照片1':'照片2';
     // 讀取目前裁切狀態
     var cropKey=ai+'_'+si;
@@ -3818,14 +3829,10 @@ var ASR = (function() {
         if(!rep){
           rep=asrDB.reports[key]={wno:fCtx.wno,reflection:'',parentFeedback:'',photos:{},cropStates:{},acts:JSON.parse(JSON.stringify(baseActs))};
         }else{
-          /* 這個小孩已經有紀錄了：如果還是完全空白的舊骨架（沒有心得、沒有家長回饋、沒有任何照片），
-             很可能是課程更新前留下的舊資料，這裡順便把裡面的活動名稱/指標換成目前最新的課程，
-             避免出現「複製了照片，但活動名稱還是舊的」的狀況。已經有實際內容（老師寫過心得/
-             回饋，或已經有其他照片）就不動，避免蓋掉老師自己的紀錄。 */
-          var isEmptySkeleton=!rep.reflection&&!rep.parentFeedback&&(!rep.photos||Object.keys(rep.photos).every(function(k){
-            var p=rep.photos[k];return !p||(!p[0]&&!p[1]);
-          }));
-          if(isEmptySkeleton)rep.acts=JSON.parse(JSON.stringify(baseActs));
+          /* 複製照片時，順便把目標小孩的活動名稱/指標換成目前最新的課程內容（跟來源小孩畫面上
+             看到的一致），避免「複製了照片、但對方的活動名稱還是舊的」這種對不起來的狀況。
+             心得、家長回饋文字不會被動到。 */
+          rep.acts=JSON.parse(JSON.stringify(baseActs));
         }
         if(!rep.photos)rep.photos={};
         if(!rep.photos[ai])rep.photos[ai]=[null,null];
@@ -4067,6 +4074,8 @@ var ASR = (function() {
     if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
     var bC=document.getElementById('btnAddC');
     if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
+    var bResetWk=document.getElementById('btnResetWeekPhotos');
+    if(bResetWk)bResetWk.onclick=function(){resetWeekPhotos();};
     var bSync=document.getElementById('btnSyncRoster');
     if(bSync)bSync.onclick=function(){
       bSync.disabled=true; var orig=bSync.textContent; bSync.textContent='同步中…';
@@ -4716,7 +4725,35 @@ var ASR = (function() {
       });
     }
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster};
+  function resetWeekPhotos(){
+    if(!selT){alert('請先選擇老師');return;}
+    var kids=asrDB.children[selT]||[];
+    if(!kids.length){alert('這位老師底下沒有幼兒');return;}
+    var wnoStr=prompt('要清空這位老師「全班」第幾週的照片？請輸入週數字（例如 8）');
+    if(wnoStr==null)return;
+    var wno=parseInt(wnoStr,10);
+    if(!wno||isNaN(wno)){alert('請輸入正確的週數字');return;}
+    var teacher=(asrDB.teachers||[]).filter(function(t){return t.id===selT;})[0];
+    var cls=teacher?teacher.cls:'run';
+    var baseActs=(wkData.acts[wno]&&wkData.acts[wno][cls])?wkData.acts[wno][cls]:[];
+    if(!confirm('確定要清空「'+(teacher?teacher.name:'')+'」老師全班（'+kids.length+'位）第'+wno+'週的照片，並改用目前最新課程內容嗎？\n\n心得、家長回饋文字不會被清除，僅清除照片並更新活動名稱/指標。此動作無法復原。')){return;}
+    kids.forEach(function(c){
+      var key=selYear+'_'+selTheme+'_'+selT+c.id+wno;
+      var rep=asrDB.reports[key];
+      if(!rep){
+        asrDB.reports[key]={wno:wno,reflection:'',parentFeedback:'',photos:{},cropStates:{},acts:JSON.parse(JSON.stringify(baseActs))};
+      }else{
+        rep.photos={};
+        rep.cropStates={};
+        rep.acts=JSON.parse(JSON.stringify(baseActs));
+      }
+    });
+    asrSave();
+    rdrC();
+    if(selC)rdrW();
+    toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
+  }
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetWeekPhotos:resetWeekPhotos};
 })();
 
 </script>
@@ -10649,7 +10686,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:52</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:03</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
