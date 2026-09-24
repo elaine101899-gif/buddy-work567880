@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924153622';
+  var BUILD='20260924155203';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3611,7 +3611,14 @@ var ASR = (function() {
         return act;
       });
     }
-    var acts=existing.acts?existing.acts:baseActs;
+    /* existing.acts 是這個小孩「上次開啟時」的課程快照，老師可能有針對這個小孩客製化過
+       活動名稱/指標，所以預設沿用。但如果這筆紀錄其實完全是空骨架（沒寫心得、沒有家長回饋、
+       沒有任何照片），代表根本沒人真的填過，這種情況一律改用目前最新的課程內容，
+       避免課程更新後，舊骨架卡住顯示過期的活動名稱/指標。 */
+    var _existingIsEmptySkeleton=!existing.reflection&&!existing.parentFeedback&&(!existing.photos||Object.keys(existing.photos).every(function(k){
+      var p=existing.photos[k];return !p||(!p[0]&&!p[1]);
+    }));
+    var acts=(existing.acts&&!_existingIsEmptySkeleton)?existing.acts:baseActs;
     var photos=existing.photos||{};
     fCtx.tid=selT;fCtx.cid=selC;fCtx.wno=wno;fCtx.photos={};
     for(var k in photos){fCtx.photos[k]=photos[k];}
@@ -3807,10 +3814,19 @@ var ASR = (function() {
       // 複製照片 + 裁切狀態
       sel.forEach(function(cid){
         var key=selYear+'_'+selTheme+'_'+fCtx.tid+cid+fCtx.wno;
-        if(!asrDB.reports[key]){
-          asrDB.reports[key]={wno:fCtx.wno,reflection:'',parentFeedback:'',photos:{},cropStates:{},acts:JSON.parse(JSON.stringify(baseActs))};
-        }
         var rep=asrDB.reports[key];
+        if(!rep){
+          rep=asrDB.reports[key]={wno:fCtx.wno,reflection:'',parentFeedback:'',photos:{},cropStates:{},acts:JSON.parse(JSON.stringify(baseActs))};
+        }else{
+          /* 這個小孩已經有紀錄了：如果還是完全空白的舊骨架（沒有心得、沒有家長回饋、沒有任何照片），
+             很可能是課程更新前留下的舊資料，這裡順便把裡面的活動名稱/指標換成目前最新的課程，
+             避免出現「複製了照片，但活動名稱還是舊的」的狀況。已經有實際內容（老師寫過心得/
+             回饋，或已經有其他照片）就不動，避免蓋掉老師自己的紀錄。 */
+          var isEmptySkeleton=!rep.reflection&&!rep.parentFeedback&&(!rep.photos||Object.keys(rep.photos).every(function(k){
+            var p=rep.photos[k];return !p||(!p[0]&&!p[1]);
+          }));
+          if(isEmptySkeleton)rep.acts=JSON.parse(JSON.stringify(baseActs));
+        }
         if(!rep.photos)rep.photos={};
         if(!rep.photos[ai])rep.photos[ai]=[null,null];
         rep.photos[ai][si]=photo;
@@ -10633,7 +10649,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:36</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:52</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
