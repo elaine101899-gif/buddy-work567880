@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924152513';
+  var BUILD='20260924152956';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1530,9 +1530,26 @@ var ROSTER=(function(){
     _attach('114');
     _attach('115');
   }
-  function addTeacher(yr,teacher){
+  /* 強制重新抓一次雲端名單（不管 .on 的常駐連線是否正常），
+     給「立即同步」按鈕用，讓使用者自己就能排除同步沒生效的狀況 */
+  function forceSync(cb){
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacher.id).set(teacher);
+    if(!base['114']&&!base['115'])_snapshotBase();
+    if(!fb){ if(cb)cb(false); return; }
+    var yrs=['114','115'], remaining=yrs.length, ok=true;
+    yrs.forEach(function(yr){
+      fb.ref('xiaobuddyClean/roster/'+yr).once('value').then(function(snap){
+        _merge(yr,snap.val());
+        remaining--; if(remaining===0&&cb)cb(ok);
+      }).catch(function(){
+        ok=false; remaining--; if(remaining===0&&cb)cb(ok);
+      });
+    });
+  }
+  function addTeacher(yr,teacher,cb){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacher.id).set(teacher,function(err){ if(cb)cb(!err); });
+    else if(cb)cb(false);
     /* 樂觀更新：不等雲端回應，先讓本機其他模組立刻看到 */
     var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
     if(!cur.teachers.some(function(t){return t.id===teacher.id;})){
@@ -1541,9 +1558,10 @@ var ROSTER=(function(){
       if(typeof refreshSigners==='function')refreshSigners();
     }
   }
-  function addChild(yr,teacherId,child){
+  function addChild(yr,teacherId,child,cb){
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+child.id).set(child);
+    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+child.id).set(child,function(err){ if(cb)cb(!err); });
+    else if(cb)cb(false);
     var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
     if(!cur.children[teacherId])cur.children[teacherId]=[];
     if(!cur.children[teacherId].some(function(c){return c.id===child.id;})){
@@ -1552,7 +1570,7 @@ var ROSTER=(function(){
     }
   }
   document.addEventListener('DOMContentLoaded',init);
-  return{init:init,addTeacher:addTeacher,addChild:addChild};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,forceSync:forceSync};
 })();
 </script>
 
@@ -2718,6 +2736,7 @@ function printSummaryB(cls) {
     <div class="asr-section-hd">
       <span>&#x1F469;&#x200D;&#x1F3EB; 托育人員</span>
       <button class="asr-add-btn" id="btnAddT">&#xFF0B; 新增老師</button>
+      <button class="asr-add-btn" id="btnSyncRoster" style="background:#4a90c0" title="如果新增老師/幼兒後沒有出現，按這裡強制重新抓取最新名單">&#x1F504; 立即同步</button>
       <button class="asr-save-btn" onclick="saveHTMLWithData()" title="將老師與幼兒資料寫入 HTML，下載後取代 iCloud 舊檔即可跨裝置同步">&#x1F4BE; 儲存並下載 HTML</button>
     </div>
     <div class="asr-grid" id="teacherGrid"><div style="color:#8a8a9a;font-size:.78rem">尚無老師，請點「新增老師」</div></div>
@@ -3513,7 +3532,9 @@ var ASR = (function() {
     asrDB.teachers.push(newTeacher);
     asrSave();cm('T');rdrT();toast('已新增 '+n);
     /* 同步寫入雲端名單，讓所有裝置（適齡適性/請假/事故單/體溫/簽名庫等）都看得到這位老師 */
-    if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher);
+    if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher,function(ok){
+      if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
+    });
   }
   function okC(){
     var n=(document.getElementById('inpCN').value||'').trim();
@@ -3523,7 +3544,9 @@ var ASR = (function() {
     var newChild={id:'c'+Date.now(),name:n,age:a};
     asrDB.children[selT].push(newChild);
     asrSave();cm('C');rdrC();toast('已新增 '+n);
-    if(typeof ROSTER!=='undefined')ROSTER.addChild(selYear,selT,newChild);
+    if(typeof ROSTER!=='undefined')ROSTER.addChild(selYear,selT,newChild,function(ok){
+      if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
+    });
   }
   function openF(wno){
     var teacher=null,child=null,wk=null,i;
@@ -3999,6 +4022,17 @@ var ASR = (function() {
     if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
     var bC=document.getElementById('btnAddC');
     if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
+    var bSync=document.getElementById('btnSyncRoster');
+    if(bSync)bSync.onclick=function(){
+      bSync.disabled=true; var orig=bSync.textContent; bSync.textContent='同步中…';
+      if(typeof ROSTER!=='undefined'&&ROSTER.forceSync){
+        ROSTER.forceSync(function(ok){
+          bSync.disabled=false; bSync.textContent=orig;
+          if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+          toast(ok?'✓ 已同步最新名單':'⚠️ 同步失敗，請檢查網路連線');
+        });
+      }else{ bSync.disabled=false; bSync.textContent=orig; }
+    };
     var bEx=document.getElementById('btnExASR');
     if(bEx)bEx.onclick=exportASR;
     var bIm=document.getElementById('btnImASR');
@@ -10564,7 +10598,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:29</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
