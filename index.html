@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924192609';
+  var BUILD='20260924193220';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1536,6 +1536,9 @@ function _fbInitRaw(){
   }catch(e){_fbDb=null;}
   return _fbDb;
 }
+/* localStorage / IndexedDB 本機快取的 key 也要依公司分開，避免兩間公司的
+   請假交接單、事故單、腸病毒表等本機快取資料互相污染（雲端已經靠 _fbCompanyPrefix 隔開了） */
+function _ckey(k){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?('bambino__'+k):k;}
 /* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋 */
 var _FB_SHARED_PATHS=['xiaobuddyClean/teachSync'];
 function _fbCompanyPrefix(path){
@@ -6824,16 +6827,17 @@ var _LSFB=(function(){
   var _refs={};              /* path -> firebase ref（供 detach 用） */
   var _cache={};             /* path -> 記憶體備援（localStorage 寫入失敗時仍可讀） */
 
-  function cacheOf(path){return _cache[path]||{};}
+  function cacheOf(path){return _cache[_ckey(path)]||{};}
 
   function detach(path){
-    if(_refs[path]){try{_refs[path].off('value');}catch(e){}delete _refs[path];}
+    var ck=_ckey(path);
+    if(_refs[ck]){try{_refs[ck].off('value');}catch(e){}delete _refs[ck];}
   }
 
   /* 讀 localStorage（失敗時回退記憶體快取） */
   function readLocal(KEY,path){
     try{
-      var d=JSON.parse(localStorage.getItem(KEY)||'{}');
+      var d=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');
       if(d&&Object.keys(d).length)return d;
     }catch(e){}
     return cacheOf(path);
@@ -6844,27 +6848,28 @@ var _LSFB=(function(){
     var fb=(typeof _fbInit!=='undefined')?_fbInit():null;
     if(!fb)return;
     detach(path);
+    var ck=_ckey(path);
     var ref=fb.ref(path);
-    _refs[path]=ref;
+    _refs[ck]=ref;
     ref.on('value',function(snap){
       var remote=snap.val()||{};
       if(Object.keys(remote).length){
-        _cache[path]=remote;
+        _cache[ck]=remote;
         /* 合併進 localStorage：以雲端為準逐筆覆蓋，保留本機獨有的假單 */
         try{
           var all={};
-          try{all=JSON.parse(localStorage.getItem(KEY)||'{}');}catch(e){}
+          try{all=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');}catch(e){}
           Object.keys(remote).forEach(function(nm){
             if(!all[nm])all[nm]={};
             Object.keys(remote[nm]).forEach(function(fid){all[nm][fid]=remote[nm][fid];});
           });
-          localStorage.setItem(KEY,JSON.stringify(all));
-          if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(all));
+          localStorage.setItem(_ckey(KEY),JSON.stringify(all));
+          if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(all));
         }catch(e){}
       } else {
         /* 雲端是空的但本機有資料 → 補推上去，避免舊資料只留在單一裝置 */
         try{
-          var local=JSON.parse(localStorage.getItem(KEY)||'{}');
+          var local=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');
           Object.keys(local).forEach(function(nm){
             Object.keys(local[nm]||{}).forEach(function(fid){
               fb.ref(path+'/'+nm+'/'+fid).set(local[nm][fid]);
@@ -6896,12 +6901,14 @@ var LEAVE_BOSS=(function(){
   var KEY='xiaoBudiLeaveBossV2';
   var FB_PATH='xiaobuddyLeaveBoss';
   var BOSS_NAMES=['金佩樺','黃苡綸','洪逸惠'];
+  window._BAMBINO_BOSS_NAMES=['黃鈺雯'];
+  function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_BOSS_NAMES:BOSS_NAMES;}
   var curName='',curFid='',curStep='hub';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){
-    try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));
   }
   function getForms(name){return getAll()[name]||{};}
   function saveFid(name,fid,data){
@@ -6917,7 +6924,7 @@ var LEAVE_BOSS=(function(){
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
-    BOSS_NAMES.forEach(function(name){
+    _names().forEach(function(name){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
@@ -7241,11 +7248,13 @@ var LEAVE_FLEX=(function(){
   var KEY='xiaoBudiLeaveFlexV2';
   var FB_PATH='xiaobuddyLeaveFlex';
   var FLEX_NAMES=['黃鈺雯','陳芓妍'];
+  window._BAMBINO_FLEX_NAMES=[];
+  function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_FLEX_NAMES:FLEX_NAMES;}
   var curName='',curFid='',curStep='hub';
   var TX='#3d7030',BGC='#e8f0e5',BDC='#7aaa6a';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
-  function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
+  function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
   function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
@@ -7255,7 +7264,7 @@ var LEAVE_FLEX=(function(){
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
-    FLEX_NAMES.forEach(function(name){
+    _names().forEach(function(name){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
@@ -7442,12 +7451,14 @@ var LEAVE_COOK=(function(){
   var KEY='xiaoBudiLeaveCookV2';
   var FB_PATH='xiaobuddyLeaveCook';
   var COOK_NAMES=['黃郁婷','林素珍'];
+  window._BAMBINO_COOK_NAMES=['林素珍'];
+  function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_COOK_NAMES:COOK_NAMES;}
   var DEFAULT_MEAL='1. 早餐：5 杯米，格線 10\n2. 午餐：8 杯米，兩只手指頭\n3. 點心：3 杯米，格線 6\n4. 托育人員餐點部分';
   var curName='',curFid='',curStep='hub';
   var TX='#b85040',BGC='#fdeae5',BDC='#e88c7a';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
-  function setAll(d){try{localStorage.setItem(KEY,JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(d));}
+  function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
   function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
@@ -7457,7 +7468,7 @@ var LEAVE_COOK=(function(){
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇人員查看或新增假單</div>';
-    COOK_NAMES.forEach(function(name){
+    _names().forEach(function(name){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
@@ -7653,7 +7664,7 @@ var INCIDENT=(function(){
   function clsIcon(c){return c==='run'?'🏃':c==='crawl'?'🐛':'🍼';}
 
   function loadLocal(){
-    try{var v=JSON.parse(localStorage.getItem(KEY)||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
+    try{var v=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
     catch(e){db={baby:{},crawl:{},run:{}};}
   }
   function _wrap(){return document.getElementById('incidentWrap');}
@@ -7666,8 +7677,8 @@ var INCIDENT=(function(){
         light[cls][fid]=noP;
       });
     });
-    try{localStorage.setItem(KEY,JSON.stringify(light));}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(db));
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
   }
   function pushFb(cls,fid,data){
     try{
@@ -7971,7 +7982,7 @@ var INCIDENT=(function(){
   /* ─── 導覽 ─── */
   function _loadPhotosFromIDB(cb){
     if(typeof _xbdDB==='undefined'){if(cb)cb();return;}
-    _xbdDB.get(KEY,function(raw){
+    _xbdDB.get(_ckey(KEY),function(raw){
       if(raw){try{
         var idb=JSON.parse(raw);
         ['baby','crawl','run'].forEach(function(cls){
@@ -8254,7 +8265,7 @@ var ENTEROVIRUS=(function(){
   function clsIcon(c){return c==='run'?'🏃':c==='crawl'?'🐛':'🍼';}
 
   function loadLocal(){
-    try{var v=JSON.parse(localStorage.getItem(KEY)||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
+    try{var v=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');db.baby=v.baby||{};db.crawl=v.crawl||{};db.run=v.run||{};}
     catch(e){db={baby:{},crawl:{},run:{}};}
   }
   function _wrap(){return document.getElementById('enterovirusWrap');}
@@ -8267,8 +8278,8 @@ var ENTEROVIRUS=(function(){
         light[cls][fid]=noP;
       });
     });
-    try{localStorage.setItem(KEY,JSON.stringify(light));}catch(e){}
-    if(typeof _xbdDB!=='undefined')_xbdDB.set(KEY,JSON.stringify(db));
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
   }
   function pushFb(cls,fid,data){
     try{
@@ -8513,7 +8524,7 @@ var ENTEROVIRUS=(function(){
   /* ─── 導覽 ─── */
   function _loadPhotosFromIDB(cb){
     if(typeof _xbdDB==='undefined'){if(cb)cb();return;}
-    _xbdDB.get(KEY,function(raw){
+    _xbdDB.get(_ckey(KEY),function(raw){
       if(raw){try{
         var idb=JSON.parse(raw);
         ['baby','crawl','run'].forEach(function(cls){
@@ -10840,7 +10851,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924192609</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">v20260924193220</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
