@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924144807';
+  var BUILD='20260924152035';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1511,6 +1511,10 @@ var ROSTER=(function(){
     });
     window['_asrPreload'+yr]={teachers:teachers,children:children,removed:b.removed||[]};
     if(typeof refreshSigners==='function')refreshSigners();
+    /* 適齡適性記錄有自己的一份 asrDB.teachers/children 快照（在切換學期那一刻複製），
+       雲端資料若比那個時間點晚到（手機網路較慢時常見），要主動補進目前畫面，
+       不然要等使用者手動重新整理或切換學期才會看到新增的老師/幼兒。 */
+    if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
   }
   function _attach(yr){
     if(attached[yr])return;
@@ -3374,6 +3378,25 @@ var ASR = (function() {
     t.textContent=m; document.body.appendChild(t);
     setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2800);
   }
+  function refreshRoster(){
+    /* setYrTh() 只在切換學期那一刻把 _asrPreload 複製進 asrDB，
+       之後雲端（ROSTER）才到的新增老師/幼兒不會自動反映進來，
+       這裡讓 ROSTER 合併完成時可以呼叫，把差異補進目前畫面。 */
+    var pl=window['_asrPreload'+selYear]||{};
+    if(pl.teachers){
+      var tIds={}; asrDB.teachers.forEach(function(t){tIds[t.id]=true;});
+      pl.teachers.forEach(function(t){ if(!tIds[t.id]){asrDB.teachers.push(t);tIds[t.id]=true;} });
+    }
+    if(pl.children){
+      Object.keys(pl.children).forEach(function(tid){
+        if(!asrDB.children[tid])asrDB.children[tid]=[];
+        var cIds={}; asrDB.children[tid].forEach(function(c){cIds[c.id]=true;});
+        (pl.children[tid]||[]).forEach(function(c){ if(!cIds[c.id]){asrDB.children[tid].push(c);cIds[c.id]=true;} });
+      });
+    }
+    rdrT();
+    if(selT)rdrC();
+  }
   function rdrT(){
     var g=document.getElementById('teacherGrid');
     /* 確保永遠從 preload 讀取老師 */
@@ -4608,7 +4631,7 @@ var ASR = (function() {
       asrSave();rdrC();toast('已刪除');
     }
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster};
 })();
 
 </script>
@@ -10541,7 +10564,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 14:48</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 15:20</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
