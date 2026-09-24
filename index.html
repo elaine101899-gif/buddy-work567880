@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924160342';
+  var BUILD='20260924164943';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1450,6 +1450,63 @@ window._asrPreload114=window._asrPreload;</script>
   window._asrPreload115={"teachers":[{"id":"t001","name":"陳巧芳","cls":"baby"},{"id":"t009","name":"吳婉寧","cls":"baby"},{"id":"t002","name":"梁欣萍","cls":"crawl"},{"id":"t010","name":"徐華家","cls":"crawl"},{"id":"t013","name":"柯楷倫","cls":"crawl"},{"id":"t014","name":"周香瑩","cls":"crawl"},{"id":"t003","name":"蔡季涵","cls":"run"},{"id":"t006","name":"杜雯捷","cls":"run"},{"id":"t005","name":"鄭亞柔","cls":"run"},{"id":"t007","name":"林筠蓉","cls":"run"},{"id":"t012","name":"陳珮如","cls":"run"},{"id":"t1790232960118","name":"邱淳郁","cls":"run"}],"children":{"t1790232960118":[],"t001":[{"id":"c0105","name":"江尚騰","age":"0-9M"},{"id":"c0107","name":"吳苡僑","age":"0-9M"},{"id":"c0108","name":"杜予安","age":"0-9M"},{"id":"c0109","name":"林育陞","age":"0-9M"},{"id":"c0110","name":"吳澈","age":"0-9M"}],"t009":[{"id":"c0904","name":"何唯榛","age":"0-9M"},{"id":"c0106","name":"蔡睿妍","age":"0-9M"},{"id":"c0905","name":"杜予宇","age":"0-9M"},{"id":"c1102","name":"張宇睿","age":"9-15M"},{"id":"c0906","name":"鄭允宸","age":"0-9M"}],"t002":[{"id":"c0201","name":"蕭牧恒","age":"9-15M"},{"id":"c0202","name":"王品承","age":"9-15M"},{"id":"c0101","name":"胡語心","age":"9-15M"},{"id":"c0204","name":"林昕妍","age":"9-15M"},{"id":"c0205","name":"江品嬡","age":"9-15M"}],"t010":[{"id":"c1001","name":"曾語洋","age":"9-15M"},{"id":"c0203","name":"韓宇棠","age":"9-15M"},{"id":"c1103","name":"黃沐霏","age":"9-15M"},{"id":"c1005","name":"林品叡","age":"9-15M"},{"id":"c1004","name":"宋依澄","age":"9-15M"}],"t013":[{"id":"c1002","name":"黃芯悅","age":"9-15M"},{"id":"c0103","name":"陳宥維","age":"9-15M"},{"id":"c1003","name":"廖玥忻","age":"9-15M"},{"id":"c1204","name":"林資振","age":"9-15M"},{"id":"c1301","name":"吳宇祈","age":"9-15M"}],"t011":[{"id":"c1002","name":"黃芯悅","age":"9-15M"},{"id":"c0103","name":"陳宥維","age":"9-15M"},{"id":"c1003","name":"廖玥忻","age":"9-15M"},{"id":"c1204","name":"林資振","age":"9-15M"},{"id":"c1301","name":"吳宇祈","age":"9-15M"}],"t014":[{"id":"c1002","name":"黃芯悅","age":"9-15M"},{"id":"c0103","name":"陳宥維","age":"9-15M"},{"id":"c1003","name":"廖玥忻","age":"9-15M"},{"id":"c1204","name":"林資振","age":"9-15M"},{"id":"c1301","name":"吳宇祈","age":"9-15M"}],"t003":[{"id":"c0301","name":"劉煦琳","age":"13-36M"},{"id":"c0302","name":"吳品希","age":"13-36M"},{"id":"c0303","name":"王詩漫","age":"13-36M"},{"id":"c0304","name":"呂婕瑄","age":"13-36M"},{"id":"c0305","name":"林敬翰","age":"13-36M"}],"t006":[{"id":"c0603","name":"蔡沐妘","age":"13-36M"},{"id":"c0604","name":"詹謹侑","age":"13-36M"},{"id":"c0605","name":"陳嶼樂","age":"13-36M"},{"id":"c0606","name":"洪羽星","age":"13-36M"},{"id":"c0608","name":"陳羿鈞","age":"13-36M"}],"t005":[{"id":"c0506","name":"蔡沛紜","age":"13-36M"},{"id":"c0502","name":"黃晨維","age":"13-36M"},{"id":"c0504","name":"蕭聖龍","age":"13-36M"},{"id":"c0503","name":"歐奕亨","age":"13-36M"},{"id":"c0505","name":"蕭昀婕","age":"13-36M"}],"t007":[{"id":"c0501","name":"吳雨恩","age":"13-36M"},{"id":"c0602","name":"李咏璇","age":"13-36M"},{"id":"c0701","name":"陳瑞恩","age":"13-36M"},{"id":"c0704","name":"江昀諭","age":"13-36M"},{"id":"c0703","name":"徐銳安","age":"13-36M"}],"t012":[{"id":"c1201","name":"宋沐澄","age":"13-36M"},{"id":"c1202","name":"陳希寧","age":"13-36M"},{"id":"c1203","name":"洪羽太","age":"13-36M"},{"id":"c0601","name":"李岳恩","age":"13-36M"},{"id":"c1205","name":"蔡祤辰","age":"13-36M"}],"t004":[]},"removed":["c0102","c0104","c0101","c0103","c0203","c0501","c0601","c0602","c0607"]};
 })();
 </script>
+<script id="multiCompanySetup">
+/* ── 多公司架構：小布迪 / 邦比諾 ──
+   小布迪原本的名單/課程資料原封不動保留成「XBD 母本」，邦比諾從空白開始。
+   選好公司後，把對應母本內容複製進實際在用的全域變數（_asrPreload114/115、
+   allThemes），這樣其他所有既有程式碼完全不用改，讀到的自然就是當時選的公司資料。 */
+var COMPANIES={
+  xbd:{id:'xbd',name:'小布迪音樂藝術托嬰中心',short:'小布迪'},
+  bambino:{id:'bambino',name:'邦比諾音樂托嬰中心',short:'邦比諾'}
+};
+/* 只有這些功能已經做成「跟著公司走」；其他表單暫時只服務小布迪，避免邦比諾誤寫到小布迪的雲端資料 */
+var _XBD_ONLY_PAGES=['diary','bodytemp','clean','leave','leave-teacher','leave-menu','leave-cook','leave-flex','leave-boss','incident','enterovirus','phonevisit'];
+window._XBD_asrPreload114=window._asrPreload114;
+window._XBD_asrPreload115=window._asrPreload115;
+window._BAMBINO_asrPreload114={teachers:[],children:{},removed:[]};
+window._BAMBINO_asrPreload115={teachers:[],children:{},removed:[]};
+var CURRENT_COMPANY=null;
+try{CURRENT_COMPANY=localStorage.getItem('xbdCompany')||null;}catch(e){}
+function _rosterFbBase(){return CURRENT_COMPANY==='bambino'?'xiaobuddyBambino/roster':'xiaobuddyClean/roster';}
+function applyCompany(companyId){
+  CURRENT_COMPANY=companyId;
+  try{localStorage.setItem('xbdCompany',companyId);}catch(e){}
+  if(companyId==='bambino'){
+    window._asrPreload=window._BAMBINO_asrPreload114;
+    window._asrPreload114=window._BAMBINO_asrPreload114;
+    window._asrPreload115=window._BAMBINO_asrPreload115;
+    if(typeof window._BAMBINO_allThemes!=='undefined')window.allThemes=window._BAMBINO_allThemes;
+  }else{
+    window._asrPreload=window._XBD_asrPreload114;
+    window._asrPreload114=window._XBD_asrPreload114;
+    window._asrPreload115=window._XBD_asrPreload115;
+    if(typeof window._XBD_allThemes!=='undefined')window.allThemes=window._XBD_allThemes;
+  }
+  var info=COMPANIES[companyId]||COMPANIES.xbd;
+  document.querySelectorAll('.hero-name').forEach(function(el){el.textContent=info.name;});
+  document.title=info.name;
+  if(typeof refreshSigners==='function')refreshSigners();
+  /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
+     換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
+     另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
+  if(typeof ROSTER!=='undefined'&&ROSTER.forceSync)ROSTER.forceSync(function(){
+    if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+  });
+}
+function pickCompany(companyId){
+  applyCompany(companyId);
+  GO('home');
+}
+document.addEventListener('DOMContentLoaded',function(){
+  if(CURRENT_COMPANY){
+    applyCompany(CURRENT_COMPANY);
+    var cp=document.getElementById('pg-company');
+    if(cp)cp.classList.remove('on');
+    var hp=document.getElementById('pg-home');
+    if(hp)hp.classList.add('on');
+  }
+});
+</script>
 </head>
 <body>
 
@@ -1521,11 +1578,17 @@ var ROSTER=(function(){
     if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
   }
   function _attach(yr){
-    if(attached[yr])return;
+    /* 用「公司+年份」當 key：換公司時要對另一家公司的路徑重新掛一個監聽器，
+       同時用閉包記住這個監聽器是替哪家公司掛的，之後公司若又切走，這個監聽器
+       收到舊公司的更新也不會去動到目前正在使用的公司資料。 */
+    var company=CURRENT_COMPANY;
+    var key=company+'_'+yr;
+    if(attached[key])return;
     var fb=_fbInit();
     if(!fb)return;
-    attached[yr]=true;
-    fb.ref('xiaobuddyClean/roster/'+yr).on('value',function(snap){
+    attached[key]=true;
+    fb.ref(_rosterFbBase()+'/'+yr).on('value',function(snap){
+      if(CURRENT_COMPANY!==company)return;
       _merge(yr,snap.val());
     });
   }
@@ -1538,11 +1601,13 @@ var ROSTER=(function(){
      給「立即同步」按鈕用，讓使用者自己就能排除同步沒生效的狀況 */
   function forceSync(cb){
     var fb=_fbInit();
-    if(!base['114']&&!base['115'])_snapshotBase();
+    /* 每次都重新拍一次快照：換公司時 window._asrPreload{yr} 會被換成另一家的母本，
+       這裡若不重新拍照，base 還停留在舊公司的內容，merge 出來的名單會混到別家去。 */
+    _snapshotBase();
     if(!fb){ if(cb)cb(false); return; }
     var yrs=['114','115'], remaining=yrs.length, ok=true;
     yrs.forEach(function(yr){
-      fb.ref('xiaobuddyClean/roster/'+yr).once('value').then(function(snap){
+      fb.ref(_rosterFbBase()+'/'+yr).once('value').then(function(snap){
         _merge(yr,snap.val());
         remaining--; if(remaining===0&&cb)cb(ok);
       }).catch(function(){
@@ -1552,7 +1617,7 @@ var ROSTER=(function(){
   }
   function addTeacher(yr,teacher,cb){
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacher.id).set(teacher,function(err){ if(cb)cb(!err); });
+    if(fb)fb.ref(_rosterFbBase()+'/'+yr+'/teachers/'+teacher.id).set(teacher,function(err){ if(cb)cb(!err); });
     else if(cb)cb(false);
     /* 樂觀更新：不等雲端回應，先讓本機其他模組立刻看到 */
     var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
@@ -1564,7 +1629,7 @@ var ROSTER=(function(){
   }
   function addChild(yr,teacherId,child,cb){
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+child.id).set(child,function(err){ if(cb)cb(!err); });
+    if(fb)fb.ref(_rosterFbBase()+'/'+yr+'/children/'+teacherId+'/'+child.id).set(child,function(err){ if(cb)cb(!err); });
     else if(cb)cb(false);
     var cur=window['_asrPreload'+yr]||{teachers:[],children:{},removed:[]};
     if(!cur.children[teacherId])cur.children[teacherId]=[];
@@ -1576,8 +1641,8 @@ var ROSTER=(function(){
   function removeTeacher(yr,teacherId,cb){
     var fb=_fbInit();
     if(fb){
-      fb.ref('xiaobuddyClean/roster/'+yr+'/removedTeachers/'+teacherId).set(true,function(err){ if(cb)cb(!err); });
-      fb.ref('xiaobuddyClean/roster/'+yr+'/teachers/'+teacherId).remove();
+      fb.ref(_rosterFbBase()+'/'+yr+'/removedTeachers/'+teacherId).set(true,function(err){ if(cb)cb(!err); });
+      fb.ref(_rosterFbBase()+'/'+yr+'/teachers/'+teacherId).remove();
     }else if(cb)cb(false);
     var cur=window['_asrPreload'+yr];
     if(cur){
@@ -1589,8 +1654,8 @@ var ROSTER=(function(){
   function removeChild(yr,teacherId,childId,cb){
     var fb=_fbInit();
     if(fb){
-      fb.ref('xiaobuddyClean/roster/'+yr+'/removedChildren/'+childId).set(true,function(err){ if(cb)cb(!err); });
-      fb.ref('xiaobuddyClean/roster/'+yr+'/children/'+teacherId+'/'+childId).remove();
+      fb.ref(_rosterFbBase()+'/'+yr+'/removedChildren/'+childId).set(true,function(err){ if(cb)cb(!err); });
+      fb.ref(_rosterFbBase()+'/'+yr+'/children/'+teacherId+'/'+childId).remove();
     }else if(cb)cb(false);
     var cur=window['_asrPreload'+yr];
     if(cur&&cur.children[teacherId]){
@@ -1598,7 +1663,9 @@ var ROSTER=(function(){
       window['_asrPreload'+yr]=cur;
     }
   }
-  document.addEventListener('DOMContentLoaded',init);
+  /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
+     或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
+     造成 base 快照被還沒切換完成的舊公司資料污染。 */
   return{init:init,addTeacher:addTeacher,addChild:addChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync};
 })();
 </script>
@@ -1629,7 +1696,43 @@ var ROSTER=(function(){
 </div>
 
 <!-- ═══ HOME ═══ -->
-<div class="pg on" id="pg-home">
+<!-- ═══ COMPANY SELECT ═══ -->
+<div class="pg on" id="pg-company">
+  <div class="hero">
+    <div class="hero-logo-wrap">
+      <div style="font-size:44px;line-height:104px;">🏢</div>
+    </div>
+    <div class="hero-name">請選擇公司</div>
+    <div class="hero-sub">Select Your Center</div>
+  </div>
+  <div class="cards-wrap">
+    <div class="cards-lbl">請選擇要進入的托嬰中心</div>
+    <div class="hcard c-teal" onclick="pickCompany('xbd')">
+      <div class="hcard-in">
+        <div class="hcard-bar"></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">Center A</div>
+          <div class="hcard-title">🏫 小布迪音樂藝術托嬰中心</div>
+          <div class="hcard-desc">進入小布迪的系統</div>
+        </div>
+        <div class="hcard-arr">&#x203A;</div>
+      </div>
+    </div>
+    <div class="hcard c-ora" onclick="pickCompany('bambino')">
+      <div class="hcard-in">
+        <div class="hcard-bar"></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">Center B</div>
+          <div class="hcard-title">🏫 邦比諾音樂托嬰中心</div>
+          <div class="hcard-desc">進入邦比諾的系統</div>
+        </div>
+        <div class="hcard-arr">&#x203A;</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pg" id="pg-home">
   <div class="hero">
     <div class="hero-logo-wrap">
       <img src="data:image/png;base64,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" class="hero-logo" alt="">
@@ -1700,7 +1803,7 @@ var ROSTER=(function(){
       </div>
     </div>
   </div>
-  <div class="site-foot">&#xa9; 小布迪音樂藝術托嬰中心 &#xB7; 115年</div>
+  <div class="site-foot">&#xa9; 小布迪音樂藝術托嬰中心 &#xB7; 115年 &#xB7; <a href="javascript:void(0)" onclick="GO('company')" style="color:inherit;text-decoration:underline;">&#x1F3E2; 切換公司</a></div>
 </div>
 
 <!-- ═══ FORMS MENU（各式表單） ═══ -->
@@ -2209,6 +2312,10 @@ SW(1);
 
 /* ── Navigation ── */
 function GO(id) {
+  if (typeof CURRENT_COMPANY !== 'undefined' && CURRENT_COMPANY === 'bambino' && typeof _XBD_ONLY_PAGES !== 'undefined' && _XBD_ONLY_PAGES.indexOf(id) >= 0) {
+    alert('這個功能還沒有支援邦比諾，目前僅開放教學課程和適齡適性記錄。如需使用，請聯繫系統管理員。');
+    return;
+  }
   var pgs = document.getElementsByClassName('pg');
   var i;
   for (i = 0; i < pgs.length; i++) { pgs[i].classList.remove('on'); }
@@ -2952,6 +3059,12 @@ var allThemes={
       8:{baby:[{dom:'社會情緒',ind:'II-2-3 能表現愉悅的情緒',name:'繞著森林走一走+括弧木魚',mat:'"音樂躲貓貓"的繪本-叩叩叩，誰家的信？p.17、音響、音樂(繞著森林走一走)、樂器-括弧木魚',content:'本週主題-繞著森林走一走，今天托育人員講述主題繪本及撥放主題歌曲-括弧木魚，讓孩子們和好朋友在一起，搭配樂器-括弧木魚與音樂，一同拿起括弧木魚操作及搖擺身體，一起跟隨音樂盡情的演奏吧!'},{dom:'語言溝通',ind:'II-3-4 會注視說話的人',name:'我的小森林',mat:'音響、音樂(繞著森林一起走)、咖啡色黏土 (替代樹枝)、托盤(落葉 x 數片)',content:'延伸上禮拜的樹葉，今天帶領孩子自己製作，創造出一片屬於自己的小森林～過程中，孩子也能表達想要拿取的葉子。此活動，促進表達能力及小肌肉發展、手眼協調，培養孩子對於美感的培養。'},{dom:'身體動作發展',ind:'II-1-4能伸手拉或耙抓物品',name:'森林動物有哪些?',mat:'動物模型',content:'今天托育人員利用小動物模型先一一介紹動物有哪些?各種動物讓孩子們看得目不轉睛，再讓孩子練習伸手抓握森林動物。伸手抓握的動作，可以增進孩子的上肢力量和專注力哦!'},{dom:'認知探索',ind:'I-4-3 能對不同觸感有反應',name:'森林裡的小動物',mat:'音響、音樂(繞著森林一起走)、森林感官盆(感官盆、沙子、石頭、落葉)、托盤(動物模型)',content:'延伸昨天做好的小森林，今天要帶領孩子們認識森林裡的小動物。托育人員將小森林放入感官盆，再加入一些沙子、石頭、落葉，讓孩子摸一摸、看一看及自己動手把小動物從托盤子上拿起來，在放進去屬於牠們的森林裡。當放入動物時，托育人員也會跟孩子述說這是什麼動物，讓孩子可以更瞭解森林裡的動物。此活動，增進孩子的觸覺感官發展。'},{dom:'生活自理',ind:'V-5-5 能在協助下刷牙',name:'清潔口腔我最棒!',mat:'托盤(紗布巾、溫開水)',content:'今天帶領孩子們來練習清潔口腔囉!托育人員會利用孩子帶來的紗布巾，沾取溫開水，將孩子的口腔做清潔。平時喝奶後或飯後，都需要清潔孩子的口腔，讓孩子養成清潔口腔的好習慣。'}],crawl:[{dom:'認知探索',ind:'III-4-2 會尋找完全被藏著的物品',name:'森林裡的小動物',mat:'音響、音樂(繞著森林一起走)、森林感官盆(感官盆、沙子、石頭、落葉)、托盤',content:'今天要帶領孩子們認識森林裡的小動物。托育人員將小森林放入感官盆，再加入一些沙子、石頭、落葉，讓孩子摸一摸、看一看及自己動手把小動物從托盤子上拿起來，在放進去屬於牠們的森林裡。當放入動物時，托育人員也會跟孩子述說這是什麼動物，讓孩子可以更瞭解森林裡的動物。此活動，增進孩子的觸覺感官發展。'},{dom:'身體動作發展',ind:'II-1-4 能伸手拉或耙抓物品',name:'拯救森林的小動物',mat:'動物模型、紙膠帶',content:'今天我們要來拯救森林的小動物囉!托育人員利用紙膠帶將小動物們黏在桌子上，要讓孩子們來解救這些小動物們。透過撕、拉、扯的動作來訓練孩子們的手眼協調及小肌肉的發展。這些動作也可以增進孩子的上肢力量、專注力哦!'},{dom:'語言溝通',ind:'III-3-5 能理解簡單語彙的意思',name:'我的小森林',mat:'音響、音樂(繞著森林一起走)、咖啡色黏土 (替代樹枝)、托盤(落葉 x 數片)',content:'延伸上禮拜的樹葉，今天帶領孩子自己製作，創造出一片屬於自己的小森林～過程中，孩子也能表達想要拿取的葉子。此活動，促進表達能力及小肌肉發展、手眼協調，培養孩子對於美感的培養。'},{dom:'社會情緒',ind:'IV-2-1 能與別的孩子坐在一起玩',name:'繞著森林走一走+括弧木魚',mat:'"音樂躲貓貓"的繪本-叩叩叩，誰家的信？p.17、音響、音樂(繞著森林走一走)、樂器-括弧木魚',content:'本週主題-繞著森林走一走，今天托育人員講述主題繪本及撥放主題歌曲-你家在哪裡，讓孩子們和好朋友坐在一起，搭配樂器-括弧木魚與音樂，一同拿起括弧木魚操作及搖擺身體，一起跟隨音樂盡情的演奏吧!'},{dom:'生活自理',ind:'IV-5-3 練習用湯匙',name:'我會自己拿湯匙',mat:'湯匙、碗、餐點、用餐圍兜、幫寶椅',content:'今天要讓孩子自己練習拿湯匙吃飯，此活動可以增強孩子手部控制的能力，也可以鍛鍊孩子握湯匙的能力及手眼協調哦!自己練習拿湯匙吃飯的好處，可以讓孩子養成吃飯不浪費食物的好習慣唷～'}],run:[{dom:'社會情緒',ind:'V-2-2 能參與團體性的活動',name:'繞著森林走一走+括弧木魚',mat:'"音樂躲貓貓"的繪本-叩叩叩，誰家的信？p.17、音響、音樂(繞著森林走一走)、樂器-括弧木魚',content:'本週主題-繞著森林走一走，今天托育人員講述主題繪本及撥放主題歌曲-你家在哪裡，讓孩子們和好朋友坐在一起，搭配樂器-括弧木魚與音樂，一同拿起括弧木魚操作及搖擺身體，一起跟隨音樂盡情的演奏吧!'},{dom:'認知探索',ind:'III-4-6 能操作簡單教具',name:'我的小森林',mat:'音響、音樂(繞著森林一起走)、咖啡色黏土(替代樹枝)、托盤(落葉 x 數片)',content:'延伸上禮拜的樹葉，今天帶領孩子自己製作，創造出一片屬於自己的小森林～過程中，孩子也能表達想要拿取的葉子。此活動，促進認知能力及小肌肉發展、手眼協調，培養孩子對於美感的培養。'},{dom:'身體動作發展',ind:'IV-1-7拿以兩指(拇指、食指)撿拾物品',name:'拯救森林的小動物',mat:'動物模型、紙膠帶',content:'今天我們要來拯救森林的小動物囉!托育人員利用紙膠帶將小動物們黏在桌子上，要讓孩子們來解救這些小動物們。透過撕、拉、扯的動作來訓練孩子們的手眼協調及小肌肉的發展。這些動作也可以增進孩子的上肢力量、專注力哦!'},{dom:'語言溝通',ind:'IV-3-5 能指認出或說出動物的名稱',name:'森林裡的小動物',mat:'音響、音樂(繞著森林一起走)、森林感官盆(感官盆、沙子、石頭、落葉)、托盤(動物模型)',content:'延伸週二做好的小森林，今天要帶領孩子們認識森林裡的小動物。托育人員將小森林放入感官盆，再加入一些沙子、石頭、落葉，讓孩子摸一摸、看一看及自己動手把小動物從托盤子上拿起來，在放進去屬於牠們的森林裡。當放入動物時，托育人員也會跟孩子詢問或述說這是什麼動物，讓孩子可以更瞭解森林裡的動物。此活動，增進孩子的語言及觸覺感官的發展。'},{dom:'生活自理',ind:'V-5-7 能練習做簡單家事',name:'我會擦碗',mat:'幼兒的餐碗、衛生紙、垃圾桶',content:'今天要讓孩子自己練習擦碗，此活動可以增強孩子手部控制的能力，也可以鍛鍊孩子的手眼協調哦!自己練習擦碗的好處，可以讓孩子養成做家事的好習慣唷～'}]},
       9:{baby:[{dom:'身體動作發展',ind:'I-1-4 能試圖伸手拿眼前物品',name:'動物在哪裡？',mat:'音響、音樂(繞著森林一起走)、自製教具-動物找影子',content:'透過自製教具-動物找影子，讓孩子看一下動物的樣貌，協助引導讓孩子進行配對，了解動物的形狀與樣貌。此活動，可以培養孩子的專注力、觀察力，還可以加強訓練孩子的記憶力呢!'},{dom:'社會情緒',ind:'II-2-4 對於人互動表現正向反應',name:'秋天的相框',mat:'音響、音樂(繞著森林一起走)、秋天的相框(紙相簍空、樹葉+落葉貼邊框布置)',content:'延伸上週主題-繞著森林走一走，大自然是孩子最好的啟蒙老師，讓孩子從體驗和理解大自然開始吧。秋天是植物顏色最豐富的季節了，迎著秋天的風跟著寶貝們一起動手做一個屬於秋天的相框。'},{dom:'語言溝通',ind:'II-3-3 對熟悉的童謠或音樂有反應',name:'森林裡的音樂會',mat:'音響、音樂(繞著森林一起走)、各種樂器',content:'今天帶領孩子們來認識各種不同的樂器，讓孩子們自由的摸索、探索，自己敲一敲、拍一拍、搖一搖。教室裡播放主題音樂〝繞著森林走一走〞，來刺激孩子們的聽覺感官及配合音樂跟著音樂進行律動，整個教室很有音樂會的氛圍呢!'},{dom:'認知探索',ind:'II-4-5 會注視顏色或圖案鮮明的圖片/玩具',name:'動物的衣裳',mat:'音響、音樂(繞著森林一起走)、動物模型、自製教具-動物花紋配對',content:'讓孩子們認識及觸摸各種動物的模型及透過自製教具-動物花紋配對，認識動物的皮膚是什麼樣子?讓孩子們一起觀察動物的顏色、質地、和長相，一起幫動物配對花紋，讓動物找回屬於自己的衣服吧!'},{dom:'生活自理',ind:'I-5-1 能吸允奶嘴',name:'我會吸奶嘴',mat:'嬰兒的奶嘴',content:'今天生活自理要讓孩子自己練習吸允奶嘴，自己將奶嘴放進嘴巴裡。此活動訓練孩子的手眼協調能力及小肌肉發展。平時練習，可於孩子需要安撫時，孩子自己就可以拿起奶嘴來吸吮並穩定情緒唷~'}],crawl:[{dom:'語言溝通',ind:'III-3-5 能理解簡單語彙的意思',name:'動物的衣裳',mat:'音響、音樂(繞著森林一起走)、動物模型、自製教具-動物花紋配對',content:'讓孩子們認識及觸摸各種動物的模型及透過自製教具-動物花紋配對，認識動物的皮膚是什麼樣子?讓孩子們一起觀察動物的顏色、質地、和長相，一起幫動物配對花紋，讓動物找回屬於自己的衣服吧!'},{dom:'身體動作發展',ind:'IV-1-7 拿以兩指(拇指、食指)撿拾物品',name:'動物在哪裡？',mat:'音響、音樂(繞著森林一起走)、自製教具-動物找影子',content:'透過自製教具-動物找影子，讓孩子看一下動物的樣貌，再讓孩子進行配對，了解動物的形狀與樣貌。此活動，可以培養孩子的專注力、觀察力，還可以加強訓練孩子的記憶力呢!'},{dom:'認知探索',ind:'IV-4-1 能遵從簡單的指令',name:'秋天的相框',mat:'音響、音樂(繞著森林一起走)、秋天的相框(紙相簍空、樹葉+落葉貼邊框布置)',content:'延伸上週主題-繞著森林走一走，大自然是孩子最好的啟蒙老師，讓孩子從體驗和理解大自然開始吧。秋天是植物顏色最豐富的季節了，迎著秋天的風跟著寶貝們一起動手做一個屬於秋天的相框。'},{dom:'社會情緒',ind:'III-2-2 能和成人玩簡單重覆遊戲',name:'森林裡的音樂會',mat:'音響、音樂(繞著森林一起走)、各種樂器',content:'今天帶領孩子們來認識各種不同的樂器，讓孩子們自由的摸索、探索，自己敲一敲、拍一拍、搖一搖。教室裡播放主題音樂〝繞著森林走一走〞，來刺激孩子們的聽覺感官及配合音樂跟著音樂進行律動，整個教室很有音樂會的氛圍呢!'},{dom:'生活自理',ind:'III-5-3 能自己拿食物吃',name:'我會自己吃米餅',mat:'米餅、餐碗',content:'今天生活自理要讓孩子自己練習從餐碗裡拿米餅，自己放進嘴巴裡；訓練孩子的手眼協調能力跟小肌肉發展。'}],run:[{dom:'認知探索',ind:'IV-4-1 能遵從簡單的指令',name:'秋天的相框',mat:'音響、音樂(繞著森林一起走)、秋天的相框(紙相簍空、樹葉+落葉貼邊框布置)',content:'延伸上週主題-繞著森林走一走，大自然是孩子最好的啟蒙老師，讓孩子從體驗和理解大自然開始吧。秋天是植物顏色最豐富的季節了，迎著秋天的風跟著寶貝們一起動手做一個屬於秋天的相框。'},{dom:'語言溝通',ind:'IV-3-5能指認或說出動物的名稱',name:'動物在哪裡？',mat:'音響、音樂(繞著森林一起走)、自製教具-影子找動物、棉花棒、水性黑筆(粗)',content:'透過自製教具-影子找動物，讓孩子看一下動物的樣貌，鼓勵孩子自己動手用棉花棒將影子擦掉及表達出這是什麼動物?讓孩子了解動物的形狀與樣貌。此活動，可以培養孩子的專注力、觀察力，還可以加強訓練孩子的記憶力呢!'},{dom:'身體動作發展',ind:'III-1-6 能用拇指配合其他手指鉗握物品',name:'森林裡的音樂會-各種樂器',mat:'音響、音樂(繞著森林一起走)、各種樂器',content:'今天帶領孩子們來認識各種不同的樂器，讓孩子們自由的摸索、探索，自己敲一敲、拍一拍、搖一搖。教室裡播放主題音樂〝繞著森林走一走〞，來刺激孩子們的聽覺感官及配合音樂跟著音樂進行律動，整個教室很有音樂會的氛圍呢!'},{dom:'語言溝通',ind:'IV-3-2 能結合二個字出現電報式的話語',name:'動物的衣裳',mat:'音響、音樂(繞著森林一起走)、動物模型、自製教具-動物花紋配對',content:'讓孩子們認識及觸摸各種動物的模型及透過自製教具-動物花紋配對，認識動物的皮膚是什麼樣子?讓孩子們一起觀察動物的顏色、質地、和長相，一起幫動物配對花紋，讓動物找回屬於自己的衣服吧!'},{dom:'生活自理',ind:'V-5-7 能練習做簡單家事',name:'我會收碗',mat:'幼兒的餐具(餐碗、餐蓋、湯匙)',content:'延伸上週生活自理，今天要讓孩子自己練習收碗，此活動可以增強孩子手部控制的能力，也可以鍛鍊孩子的手眼協調及小肌肉發展哦!自己練習收碗的好處，可以讓孩子養成作家事幫忙的好習慣唷!'}]}
     }},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
+  "116":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}}
+};
+window._XBD_allThemes=allThemes;
+window._BAMBINO_allThemes={
+  "114":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
+  "115":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}},
   "116":{1:{name:"待規劃",weeks:[],acts:{}},2:{name:"待規劃",weeks:[],acts:{}},3:{name:"待規劃",weeks:[],acts:{}},4:{name:"待規劃",weeks:[],acts:{}},5:{name:"待規劃",weeks:[],acts:{}},6:{name:"待規劃",weeks:[],acts:{}}}
 };
 /* ── 115下半年第一主題 寶寶班 週1-4 完整活動資料 ── */
@@ -10686,7 +10799,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:03</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">09/24 16:49</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
