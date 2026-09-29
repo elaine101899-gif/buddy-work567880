@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260924215156';
+  var BUILD='20260929140829';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3898,7 +3898,7 @@ var ASR = (function() {
       '<div class="asr-fmeta">'+
         '<div class="asr-fmeta-c"><div class="asr-fml">班　級</div><div class="asr-fmv">'+clsL+'</div></div>'+
         '<div class="asr-fmeta-c"><div class="asr-fml">活動日期</div><div class="asr-fmv">'+wDt+'</div></div>'+
-        '<div class="asr-fmeta-c"><div class="asr-fml">引　導　者</div><div class="asr-fmv">'+tN+'</div></div>'+
+        '<div class="asr-fmeta-c"><div class="asr-fml">記　錄　者</div><div class="asr-fmv">'+tN+'</div></div>'+
       '</div>'+
       '<div class="asr-col-hd"><div>發展領域</div><div>適性發展活動</div><div>活動照片</div></div>'+
       '<div class="form-activities">'+rowH+'</div>'+
@@ -4397,13 +4397,13 @@ var ASR = (function() {
     h+='<div style="font-size:9px;color:#666;margin-top:2px;">年齡層：'+childAge+'<\/div>';
     h+='<\/div><\/div>';
 
-    /* 班級 ＋ 活動日期 ＋ 引導者 — 同一行 flex */
+    /* 班級 ＋ 活動日期 ＋ 記錄者 — 同一行 flex */
     h+='<div style="display:flex;height:'+META_H+'px;border-bottom:1.5px solid #b0b0b0;background:#f8fbfc;">';
     h+='<div style="width:'+C1+'px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:9px;font-weight:700;color:#0d6e8a;background:#dff0f5;">班　級<\/div>';
     h+='<div style="width:'+C2+'px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:11px;font-weight:700;color:#2d3057;">'+clsVal+'<\/div>';
     h+='<div style="flex:1.5;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:9px;font-weight:700;color:#0d6e8a;background:#dff0f5;">活動日期<\/div>';
     h+='<div style="flex:2;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:11px;font-weight:700;color:#2d3057;">'+dateVal+'<\/div>';
-    h+='<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:9px;font-weight:700;color:#0d6e8a;background:#dff0f5;">引導者<\/div>';
+    h+='<div style="flex:1;display:flex;align-items:center;justify-content:center;border-right:1.5px solid #b0b0b0;font-size:9px;font-weight:700;color:#0d6e8a;background:#dff0f5;">記錄者<\/div>';
     h+='<div style="flex:1.5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#2d3057;">'+tcrVal+'<\/div>';
     h+='<\/div>';
 
@@ -11072,7 +11072,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/24 21:51</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/29 14:08</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
