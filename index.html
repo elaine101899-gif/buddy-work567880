@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930230827';
+  var BUILD='20260930232938';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3836,9 +3836,12 @@ var ASR = (function() {
     if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher,function(ok){
       if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
     });
-    /* 有填班別的話，順手在寢具表建立對應班級，不用再跑一趟寢具表後台手動新增 */
-    if(bedCls&&typeof SPACES!=='undefined'&&SPACES.add){
-      SPACES.add('bedding',{label:bedCls+'（'+n+'）',level:c},function(ok){
+    /* 有填班別的話，順手在寢具表建立對應班級，不用再跑一趟寢具表後台手動新增。
+       這裡刻意用「老師的 id」當寢具班級的 id（不是隨機 id）：寢具表是靠這個 id
+       去對應名單裡的幼兒，id 對上了，以後這位老師底下新增/刪除幼兒，寢具表才會
+       自動跟著同步，不用每次都手動處理。 */
+    if(bedCls&&typeof SPACES!=='undefined'&&SPACES.setWithId){
+      SPACES.setWithId('bedding',newTeacher.id,{label:bedCls+'（'+n+'）',level:c},function(ok){
         if(!ok)toast('⚠️ 寢具班級同步失敗，請至寢具表後台手動新增');
       });
     }
@@ -10212,6 +10215,12 @@ var SPACES=(function(){
   }
   function add(kind,obj,cb){
     var id='sp'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    setWithId(kind,id,obj,cb);
+  }
+  /* 用指定的 id 新增（不是隨機 id）。寢具班級一定要用「帶班老師的名單 id」當 id，
+     這樣寢具表的 getChildNames(tid) 才抓得到這個老師底下的幼兒，以後新增/刪除
+     幼兒才會自動同步進寢具表，不用每次都手動去寢具表後台再加一次。 */
+  function setWithId(kind,id,obj,cb){
     var fb=_fbInit();
     if(fb)fb.ref(_path(kind)+'/'+id).set(obj,function(err){if(cb)cb(!err);});
     else if(cb)cb(false);
@@ -10226,7 +10235,7 @@ var SPACES=(function(){
     _rebuild(kind);
   }
   function idsOf(kind){return Object.keys(lists[kind]||{});}
-  return{init:init,forceSync:forceSync,add:add,remove:remove,idsOf:idsOf};
+  return{init:init,forceSync:forceSync,add:add,setWithId:setWithId,remove:remove,idsOf:idsOf};
 })();
 
 /* ── 體溫管理 ── */
@@ -11325,7 +11334,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:08</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:29</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
