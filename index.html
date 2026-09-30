@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17908082373895';
+  var BUILD='179080879214700';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3899,14 +3899,15 @@ var ASR = (function() {
     var g=document.getElementById('childGrid');
     if(!selT){g.innerHTML='';return;}
     var _allCs=asrDB.children[selT]||[];
-    /* 離園日到了（含今天）、或入園日還沒到，卡片就先從名單夾裡拿掉——
-       只是「這裡看不到」，寢具/日誌/電訪表的舊資料完全不受影響，
-       真的要找回來調整（例如日期設定錯了）就用下面「顯示已離園/未入園」切換。 */
+    /* 這裡是後台幼兒管理畫面：未到入園日的新生仍然要顯示（帶入園日期提醒），
+       避免忘記已經新增過。只有「離園日已到」的孩子預設隱藏——
+       寢具/日誌/電訪表等前台模組本來就是依日期各自判斷是否顯示，不受這裡影響，
+       真的要找回離園幼兒調整設定，就用下面「顯示已離園」切換。 */
     var today=_todayISO();
     var hiddenCount=0;
     var cs=_allCs.filter(function(c){
       var lc=(typeof ROSTER!=='undefined'&&ROSTER.getChildLifecycle)?ROSTER.getChildLifecycle(selYear,c.id):null;
-      var hidden=!!(lc&&((lc.leaveDate&&lc.leaveDate<=today)||(lc.enrollDate&&lc.enrollDate>today)));
+      var hidden=!!(lc&&lc.leaveDate&&lc.leaveDate<=today);
       if(hidden)hiddenCount++;
       return _showLeftKids||!hidden;
     });
@@ -3914,7 +3915,7 @@ var ASR = (function() {
     if(hiddenCount>0){
       h+='<div style="grid-column:1/-1;margin-bottom:6px;">';
       h+='<a href="javascript:void(0)" onclick="ASR.toggleShowLeftKids()" style="font-size:.75rem;color:#888;text-decoration:underline;">';
-      h+=(_showLeftKids?'隱藏':'顯示')+'已離園／未入園的幼兒（'+hiddenCount+'位）';
+      h+=(_showLeftKids?'隱藏':'顯示')+'已離園的幼兒（'+hiddenCount+'位）';
       h+='</a></div>';
     }
     for(i=0;i<cs.length;i++){
@@ -11672,7 +11673,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 06:43</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 06:53</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
