@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261001002210';
+  var BUILD='20261001003842';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1677,17 +1677,20 @@ var ROSTER=(function(){
       if(src)base[yr]=JSON.parse(JSON.stringify(src));
     });
   }
-  function _merge(yr,cloud){
+  /* 名單快照的核心運算，抽成獨立函式、用 asOfDate 參數化：預設傳今天的日期字串
+     就是原本「現在的名單」；傳過去的日期，就能還原「那一天」的名單長什麼樣子
+     （寢具/日誌/電訪表查詢舊月份資料時要用）。不會動到 window._asrPreload，
+     單純算出結果回傳，呼叫端決定要不要拿去覆蓋目前顯示的名單。 */
+  function _computeRoster(yr,cloud,asOfDate){
     var b=base[yr];
-    if(!b)return;
+    if(!b)return null;
     var removedT=(cloud&&cloud.removedTeachers)||{};
     var removedC=(cloud&&cloud.removedChildren)||{};
-    /* 升班用：記錄「這個幼兒 id 現在改分到哪個老師、什麼時候生效」，跟
+    /* 升班用：記錄「這個幼兒 id 改分到哪個老師、什麼時候生效」，跟
        removedChildren（永久刪除）是不同語意——升班只是換班級，底稿（base）裡
        原本那位老師名下的靜態名單還是會列著這個孩子，這裡要把他從「原本」老師
        的名單濾掉，避免同一個孩子同時出現在兩個班級。
-       生效日期還沒到的話，維持顯示在原本班級，不提早套用。 */
-    var todayStr=_todayISO();
+       生效日期比 asOfDate 晚的話，維持顯示在原本班級，不提早套用。 */
     var reassignedRaw=(cloud&&cloud.reassigned)||{};
     var reassigned={};
     Object.keys(reassignedRaw).forEach(function(cid){
@@ -1695,7 +1698,7 @@ var ROSTER=(function(){
       /* 相容舊格式（純字串 teacherId，沒有生效日期，視同立即生效） */
       var tid=(typeof r==='string')?r:r.tid;
       var effDate=(typeof r==='object'&&r.effDate)?r.effDate:null;
-      if(!effDate||effDate<=todayStr)reassigned[cid]=tid;
+      if(!effDate||effDate<=asOfDate)reassigned[cid]=tid;
     });
     var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
     var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
@@ -1720,12 +1723,25 @@ var ROSTER=(function(){
         if(!cIds[cid]&&!removedC[cid]&&(!hasSchedule||effectiveHere)){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
-    window['_asrPreload'+yr]={teachers:teachers,children:children,removed:b.removed||[]};
+    return {teachers:teachers,children:children,removed:b.removed||[]};
+  }
+  var lastCloud={};
+  function _merge(yr,cloud){
+    lastCloud[yr]=cloud;
+    var result=_computeRoster(yr,cloud,_todayISO());
+    if(!result)return;
+    window['_asrPreload'+yr]=result;
     if(typeof refreshSigners==='function')refreshSigners();
     /* 適齡適性記錄有自己的一份 asrDB.teachers/children 快照（在切換學期那一刻複製），
        雲端資料若比那個時間點晚到（手機網路較慢時常見），要主動補進目前畫面，
        不然要等使用者手動重新整理或切換學期才會看到新增的老師/幼兒。 */
     if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+  }
+  /* 查詢「某一天」的名單快照（例如寢具/日誌/電訪表查 9 月資料時，要用 9 月
+     那天的名單，不是今天的名單）。dateStr 格式 'YYYY-MM-DD'（西元年）。
+     用最後一次同步到的雲端資料現算，不用另外打 Firebase。 */
+  function rosterAsOf(yr,dateStr){
+    return _computeRoster(yr,lastCloud[yr],dateStr);
   }
   function _attach(yr){
     /* 用「公司+年份」當 key：換公司時要對另一家公司的路徑重新掛一個監聽器，
@@ -1844,7 +1860,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf};
 })();
 </script>
 
@@ -5606,17 +5622,21 @@ var DIARY=(function(){
       var dt=new Date(start.getTime()+i*86400000);
       var mm=String(dt.getMonth()+1).padStart(2,'0');
       var dd=String(dt.getDate()).padStart(2,'0');
-      days.push({no:i+1,dow:dows[dt.getDay()],ymd:rocYr+'年'+mm+'月'+dd+'日',fn:mm+dd});
+      days.push({no:i+1,dow:dows[dt.getDay()],ymd:rocYr+'年'+mm+'月'+dd+'日',fn:mm+dd,iso:dt.getFullYear()+'-'+mm+'-'+dd});
     }
     return days;
   }
 
-  function getStudents(cls){
+  function getStudents(cls,asOfDate){
     /* 永遠用正確學期的 preload 名單，避免 localStorage 舊學期資料干擾 */
     var _autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var _pl=window['_asrPreload'+_autoYr]||window._asrPreload||{};
-    var _teachers=_pl.teachers||((typeof asrDB!=='undefined')?asrDB.teachers:null)||[];
-    var _children=_pl.children||((typeof asrDB!=='undefined')?asrDB.children:null)||{};
+    /* asOfDate 有給的話（查詢某一天的日誌），用「那一天」的名單快照，
+       不要用現在的名單——不然幼兒升班以後，回頭看舊月份會找不到孩子、
+       儲存過的紀錄也會顯示「未選擇」。 */
+    var _asOfPl=(asOfDate&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf)?ROSTER.rosterAsOf(_autoYr,asOfDate):null;
+    var _pl=_asOfPl||window['_asrPreload'+_autoYr]||window._asrPreload||{};
+    var _teachers=_pl.teachers||(!_asOfPl&&typeof asrDB!=='undefined'?asrDB.teachers:null)||[];
+    var _children=_pl.children||(!_asOfPl&&typeof asrDB!=='undefined'?asrDB.children:null)||{};
     // 各班只顯示自己班的孩子
     var clsList=[cls];
     var ts=_teachers.filter(function(t){
@@ -5833,7 +5853,7 @@ var DIARY=(function(){
     var clsColor=CLSCOLOR[cls];
     var clsTxColor=CLSTXCOLOR[cls];
     var clsBdColor=CLSBDCOLOR[cls];
-    var students=getStudents(cls);
+    var students=getStudents(cls,dayData.iso);
     var domColor=DC_MAP[act.dom]||clsBdColor;
     /* 優先用 TEACHSYNC 覆蓋後的名稱查範本，找不到再用原始名稱 */
     var _defBase=_dActDB[act.name]||_dActDB[_origActName]||{};
@@ -6146,7 +6166,7 @@ var DIARY=(function(){
     var wkTheme=dCtx.wkObj?dCtx.wkObj.theme:'';
     var domColor=DC_MAP[act.dom]||clsBdColor;
     var studentName='';
-    if(data.studentId){var sts=getStudents(cls);var st=sts.find(function(s){return s.id===data.studentId;});if(st)studentName=st.name;}
+    if(data.studentId){var sts=getStudents(cls,day&&day.iso);var st=sts.find(function(s){return s.id===data.studentId;});if(st)studentName=st.name;}
     var isGrowth=dCtx.isGrowth||(act.dom==='成長紀錄');
     var growthLabels=['📏 身高','⚖️ 體重','🔵 頭圍','📊 成長數據'];
     var steps=data.steps||[];
@@ -11463,7 +11483,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:22</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:38</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
