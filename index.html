@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261001000628';
+  var BUILD='20261001002210';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1625,6 +1625,9 @@ function _fbInitRaw(){
 /* localStorage / IndexedDB 本機快取的 key 也要依公司分開，避免兩間公司的
    請假交接單、事故單、腸病毒表等本機快取資料互相污染（雲端已經靠 _fbCompanyPrefix 隔開了） */
 function _ckey(k){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?('bambino__'+k):k;}
+/* 'YYYY-MM-DD' 格式的今天日期字串，用西元年（跟 <input type="date"> 一致），
+   給幼兒升班「生效日期」比對用，字串本身就能直接比大小。 */
+function _todayISO(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 /* 各種列印/匯出範本用的公司名稱、抬頭、Logo——統一從這裡拿，不要在範本裡寫死小布迪 */
 function _companyName(){return (COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;}
 function _companyFullName(){return '臺南市私立'+_companyName();}
@@ -1679,11 +1682,21 @@ var ROSTER=(function(){
     if(!b)return;
     var removedT=(cloud&&cloud.removedTeachers)||{};
     var removedC=(cloud&&cloud.removedChildren)||{};
-    /* 升班用：記錄「這個幼兒 id 現在改分到哪個老師」，跟 removedChildren（永久刪除）
-       是不同語意——升班只是換班級，底稿（base）裡原本那位老師名下的靜態名單
-       還是會列著這個孩子，這裡要把他從「原本」老師的名單濾掉，
-       避免同一個孩子同時出現在兩個班級。 */
-    var reassigned=(cloud&&cloud.reassigned)||{};
+    /* 升班用：記錄「這個幼兒 id 現在改分到哪個老師、什麼時候生效」，跟
+       removedChildren（永久刪除）是不同語意——升班只是換班級，底稿（base）裡
+       原本那位老師名下的靜態名單還是會列著這個孩子，這裡要把他從「原本」老師
+       的名單濾掉，避免同一個孩子同時出現在兩個班級。
+       生效日期還沒到的話，維持顯示在原本班級，不提早套用。 */
+    var todayStr=_todayISO();
+    var reassignedRaw=(cloud&&cloud.reassigned)||{};
+    var reassigned={};
+    Object.keys(reassignedRaw).forEach(function(cid){
+      var r=reassignedRaw[cid];
+      /* 相容舊格式（純字串 teacherId，沒有生效日期，視同立即生效） */
+      var tid=(typeof r==='string')?r:r.tid;
+      var effDate=(typeof r==='object'&&r.effDate)?r.effDate:null;
+      if(!effDate||effDate<=todayStr)reassigned[cid]=tid;
+    });
     var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
     var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
     var cloudT=(cloud&&cloud.teachers)||{};
@@ -1699,7 +1712,12 @@ var ROSTER=(function(){
       if(!children[tid])children[tid]=[];
       var cIds={}; children[tid].forEach(function(c){cIds[c.id]=true;});
       Object.keys(cloudC[tid]).forEach(function(cid){
-        if(!cIds[cid]&&!removedC[cid]){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
+        /* 這個孩子如果有「升班」排程，只有在排程對象就是目前這個老師、
+           而且生效日期已到（cid 有出現在上面已生效的 reassigned 裡）才顯示；
+           還沒到生效日期的話，先不要顯示在新班級，維持只在舊班級看得到。 */
+        var hasSchedule=Object.prototype.hasOwnProperty.call(reassignedRaw,cid);
+        var effectiveHere=(reassigned[cid]===tid);
+        if(!cIds[cid]&&!removedC[cid]&&(!hasSchedule||effectiveHere)){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
     window['_asrPreload'+yr]={teachers:teachers,children:children,removed:b.removed||[]};
@@ -1786,16 +1804,21 @@ var ROSTER=(function(){
   /* 升班／換班：跟 removeChild+addChild 不一樣，不能用 removedChildren
      （那是永久刪除、全部班級都會濾掉這個孩子）。改寫 reassigned 這個對照表，
      _merge() 只會把孩子從「原本」老師的靜態名單濾掉，新老師這邊則靠雲端
-     children 節點顯示，兩邊都不會消失也不會重複。 */
-  function moveChild(yr,oldTeacherId,newTeacherId,child,cb){
+     children 節點顯示，兩邊都不會消失也不會重複。
+     effDate（YYYY-MM-DD，選填）：生效日期還沒到的話，寫進雲端的排程先不套用，
+     維持顯示在舊班級，_merge() 每次重新整理時會自己判斷日期到了沒有；
+     不給 effDate 或生效日期是今天（含）以前，就當作立刻生效。 */
+  function moveChild(yr,oldTeacherId,newTeacherId,child,cb,effDate){
     var fb=_fbInit();
+    var immediate=(!effDate||effDate<=_todayISO());
     var remaining=2, ok=true;
     function done(err){ if(err)ok=false; remaining--; if(remaining===0&&cb)cb(ok); }
     if(fb){
-      fb.ref(_rosterFbBase()+'/'+yr+'/reassigned/'+child.id).set(newTeacherId,function(err){done(err);});
+      fb.ref(_rosterFbBase()+'/'+yr+'/reassigned/'+child.id).set(effDate?{tid:newTeacherId,effDate:effDate}:newTeacherId,function(err){done(err);});
       fb.ref(_rosterFbBase()+'/'+yr+'/children/'+newTeacherId+'/'+child.id).set(child,function(err){done(err);});
-      fb.ref(_rosterFbBase()+'/'+yr+'/children/'+oldTeacherId+'/'+child.id).remove();
+      if(immediate)fb.ref(_rosterFbBase()+'/'+yr+'/children/'+oldTeacherId+'/'+child.id).remove();
     }else{ if(cb)cb(false); return; }
+    if(!immediate)return; /* 還沒生效：本機畫面（window._asrPreload）先不變動，維持舊班級 */
     var cur=window['_asrPreload'+yr];
     if(cur){
       if(cur.children[oldTeacherId])cur.children[oldTeacherId]=cur.children[oldTeacherId].filter(function(c){return c.id!==child.id;});
@@ -3127,6 +3150,8 @@ function printSummaryB(cls) {
     <h3>&#x2B06;&#xFE0F; <span id="promoteChildName"></span> 升班</h3>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">選擇要升去的班級</div>
     <select class="asr-msel" id="promoteTeacherSel"></select>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">生效日期（在這天之前，寢具/日誌/電訪表等畫面都還是顯示原班級）</div>
+    <input type="date" class="asr-mi" id="promoteEffDate">
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="ASR.closePromote()">取消</button>
       <button class="asr-mok" onclick="ASR.confirmPromote()">確認升班</button>
@@ -3849,6 +3874,8 @@ var ASR = (function() {
       opts+='<option value="'+t.id+'">'+(CLS[t.cls]||t.cls)+' － '+t.name+'</option>';
     });
     sel.innerHTML=opts||'<option value="">（沒有其他班級）</option>';
+    var dateInp=document.getElementById('promoteEffDate');
+    if(dateInp)dateInp.value=_todayISO();
     document.getElementById('asrPromoteOv').classList.add('on');
   }
   function closePromote(){
@@ -3857,28 +3884,34 @@ var ASR = (function() {
   }
   function confirmPromote(){
     var newTid=document.getElementById('promoteTeacherSel').value;
+    var effDate=(document.getElementById('promoteEffDate').value)||_todayISO();
     if(!_promoteChildId||!newTid){closePromote();return;}
     var oldTid=selT;
-    var cs=asrDB.children[oldTid]||[];
-    var child=null;
-    asrDB.children[oldTid]=cs.filter(function(c){
-      if(c.id===_promoteChildId){child=c;return false;}
-      return true;
-    });
+    var isFuture=effDate>_todayISO();
+    var child=(asrDB.children[oldTid]||[]).find(function(c){return c.id===_promoteChildId;});
     if(!child){closePromote();return;}
-    if(!asrDB.children[newTid])asrDB.children[newTid]=[];
-    asrDB.children[newTid].push(child);
-    if(selC===_promoteChildId){selC=null;document.getElementById('weekSec').style.display='none';}
-    asrSave();rdrC();
     var newTeacherObj=asrDB.teachers.find(function(t){return t.id===newTid;});
-    toast('已將 '+child.name+' 升班到 '+(newTeacherObj?newTeacherObj.name:''));
+    if(!isFuture){
+      /* 生效日期是今天（含）以前：立刻在畫面上換班 */
+      asrDB.children[oldTid]=(asrDB.children[oldTid]||[]).filter(function(c){return c.id!==_promoteChildId;});
+      if(!asrDB.children[newTid])asrDB.children[newTid]=[];
+      asrDB.children[newTid].push(child);
+      if(selC===_promoteChildId){selC=null;document.getElementById('weekSec').style.display='none';}
+      asrSave();rdrC();
+      toast('已將 '+child.name+' 升班到 '+(newTeacherObj?newTeacherObj.name:''));
+    } else {
+      /* 生效日期還沒到：畫面先不變，只是把排程寫到雲端，
+         這樣還沒到生效日之前（例如9月），寢具/日誌/電訪表/請假交接單看到的都還是舊班級，
+         不會讓還沒填完舊班資料的老師突然找不到小孩。 */
+      toast('已排程：'+child.name+' 將於 '+effDate+' 升班到 '+(newTeacherObj?newTeacherObj.name:'')+'，在那之前畫面仍維持原班級');
+    }
     /* 雲端同步：用 moveChild（不是 removeChild+addChild）。removeChild 會把孩子
        標記成永久刪除，之後不管加到哪個老師底下都不會再出現；升班只是換班級，
        要用 moveChild 才不會讓孩子從系統裡整個消失。 */
     if(typeof ROSTER!=='undefined'&&ROSTER.moveChild){
       ROSTER.moveChild(selYear,oldTid,newTid,child,function(ok){
         if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能還看得到舊班級，請點「立即同步」重試');
-      });
+      },effDate);
     }
     closePromote();
   }
@@ -9723,7 +9756,11 @@ var BEDDING=(function(){
   function renderDetail(wrap){
     var rec=getRec();
     if(!rec.sigs)rec.sigs=['','','','',''];
-    if(reconcileRoster(rec)){
+    /* 只有在看「這個月」才跟名單對齊。看以前月份的話，名單早就跟著現在的
+       班級走了（例如幼兒升班），照現在的名單去加減以前月份的列，
+       會把老師還沒填完的舊資料整列刪掉，讓老師突然找不到小孩。 */
+    var _now=new Date(),_curYr=_now.getFullYear()-1911,_curMo=_now.getMonth()+1;
+    if(curY===_curYr&&curM===_curMo&&reconcileRoster(rec)){
       save();
       var fb0=_fbInit();
       if(fb0)fb0.ref('xiaobuddyClean/bedding/records/'+key()+'/rows').set(rec.rows);
@@ -11426,7 +11463,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:06</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:22</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
