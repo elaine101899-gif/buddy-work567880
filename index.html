@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261001063509';
+  var BUILD='17908082373895';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3195,6 +3195,8 @@ function printSummaryB(cls) {
       <option value="9-15M">9-15M</option>
       <option value="13-36M" selected>13-36M</option>
     </select>
+    <div style="font-size:.72rem;color:#888;margin-bottom:4px;">入園日期（選填；填未來日期的話，在那天之前這位幼兒不會出現在寢具/日誌/電訪表等表單上）</div>
+    <input type="date" class="asr-mi" id="inpCEnroll">
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="ASR.cm('C')">取消</button>
       <button class="asr-mok" onclick="ASR.okC()">新增</button>
@@ -3891,10 +3893,30 @@ var ASR = (function() {
     if(teacher)document.getElementById('childSecTitle').textContent='👶 幼兒名冊　'+teacher.name+'（'+(CLS[teacher.cls]||teacher.cls)+'）';
     rdrC();
   }
+  var _showLeftKids=false;
+  function toggleShowLeftKids(){_showLeftKids=!_showLeftKids;rdrC();}
   function rdrC(){
     var g=document.getElementById('childGrid');
     if(!selT){g.innerHTML='';return;}
-    var cs=asrDB.children[selT]||[]; var h=''; var i,j,w;
+    var _allCs=asrDB.children[selT]||[];
+    /* 離園日到了（含今天）、或入園日還沒到，卡片就先從名單夾裡拿掉——
+       只是「這裡看不到」，寢具/日誌/電訪表的舊資料完全不受影響，
+       真的要找回來調整（例如日期設定錯了）就用下面「顯示已離園/未入園」切換。 */
+    var today=_todayISO();
+    var hiddenCount=0;
+    var cs=_allCs.filter(function(c){
+      var lc=(typeof ROSTER!=='undefined'&&ROSTER.getChildLifecycle)?ROSTER.getChildLifecycle(selYear,c.id):null;
+      var hidden=!!(lc&&((lc.leaveDate&&lc.leaveDate<=today)||(lc.enrollDate&&lc.enrollDate>today)));
+      if(hidden)hiddenCount++;
+      return _showLeftKids||!hidden;
+    });
+    var h=''; var i,j,w;
+    if(hiddenCount>0){
+      h+='<div style="grid-column:1/-1;margin-bottom:6px;">';
+      h+='<a href="javascript:void(0)" onclick="ASR.toggleShowLeftKids()" style="font-size:.75rem;color:#888;text-decoration:underline;">';
+      h+=(_showLeftKids?'隱藏':'顯示')+'已離園／未入園的幼兒（'+hiddenCount+'位）';
+      h+='</a></div>';
+    }
     for(i=0;i<cs.length;i++){
       var c=cs[i]; var done=0;
       for(j=0;j<wkData.weeks.length;j++){if(asrDB.reports[selYear+"_"+selTheme+"_"+selT+c.id+wkData.weeks[j].no])done++;}
@@ -4097,6 +4119,7 @@ var ASR = (function() {
   function okC(){
     var n=(document.getElementById('inpCN').value||'').trim();
     var a=document.getElementById('inpCA').value;
+    var enrollDate=(document.getElementById('inpCEnroll').value||'').trim();
     if(!n){alert('請輸入姓名');return;}
     if(!asrDB.children[selT])asrDB.children[selT]=[];
     var newChild={id:'c'+Date.now(),name:n,age:a};
@@ -4104,6 +4127,14 @@ var ASR = (function() {
     asrSave();cm('C');rdrC();toast('已新增 '+n);
     if(typeof ROSTER!=='undefined')ROSTER.addChild(selYear,selT,newChild,function(ok){
       if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
+      /* 有填入園日期的話，緊接著寫入 lifecycle。要等 addChild 的雲端寫入完成再寫，
+         避免兩個寫入的順序在雲端跟本機的樂觀更新之間互相打架。 */
+      if(enrollDate&&typeof ROSTER.setChildLifecycle==='function'){
+        ROSTER.setChildLifecycle(selYear,newChild.id,'enrollDate',enrollDate,function(ok2){
+          if(!ok2)toast('⚠️ 入園日期同步失敗，請點「立即同步」重試');
+          rdrC();
+        });
+      }
     });
   }
   /* 取得某一主題週/班別「目前真正應該顯示」的課程內容，含 TEACHSYNC（後台針對特定日期的
@@ -4601,7 +4632,7 @@ var ASR = (function() {
     var bT=document.getElementById('btnAddT');
     if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
     var bC=document.getElementById('btnAddC');
-    if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
+    if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';document.getElementById('inpCEnroll').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
     var bResetWk=document.getElementById('btnResetWeekPhotos');
     if(bResetWk)bResetWk.onclick=function(){resetWeekPhotos();};
     var bSync=document.getElementById('btnSyncRoster');
@@ -5281,7 +5312,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids};
 })();
 
 </script>
@@ -11641,7 +11672,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 06:35</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 06:43</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
