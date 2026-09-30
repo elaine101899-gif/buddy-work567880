@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261001004448';
+  var BUILD='20261001063509';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -10912,12 +10912,43 @@ var PHONEVISIT=(function(){
   function todayStr(){var d=new Date();return d.getFullYear()-1911+'.'+(d.getMonth()+1<10?'0':'')+(d.getMonth()+1)+'.'+(d.getDate()<10?'0':'')+d.getDate();}
   function nowTimeStr(){var d=new Date();return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes();}
 
+  /* 目前「資料月份」選單選的年月（民國年），決定「選擇幼兒」下拉要用哪個月的名單。
+     預設當月；使用者往回調（例如還沒填完9月電訪表，今天已經10月）就會自動換回
+     9月當時的名單，找得到已經升班/離園的孩子。 */
+  function _selectedMonthRange(){
+    var yrEl=document.getElementById('pv-rec-yr'),mnEl=document.getElementById('pv-rec-mn');
+    var now=new Date();
+    var roc=yrEl&&yrEl.value?parseInt(yrEl.value,10):(now.getFullYear()-1911);
+    var mo=mnEl&&mnEl.value?parseInt(mnEl.value,10):(now.getMonth()+1);
+    var ceYr=roc+1911;
+    var mm=(mo<10?'0':'')+mo;
+    var lastDay=new Date(ceYr,mo,0).getDate();
+    return {roc:roc,mo:mo,first:ceYr+'-'+mm+'-01',last:ceYr+'-'+mm+'-'+(lastDay<10?'0':'')+lastDay};
+  }
   function getKids(cls){
     /* 永遠用正確學期的 preload 名單，避免 localStorage 舊學期資料干擾 */
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
-    var teachers=pl.teachers||((typeof asrDB!=='undefined')?asrDB.teachers:null)||[];
-    var children=pl.children||((typeof asrDB!=='undefined')?asrDB.children:null)||{};
+    var range=_selectedMonthRange();
+    var isCurMonth=(range.roc===(new Date().getFullYear()-1911))&&(range.mo===(new Date().getMonth()+1));
+    var teachers,children;
+    if(!isCurMonth&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
+      /* 選的不是當月：把月初、月底兩天的名單都抓出來取聯集，
+         這樣不管孩子是月中升班/入離園，只要那個月有在這個班，都找得到。 */
+      var rFirst=ROSTER.rosterAsOf(autoYr,range.first)||{teachers:[],children:{}};
+      var rLast=ROSTER.rosterAsOf(autoYr,range.last)||{teachers:[],children:{}};
+      teachers=(rFirst.teachers||[]).concat(rLast.teachers||[]);
+      children={};
+      [rFirst.children||{},rLast.children||{}].forEach(function(cm){
+        Object.keys(cm).forEach(function(tid){
+          if(!children[tid])children[tid]=[];
+          children[tid]=children[tid].concat(cm[tid]);
+        });
+      });
+    } else {
+      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+      teachers=pl.teachers||((typeof asrDB!=='undefined')?asrDB.teachers:null)||[];
+      children=pl.children||((typeof asrDB!=='undefined')?asrDB.children:null)||{};
+    }
     var res=[],seenId={},seenName={};
     teachers.forEach(function(t){
       if(t.cls!==cls)return;
@@ -10951,6 +10982,18 @@ var PHONEVISIT=(function(){
     ['baby','crawl','run'].forEach(function(cls){
       h+='<button class="pv-cls-tab'+(curCls===cls?' on':'')+'" onclick="PHONEVISIT.setCls(\''+cls+'\')">'+CLSLABEL[cls]+'</button>';
     });
+    h+='</div>';
+    // 資料月份：決定下面「選擇幼兒」抓哪個月的名單、以及下方歷史記錄要看哪個月
+    var _mr=_selectedMonthRange();
+    h+='<div style="display:flex;align-items:center;gap:8px;background:#fff6e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<span style="font-size:.85rem;color:#a5680a;font-weight:700;">🗓️ 資料月份</span>';
+    h+='<select id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
+    for(var vy=ry;vy>=ry-2;vy--) h+='<option value="'+vy+'"'+(vy===_mr.roc?' selected':'')+'>'+vy+' 年</option>';
+    h+='</select>';
+    h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
+    for(var vm=1;vm<=12;vm++) h+='<option value="'+vm+'"'+(vm===_mr.mo?' selected':'')+'>'+vm+' 月</option>';
+    h+='</select>';
+    h+='<span style="font-size:.7rem;color:#a5680a;">還沒填完舊月份的電訪表，調到那個月，下面幼兒名單會自動換回那時候的名單</span>';
     h+='</div>';
     // child selector
     var kids=getKids(curCls);
@@ -10992,16 +11035,9 @@ var PHONEVISIT=(function(){
     // save
     h+='<button class="pv-save-btn" onclick="PHONEVISIT.save()">💾 儲存記錄</button>';
     h+='</div>';
-    // records section（可切換年月查看，預設當月）
+    // records section（跟著上面的「資料月份」一起切換，不再重複一份選單）
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;margin-top:4px;">';
     h+='<span id="pv-rec-lbl" style="font-size:.8rem;color:#888;">歷史記錄</span>';
-    h+='<span style="flex:1;"></span>';
-    h+='<select id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:.8rem;background:#fff;">';
-    for(var ry2=ry;ry2>=ry-2;ry2--) h+='<option value="'+ry2+'"'+(ry2===ry?' selected':'')+'>'+ry2+' 年</option>';
-    h+='</select>';
-    h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:4px 6px;border:1px solid #ddd;border-radius:6px;font-size:.8rem;background:#fff;">';
-    for(var rm2=1;rm2<=12;rm2++) h+='<option value="'+rm2+'"'+(rm2===rm?' selected':'')+'>'+rm2+' 月</option>';
-    h+='</select>';
     h+='</div>';
     h+='<div id="pv-records"></div>';
     return h;
@@ -11383,7 +11419,20 @@ var PHONEVISIT=(function(){
     w.onload=function(){w.print();};
   }
 
-  function onRecMonthChange(){renderRecords();}
+  function onRecMonthChange(){
+    /* 月份換了，「選擇幼兒」下拉也要跟著換成那個月的名單——只重建下拉選項，
+       不整頁重繪，才不會把正在填的訪談內容清掉。 */
+    var sel=document.getElementById('pv-child');
+    if(sel){
+      var kids=getKids(curCls);
+      var stillThere=curChild&&kids.some(function(k){return k.id===curChild.id&&k.teacherId===curChild.teacherId;});
+      if(!stillThere)curChild=null;
+      var opt='<option value="">── 請選擇幼兒 ──</option>';
+      kids.forEach(function(k){opt+='<option value="'+k.id+'|'+k.teacherId+'"'+(curChild&&curChild.id===k.id?' selected':'')+'>'+k.name+'</option>';});
+      sel.innerHTML=opt;
+    }
+    renderRecords();
+  }
 
   return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange};
 })();
@@ -11592,7 +11641,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:44</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 06:35</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
