@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261001003842';
+  var BUILD='20261001004448';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1723,6 +1723,22 @@ var ROSTER=(function(){
         if(!cIds[cid]&&!removedC[cid]&&(!hasSchedule||effectiveHere)){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
+    /* 入園／離園日期：跟升班一樣是「看日期」的，不是一刀切的刪除。
+       入園日還沒到——這一天以前，這個孩子在系統裡本來就還沒有任何資料，
+       所以查詢過去日期本來就不會看到他，不用特別處理；這裡只需要處理
+       「現在」看到的名單要不要先隱藏他（asOfDate < enrollDate 就先不顯示）。
+       離園日到了——從離園當天起，各表單新增資料時就不會再選到他，但離園
+       之前查詢到的舊資料完全不受影響（因為歷史紀錄本來就不會重新對照名單）。 */
+    var lifecycle=(cloud&&cloud.lifecycle)||{};
+    Object.keys(children).forEach(function(tid){
+      children[tid]=children[tid].filter(function(c){
+        var lc=lifecycle[c.id];
+        if(!lc)return true;
+        if(lc.enrollDate&&asOfDate<lc.enrollDate)return false;
+        if(lc.leaveDate&&asOfDate>=lc.leaveDate)return false;
+        return true;
+      });
+    });
     return {teachers:teachers,children:children,removed:b.removed||[]};
   }
   var lastCloud={};
@@ -1845,6 +1861,31 @@ var ROSTER=(function(){
       window['_asrPreload'+yr]=cur;
     }
   }
+  /* 入園／離園日期設定。field 是 'enrollDate' 或 'leaveDate'，dateStr 給空字串
+     表示清掉這個日期（例如設定錯了要取消）。跟升班共用同一套「看日期」邏輯，
+     寫完雲端後順手把最後一次收到的雲端快照也同步更新一份、馬上重算一次
+     「今天」的名單，這樣畫面不用等下一次雲端推播就能立刻反映。 */
+  function setChildLifecycle(yr,childId,field,dateStr,cb){
+    var fb=_fbInit();
+    if(fb){
+      fb.ref(_rosterFbBase()+'/'+yr+'/lifecycle/'+childId+'/'+field).set(dateStr||null,function(err){ if(cb)cb(!err); });
+    }else if(cb){cb(false);}
+    if(!lastCloud[yr])lastCloud[yr]={};
+    if(!lastCloud[yr].lifecycle)lastCloud[yr].lifecycle={};
+    if(!lastCloud[yr].lifecycle[childId])lastCloud[yr].lifecycle[childId]={};
+    lastCloud[yr].lifecycle[childId][field]=dateStr||null;
+    var result=_computeRoster(yr,lastCloud[yr],_todayISO());
+    if(result){
+      window['_asrPreload'+yr]=result;
+      if(typeof refreshSigners==='function')refreshSigners();
+      if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+    }
+  }
+  /* 查詢某個幼兒目前設定的入園/離園日期（給後台名單畫面顯示狀態標籤用） */
+  function getChildLifecycle(yr,childId){
+    var lc=lastCloud[yr]&&lastCloud[yr].lifecycle&&lastCloud[yr].lifecycle[childId];
+    return lc||null;
+  }
   function removeChild(yr,teacherId,childId,cb){
     var fb=_fbInit();
     if(fb){
@@ -1860,7 +1901,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 </script>
 
@@ -3175,6 +3216,19 @@ function printSummaryB(cls) {
   </div>
 </div>
 
+<div class="asr-modal" id="asrLifecycleOv">
+  <div class="asr-mbox">
+    <h3><span id="lifecycleIcon">&#x1F6AA;</span> <span id="lifecycleChildName"></span> <span id="lifecycleTitle"></span></h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;" id="lifecycleHint"></div>
+    <input type="date" class="asr-mi" id="lifecycleDate">
+    <div style="font-size:.72rem;color:#aaa;margin-bottom:6px;">（已經設定過想取消，日期欄位清空後按確認即可）</div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="ASR.closeLifecycle()">取消</button>
+      <button class="asr-mok" onclick="ASR.confirmLifecycle()" id="lifecycleOkBtn">確認</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 教保日誌 ═══ -->
 <div class="pg" id="pg-diary">
   <div class="bbar">
@@ -3852,8 +3906,17 @@ var ASR = (function() {
       h+='<div class="asr-pname">'+c.name+'</div>';
       h+='<div class="asr-page">'+c.age+'</div>';
       h+='<span class="asr-stat '+bc+'">'+bl+'</span>';
+      var _lc=(typeof ROSTER!=='undefined'&&ROSTER.getChildLifecycle)?ROSTER.getChildLifecycle(selYear,c.id):null;
+      if(_lc&&(_lc.enrollDate||_lc.leaveDate)){
+        h+='<div style="font-size:.6rem;color:#c0784a;font-weight:700;margin-top:2px;">';
+        if(_lc.enrollDate)h+='🚪入園'+_lc.enrollDate.slice(5)+' ';
+        if(_lc.leaveDate)h+='🚪離園'+_lc.leaveDate.slice(5);
+        h+='</div>';
+      }
       h+='<button class="asr-del-btn" data-del-cid="'+c.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delC(this.getAttribute(\'data-del-cid\'))">&#x2715; 刪除</button>';
       h+='<button class="asr-promote-btn" data-pro-cid="'+c.id+'" style="display:none;margin-top:5px;background:#4a90c0;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openPromote(this.getAttribute(\'data-pro-cid\'))">&#x2B06;&#xFE0F; 升班</button>';
+      h+='<button class="asr-promote-btn" data-lc-cid="'+c.id+'" style="display:none;margin-top:5px;background:#36b27e;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openLifecycle(this.getAttribute(\'data-lc-cid\'),\'enroll\')">&#x1F6AA; 入園</button>';
+      h+='<button class="asr-promote-btn" data-lc-cid="'+c.id+'" style="display:none;margin-top:5px;background:#c0784a;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openLifecycle(this.getAttribute(\'data-lc-cid\'),\'leave\')">&#x1F6AA; 離園</button>';
       h+='</div>';
     }
     g.innerHTML=h||'<div style="color:#8a8a9a;font-size:.78rem">尚無幼兒</div>';
@@ -3930,6 +3993,52 @@ var ASR = (function() {
       },effDate);
     }
     closePromote();
+  }
+  var _lifecycleChildId=null,_lifecycleMode=null;
+  function openLifecycle(cid,mode){
+    var cs=asrDB.children[selT]||[]; var child=null,i;
+    for(i=0;i<cs.length;i++){if(cs[i].id===cid){child=cs[i];break;}}
+    if(!child)return;
+    _lifecycleChildId=cid; _lifecycleMode=mode;
+    document.getElementById('lifecycleChildName').textContent=child.name;
+    if(mode==='enroll'){
+      document.getElementById('lifecycleIcon').textContent='🚪';
+      document.getElementById('lifecycleTitle').textContent='入園日期';
+      document.getElementById('lifecycleHint').textContent='入園日期當天以前，這位幼兒不會出現在寢具/日誌/電訪表等畫面上';
+    } else {
+      document.getElementById('lifecycleIcon').textContent='🚪';
+      document.getElementById('lifecycleTitle').textContent='離園日期';
+      document.getElementById('lifecycleHint').textContent='離園日期當天起，這位幼兒就不會再出現在寢具/日誌/電訪表等畫面上；離園之前已經填寫的資料完全不受影響，不會消失';
+    }
+    document.getElementById('lifecycleDate').value=_todayISO();
+    document.getElementById('asrLifecycleOv').classList.add('on');
+  }
+  function closeLifecycle(){
+    document.getElementById('asrLifecycleOv').classList.remove('on');
+    _lifecycleChildId=null;_lifecycleMode=null;
+  }
+  function confirmLifecycle(){
+    if(!_lifecycleChildId||!_lifecycleMode){closeLifecycle();return;}
+    var cid=_lifecycleChildId, mode=_lifecycleMode;
+    var field=(mode==='enroll')?'enrollDate':'leaveDate';
+    var dateStr=document.getElementById('lifecycleDate').value||'';
+    var child=(asrDB.children[selT]||[]).find(function(c){return c.id===cid;});
+    if(!child){closeLifecycle();return;}
+    /* 這裡刻意不去動 asrDB.children（適性後台自己的名單管理畫面）——
+       入園/離園只影響「其他表單」看不看得到這個孩子（透過 window._asrPreload），
+       後台自己的名單一律維持完整顯示（只是多一個狀態標籤），
+       不然萬一設定錯了，孩子從後台畫面上消失就沒辦法點進去改了。 */
+    rdrC();
+    var msg=mode==='enroll'
+      ?(dateStr?(child.name+' 入園日期設定為 '+dateStr):('已取消 '+child.name+' 的入園日期設定'))
+      :(dateStr?(child.name+' 離園日期設定為 '+dateStr):('已取消 '+child.name+' 的離園日期設定'));
+    toast(msg);
+    if(typeof ROSTER!=='undefined'&&ROSTER.setChildLifecycle){
+      ROSTER.setChildLifecycle(selYear,cid,field,dateStr,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能還沒更新，請點「立即同步」重試');
+      });
+    }
+    closeLifecycle();
   }
   function selC2(cid){
     selC=cid;rdrC();
@@ -5172,7 +5281,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle};
 })();
 
 </script>
@@ -11483,7 +11592,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:38</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:44</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
