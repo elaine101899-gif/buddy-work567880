@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930223842';
+  var BUILD='20260930230827';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -11132,6 +11132,17 @@ var EXTENDCARE=(function(){
   function pad2(n){return (n<10?'0':'')+n;}
   function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
   function nowTimeStr(){var d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+  /* 查詢用的「目前檢視日期」，預設今天；切換日期只影響畫面顯示，
+     新增/離園操作一律還是寫回「今天」的紀錄，不會誤改到歷史資料 */
+  var curViewKey=todayKey();
+  function keyToDateInputVal(k){
+    var p=k.split('_');
+    return (parseInt(p[0],10)+1911)+'-'+p[1]+'-'+p[2];
+  }
+  function dateInputValToKey(v){
+    var p=v.split('-');
+    return (parseInt(p[0],10)-1911)+'_'+p[1]+'_'+p[2];
+  }
 
   function getKidsByCls(){
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
@@ -11191,30 +11202,51 @@ var EXTENDCARE=(function(){
     var wrap=document.getElementById('ec-root');
     if(!wrap)return;
     var groups=getKidsByCls();
-    var todayLbl=(function(){var d=new Date();return (d.getFullYear()-1911)+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';})();
-    var h='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">今天　'+todayLbl+'　·　點一下開始延托，再點一下記錄離園</div>';
+    var isToday=(curViewKey===todayKey());
+    var dayRec=db.records[curViewKey]||{};
+    var ecCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].status;}).length;
+
+    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
+    h+='<input type="date" class="df-inp" style="width:auto;" id="ecViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="EXTENDCARE.viewDate(this.value)">';
+    if(!isToday)h+='<button class="cln-sig-btn" onclick="EXTENDCARE.backToday()">回到今天</button>';
+    h+='<span style="margin-left:auto;font-weight:800;color:#a5680a;font-size:.88rem;">當天共 '+ecCount+' 人次延托</span>';
+    h+='</div>';
+
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+(isToday?'點一下開始延托，再點一下記錄離園':'歷史紀錄僅供查詢，不能修改')+'</div>';
     var any=false;
     CLSORDER.forEach(function(cls){
       var kids=groups[cls];
+      if(!isToday)kids=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].status;});
       if(!kids.length)return;
       any=true;
       h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
       kids.forEach(function(k){
-        var rec=(db.records[todayKey()]||{})[k.id]||{};
+        var rec=dayRec[k.id]||{};
         var status=rec.status||'';
         var bg='#f7f7fa',border='#ddd',txt='#888',tag='未延托';
         if(status==='active'){bg='#fff6e0';border='#e8a030';txt='#a5680a';tag='延托中 '+(rec.start||'');}
-        else if(status==='done'){bg='#e8f7f0';border='#36b27e';txt='#1f7a54';tag='已離園 '+(rec.end||'');}
-        h+='<div onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+k.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        else if(status==='done'){bg='#e8f7f0';border='#36b27e';txt='#1f7a54';tag=(rec.start||'')+' ～ '+(rec.end||'');}
+        var clickAttr=isToday?' onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+k.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;':' style="cursor:default;';
+        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
         h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
         h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
         h+='</div>';
       });
       h+='</div></div>';
     });
-    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">尚無幼兒名單</div>';
+    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">'+(isToday?'尚無幼兒名單':'這一天沒有幼兒延托紀錄')+'</div>';
     wrap.innerHTML=h;
+  }
+  function viewDate(inputVal){
+    if(!inputVal)return;
+    curViewKey=dateInputValToKey(inputVal);
+    render();
+  }
+  function backToday(){
+    curViewKey=todayKey();
+    render();
   }
 
   var _curDepartChild=null;
@@ -11287,13 +11319,13 @@ var EXTENDCARE=(function(){
     render();
   }
 
-  function init(){load();render();}
-  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart};
+  function init(){curViewKey=todayKey();load();render();}
+  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday};
 })();
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 22:38</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:08</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
