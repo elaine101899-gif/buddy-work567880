@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930215337';
+  var BUILD='20260930215559';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1626,7 +1626,7 @@ function _fbInitRaw(){
 function _ckey(k){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?('bambino__'+k):k;}
 /* 各種列印/匯出範本用的公司名稱、抬頭、Logo——統一從這裡拿，不要在範本裡寫死小布迪 */
 function _companyName(){return (COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;}
-function _companyFullName(){return CURRENT_COMPANY==='bambino'?_companyName():('臺南市私立'+_companyName());}
+function _companyFullName(){return '臺南市私立'+_companyName();}
 function _companyLogoSrc(){return (CURRENT_COMPANY==='bambino'&&window._BAMBINO_LOGO_SRC)?window._BAMBINO_LOGO_SRC:(window._XBD_LOGO_SRC||'');}
 /* 教學課程的週頁面（week-page/week5-page/weekB-page）是寫死在 HTML 裡的靜態內容，
    每個 h2 開頭都是「公司名稱 · ...」，換公司時要把開頭那段換掉，不能就這樣放著。 */
@@ -11090,7 +11090,7 @@ var PHONEVISIT=(function(){
 })();
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 21:53</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 21:55</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
