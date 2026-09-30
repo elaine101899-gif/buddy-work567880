@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930232938';
+  var BUILD='20260930235329';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1155,6 +1155,7 @@ body.adm .add-mat{display:inline-block;background:rgba(76,184,194,.12);border:1.
 .asr-add-btn{background:#e8a030;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:.77rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:none;}
 body.adm .asr-add-btn{display:inline-block !important;}
 body.adm .asr-del-btn{display:block !important;}
+body.adm .asr-promote-btn{display:block !important;}
 .asr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
 .asr-person{background:white;border:1.5px solid #ece8e2;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .asr-person.sel{border-color:#e8a030;background:#fdf1e4;}
@@ -1678,6 +1679,11 @@ var ROSTER=(function(){
     if(!b)return;
     var removedT=(cloud&&cloud.removedTeachers)||{};
     var removedC=(cloud&&cloud.removedChildren)||{};
+    /* 升班用：記錄「這個幼兒 id 現在改分到哪個老師」，跟 removedChildren（永久刪除）
+       是不同語意——升班只是換班級，底稿（base）裡原本那位老師名下的靜態名單
+       還是會列著這個孩子，這裡要把他從「原本」老師的名單濾掉，
+       避免同一個孩子同時出現在兩個班級。 */
+    var reassigned=(cloud&&cloud.reassigned)||{};
     var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
     var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
     var cloudT=(cloud&&cloud.teachers)||{};
@@ -1686,7 +1692,7 @@ var ROSTER=(function(){
     });
     var children={};
     Object.keys(b.children||{}).forEach(function(tid){
-      children[tid]=b.children[tid].filter(function(c){return !removedC[c.id];});
+      children[tid]=b.children[tid].filter(function(c){return !removedC[c.id]&&!(reassigned[c.id]&&reassigned[c.id]!==tid);});
     });
     var cloudC=(cloud&&cloud.children)||{};
     Object.keys(cloudC).forEach(function(tid){
@@ -1777,6 +1783,29 @@ var ROSTER=(function(){
       if(typeof refreshSigners==='function')refreshSigners();
     }
   }
+  /* 升班／換班：跟 removeChild+addChild 不一樣，不能用 removedChildren
+     （那是永久刪除、全部班級都會濾掉這個孩子）。改寫 reassigned 這個對照表，
+     _merge() 只會把孩子從「原本」老師的靜態名單濾掉，新老師這邊則靠雲端
+     children 節點顯示，兩邊都不會消失也不會重複。 */
+  function moveChild(yr,oldTeacherId,newTeacherId,child,cb){
+    var fb=_fbInit();
+    var remaining=2, ok=true;
+    function done(err){ if(err)ok=false; remaining--; if(remaining===0&&cb)cb(ok); }
+    if(fb){
+      fb.ref(_rosterFbBase()+'/'+yr+'/reassigned/'+child.id).set(newTeacherId,function(err){done(err);});
+      fb.ref(_rosterFbBase()+'/'+yr+'/children/'+newTeacherId+'/'+child.id).set(child,function(err){done(err);});
+      fb.ref(_rosterFbBase()+'/'+yr+'/children/'+oldTeacherId+'/'+child.id).remove();
+    }else{ if(cb)cb(false); return; }
+    var cur=window['_asrPreload'+yr];
+    if(cur){
+      if(cur.children[oldTeacherId])cur.children[oldTeacherId]=cur.children[oldTeacherId].filter(function(c){return c.id!==child.id;});
+      if(!cur.children[newTeacherId])cur.children[newTeacherId]=[];
+      if(!cur.children[newTeacherId].some(function(c){return c.id===child.id;})){
+        cur.children[newTeacherId]=cur.children[newTeacherId].concat([child]);
+      }
+      window['_asrPreload'+yr]=cur;
+    }
+  }
   function removeChild(yr,teacherId,childId,cb){
     var fb=_fbInit();
     if(fb){
@@ -1792,7 +1821,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,addChild:addChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync};
 })();
 </script>
 
@@ -3093,6 +3122,18 @@ function printSummaryB(cls) {
   </div>
 </div>
 
+<div class="asr-modal" id="asrPromoteOv">
+  <div class="asr-mbox">
+    <h3>&#x2B06;&#xFE0F; <span id="promoteChildName"></span> 升班</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">選擇要升去的班級</div>
+    <select class="asr-msel" id="promoteTeacherSel"></select>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="ASR.closePromote()">取消</button>
+      <button class="asr-mok" onclick="ASR.confirmPromote()">確認升班</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ 教保日誌 ═══ -->
 <div class="pg" id="pg-diary">
   <div class="bbar">
@@ -3771,6 +3812,7 @@ var ASR = (function() {
       h+='<div class="asr-page">'+c.age+'</div>';
       h+='<span class="asr-stat '+bc+'">'+bl+'</span>';
       h+='<button class="asr-del-btn" data-del-cid="'+c.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delC(this.getAttribute(\'data-del-cid\'))">&#x2715; 刪除</button>';
+      h+='<button class="asr-promote-btn" data-pro-cid="'+c.id+'" style="display:none;margin-top:5px;background:#4a90c0;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openPromote(this.getAttribute(\'data-pro-cid\'))">&#x2B06;&#xFE0F; 升班</button>';
       h+='</div>';
     }
     g.innerHTML=h||'<div style="color:#8a8a9a;font-size:.78rem">尚無幼兒</div>';
@@ -3787,10 +3829,58 @@ var ASR = (function() {
           }
           return;
         }
+        if(p.getAttribute('data-pro-cid'))return; /* 交給 button 自己的 onclick 處理 */
         if(p.getAttribute('data-cid')){selC2(p.getAttribute('data-cid'));return;}
         p=p.parentNode;
       }
     };
+  }
+  var _promoteChildId=null;
+  function openPromote(cid){
+    var cs=asrDB.children[selT]||[]; var child=null,i;
+    for(i=0;i<cs.length;i++){if(cs[i].id===cid){child=cs[i];break;}}
+    if(!child)return;
+    _promoteChildId=cid;
+    document.getElementById('promoteChildName').textContent=child.name;
+    var sel=document.getElementById('promoteTeacherSel');
+    var opts='';
+    asrDB.teachers.forEach(function(t){
+      if(t.id===selT)return; /* 排除目前班級本身 */
+      opts+='<option value="'+t.id+'">'+(CLS[t.cls]||t.cls)+' － '+t.name+'</option>';
+    });
+    sel.innerHTML=opts||'<option value="">（沒有其他班級）</option>';
+    document.getElementById('asrPromoteOv').classList.add('on');
+  }
+  function closePromote(){
+    document.getElementById('asrPromoteOv').classList.remove('on');
+    _promoteChildId=null;
+  }
+  function confirmPromote(){
+    var newTid=document.getElementById('promoteTeacherSel').value;
+    if(!_promoteChildId||!newTid){closePromote();return;}
+    var oldTid=selT;
+    var cs=asrDB.children[oldTid]||[];
+    var child=null;
+    asrDB.children[oldTid]=cs.filter(function(c){
+      if(c.id===_promoteChildId){child=c;return false;}
+      return true;
+    });
+    if(!child){closePromote();return;}
+    if(!asrDB.children[newTid])asrDB.children[newTid]=[];
+    asrDB.children[newTid].push(child);
+    if(selC===_promoteChildId){selC=null;document.getElementById('weekSec').style.display='none';}
+    asrSave();rdrC();
+    var newTeacherObj=asrDB.teachers.find(function(t){return t.id===newTid;});
+    toast('已將 '+child.name+' 升班到 '+(newTeacherObj?newTeacherObj.name:''));
+    /* 雲端同步：用 moveChild（不是 removeChild+addChild）。removeChild 會把孩子
+       標記成永久刪除，之後不管加到哪個老師底下都不會再出現；升班只是換班級，
+       要用 moveChild 才不會讓孩子從系統裡整個消失。 */
+    if(typeof ROSTER!=='undefined'&&ROSTER.moveChild){
+      ROSTER.moveChild(selYear,oldTid,newTid,child,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能還看得到舊班級，請點「立即同步」重試');
+      });
+    }
+    closePromote();
   }
   function selC2(cid){
     selC=cid;rdrC();
@@ -5033,7 +5123,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote};
 })();
 
 </script>
@@ -11334,7 +11424,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:29</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:53</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
