@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930215559';
+  var BUILD='20260930223842';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1968,6 +1968,11 @@ var ROSTER=(function(){
         <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">電訪表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">家長電訪記錄，全機同步</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('extendcare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
+        <span style="font-size:1.8rem;">&#x1F9F8;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">延托幼兒</div><div style="font-size:.78rem;color:#888;margin-top:2px;">延托起訖時段記錄，全機同步</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2141,6 +2146,32 @@ var ROSTER=(function(){
   </div>
   <div style="padding:14px 16px 40px;" id="pv-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<!-- ═══ 延托幼兒 ═══ -->
+<div class="pg" id="pg-extendcare">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <span class="btitle">&#x1F9F8; 延托幼兒</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="ec-root">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="ecDepartOv">
+  <div class="asr-mbox">
+    <h3>👋 <span id="ecDepartName"></span> 離園</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">離園時間</div>
+    <input type="time" class="asr-mi" id="ecDepartTime">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">托育人員簽章（需兩位）</div>
+    <div style="display:flex;gap:8px;margin-bottom:6px;">
+      <button type="button" class="asr-mok" id="ecSigBtn1" style="flex:1;background:#eee;color:#666;" onclick="EXTENDCARE.sign(1)">✍️ 簽章 1</button>
+      <button type="button" class="asr-mok" id="ecSigBtn2" style="flex:1;background:#eee;color:#666;" onclick="EXTENDCARE.sign(2)">✍️ 簽章 2</button>
+    </div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="EXTENDCARE.closeDepart()">取消</button>
+      <button class="asr-mok" id="ecConfirmBtn" onclick="EXTENDCARE.confirmDepart()" disabled style="opacity:.45;cursor:not-allowed;">✓ 確認離園</button>
+    </div>
   </div>
 </div>
 <!-- ═══ TEACH HUB ═══ -->
@@ -2464,6 +2495,7 @@ function GO(id) {
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
+  if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'leave-flex') { if (typeof LEAVE_FLEX !== 'undefined') LEAVE_FLEX.init(); }
   if (id === 'leave-boss') { if (typeof LEAVE_BOSS !== 'undefined') LEAVE_BOSS.init(); }
   if (id === 'asr') {
@@ -11088,9 +11120,180 @@ var PHONEVISIT=(function(){
 
   return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange};
 })();
+
+/* ── 延托幼兒：延托起訖時段記錄 ── */
+var EXTENDCARE=(function(){
+  var db={records:{}};
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
+  var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
+  var CLSORDER=['baby','crawl','run'];
+
+  function pad2(n){return (n<10?'0':'')+n;}
+  function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
+  function nowTimeStr(){var d=new Date();return pad2(d.getHours())+':'+pad2(d.getMinutes());}
+
+  function getKidsByCls(){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||[];
+    var children=pl.children||{};
+    var groups={baby:[],crawl:[],run:[]};
+    var seenId={};
+    teachers.forEach(function(t){
+      if(!groups[t.cls])return;
+      (children[t.id]||[]).forEach(function(c){
+        if(!c.id||!c.name||seenId[c.id])return;
+        seenId[c.id]=true;
+        groups[t.cls].push({id:c.id,name:c.name,teacherName:t.name});
+      });
+    });
+    return groups;
+  }
+
+  function getRec(childId){
+    var k=todayKey();
+    if(!db.records[k])db.records[k]={};
+    if(!db.records[k][childId])db.records[k][childId]={};
+    return db.records[k][childId];
+  }
+
+  function save(){
+    var json=JSON.stringify(db);
+    try{localStorage.setItem(_ckey('extendcareDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('extendcareDB'),json);
+  }
+  function pushRec(childId){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/extendcare/records/'+todayKey()+'/'+childId).set(getRec(childId));
+  }
+
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _fbRef=fb.ref('xiaobuddyClean/extendcare');
+    _fbRef.on('value',function(snap){
+      var v=snap.val();
+      db=(v&&v.records)?v:{records:{}};
+      try{localStorage.setItem(_ckey('extendcareDB'),JSON.stringify(db));}catch(e){}
+      render();
+    });
+  }
+  function load(){
+    try{var r=localStorage.getItem(_ckey('extendcareDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    attachFb();
+  }
+
+  function render(){
+    var wrap=document.getElementById('ec-root');
+    if(!wrap)return;
+    var groups=getKidsByCls();
+    var todayLbl=(function(){var d=new Date();return (d.getFullYear()-1911)+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';})();
+    var h='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">今天　'+todayLbl+'　·　點一下開始延托，再點一下記錄離園</div>';
+    var any=false;
+    CLSORDER.forEach(function(cls){
+      var kids=groups[cls];
+      if(!kids.length)return;
+      any=true;
+      h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+      kids.forEach(function(k){
+        var rec=(db.records[todayKey()]||{})[k.id]||{};
+        var status=rec.status||'';
+        var bg='#f7f7fa',border='#ddd',txt='#888',tag='未延托';
+        if(status==='active'){bg='#fff6e0';border='#e8a030';txt='#a5680a';tag='延托中 '+(rec.start||'');}
+        else if(status==='done'){bg='#e8f7f0';border='#36b27e';txt='#1f7a54';tag='已離園 '+(rec.end||'');}
+        h+='<div onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+k.name.replace(/'/g,"\\'")+'\')" style="cursor:pointer;min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
+        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">尚無幼兒名單</div>';
+    wrap.innerHTML=h;
+  }
+
+  var _curDepartChild=null;
+  var _sig1=null,_sig2=null;
+  function toggle(childId,name){
+    var rec=getRec(childId);
+    if(!rec.status){
+      rec.status='active';
+      rec.name=name;
+      rec.start=nowTimeStr();
+      save();pushRec(childId);render();
+    } else if(rec.status==='active'){
+      openDepart(childId,name);
+    } else {
+      if(confirm(name+' 已記錄離園（'+rec.end+'），要清除這筆重新開始嗎？')){
+        var k=todayKey();
+        if(db.records[k])delete db.records[k][childId];
+        save();
+        var fb=_fbInit();
+        if(fb)fb.ref('xiaobuddyClean/extendcare/records/'+k+'/'+childId).remove();
+        render();
+      }
+    }
+  }
+  function openDepart(childId,name){
+    _curDepartChild={id:childId,name:name};
+    _sig1=null;_sig2=null;
+    document.getElementById('ecDepartName').textContent=name;
+    document.getElementById('ecDepartTime').value=nowTimeStr();
+    _resetSigBtns();
+    document.getElementById('ecDepartOv').classList.add('on');
+  }
+  function _resetSigBtns(){
+    var b1=document.getElementById('ecSigBtn1'),b2=document.getElementById('ecSigBtn2'),cf=document.getElementById('ecConfirmBtn');
+    b1.style.background='#eee';b1.style.color='#666';b1.textContent='✍️ 簽章 1';
+    b2.style.background='#eee';b2.style.color='#666';b2.textContent='✍️ 簽章 2';
+    cf.disabled=true;cf.style.opacity='.45';cf.style.cursor='not-allowed';
+  }
+  function closeDepart(){
+    var ov=document.getElementById('ecDepartOv');
+    if(ov)ov.classList.remove('on');
+    _curDepartChild=null;
+  }
+  function sign(which){
+    if(!_curDepartChild)return;
+    _sigPad.open('托育人員簽章 '+which,which===1?_sig1:_sig2,function(dataURL){
+      if(which===1){
+        _sig1=dataURL;
+        var b=document.getElementById('ecSigBtn1');
+        b.style.background='#e8f7f4';b.style.color='var(--teal)';b.textContent='✓ 已簽名';
+      } else {
+        _sig2=dataURL;
+        var b2=document.getElementById('ecSigBtn2');
+        b2.style.background='#e8f7f4';b2.style.color='var(--teal)';b2.textContent='✓ 已簽名';
+      }
+      if(_sig1&&_sig2){
+        var cf=document.getElementById('ecConfirmBtn');
+        cf.disabled=false;cf.style.opacity='1';cf.style.cursor='pointer';
+      }
+    });
+  }
+  function confirmDepart(){
+    if(!_curDepartChild||!_sig1||!_sig2)return;
+    var rec=getRec(_curDepartChild.id);
+    rec.status='done';
+    rec.end=document.getElementById('ecDepartTime').value||nowTimeStr();
+    rec.sig1=_sig1;rec.sig2=_sig2;
+    save();pushRec(_curDepartChild.id);
+    closeDepart();
+    render();
+  }
+
+  function init(){load();render();}
+  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart};
+})();
+
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 21:55</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 22:38</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
