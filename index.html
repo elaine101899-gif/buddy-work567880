@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20260930235329';
+  var BUILD='20261001000628';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -5593,9 +5593,11 @@ var DIARY=(function(){
     });
     var out=[],seenId={},seenName={};
     ts.forEach(function(t){(_children[t.id]||[]).forEach(function(c){
-      // filter out ghost entries (IDs longer than 8 chars are c+Date.now() timestamps)
       var nm=c.name&&c.name.trim();
-      if(c.id&&c.id.length<=8&&nm&&!seenId[c.id]&&!seenName[nm]){
+      /* 原本這裡多了一條「id 長度 <=8」的過濾，原意是濾掉測試髒資料，
+         但正常新增幼兒的 id 是 'c'+Date.now()（13碼時間戳，遠超過8碼），
+         結果變成新增的幼兒永遠被濾掉、教保日誌看不到人。改回不限制長度。 */
+      if(c.id&&nm&&!seenId[c.id]&&!seenName[nm]){
         seenId[c.id]=true;seenName[nm]=true;
         out.push({id:c.id,name:nm});
       }
@@ -11424,7 +11426,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">9/30 23:53</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 00:06</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
