@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179084591219027';
+  var BUILD='17908469133854';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6601,6 +6601,13 @@ var LEAVE=(function(){
   var _FB_PATH='xiaobuddyLeave';
   var _lFbRef=null;
   var _lFbCache={};
+  /* 這張假單目前畫面上用的是「哪一天」的名單——render 跟 collectChildren 要用同一個
+     日期，不然兩邊算出來的 kids 陣列順序對不上，欄位會存到錯的小孩身上。 */
+  var _lRenderAsOf=null;
+  function _isoFromTs(ts){
+    var d=new Date(ts||Date.now());
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
 
   function clsLabel(c){return c==='run'?'跑跑班':c==='crawl'?'爬爬班':c==='baby'?'寶寶班':c;}
   function clsBg(c){return c==='run'?'var(--run-bg)':c==='crawl'?'var(--crawl-bg)':'var(--baby-bg)';}
@@ -6704,10 +6711,14 @@ var LEAVE=(function(){
     }catch(e){cb&&cb(getTeacherForms(tid));}
   }
 
-  function getKids(tid){
+  function getKids(tid,asOfDate){
     /* 永遠用正確學期的 preload 幼兒名單，避免 localStorage 舊資料干擾 */
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    /* asOfDate 有給的話，用「交接單那一天」的名單快照——不然幼兒升班/入園離園後，
+       回頭看舊假單會變成今天的名單，跟填單當下看到的對不起來（請假交接單的幼兒
+       清單原本整個沒有日期觀念，是直接讀當下的即時名單）。 */
+    var pl=(asOfDate&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf)?ROSTER.rosterAsOf(autoYr,asOfDate):null;
+    if(!pl||!pl.children)pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
     var kids=(pl.children&&pl.children[tid])||[];
     return kids.filter(function(c){return c.id&&c.name&&c.name.trim();});
   }
@@ -6827,7 +6838,7 @@ var LEAVE=(function(){
     lFid='f'+Date.now();
     var teacher=_leaveTeachers().find(function(t){return t.id===lTid;});
     saveLocal(lTid,lFid,{
-      header:{name:teacher?teacher.name:'',cls:teacher?clsLabel(teacher.cls):''},
+      header:{name:teacher?teacher.name:'',cls:teacher?clsLabel(teacher.cls):'',date:_todayISO()},
       children:[],postHandover:'',sigSub:'',sigDir:'',
       createdAt:Date.now()
     });
@@ -6862,7 +6873,11 @@ var LEAVE=(function(){
     var forms=getTeacherForms(lTid);
     var saved=forms[lFid]||{};
     var hdr=saved.header||{};
-    var kids=getKids(lTid);
+    /* 用這張單自己的「交接日期」當作名單的時間點；沒填日期的舊單就退回用建立時間，
+       避免回頭打開舊假單時被今天（可能已經升班/有新生）的即時名單蓋過去。 */
+    var asOfDate=hdr.date||_isoFromTs(saved.createdAt);
+    _lRenderAsOf=asOfDate;
+    var kids=getKids(lTid,asOfDate);
     var childData=saved.children||[];
     var cls=teacher.cls;
 
@@ -6922,7 +6937,9 @@ var LEAVE=(function(){
 
     /* ── 幼兒區塊 ── */
     kids.forEach(function(kid,idx){
-      var cd=childData[idx]||{};
+      /* 優先用幼兒 id 比對已存資料，順序萬一跟存檔當時不同也能對到正確的孩子；
+         真的對不到（很舊的單、沒存 id）才退回用原本的索引位置。 */
+      var cd=childData.find(function(c){return c&&c.id===kid.id;})||childData[idx]||{};
       h+=renderChild(kid,idx,cd,cls);
     });
 
@@ -7044,7 +7061,9 @@ var LEAVE=(function(){
   }
 
   function collectChildren(){
-    var kids=getKids(lTid);
+    /* 一定要跟目前畫面上 renderBody() 用的是同一個日期，不然這裡算出來的 kids
+       陣列順序跟畫面上輸入框的 idx 對不上，會把欄位存到錯的小孩身上。 */
+    var kids=getKids(lTid,_lRenderAsOf||v('lHdrDate')||_todayISO());
     return kids.map(function(kid,idx){
       var milkTypes=qcb('lMilk'+idx);
       return {
@@ -11800,7 +11819,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 17:11</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 17:28</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
