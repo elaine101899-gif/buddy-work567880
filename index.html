@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179081073513447';
+  var BUILD='179084591219027';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1648,8 +1648,10 @@ function _fixCompanyNameHeaders(){
   var wl=document.getElementById('weekHeaderLogo'); if(wl){var src=_companyLogoSrc(); if(src)wl.src=src;}
   var sf=document.getElementById('siteFootName'); if(sf)sf.textContent=name;
 }
-/* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋 */
-var _FB_SHARED_PATHS=['xiaobuddyClean/teachSync'];
+/* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋。
+   diaryResourceSync：小布迪老師在日誌裡填的「教學資源／活動引導重點」，
+   邦比諾直接沿用同一份，只有這兩個欄位共用，其他日誌內容（學生、照片、省思）不共用。 */
+var _FB_SHARED_PATHS=['xiaobuddyClean/teachSync','xiaobuddyClean/diaryResourceSync'];
 function _fbCompanyPrefix(path){
   if(typeof CURRENT_COMPANY==='undefined'||CURRENT_COMPANY!=='bambino')return path;
   for(var i=0;i<_FB_SHARED_PATHS.length;i++){
@@ -5452,6 +5454,11 @@ var DIARY=(function(){
   var diaryDB={entries:{}};
   var _fbDLAttachedCompany=null;
   var _fbDLRef=null;
+  /* 小布迪老師填的「教學資源／活動引導重點」共用給邦比諾：只快取這兩個欄位，
+     不跟 diaryDB.entries 混在一起，換公司時 diaryDB.entries 會被清空重建，
+     但這份共用快取不用清，本來就是兩間公司共用的同一份雲端資料。 */
+  var _sharedResourceDB={};
+  var _fbDRAttached=false;
 
   var CLSLABEL={run:'🏃 跑跑班',crawl:'🐛 爬爬班',baby:'👶 寶寶班'};
   var CLSCOLOR={run:'#e5eaf5',crawl:'#e8f0e5',baby:'#fdeae5'};
@@ -5828,6 +5835,16 @@ var DIARY=(function(){
         }
       });
     }
+    /* 「教學資源／活動引導重點」共用路徑只掛一次監聽器就好，不用像上面那樣
+       每次換公司都重新綁——兩間公司本來就是讀同一份雲端資料，不會因為換公司而改變。 */
+    if(_fbDL&&!_fbDRAttached){
+      _fbDRAttached=true;
+      _fbDL.ref('xiaobuddyClean/diaryResourceSync').on('value',function(snap){
+        _sharedResourceDB=snap.val()||{};
+        var main=document.getElementById('diaryMain');
+        if(main&&main.style.display!=='none'&&typeof renderDays==='function')renderDays();
+      });
+    }
   }
 
   function dbKey(yr,th,wk,day,cls){return yr+'_'+th+'_'+wk+'_'+day+'_'+cls;}
@@ -6084,9 +6101,13 @@ var DIARY=(function(){
     var _defBase=_dActDB[act.name]||_dActDB[_origActName]||{};
     /* 同一活動若各班觀察指標不同，可用 byCls 放分班專屬內容；沒有就用共通版 */
     var _def=(_defBase.byCls&&_defBase.byCls[cls])||_defBase;
-    var resource=(saved.resource!==undefined&&saved.resource!==null&&saved.resource!=='')?saved.resource:(_def.res||'');
+    /* 小布迪老師填的教學資源／活動引導重點，邦比諾沒自己填過的話直接沿用（見 _sharedResourceDB）；
+       自己這邊存過的（saved.resource/saved.steps）優先權還是最高，不會被共用資料蓋掉。 */
+    var _sharedR=_sharedResourceDB[key];
+    var resource=(saved.resource!==undefined&&saved.resource!==null&&saved.resource!=='')?saved.resource:((_sharedR&&_sharedR.resource)?_sharedR.resource:(_def.res||''));
     var _hasRealSteps=saved.steps&&saved.steps.some&&saved.steps.some(function(s){return s&&s.trim().length>0;});
-    var steps=_hasRealSteps?saved.steps:(_def.steps&&_def.steps.length?_def.steps:['']);
+    var _hasSharedSteps=_sharedR&&_sharedR.steps&&_sharedR.steps.some&&_sharedR.steps.some(function(s){return s&&s.trim().length>0;});
+    var steps=_hasRealSteps?saved.steps:(_hasSharedSteps?_sharedR.steps:(_def.steps&&_def.steps.length?_def.steps:['']));
     dCtx.isGrowth=isGrowth;
 
     var h='';
@@ -6235,7 +6256,29 @@ var DIARY=(function(){
     };
     dbSave();
     _pushDiaryEntry(key,0);
+    _pushDiaryResource(key,0);
     dToast('✓ 已儲存');
+  }
+  /* 只有小布迪填的「教學資源／活動引導重點」會推到共用路徑給邦比諾沿用；
+     邦比諾自己存檔不會回推，避免邦比諾自訂的內容反過來蓋掉小布迪的版本。 */
+  function _pushDiaryResource(key,retryCount){
+    if(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')return;
+    var _fbR=_fbInit();
+    if(!_fbR)return;
+    var _eR=diaryDB.entries[key];
+    if(!_eR)return;
+    var payload={resource:_eR.resource||'',steps:_eR.steps||[],_ts:_eR._ts||Date.now()};
+    var done=false;
+    var timer=setTimeout(function(){
+      if(done)return;done=true;
+      if(retryCount<1)setTimeout(function(){_pushDiaryResource(key,retryCount+1);},4000);
+    },8000);
+    try{
+      _fbR.ref('xiaobuddyClean/diaryResourceSync/'+key.replace(/\//g,'_')).set(payload,function(err){
+        if(done)return;done=true;clearTimeout(timer);
+        if(err&&retryCount<1)setTimeout(function(){_pushDiaryResource(key,retryCount+1);},4000);
+      });
+    }catch(e){ if(!done){done=true;clearTimeout(timer);} }
   }
   /* 推上雲端；失敗會重試，重試仍失敗才提示（原本失敗完全無聲，
      導致雲端停留舊版，隔天重新整理時舊版又把本機剛存的內容蓋掉） */
@@ -11757,7 +11800,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 07:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 17:11</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
