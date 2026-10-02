@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17908469133854';
+  var BUILD='17909004842231';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1686,7 +1686,7 @@ var ROSTER=(function(){
      就是原本「現在的名單」；傳過去的日期，就能還原「那一天」的名單長什麼樣子
      （寢具/日誌/電訪表查詢舊月份資料時要用）。不會動到 window._asrPreload，
      單純算出結果回傳，呼叫端決定要不要拿去覆蓋目前顯示的名單。 */
-  function _computeRoster(yr,cloud,asOfDate){
+  function _computeRoster(yr,cloud,asOfDate,skipLifecycle){
     var b=base[yr];
     if(!b)return null;
     var removedT=(cloud&&cloud.removedTeachers)||{};
@@ -1734,16 +1734,23 @@ var ROSTER=(function(){
        「現在」看到的名單要不要先隱藏他（asOfDate < enrollDate 就先不顯示）。
        離園日到了——從離園當天起，各表單新增資料時就不會再選到他，但離園
        之前查詢到的舊資料完全不受影響（因為歷史紀錄本來就不會重新對照名單）。 */
-    var lifecycle=(cloud&&cloud.lifecycle)||{};
-    Object.keys(children).forEach(function(tid){
-      children[tid]=children[tid].filter(function(c){
-        var lc=lifecycle[c.id];
-        if(!lc)return true;
-        if(lc.enrollDate&&asOfDate<lc.enrollDate)return false;
-        if(lc.leaveDate&&asOfDate>=lc.leaveDate)return false;
-        return true;
+    /* skipLifecycle：後台幼兒管理畫面要用的「全部名單」不套用這層日期篩選——
+       不然幼兒管理畫面跟各表單用同一份被篩過的名單，剛新增、入園日還沒到的
+       孩子在換公司/重新整理後會從 asrDB.children 整個消失（不是單純畫面上
+       隱藏），管理者會以為沒新增成功而重複新增。日期篩選只套用在真正要給
+       日誌/寢具/電訪表/請假交接單這些「今天的課堂名單」使用的地方。 */
+    if(!skipLifecycle){
+      var lifecycle=(cloud&&cloud.lifecycle)||{};
+      Object.keys(children).forEach(function(tid){
+        children[tid]=children[tid].filter(function(c){
+          var lc=lifecycle[c.id];
+          if(!lc)return true;
+          if(lc.enrollDate&&asOfDate<lc.enrollDate)return false;
+          if(lc.leaveDate&&asOfDate>=lc.leaveDate)return false;
+          return true;
+        });
       });
-    });
+    }
     return {teachers:teachers,children:children,removed:b.removed||[]};
   }
   var lastCloud={};
@@ -1763,6 +1770,11 @@ var ROSTER=(function(){
      用最後一次同步到的雲端資料現算，不用另外打 Firebase。 */
   function rosterAsOf(yr,dateStr){
     return _computeRoster(yr,lastCloud[yr],dateStr);
+  }
+  /* 給後台幼兒管理畫面用：不套用入園/離園日期篩選的完整名單，
+     每個新增過的孩子都看得到，不會因為入園日還沒到就從畫面上消失。 */
+  function rosterAll(yr){
+    return _computeRoster(yr,lastCloud[yr],_todayISO(),true);
   }
   function _attach(yr){
     /* 用「公司+年份」當 key：換公司時要對另一家公司的路徑重新掛一個監聽器，
@@ -1906,7 +1918,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 </script>
 
@@ -3901,8 +3913,12 @@ var ASR = (function() {
     /* 換公司時名單要「整批換掉」，不能像 refreshRoster() 那樣只做加法——
        不然小布迪的老師/幼兒會一直留在陣列裡，邦比諾的名單只是疊加上去，
        變成兩間公司的人混在一起。這裡比照 setYrTh() 切換學期時的做法，
-       直接用目前公司的 _asrPreload 整份覆蓋掉 asrDB.teachers/children。 */
-    var pl=window['_asrPreload'+selYear]||{};
+       直接用目前公司的 _asrPreload 整份覆蓋掉 asrDB.teachers/children。
+       這裡要用 ROSTER.rosterAll()（不套用入園/離園日期篩選的完整名單），
+       不能直接用 window._asrPreload（那份是給前台課堂名單用的，入園日還沒到
+       的孩子會被濾掉）——不然管理者剛新增的新生，換公司或重新整理後，
+       會從後台名單整個消失，誤以為沒新增成功而重複新增。 */
+    var pl=(typeof ROSTER!=='undefined'&&ROSTER.rosterAll&&ROSTER.rosterAll(selYear))||window['_asrPreload'+selYear]||{};
     asrDB.teachers=pl.teachers?pl.teachers.slice():[];
     asrDB.children=pl.children?JSON.parse(JSON.stringify(pl.children)):{};
     selT=null;selC=null;
@@ -3913,8 +3929,9 @@ var ASR = (function() {
   function refreshRoster(){
     /* setYrTh() 只在切換學期那一刻把 _asrPreload 複製進 asrDB，
        之後雲端（ROSTER）才到的新增老師/幼兒不會自動反映進來，
-       這裡讓 ROSTER 合併完成時可以呼叫，把差異補進目前畫面。 */
-    var pl=window['_asrPreload'+selYear]||{};
+       這裡讓 ROSTER 合併完成時可以呼叫，把差異補進目前畫面。
+       同樣要用 rosterAll()（不篩入園/離園日期），理由跟 resetForCompany() 一樣。 */
+    var pl=(typeof ROSTER!=='undefined'&&ROSTER.rosterAll&&ROSTER.rosterAll(selYear))||window['_asrPreload'+selYear]||{};
     if(pl.teachers){
       var tIds={}; asrDB.teachers.forEach(function(t){tIds[t.id]=true;});
       pl.teachers.forEach(function(t){ if(!tIds[t.id]){asrDB.teachers.push(t);tIds[t.id]=true;} });
@@ -6873,9 +6890,11 @@ var LEAVE=(function(){
     var forms=getTeacherForms(lTid);
     var saved=forms[lFid]||{};
     var hdr=saved.header||{};
-    /* 用這張單自己的「交接日期」當作名單的時間點；沒填日期的舊單就退回用建立時間，
-       避免回頭打開舊假單時被今天（可能已經升班/有新生）的即時名單蓋過去。 */
-    var asOfDate=hdr.date||_isoFromTs(saved.createdAt);
+    /* 名單要用「請假日期（起）」當基準日，不是「交接日期」——交接單通常請假前
+       好幾天就先填好了（規定寫明要提前七天），但代理人真正代班、需要對到的
+       名單是請假當天的，所以請假日期優先；沒填請假日期才退回交接日期，
+       兩個都沒填的舊單再退回用建立時間。 */
+    var asOfDate=(hdr.from&&hdr.from.split(/[T ]/)[0])||hdr.date||_isoFromTs(saved.createdAt);
     _lRenderAsOf=asOfDate;
     var kids=getKids(lTid,asOfDate);
     var childData=saved.children||[];
@@ -6889,15 +6908,15 @@ var LEAVE=(function(){
     /* ── 基本資料 ── */
     h+='<div class="df-sec"><div class="df-lbl">📄 基本資料</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" value="'+(hdr.date||'')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="lHdrName" class="df-inp" value="'+(hdr.name||teacher.name||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">班級</div><input type="text" id="lHdrCls" class="df-inp" value="'+(hdr.cls||clsLabel(cls)).replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）<span style="font-weight:400;color:#999;">（下面幼兒名單會依這天的名單顯示）</span></div><div style="display:flex;gap:6px;">';
+    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
     h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
     h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
@@ -7063,7 +7082,7 @@ var LEAVE=(function(){
   function collectChildren(){
     /* 一定要跟目前畫面上 renderBody() 用的是同一個日期，不然這裡算出來的 kids
        陣列順序跟畫面上輸入框的 idx 對不上，會把欄位存到錯的小孩身上。 */
-    var kids=getKids(lTid,_lRenderAsOf||v('lHdrDate')||_todayISO());
+    var kids=getKids(lTid,_lRenderAsOf||v('lHdrFromDate')||v('lHdrDate')||_todayISO());
     return kids.map(function(kid,idx){
       var milkTypes=qcb('lMilk'+idx);
       return {
@@ -7094,6 +7113,16 @@ var LEAVE=(function(){
     pushFb(lTid,lFid,data);
     var btn=document.querySelector('.lf-save-btn');
     if(btn){var old=btn.textContent;btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent=old;},1500);}
+  }
+
+  /* 「交接日期」或「請假日期（起）」改掉時，幼兒名單要跟著換成那一天的名單，
+     不用等使用者手動存檔再重新打開才看得到。做法是先用目前畫面上（改日期前）
+     的名單把已輸入的內容存起來，再用新日期重新整理畫面——這樣才不會因為
+     換日期後名單順序不同，把答案接到錯的小孩身上。 */
+  function onDateChange(){
+    if(!lTid||!lFid)return;
+    saveForm();
+    renderBody();
   }
 
   function fmtDate(s){
@@ -7324,7 +7353,7 @@ var LEAVE=(function(){
     showList();
   }
 
-  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig};
+  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,onDateChange:onDateChange,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig};
 })();
 
 /* ════ 主管／機動／廚工 假單 Firebase 同步共用工具 ════
@@ -11819,7 +11848,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/1 17:28</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/2 08:21</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
