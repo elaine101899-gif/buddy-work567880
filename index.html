@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17911233942741';
+  var BUILD='179112424325895';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1659,11 +1659,53 @@ function _fixCompanyNameHeaders(){
   var wl=document.getElementById('weekHeaderLogo'); if(wl){var src=_companyLogoSrc(); if(src)wl.src=src;}
   var sf=document.getElementById('siteFootName'); if(sf)sf.textContent=name;
 }
+/* 每週歌曲的音檔，key 是 "學年_主題_週次"，檔案放在 audio/ 資料夾（跟著網站一起部署）。
+   老師點歌曲旁邊的播放鈕就能直接聽，不用另外找 CD。目前只配好「弟弟到底像誰」
+   「叩叩叩，誰家的信？」跟舊的「小丑魚和貝貝」主題，其餘主題等內容規劃好、
+   確認歌曲名稱後再補。 */
+var WEEK_SONGS={
+  '114_6_1':'audio/xiaobeike.mp3','114_6_2':'audio/xiaobeike.mp3',
+  '114_6_4':'audio/xiaochou.mp3',
+  '114_6_5':'audio/shuizuguan.mp3','114_6_6':'audio/shuizuguan.mp3','114_6_7':'audio/shuizuguan.mp3',
+  '114_6_8':'audio/kuaileyinyuehui.mp3','114_6_9':'audio/kuaileyinyuehui.mp3',
+  '115_1_2':'audio/peekaboo.mp3','115_1_3':'audio/peekaboo.mp3',
+  '115_1_4':'audio/genpichong.mp3','115_1_5':'audio/genpichong.mp3',
+  '115_1_6':'audio/yibiyaya.mp3','115_1_7':'audio/yibiyaya.mp3',
+  '115_2_1':'audio/xiaoyouchai.mp3','115_2_2':'audio/xiaoyouchai.mp3',
+  '115_2_3':'audio/nijiazainali.mp3','115_2_4':'audio/nijiazainali.mp3','115_2_5':'audio/nijiazainali.mp3',
+  '115_2_6':'audio/qiutiandege.mp3','115_2_7':'audio/qiutiandege.mp3',
+  '115_2_8':'audio/raozhesenlin.mp3','115_2_9':'audio/raozhesenlin.mp3'
+};
+/* 依週頁面的 id 反推這一週是「學年_主題_週次」，才能查表找音檔。
+   week-N／week5-N 是舊的靜態週頁面，內容其實是 114 學年度的主題；
+   weekB-N 是切換其他主題時動態產生的頁面，年度固定 115，主題用
+   renderWeekB() 記錄的 _weekBRenderedTh。 */
+function _weekSongKey(wp){
+  var m;
+  if((m=/^week-(\d+)$/.exec(wp.id)))return '114_6_'+m[1];
+  if((m=/^week5-(\d+)$/.exec(wp.id)))return '114_5_'+m[1];
+  if((m=/^weekB-(\d+)$/.exec(wp.id))&&typeof _weekBRenderedTh!=='undefined'&&_weekBRenderedTh)return '115_'+_weekBRenderedTh+'_'+m[1];
+  return null;
+}
+var _weekAudioEl=null;
+function _toggleWeekSong(btn,src){
+  if(_weekAudioEl&&!_weekAudioEl.paused&&_weekAudioEl.src.indexOf(src)>-1){
+    _weekAudioEl.pause();
+    btn.textContent='▶️';
+    return;
+  }
+  if(_weekAudioEl){_weekAudioEl.pause();}
+  document.querySelectorAll('.week-song-play').forEach(function(b){b.textContent='▶️';});
+  _weekAudioEl=new Audio(src);
+  _weekAudioEl.play().catch(function(){alert('播放失敗，請檢查網路連線');});
+  btn.textContent='⏸️';
+  _weekAudioEl.onended=function(){btn.textContent='▶️';};
+}
 /* 週次旁邊原本會顯示「公司名稱．115年下半年」這一行，使用者覺得多餘，要拿掉，
-   改成只顯示「主題」「歌曲」兩行。h2／p／theme-tag 本身保留在 DOM 裡不刪除
-   （CSS 已經隱藏），列印總表等既有功能還是讀得到原始資料，不受影響——
-   這裡只是把同樣已經存在畫面上的文字（週主題繪本名稱、週次歌曲小標籤）
-   重新排版成週次旁邊的兩行。 */
+   改成只顯示「主題」「歌曲」兩行，歌曲後面有音檔的話再加一個播放鈕。
+   h2／p／theme-tag 本身保留在 DOM 裡不刪除（CSS 已經隱藏），列印總表等既有
+   功能還是讀得到原始資料，不受影響——這裡只是把同樣已經存在畫面上的文字
+   （週主題繪本名稱、週次歌曲小標籤）重新排版成週次旁邊的兩行。 */
 function _restyleWeekHeader(wp){
   var info=wp.querySelector('.week-info');
   if(!info||info.querySelector('.week-theme-ln'))return; /* 已經處理過就不要重複插入 */
@@ -1681,6 +1723,17 @@ function _restyleWeekHeader(wp){
   var songLn=document.createElement('div');
   songLn.className='week-song-ln';
   songLn.textContent='歌曲：'+songTxt;
+  var songKey=_weekSongKey(wp);
+  var audioSrc=songKey?WEEK_SONGS[songKey]:null;
+  if(audioSrc){
+    var playBtn=document.createElement('button');
+    playBtn.type='button';
+    playBtn.className='week-song-play';
+    playBtn.textContent='▶️';
+    playBtn.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:.85rem;vertical-align:middle;padding:0 2px;';
+    playBtn.onclick=function(e){e.stopPropagation();_toggleWeekSong(playBtn,audioSrc);};
+    songLn.appendChild(playBtn);
+  }
   info.insertBefore(songLn,info.firstChild);
   info.insertBefore(themeLn,info.firstChild);
 }
@@ -2573,8 +2626,11 @@ function renderWeekB() {
     var html = '<div class="week-page weekB-page" id="weekB-'+wk.no+'" style="display:none">';
     html += '<div class="week-header"><div class="week-badge"><div class="wn">'+wk.no+'</div><div class="wl">第 '+wk.no+' 週</div></div>';
     html += '<div class="week-info"><h2>'+_companyName()+' &middot; 115年下半年</h2>';
-    html += '<p>&#x1F4C5; '+wk.dates.replace('~',' ～ ')+' &#xFF5C; 主題繪本：'+wk.theme+'</p></div>';
-    html += '<div class="theme-tag">&#x1F4D6; '+thData.name+'</div></div>';
+    /* p 放整個主題的繪本名稱、theme-tag 放這一週的歌曲名稱，
+       跟靜態週頁面（week-1~9）的欄位語意一致，_restyleWeekHeader() 才會
+       正確把「主題」「歌曲」兩行對應到對的內容，不會兩邊相反。 */
+    html += '<p>&#x1F4C5; '+wk.dates.replace('~',' ～ ')+' &#xFF5C; 主題繪本：'+thData.name+'</p></div>';
+    html += '<div class="theme-tag">&#x1F3B6; '+wk.theme+'</div></div>';
     var _sd = wk.dates.split('~')[0].split('/');
     var _wkStart = new Date(2026, parseInt(_sd[0])-1, parseInt(_sd[1]));
     var _dayNames = ['一','二','三','四','五'];
@@ -11964,7 +12020,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 22:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 22:30</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
