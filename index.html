@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179111590832761';
+  var BUILD='179111647710402';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3758,6 +3758,14 @@ function _pushAsrReport(key,retryCount){
     });
   }catch(ex){ if(!done){done=true;clearTimeout(timer);} }
 }
+/* 這個監聽器掛在共用路徑的「父節點」上：公司裡任何一位老師存檔，都會讓全公司
+   每一台裝置的這個監聽器重新觸發一次。原本每次觸發都把整個 asrDB（含全公司
+   所有老師同步下來的照片）重複字串化三次、整包寫回 localStorage/IndexedDB，
+   老師多、同時在用的人多時，手機短時間內會被這個重複的大量字串化工作卡住、
+   耗光記憶體，在部分手機上会直接讓瀏覽器判定分頁當掉、反覆跳出「網頁發生問題」
+   的系統提示。改成 debounce：短時間內連續觸發只在最後一次真正執行一次儲存，
+   而且只字串化一次 asrDB，重複使用同一份字串，不要分開呼叫三次 JSON.stringify。 */
+var _asrSyncSaveTimer=null;
 function _attachAsrSync(){
   var _fbAL=_fbInit();
   if(!_fbAL||_fbALAttachedCompany===CURRENT_COMPANY)return;
@@ -3785,13 +3793,21 @@ function _attachAsrSync(){
       }
     });
     if(!changed)return;
-    try{
-      var light=JSON.parse(JSON.stringify(asrDB));
-      Object.keys(light.reports||{}).forEach(function(k){ var r=light.reports[k]; if(r)r.photos={}; });
-      localStorage.setItem(_ckey('asrDB'),JSON.stringify(light));
-    }catch(ex){}
-    if(typeof _xbdDB!=='undefined') _xbdDB.set(_ckey('asrDB'),JSON.stringify(asrDB));
-    if(typeof ASR!=='undefined'){ if(ASR.rdrT)ASR.rdrT(); if(ASR.rdrW)ASR.rdrW(); }
+    if(_asrSyncSaveTimer)clearTimeout(_asrSyncSaveTimer);
+    _asrSyncSaveTimer=setTimeout(function(){
+      _asrSyncSaveTimer=null;
+      var full=null;
+      try{ full=JSON.stringify(asrDB); }catch(ex){}
+      if(full){
+        try{
+          var light=JSON.parse(full);
+          Object.keys(light.reports||{}).forEach(function(k){ var r=light.reports[k]; if(r)r.photos={}; });
+          localStorage.setItem(_ckey('asrDB'),JSON.stringify(light));
+        }catch(ex){}
+        if(typeof _xbdDB!=='undefined') _xbdDB.set(_ckey('asrDB'),full);
+      }
+      if(typeof ASR!=='undefined'){ if(ASR.rdrT)ASR.rdrT(); if(ASR.rdrW)ASR.rdrW(); }
+    },1000);
   });
 }
 
@@ -11870,7 +11886,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 20:11</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 20:21</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
