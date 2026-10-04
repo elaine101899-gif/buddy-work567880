@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179112114125328';
+  var BUILD='179112301924559';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -303,7 +303,13 @@ body {
 .week-badge .wl { font-size:.62rem; opacity:.9; font-weight:300; }
 .week-info h2  { font-size:1rem; font-weight:700; color:var(--navy); }
 .week-info p   { font-size:.75rem; color:var(--gray); margin-top:3px; }
+/* 週次旁邊只留「主題」「歌曲」兩行，不再顯示公司名稱／學期文字——原本的
+   h2／p 保留在 DOM 裡只是用來餵列印總表等既有功能讀取資料，畫面上隱藏不顯示。 */
+.week-info h2, .week-info p { display:none; }
+.week-info .week-theme-ln { font-size:1rem; font-weight:700; color:var(--navy); }
+.week-info .week-song-ln  { font-size:.78rem; color:var(--teal); font-weight:600; margin-top:3px; }
 .theme-tag {
+  display:none;
   margin-left:auto; background:var(--teal-lt);
   border:1px solid var(--teal); border-radius:999px;
   padding:4px 16px; font-size:.76rem; font-weight:600;
@@ -1549,6 +1555,7 @@ function applyCompany(companyId){
     heroLogoImg.src=(companyId==='bambino'&&window._BAMBINO_LOGO_SRC)?window._BAMBINO_LOGO_SRC:window._XBD_LOGO_SRC;
   }
   if(typeof _fixCompanyNameHeaders==='function')_fixCompanyNameHeaders();
+  if(typeof _restyleAllWeekHeaders==='function')_restyleAllWeekHeaders();
   if(typeof refreshSigners==='function')refreshSigners();
   /* 清潔表單/寢具/溫濕度的空間班級清單改成後台雲端管理。init() 掛上常駐監聽器，
      讓其他裝置新增/刪除空間時能即時同步過來；forceSync() 換公司當下再強制重抓一次，
@@ -1651,6 +1658,34 @@ function _fixCompanyNameHeaders(){
   var wn=document.getElementById('weekHeaderName'); if(wn)wn.textContent=name;
   var wl=document.getElementById('weekHeaderLogo'); if(wl){var src=_companyLogoSrc(); if(src)wl.src=src;}
   var sf=document.getElementById('siteFootName'); if(sf)sf.textContent=name;
+}
+/* 週次旁邊原本會顯示「公司名稱．115年下半年」這一行，使用者覺得多餘，要拿掉，
+   改成只顯示「主題」「歌曲」兩行。h2／p／theme-tag 本身保留在 DOM 裡不刪除
+   （CSS 已經隱藏），列印總表等既有功能還是讀得到原始資料，不受影響——
+   這裡只是把同樣已經存在畫面上的文字（週主題繪本名稱、週次歌曲小標籤）
+   重新排版成週次旁邊的兩行。 */
+function _restyleWeekHeader(wp){
+  var info=wp.querySelector('.week-info');
+  if(!info||info.querySelector('.week-theme-ln'))return; /* 已經處理過就不要重複插入 */
+  var p=info.querySelector('p');
+  var tt=wp.querySelector('.theme-tag');
+  var themeTxt='';
+  if(p){
+    var m=p.textContent.split('主題繪本：');
+    themeTxt=(m.length>1?m[1]:p.textContent).trim();
+  }
+  var songTxt=tt?tt.textContent.trim():'';
+  var themeLn=document.createElement('div');
+  themeLn.className='week-theme-ln';
+  themeLn.textContent=themeTxt;
+  var songLn=document.createElement('div');
+  songLn.className='week-song-ln';
+  songLn.textContent=songTxt;
+  info.insertBefore(songLn,info.firstChild);
+  info.insertBefore(themeLn,info.firstChild);
+}
+function _restyleAllWeekHeaders(root){
+  (root||document).querySelectorAll('.week-page,.week5-page,.weekB-page').forEach(_restyleWeekHeader);
 }
 /* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋。
    diaryResourceSync：小布迪老師在日誌裡填的「教學資源／活動引導重點」，
@@ -2576,6 +2611,7 @@ function renderWeekB() {
   });
   SWB(1);
   if(typeof TEACHSYNC!=='undefined'){TEACHSYNC.apply();}
+  if(typeof _restyleAllWeekHeaders==='function')_restyleAllWeekHeaders(main);
   if(document.body.classList.contains('adm')&&typeof ADM!=='undefined'&&ADM.setupNew){ADM.setupNew(main);}
 }
 
@@ -11928,7 +11964,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 21:39</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 22:10</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
