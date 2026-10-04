@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179111647710402';
+  var BUILD='179111687015632';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1558,9 +1558,6 @@ function applyCompany(companyId){
      每次進頁面就重掛，所以要在這裡主動呼叫，換公司才會重新綁到正確的公司路徑。 */
   if(typeof DIARY!=='undefined'&&DIARY.reattach)DIARY.reattach();
   if(typeof SIGLIB!=='undefined'&&SIGLIB.reattach)SIGLIB.reattach();
-  /* 適齡適性照片同步監聽器也要在換公司時重新綁到新公司的路徑，
-     道理跟上面 DIARY.reattach 一樣（否則會暫時聽到另一家公司的照片）。 */
-  if(typeof _attachAsrSync==='function')_attachAsrSync();
   /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
@@ -3722,93 +3719,6 @@ function asrLoad() {
      老師，只要重新整理頁面，就會被這份舊快照原封不動地覆蓋回來，變成「老師
      刪除後又跑出來」。現在 ROSTER 模組（forceSync/resetForCompany/refreshRoster）
      已經是即時、正確處理刪除與升班的權威來源，不再需要這個舊的備援路徑。 */
-  _attachAsrSync();
-}
-
-/* ── 適齡適性照片跨裝置雲端同步：照片在存檔時已壓縮成 1200px/JPEG 0.78
-   （跟教保日誌同一套 compressImg，60位小孩×10張約壓到 90MB 內，
-   遠低於 Realtime Database 免費版 1GB 額度），這裡只是把壓縮後的
-   report 推上雲端、並監聽其他手機的更新，做法完全比照教保日誌
-   的 _pushDiaryEntry / diarySync 監聽器。 */
-var _fbALAttachedCompany=null;
-var _fbALRef=null;
-function _pushAsrReport(key,retryCount){
-  var _fbA=_fbInit();
-  if(!_fbA)return;
-  var _rA=asrDB.reports[key];
-  if(!_rA)return;
-  var payload={
-    wno:_rA.wno||null,
-    reflection:_rA.reflection||'',
-    parentFeedback:_rA.parentFeedback||'',
-    photos:_rA.photos||{},
-    cropStates:_rA.cropStates||{},
-    acts:_rA.acts||[],
-    _ts:_rA._ts||Date.now()
-  };
-  var done=false;
-  var timer=setTimeout(function(){
-    if(done)return;done=true;
-    if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
-  },8000);
-  try{
-    _fbA.ref('xiaobuddyClean/asrSync/'+key.replace(/\//g,'_')).set(payload,function(err){
-      if(done)return;done=true;clearTimeout(timer);
-      if(err&&retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
-    });
-  }catch(ex){ if(!done){done=true;clearTimeout(timer);} }
-}
-/* 這個監聽器掛在共用路徑的「父節點」上：公司裡任何一位老師存檔，都會讓全公司
-   每一台裝置的這個監聽器重新觸發一次。原本每次觸發都把整個 asrDB（含全公司
-   所有老師同步下來的照片）重複字串化三次、整包寫回 localStorage/IndexedDB，
-   老師多、同時在用的人多時，手機短時間內會被這個重複的大量字串化工作卡住、
-   耗光記憶體，在部分手機上会直接讓瀏覽器判定分頁當掉、反覆跳出「網頁發生問題」
-   的系統提示。改成 debounce：短時間內連續觸發只在最後一次真正執行一次儲存，
-   而且只字串化一次 asrDB，重複使用同一份字串，不要分開呼叫三次 JSON.stringify。 */
-var _asrSyncSaveTimer=null;
-function _attachAsrSync(){
-  var _fbAL=_fbInit();
-  if(!_fbAL||_fbALAttachedCompany===CURRENT_COMPANY)return;
-  if(_fbALRef){try{_fbALRef.off('value');}catch(e){}}
-  _fbALAttachedCompany=CURRENT_COMPANY;
-  _fbALRef=_fbAL.ref('xiaobuddyClean/asrSync');
-  _fbALRef.on('value',function(snap){
-    var incoming=snap.val()||{};
-    var changed=false;
-    Object.keys(incoming).forEach(function(k){
-      var e=incoming[k];
-      if(!asrDB.reports[k]){
-        asrDB.reports[k]=e;changed=true;
-      }else{
-        /* 跟教保日誌一樣用存檔時間戳判斷哪份較新：本機剛編輯過還沒推送成功的
-           版本不能被舊的雲端資料蓋掉，這種情況改成把本機版本再推一次。 */
-        var localTs=asrDB.reports[k]._ts||0;
-        var remoteTs=e._ts||0;
-        if(localTs>remoteTs){ _pushAsrReport(k,0); return; }
-        ['wno','reflection','parentFeedback','photos','cropStates','acts','_ts'].forEach(function(f){
-          if(e[f]!==undefined&&JSON.stringify(asrDB.reports[k][f])!==JSON.stringify(e[f])){
-            asrDB.reports[k][f]=e[f];changed=true;
-          }
-        });
-      }
-    });
-    if(!changed)return;
-    if(_asrSyncSaveTimer)clearTimeout(_asrSyncSaveTimer);
-    _asrSyncSaveTimer=setTimeout(function(){
-      _asrSyncSaveTimer=null;
-      var full=null;
-      try{ full=JSON.stringify(asrDB); }catch(ex){}
-      if(full){
-        try{
-          var light=JSON.parse(full);
-          Object.keys(light.reports||{}).forEach(function(k){ var r=light.reports[k]; if(r)r.photos={}; });
-          localStorage.setItem(_ckey('asrDB'),JSON.stringify(light));
-        }catch(ex){}
-        if(typeof _xbdDB!=='undefined') _xbdDB.set(_ckey('asrDB'),full);
-      }
-      if(typeof ASR!=='undefined'){ if(ASR.rdrT)ASR.rdrT(); if(ASR.rdrW)ASR.rdrW(); }
-    },1000);
-  });
 }
 
 /* ════ 儲存並下載更新版 HTML ════ */
@@ -4518,7 +4428,6 @@ var ASR = (function() {
       });
       asrSave();
       toast('✅ 已複製給 '+sel.length+' 個小孩！');
-      if(typeof _pushAsrReport==='function')_cpKeys.forEach(function(k){_pushAsrReport(k,0);});
     };
   }
 
@@ -4530,7 +4439,6 @@ var ASR = (function() {
     asrDB.reports[_saveKey]={wno:fCtx.wno,reflection:r?r.value:'',parentFeedback:p?p.value:'',photos:fCtx.photos,cropStates:crpSt,acts:_actsArr,_ts:Date.now()};
     _idbDel(_draftKey());
     asrSave();cf();rdrW();rdrC();toast('已儲存！');
-    if(typeof _pushAsrReport==='function')_pushAsrReport(_saveKey,0);
   }
   function setYrTh(){
     var yr=document.getElementById("selYrDrop").value;
@@ -5434,7 +5342,6 @@ var ASR = (function() {
     rdrC();
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
-    if(typeof _pushAsrReport==='function')_rwKeys.forEach(function(k){_pushAsrReport(k,0);});
   }
   return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,rdrW:rdrW,saveDraft:saveDraft,loadDraft:loadDraft,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids};
 })();
@@ -11886,7 +11793,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 20:21</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 20:27</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
