@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17910785347428';
+  var BUILD='179111590832761';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1706,6 +1706,10 @@ var ROSTER=(function(){
       /* 相容舊格式（純字串 teacherId，沒有生效日期，視同立即生效） */
       var tid=(typeof r==='string')?r:r.tid;
       var effDate=(typeof r==='object'&&r.effDate)?r.effDate:null;
+      /* 目標老師如果已經被刪除（排了升班排程之後才刪掉那位老師），
+         生效日到了也不要真的搬過去，不然孩子會變成掛在一個不存在的
+         老師底下、哪個班級都看不到人，一直維持在原本班級比較安全。 */
+      if(removedT[tid])return;
       if(!effDate||effDate<=asOfDate)reassigned[cid]=tid;
     });
     var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
@@ -3712,22 +3716,12 @@ function asrLoad() {
       } catch(ex) {}
     });
   }
-  /* 4. 從 Firebase 同步最新的老師／幼兒班級資料（後台更改後即時同步到所有手機） */
-  try {
-    var _fbL = _fbInit();
-    if (_fbL) {
-      _fbL.ref('xiaobuddyMeta/childrenPreload').once('value', function(snap) {
-        var fd = snap.val();
-        if (!fd || !fd.updatedAt) return;
-        if (fd.teachers) asrDB.teachers = fd.teachers;
-        if (fd.children) asrDB.children = fd.children;
-        /* 同步更新 window._asrPreload，讓事故單等模組也能讀到最新班級 */
-        if (!window._asrPreload) window._asrPreload = {};
-        window._asrPreload.teachers = asrDB.teachers;
-        window._asrPreload.children = asrDB.children;
-      });
-    }
-  } catch(e) {}
+  /* 4.（已移除）這裡原本會從 xiaobuddyMeta/childrenPreload 這個很少更新的舊快照
+     整批覆蓋 asrDB.teachers/children——那份資料只有手動按「存成HTML並下載」才會
+     更新，而且完全不知道 removedTeachers/removedChildren，於是管理者剛刪掉的
+     老師，只要重新整理頁面，就會被這份舊快照原封不動地覆蓋回來，變成「老師
+     刪除後又跑出來」。現在 ROSTER 模組（forceSync/resetForCompany/refreshRoster）
+     已經是即時、正確處理刪除與升班的權威來源，不再需要這個舊的備援路徑。 */
   _attachAsrSync();
 }
 
@@ -11876,7 +11870,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:48</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 20:11</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
