@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179111911129818';
+  var BUILD='179112114125328';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1142,6 +1142,10 @@ body.adm .spaces-admin{display:block;}
 body.adm [data-edit]{outline:2px dashed rgba(76,184,194,.5);border-radius:4px;cursor:text;min-height:1em;}
 body.adm [data-edit]:hover{outline:2px solid #4cb8c2;background:rgba(76,184,194,.05);}
 body.adm [data-edit]:focus{outline:2px solid #4cb8c2;background:rgba(76,184,194,.08);}
+/* 指標欄位改成點了跳出選單挑選，不是直接打字，用不同顏色外框+問號圖示跟其他欄位區分 */
+body.adm .act-indicator.ind-pickable{outline:2px dashed #e8a030;cursor:pointer;}
+body.adm .act-indicator.ind-pickable:hover{outline:2px solid #e8a030;background:rgba(232,160,48,.08);}
+body.adm .act-indicator.ind-pickable::after{content:' 🔽';font-size:.7em;opacity:.7;}
 body.adm .mat-tag{cursor:pointer;padding-right:16px;position:relative;}
 body.adm .mat-tag:hover{background:#ffe0e0;border-color:#e04040;}
 body.adm .mat-tag:after{content:'x';position:absolute;right:3px;top:0;color:#e04040;font-weight:700;}
@@ -2703,6 +2707,124 @@ var TCFONT=(function(){
   return{load:load,get:get,set:set,bump:bump,reset:reset};
 })();
 
+/* ── 托嬰中心嬰幼兒適性發展活動實務指引：五大領域 × 五個月齡層指標庫，
+   供教學課程後台「選擇學習指標」下拉選單使用，不用再手動打字輸入代碼。 */
+var IND_LEVELS = [
+  {key:'I',label:'I級．0-3個月'},
+  {key:'II',label:'II級．4-6個月'},
+  {key:'III',label:'III級．7-12個月'},
+  {key:'IV',label:'IV級．13-18個月'},
+  {key:'V',label:'V級．19-24個月'}
+];
+var IND_DB = {
+  '身體動作':{
+    I:[['I-1-1','俯臥時可抬起頭及頸部'],['I-1-2','能雙手碰在一起'],['I-1-3','能抓握放在手心的物品'],['I-1-4','能試圖伸手拿眼前物品'],['I-1-5','能伸展肢體']],
+    II:[['II-1-1','俯臥時能以手臂撐起胸部'],['II-1-2','能自己翻身'],['II-1-3','能在協助下坐穩'],['II-1-4','能伸手拉或耙抓物品'],['II-1-5','能搖晃手中的物品'],['II-1-6','能抬腿碰觸物品'],['II-1-7','能匍匐移動']],
+    III:[['III-1-1','能自己坐穩'],['III-1-2','會撐起身體向前爬行'],['III-1-3','能在協助下站立與行走'],['III-1-4','能獨立站立幾秒'],['III-1-5','能將物品由一手換到另一手'],['III-1-6','能用拇指配合其他手指鉗握物品'],['III-1-7','能以雙手拍手']],
+    IV:[['IV-1-1','能獨立穩定行走'],['IV-1-2','能保持平衡撿拾地上物品'],['IV-1-3','會拿或拖拉物品行走'],['IV-1-4','能將玩具放入或倒出容器'],['IV-1-5','能翻硬紙板書'],['IV-1-6','能丟擲玩具'],['IV-1-7','能以兩指(拇指、食指)撿拾物品']],
+    V:[['V-1-1','能獨立地走上樓梯'],['V-1-2','能奔跑'],['V-1-3','能原地跳起'],['V-1-4','能踢球'],['V-1-5','能堆疊數個小積木'],['V-1-6','能拿筆塗鴉'],['V-1-7','能一頁一頁地翻書']]
+  },
+  '社會情緒':{
+    I:[['I-2-1','能發出社會性微笑'],['I-2-2','會回應成人的逗弄'],['I-2-3','會使用如吸拇指或吃奶嘴的方式安撫自己']],
+    II:[['II-2-1','會玩自己的手腳'],['II-2-2','對鏡中的自己感興趣'],['II-2-3','能表現愉悅的情緒'],['II-2-4','對與人互動表現正向反應'],['II-2-5','會用簡單方式吸引成人注意']],
+    III:[['III-2-1','會揮手表示再見'],['III-2-2','能和成人玩簡單重覆遊戲（如躲貓貓）'],['III-2-3','能簡單表達自我需求及情緒'],['III-2-4','能區辨照顧者的語氣及情緒'],['III-2-5','能與照顧者建立情感依附（如主動伸手要抱）'],['III-2-6','練習處理陌生人焦慮（例如有陌生人來訪時）']],
+    IV:[['IV-2-1','能與別的孩子坐在一起玩'],['IV-2-2','能在提示下做基本社交動作（如謝謝、拜拜）'],['IV-2-3','會對喜愛玩偶表現出疼愛或照顧的行為'],['IV-2-4','會對熟悉成人表達好感（如擁抱親吻）'],['IV-2-5','會用行為或語言表達自主性（如搖頭表示不要）'],['IV-2-6','練習處理分離焦慮']],
+    V:[['V-2-1','能在照片中或鏡子中認出自己'],['V-2-2','能參與團體性的活動'],['V-2-3','能辨識並說出他人不同的情緒'],['V-2-4','會以自己的名字稱呼自己'],['V-2-5','會用動作去安慰他人'],['V-2-6','會說出親友、同伴的名字或稱呼'],['V-2-7','能認識自己、朋友或家庭成員的照片'],['V-2-8','會與玩偶對話（扮家家酒）']]
+  },
+  '語言溝通':{
+    I:[['I-3-1','會朝發出聲音的方向轉頭'],['I-3-2','能注視照顧者的口型變化'],['I-3-3','會發出聲音自娛'],['I-3-4','會回應成人的聲音']],
+    II:[['II-3-1','會嚐試發出不同的聲音'],['II-3-2','能發出聲音回應成人的話語'],['II-3-3','對熟悉的童謠或音樂有反應'],['II-3-4','會注視說話的人']],
+    III:[['III-3-1','能模仿大人的簡單話語（如ㄅㄚㄅㄚ）'],['III-3-2','在牙牙學語中出現聲量、高低和節奏的變化'],['III-3-3','會以肢體動作進行溝通（如以手指物或搖頭、點頭）'],['III-3-4','會與人輪流對話'],['III-3-5','能理解簡單語彙的意思（如ㄋㄟㄋㄟ）']],
+    IV:[['IV-3-1','能講至少十個單字'],['IV-3-2','能結合二個字出現電報式的話語（如狗狗汪汪）'],['IV-3-3','能用語言表達想要的東西'],['IV-3-4','能理解簡單日常生活用語'],['IV-3-5','能指認或說出熟悉物品/動物的名稱'],['IV-3-6','能回答簡單問題']],
+    V:[['V-3-1','可說出20個以上的字彙'],['V-3-2','能以短句與他人對話'],['V-3-3','能說出簡單的身體部位名稱'],['V-3-4','能自己閱讀圖畫書'],['V-3-5','聽到喜歡的音樂或歌謠會跟著手舞足蹈或哼唱'],['V-3-6','練習說疑問句（如問：爸爸呢？）']]
+  },
+  '認知探索':{
+    I:[['I-4-1','眼睛能追隨物品移動'],['I-4-2','對光線及聲量的變化有反應'],['I-4-3','能對不同觸感有反應'],['I-4-4','會模仿成人的臉部表情'],['I-4-5','會探索自己雙手']],
+    II:[['II-4-1','會重覆進行有目的性的行為'],['II-4-2','能用眼睛搜尋聲音的來源'],['II-4-3','能模仿簡單的動作'],['II-4-4','會用嘴巴探索物品'],['II-4-5','會注視顏色或圖案鮮明的圖片/玩具']],
+    III:[['III-4-1','會分辨熟悉家人與陌生人'],['III-4-2','會尋找完全被藏著的物品（保留概念）'],['III-4-3','能預期事件的發生（如奶瓶出現知道要喝奶了）'],['III-4-4','呼叫他的名字時會有反應'],['III-4-5','能設法接近想要的事物'],['III-4-6','能操作簡單玩具']],
+    IV:[['IV-4-1','能遵從簡單的指令'],['IV-4-2','能指認常見物品與簡單身體部位'],['IV-4-3','能配對簡單形狀'],['IV-4-4','能了解常見物品的用途'],['IV-4-5','能以新的方式探索物品的特性'],['IV-4-6','能尋找出指定物品']],
+    V:[['V-4-1','能分辨冷熱、軟硬、乾濕等'],['V-4-2','會假裝餵洋娃娃吃東西'],['V-4-3','能依形狀或顏色分類'],['V-4-4','能分辨大小'],['V-4-5','能拼簡單拼圖'],['V-4-6','對塗顏色活動感興趣']]
+  },
+  '生活自理':{
+    I:[['I-5-1','能吸吮奶嘴']],
+    II:[['II-5-1','會伸手幫忙拿奶瓶'],['II-5-2','能接受用湯匙餵食']],
+    III:[['III-5-1','能自己拿住奶瓶進食'],['III-5-2','能吞嚥糊狀副食品'],['III-5-3','能自己拿食物吃'],['III-5-4','能拉下頭上的帽子'],['III-5-5','會表示要吃東西']],
+    IV:[['IV-5-1','能用學習杯喝水'],['IV-5-2','能用吸管喝水'],['IV-5-3','練習用湯匙/叉子'],['IV-5-4','會表示尿濕了或已排便'],['IV-5-5','練習洗手的技巧'],['IV-5-6','能粗略以毛巾擦嘴'],['IV-5-7','練習咀嚼半固態食物']],
+    V:[['V-5-1','能用湯匙進食'],['V-5-2','能咀嚼固體食物'],['V-5-3','能自己脫褲子及鞋子'],['V-5-4','能在協助下練習穿衣服'],['V-5-5','能在協助下練習刷牙'],['V-5-6','能幫忙收拾玩具及物品'],['V-5-7','能練習做簡單家事（如擦桌子、收碗）'],['V-5-7b','能練習如廁及表達需求']]
+  }
+};
+/* 課程活動的領域欄位有時寫「身體動作發展」有時寫「身體動作」，統一對應到指標庫的 key */
+function _indDomKey(dom){
+  if(IND_DB[dom])return dom;
+  if(dom==='身體動作發展')return '身體動作';
+  return null;
+}
+function _closeIndicatorPicker(){
+  var m=document.getElementById('indicatorPickOv');
+  if(m)m.parentNode.removeChild(m);
+  document.removeEventListener('keydown',_indicatorPickerEsc,true);
+}
+function _indicatorPickerEsc(e){ if(e.keyCode===27)_closeIndicatorPicker(); }
+function _applyIndicatorChange(indEl,code,text){
+  var act=indEl.closest('.activity');
+  var newVal=code+' '+text;
+  indEl.textContent=newVal;
+  if(act&&!act.classList.contains('edited')){
+    act.classList.add('edited');
+    if(typeof ADM!=='undefined'&&ADM.bumpCount)ADM.bumpCount();
+  }
+  if(act&&typeof TEACHSYNC!=='undefined')TEACHSYNC.pushField(act,'ind',newVal);
+}
+function pickIndicator(indEl,evt){
+  if(evt){evt.stopPropagation();evt.preventDefault();}
+  _closeIndicatorPicker();
+  var act=indEl.closest('.activity');
+  var domEl=act?act.querySelector('.act-domain'):null;
+  var domKey=_indDomKey(domEl?domEl.textContent.trim():'');
+  if(!domKey){
+    alert('這個活動的領域不是身體動作／社會情緒／語言溝通／認知探索／生活自理，沒有對應的指標庫可以選。');
+    return;
+  }
+  var ov=document.createElement('div');
+  ov.id='indicatorPickOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+  var box=document.createElement('div');
+  box.style.cssText='background:#fff;border-radius:16px;width:min(480px,100%);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 16px 50px rgba(0,0,0,.3);';
+  var h='<div style="padding:16px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">';
+  h+='<div style="font-size:1.02rem;font-weight:800;color:#2d3057;">選擇學習指標．'+domKey+'</div>';
+  h+='<button id="indPickClose" style="background:#f2f2f7;border:none;border-radius:8px;padding:6px 14px;font-size:.82rem;color:#666;cursor:pointer;">關閉</button>';
+  h+='</div>';
+  h+='<div style="overflow-y:auto;padding:14px 18px;">';
+  IND_LEVELS.forEach(function(lv){
+    var items=IND_DB[domKey][lv.key]||[];
+    if(!items.length)return;
+    h+='<div style="font-weight:800;color:#2d7a3a;font-size:.86rem;margin:14px 0 8px;">'+lv.label+'</div>';
+    items.forEach(function(it){
+      var code=it[0],text=it[1];
+      h+='<div class="ind-pick-item" data-code="'+code+'" style="border:1.5px solid #e4ede4;border-radius:10px;padding:10px 14px;margin-bottom:8px;cursor:pointer;">';
+      h+='<span style="font-weight:800;color:#2d7a3a;">'+code.replace('b','')+'</span> <span style="color:#444;">'+text+'</span>';
+      h+='</div>';
+    });
+  });
+  h+='</div>';
+  box.innerHTML=h;
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  box.querySelectorAll('.ind-pick-item').forEach(function(row,idx){
+    row.addEventListener('mouseover',function(){row.style.borderColor='#4cb8c2';row.style.background='#f0fbfc';});
+    row.addEventListener('mouseout',function(){row.style.borderColor='#e4ede4';row.style.background='';});
+    row.addEventListener('click',function(){
+      var code=row.getAttribute('data-code');
+      var text=row.querySelector('span:last-child').textContent;
+      _applyIndicatorChange(indEl,code.replace('b',''),text);
+      _closeIndicatorPicker();
+    });
+  });
+  document.getElementById('indPickClose').onclick=_closeIndicatorPicker;
+  ov.addEventListener('click',function(e){ if(e.target===ov)_closeIndicatorPicker(); });
+  setTimeout(function(){ document.addEventListener('keydown',_indicatorPickerEsc,true); },0);
+}
+
 /* ── Admin ── */
 /* ── 六大領域 ↔ 顏色 對照表（供領域手動切換用） ── */
 var DOM_CLASS_MAP = {
@@ -2779,14 +2901,19 @@ var ADM = (function() {
     document.getElementById('aFab').innerHTML = '&#x1F512;';
     document.getElementById('aFab').style.background = '#e8a030';
     document.getElementById('aFab').onclick = function(){ quit(); };
-    var f = document.querySelectorAll('[data-edit]'), i;
+    /* 指標欄位不給直接打字編輯，改成點了跳出「選擇學習指標」下拉選單，
+       避免代碼打錯格式、或亂改成不對應領域的指標。 */
+    var f = document.querySelectorAll('[data-edit]:not(.act-indicator)'), i;
     for (i = 0; i < f.length; i++) { f[i].contentEditable = 'true'; f[i].addEventListener('input', onCh); f[i].addEventListener('paste', onPaste); }
+    var indF = document.querySelectorAll('.act-indicator'), ii;
+    for (ii = 0; ii < indF.length; ii++) { indF[ii].classList.add('ind-pickable'); indF[ii].addEventListener('click', _onIndicatorClick); }
     var a = document.querySelectorAll('.activity');
     for (i = 0; i < a.length; i++) { setupM(a[i]); }
     var dEls = document.querySelectorAll('.act-domain'), di;
     for (di = 0; di < dEls.length; di++) { dEls[di].classList.add('domain-editable'); dEls[di].addEventListener('click', onDomainClick); }
   }
   function onDomainClick(e){ pickDomain(e.currentTarget, e); }
+  function _onIndicatorClick(e){ pickIndicator(e.currentTarget, e); }
   /* 直接貼上會夾帶來源的 <span style="font-size:..">，導致同一格字體大小不一。
      這裡攔截貼上，只取純文字。 */
   function onPaste(e){
@@ -2848,8 +2975,11 @@ var ADM = (function() {
     document.getElementById('aFab').innerHTML='&#x1F511;';
     document.getElementById('aFab').style.background='';
     document.getElementById('aFab').onclick=function(){sp();};
-    var f=document.querySelectorAll('[data-edit]'),i;
+    var f=document.querySelectorAll('[data-edit]:not(.act-indicator)'),i;
     for(i=0;i<f.length;i++){f[i].contentEditable='false';f[i].removeEventListener('input',onCh);f[i].removeEventListener('paste',onPaste);}
+    var indF=document.querySelectorAll('.act-indicator'),ii;
+    for(ii=0;ii<indF.length;ii++){indF[ii].classList.remove('ind-pickable');indF[ii].removeEventListener('click',_onIndicatorClick);}
+    _closeIndicatorPicker();
     var ab=document.querySelectorAll('.add-mat');
     for(i=0;i<ab.length;i++){ab[i].parentNode.removeChild(ab[i]);}
     var ed=document.querySelectorAll('.activity.edited');
@@ -2897,8 +3027,10 @@ var ADM = (function() {
     setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3000);
   }
   function setupNew(container){
-    var f=container.querySelectorAll('[data-edit]'),i;
+    var f=container.querySelectorAll('[data-edit]:not(.act-indicator)'),i;
     for(i=0;i<f.length;i++){f[i].contentEditable='true';f[i].addEventListener('input',onCh);f[i].addEventListener('paste',onPaste);}
+    var indF=container.querySelectorAll('.act-indicator'),ii;
+    for(ii=0;ii<indF.length;ii++){indF[ii].classList.add('ind-pickable');indF[ii].addEventListener('click',_onIndicatorClick);}
     var a=container.querySelectorAll('.activity');
     for(i=0;i<a.length;i++){setupM(a[i]);}
     var dEls=container.querySelectorAll('.act-domain'),di;
@@ -11796,7 +11928,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 21:05</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 21:39</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
