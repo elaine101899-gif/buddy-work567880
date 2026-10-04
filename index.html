@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179103753514390';
+  var BUILD='179107691311785';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2047,6 +2047,18 @@ var ROSTER=(function(){
         <div class="hcard-arr">&#x203A;</div>
       </div>
     </div>
+    <div class="hcard c-sky" onclick="GO('extendcare')">
+      <div class="hcard-in">
+        <div class="hcard-bar"></div>
+        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F9F8;</span></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">Extended Care</div>
+          <div class="hcard-title">&#x1F9F8; 延托幼兒</div>
+          <div class="hcard-desc">延托起訖時段記錄<br>全機同步</div>
+        </div>
+        <div class="hcard-arr">&#x203A;</div>
+      </div>
+    </div>
     <div class="hcard c-grn" onclick="GO('forms-menu')">
       <div class="hcard-in">
         <div class="hcard-bar"></div>
@@ -2095,11 +2107,6 @@ var ROSTER=(function(){
       <div onclick="GO('phonevisit')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6aa8c8;">
         <span style="font-size:1.8rem;">&#x1F4DE;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">電訪表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">家長電訪記錄，全機同步</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-      </div>
-      <div onclick="GO('extendcare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
-        <span style="font-size:1.8rem;">&#x1F9F8;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">延托幼兒</div><div style="font-size:.78rem;color:#888;margin-top:2px;">延托起訖時段記錄，全機同步</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
     </div>
@@ -2280,7 +2287,7 @@ var ROSTER=(function(){
 <!-- ═══ 延托幼兒 ═══ -->
 <div class="pg" id="pg-extendcare">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
     <span class="btitle">&#x1F9F8; 延托幼兒</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ec-root">
@@ -11860,7 +11867,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/3 22:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:21</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
