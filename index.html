@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179107829222348';
+  var BUILD='17910785347428';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9762,7 +9762,7 @@ var CLEAN=(function(){
       h+='</div>';
     }
     h+='<input class="df-inp" id="cleanNewLabel" placeholder="新空間名稱，例如：三樓辦公室" style="margin-bottom:6px;">';
-    h+='<input class="df-inp" id="cleanNewItems" placeholder="清潔項目，用逗號分隔，例如：地板,門窗,垃圾桶" style="margin-bottom:6px;">';
+    h+='<input class="df-inp" id="cleanNewItems" placeholder="清潔項目，用逗號或頓號分隔，例如：地板、門窗、垃圾桶" style="margin-bottom:6px;">';
     h+='<button class="asr-add-btn" onclick="CLEAN.addSpace()">&#xFF0B; 新增清潔區域</button>';
     h+='</div>';
     wrap.innerHTML=h;
@@ -9772,7 +9772,9 @@ var CLEAN=(function(){
     var label=(labelEl&&labelEl.value||'').trim();
     if(!label){alert('請輸入空間名稱');return;}
     var itemsRaw=(itemsEl&&itemsEl.value||'').trim();
-    var items=itemsRaw?itemsRaw.split(/[,，]/).map(function(s){return s.trim();}).filter(Boolean):['地板','門窗','垃圾桶'];
+    /* 逗號、頓號都要能分隔——大家習慣用「、」列舉，之前只認半形/全形逗號，
+       打「地板、桌椅、門窗」會整串變成一個打勾項目，不會拆成三個。 */
+    var items=itemsRaw?itemsRaw.split(/[,，、]/).map(function(s){return s.trim();}).filter(Boolean):['地板','門窗','垃圾桶'];
     SPACES.add('clean',{label:label,items:items},function(ok){
       if(!ok)alert('新增失敗，請檢查網路後再試');
     });
@@ -11874,7 +11876,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:44</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:48</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
