@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179107691311785';
+  var BUILD='179107829222348';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -10344,10 +10344,12 @@ var TEMP=(function(){
     return '';
   }
   var _autoFilled=false;
+  /* 原本只補「今天」這一格，如果某間公司好幾天沒人打開這個頁面，
+     中間漏掉的工作日就永遠是空的，不會自己補回來。改成從這個月 1 號
+     補到今天，把漏掉的工作日一次補齊，不管哪間公司、多久沒開都一樣會自動跳。 */
   function autoFillToday(){
     var now=new Date();
     var ty=now.getFullYear()-1911, tm=now.getMonth()+1, td=now.getDate();
-    if(_isWeekend(ty,tm,td))return;
     var fb=_fbInit();
     flatOptions().forEach(function(o){
       var k=null;
@@ -10356,16 +10358,21 @@ var TEMP=(function(){
       var key2=o.kind+(o.room?('_'+o.room):'')+'_'+ty+'_'+tm;
       if(!db.records[key2])db.records[key2]={vals:{},sig1:'',sig2:'',offType:{}};
       var rec=db.records[key2];
-      if((rec.offType||{})[td])return;
-      if(!rec.vals[td])rec.vals[td]={};
-      var changed=false;
-      k.rows.forEach(function(rowLbl,ri){
-        if(!rec.vals[td][ri]){rec.vals[td][ri]=defaultVal(rowLbl,ty,tm,td);changed=true;}
-      });
-      if(changed&&fb){
+      for(var d=1;d<=td;d++){
+        if(_isWeekend(ty,tm,d))continue;
+        if((rec.offType||{})[d])continue;
+        if(!rec.vals[d])rec.vals[d]={};
+        var dayChanged=false;
         k.rows.forEach(function(rowLbl,ri){
-          fb.ref('xiaobuddyClean/temp/records/'+key2+'/vals/'+td+'/'+ri).set(rec.vals[td][ri]);
+          if(!rec.vals[d][ri]){rec.vals[d][ri]=defaultVal(rowLbl,ty,tm,d);dayChanged=true;}
         });
+        if(dayChanged&&fb){
+          (function(dd){
+            k.rows.forEach(function(rowLbl,ri){
+              fb.ref('xiaobuddyClean/temp/records/'+key2+'/vals/'+dd+'/'+ri).set(rec.vals[dd][ri]);
+            });
+          })(d);
+        }
       }
     });
     save();
@@ -11867,7 +11874,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:21</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 09:44</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
