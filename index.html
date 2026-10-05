@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17911900665955';
+  var BUILD='179119056329097';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2953,6 +2953,19 @@ function _applyDomainChange(domEl, newDom){
     if (typeof ADM !== 'undefined' && ADM.bumpCount) ADM.bumpCount();
   }
   if (typeof TEACHSYNC !== 'undefined') TEACHSYNC.pushField(act, 'dom', newDom);
+  /* 選「國定假日」的話，指標／活動內容／教學資源對放假日來說沒有意義，
+     直接清空，不用老師手動一個一個刪。 */
+  if (newDom === '國定假日') {
+    var indEl = act.querySelector('.act-indicator');
+    var contentEl = act.querySelector('.act-content');
+    var matsBox = act.querySelector('.mat-tags');
+    if (indEl) { indEl.textContent=''; if (typeof TEACHSYNC !== 'undefined') TEACHSYNC.pushField(act,'ind',''); }
+    if (contentEl) { contentEl.textContent=''; if (typeof TEACHSYNC !== 'undefined') TEACHSYNC.pushField(act,'content',''); }
+    if (matsBox) {
+      Array.prototype.slice.call(matsBox.querySelectorAll('.mat-tag')).forEach(function(t){ t.parentNode.removeChild(t); });
+      if (typeof TEACHSYNC !== 'undefined') TEACHSYNC.pushMats(act, []);
+    }
+  }
 }
 function pickDomain(domEl, evt){
   if (evt) evt.stopPropagation();
@@ -12049,7 +12062,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:47</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:56</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
