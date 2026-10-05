@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179112424325895';
+  var BUILD='179116983025365';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1740,10 +1740,14 @@ function _restyleWeekHeader(wp){
 function _restyleAllWeekHeaders(root){
   (root||document).querySelectorAll('.week-page,.week5-page,.weekB-page').forEach(_restyleWeekHeader);
 }
-/* 這些路徑兩間公司要共用（不加公司前綴），例如課程內容的後台覆蓋。
+/* 這些路徑兩間公司要共用（不加公司前綴）。
    diaryResourceSync：小布迪老師在日誌裡填的「教學資源／活動引導重點」，
-   邦比諾直接沿用同一份，只有這兩個欄位共用，其他日誌內容（學生、照片、省思）不共用。 */
-var _FB_SHARED_PATHS=['xiaobuddyClean/teachSync','xiaobuddyClean/diaryResourceSync'];
+   邦比諾直接沿用同一份，只有這兩個欄位共用，其他日誌內容（學生、照片、省思）不共用。
+   teachSync（教學課程後台的名稱/內容/指標覆蓋）原本也共用，但小布迪後台改動
+   不應該連動影響邦比諾，已經改成各自獨立——換公司時改寫不同路徑，兩邊從此
+   各自維護自己的教學課程覆蓋內容，互不影響。（換成獨立前已經把小布迪當時的
+   內容複製一份給邦比諾當起始值，邦比諾不會因為這次改動掉資料。） */
+var _FB_SHARED_PATHS=['xiaobuddyClean/diaryResourceSync'];
 function _fbCompanyPrefix(path){
   if(typeof CURRENT_COMPANY==='undefined'||CURRENT_COMPANY!=='bambino')return path;
   for(var i=0;i<_FB_SHARED_PATHS.length;i++){
@@ -12020,7 +12024,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/4 22:30</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 11:10</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
