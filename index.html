@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179116983025365';
+  var BUILD='179118979210337';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -10145,11 +10145,18 @@ var BEDDING=(function(){
   function findClsLabel(){for(var i=0;i<BEDDING_CLASSES.length;i++)if(BEDDING_CLASSES[i].id===curC)return BEDDING_CLASSES[i].label;return '';}
 
   var _autoFilled=false;
+  /* 原本只在「今天剛好是禮拜五」才會補今天這一格，如果那個禮拜五沒人開這個頁面，
+     那一格就永遠空白，不會事後補回來（跟教室溫濕度原本的問題一樣）。改成每次執行
+     都檢查這個月1號到今天之間「所有」禮拜五，漏掉哪個就補哪個，不限制一定要在
+     禮拜五當天才執行。 */
   function autoFillFriday(){
     var now=new Date();
-    if(now.getDay()!==5)return; /* 只在禮拜五執行 */
     var ty=now.getFullYear()-1911, tm=now.getMonth()+1, td=now.getDate();
-    var dateStr=tm+'/'+td;
+    var fridays=[];
+    for(var d=1;d<=td;d++){
+      if(new Date(now.getFullYear(),now.getMonth(),d).getDay()===5)fridays.push(tm+'/'+d);
+    }
+    if(!fridays.length)return;
     var fb=_fbInit();
     BEDDING_CLASSES.forEach(function(c){
       var k=c.id+'_'+ty+'_'+tm;
@@ -10157,9 +10164,11 @@ var BEDDING=(function(){
       var rec=db.records[k];
       var changed=false;
       rec.rows.forEach(function(row){
-        if(row.d.indexOf(dateStr)!==-1)return; /* 今天已經填過，不重複填 */
-        var idx=row.d.indexOf('');
-        if(idx!==-1){row.d[idx]=dateStr;changed=true;}
+        fridays.forEach(function(dateStr){
+          if(row.d.indexOf(dateStr)!==-1)return; /* 這個禮拜五已經填過，不重複填 */
+          var idx=row.d.indexOf('');
+          if(idx!==-1){row.d[idx]=dateStr;changed=true;}
+        });
       });
       if(changed&&fb){
         fb.ref('xiaobuddyClean/bedding/records/'+k+'/rows').set(rec.rows);
@@ -10315,6 +10324,17 @@ var BEDDING=(function(){
     wrap.innerHTML=h;
   }
 
+  /* 姓名/備註是打字輸入框，要失焦才會觸發 onchange 把值存進 db——
+     如果正在輸入時直接點列印，有些手機瀏覽器 blur() 不會可靠觸發原生的
+     change 事件。這裡直接手動補發 change 事件，不依賴瀏覽器自己判斷，
+     確保列印前一定先把正在打的內容存進去。 */
+  function _flushActiveInput(){
+    var el=document.activeElement;
+    if(el&&(el.tagName==='INPUT'||el.tagName==='SELECT'||el.tagName==='TEXTAREA')){
+      el.dispatchEvent(new Event('change',{bubbles:true}));
+      el.blur();
+    }
+  }
   function setCell(ri,field,idx,val){
     var rec=getRec();
     if(field==='d')rec.rows[ri].d[idx]=val;
@@ -10374,6 +10394,10 @@ var BEDDING=(function(){
     });
   }
   function download(){
+    /* 姓名/備註欄位是打字輸入框，要等失焦（blur）才會觸發 onchange 把剛打的字存進
+       db，如果使用者打完字直接點列印、輸入框還沒失焦，剛改的內容就不會被存進去、
+       列印出來還是舊的。這裡先手動把目前focus的欄位失焦，逼它先把值存進 db。 */
+    _flushActiveInput();
     var rec=getRec();
     if(!rec.sigs)rec.sigs=['','','','',''];
     var thead='<tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th></tr>';
@@ -10389,6 +10413,7 @@ var BEDDING=(function(){
     _cleanPrintOrDownload(_cleanBuildPrintHTML(findClsLabel()+' 寢具清潔紀錄表 '+curY+'年'+curM+'月',thead,rows));
   }
   function downloadLevel(levelId){
+    _flushActiveInput();
     var lv=null;
     for(var i=0;i<BEDDING_LEVELS.length;i++)if(BEDDING_LEVELS[i].id===levelId)lv=BEDDING_LEVELS[i];
     if(!lv)return;
@@ -12024,7 +12049,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 11:10</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:43</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
