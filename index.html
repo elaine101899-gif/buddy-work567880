@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179118979210337';
+  var BUILD='17911900665955';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -354,7 +354,7 @@ body {
 .act-body  { background:var(--body-bg); border-color:var(--body-bd); }
 .act-cog   { background:var(--cog-bg);  border-color:var(--cog-bd); }
 .act-life  { background:var(--life-bg); border-color:var(--life-bd); }
-.act-holiday { background:#fff8e1; border-color:#f9a825; }
+.act-holiday { background:#fff3e0; border-color:#ffa726; }
 .act-grow  { background:var(--grow-bg); border-color:var(--grow-bd); }
 
 .act-domain {
@@ -2931,7 +2931,7 @@ var DOM_CLASS_MAP = {
   '國定假日':'act-holiday'
 };
 var DOM_ALL_CLASSES = ['act-lang','act-soc','act-body','act-cog','act-life','act-grow','act-rest','act-holiday'];
-var DOM_PICK_OPTIONS = ['語言溝通','社會情緒','身體動作發展','認知探索','生活自理','成長紀錄'];
+var DOM_PICK_OPTIONS = ['語言溝通','社會情緒','身體動作發展','認知探索','生活自理','成長紀錄','國定假日'];
 function _domClassFor(dom){ return DOM_CLASS_MAP[dom] || 'act-cog'; }
 function _closeDomainMenu(){
   var m = document.getElementById('domainPickMenu');
@@ -3150,7 +3150,7 @@ function printSummary(cls) {
   var clsLight  = cls==='baby'?'#fdeef1': cls==='crawl'?'#edf7ee':'#eaf1fb';
   var domainColors = {
     '認知探索':'#c8a830','語言溝通':'#4a7fc1','身體動作':'#5ba85e','社會情緒':'#d46a8a','生活自理':'#9870c8',
-    '美感藝術':'#e87040','身體動作發展':'#5ba85e','休息':'#aaa'
+    '美感藝術':'#e87040','身體動作發展':'#5ba85e','休息':'#aaa','國定假日':'#ffa726'
   };
 
   /* ── 只收週次 1–9 ── */
@@ -3273,7 +3273,7 @@ function printSummaryB(cls) {
   var clsLight  = cls==='baby'?'#fdeef1': cls==='crawl'?'#edf7ee':'#eaf1fb';
   var domainColors = {
     '認知探索':'#c8a830','語言溝通':'#4a7fc1','身體動作':'#5ba85e','社會情緒':'#d46a8a','生活自理':'#9870c8',
-    '美感藝術':'#e87040','身體動作發展':'#5ba85e','休息':'#aaa','成長紀錄':'#888'
+    '美感藝術':'#e87040','身體動作發展':'#5ba85e','休息':'#aaa','成長紀錄':'#888','國定假日':'#ffa726'
   };
   var weekInfos = [];
   document.querySelectorAll('#mainB .week-page').forEach(function(wp){
@@ -12049,7 +12049,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:43</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:47</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
