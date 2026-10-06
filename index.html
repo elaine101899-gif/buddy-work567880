@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179126070027034';
+  var BUILD='179126092323271';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2190,9 +2190,61 @@ var ROSTER=(function(){
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
     <span class="btitle">&#x1F4CB; 評鑑</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">
-    內容準備中，之後會補上評鑑相關資料。
+  <div style="max-width:680px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
+    <div onclick="GO('pingjian-admin')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
+      <span style="font-size:1.8rem;">&#x1F4CB;</span>
+      <div><div style="font-weight:800;font-size:1rem;color:#30588a;">行政管理</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pingjian-care')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
+      <span style="font-size:1.8rem;">&#x1F9F8;</span>
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">教保活動</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pingjian-health')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <span style="font-size:1.8rem;">&#x1FA7A;</span>
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">衛生保健</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pingjian-welfare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
+      <span style="font-size:1.8rem;">&#x1F91D;</span>
+      <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">員工福利措施</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
   </div>
+</div>
+
+<!-- ═══ 評鑑：行政管理 ═══ -->
+<div class="pg" id="pg-pingjian-admin">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
+    <span class="btitle">&#x1F4CB; 行政管理</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<!-- ═══ 評鑑：教保活動 ═══ -->
+<div class="pg" id="pg-pingjian-care">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
+    <span class="btitle">&#x1F9F8; 教保活動</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<!-- ═══ 評鑑：衛生保健 ═══ -->
+<div class="pg" id="pg-pingjian-health">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
+    <span class="btitle">&#x1FA7A; 衛生保健</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<!-- ═══ 評鑑：員工福利措施 ═══ -->
+<div class="pg" id="pg-pingjian-welfare">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
+    <span class="btitle">&#x1F91D; 員工福利措施</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
 </div>
 
 <!-- ═══ FORMS MENU（各式表單） ═══ -->
@@ -12085,7 +12137,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 12:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 12:28</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
