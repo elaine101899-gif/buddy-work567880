@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179119056329097';
+  var BUILD='179126070027034';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2168,8 +2168,31 @@ var ROSTER=(function(){
         <div class="hcard-arr">&#x203A;</div>
       </div>
     </div>
+    <div class="hcard c-ros" onclick="GO('pingjian')">
+      <div class="hcard-in">
+        <div class="hcard-bar"></div>
+        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F4CB;</span></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">Evaluation</div>
+          <div class="hcard-title">&#x1F4CB; 評鑑</div>
+          <div class="hcard-desc">評鑑相關資料</div>
+        </div>
+        <div class="hcard-arr">&#x203A;</div>
+      </div>
+    </div>
   </div>
   <div class="site-foot">&#xa9; <span id="siteFootName">小布迪音樂藝術托嬰中心</span> &#xB7; 115年 &#xB7; <a href="javascript:void(0)" onclick="GO('company')" style="color:inherit;text-decoration:underline;">&#x1F3E2; 切換公司</a></div>
+</div>
+
+<!-- ═══ 評鑑 ═══ -->
+<div class="pg" id="pg-pingjian">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <span class="btitle">&#x1F4CB; 評鑑</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">
+    內容準備中，之後會補上評鑑相關資料。
+  </div>
 </div>
 
 <!-- ═══ FORMS MENU（各式表單） ═══ -->
@@ -12062,7 +12085,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/5 16:56</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 12:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
