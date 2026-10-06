@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179128263010333';
+  var BUILD='179128329022415';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2399,7 +2399,30 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
     <span class="btitle">3-2-3</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-h-3-2-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-3-1（生熟食）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-2-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-3-2（餐點配送及擺放位置）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-3-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2-3')">&#x2190; 3-2-3</button>
+    <span class="btitle">3-2-3-1（生熟食）</span>
+  </div>
+  <div id="rawcookedWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-3-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2-3')">&#x2190; 3-2-3</button>
+    <span class="btitle">3-2-3-2（餐點配送及擺放位置）</span>
+  </div>
+  <div id="mealplaceWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-h-3-2-4">
   <div class="bbar">
@@ -3099,6 +3122,8 @@ function GO(id) {
   if (id === 'pj-h-3-2-2-4') { if (typeof FRIDGEMED !== 'undefined') FRIDGEMED.init(); }
   if (id === 'pj-h-3-2-2-5') { if (typeof FRIDGEFOOD !== 'undefined') FRIDGEFOOD.init(); }
   if (id === 'pj-h-3-2-2-6') { if (typeof FRIDGEMILK !== 'undefined') FRIDGEMILK.init(); }
+  if (id === 'pj-h-3-2-3-1') { if (typeof RAWCOOKED !== 'undefined') RAWCOOKED.init(); }
+  if (id === 'pj-h-3-2-3-2') { if (typeof MEALPLACE !== 'undefined') MEALPLACE.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -12248,6 +12273,28 @@ var FRIDGEMILK=_buildFacilityCheckModule({
   printTitle:'冰箱溫度（母奶）查核紀錄',printEmoji:'🍼'
 });
 
+var RAWCOOKED=_buildFacilityCheckModule({
+  key:'xiaoBudiRawCookedV1',fbPath:'xiaobuddyRawCooked',idPrefix:'rc',varName:'RAWCOOKED',wrapId:'rawcookedWrap',
+  listSubtitle:'生熟食查核紀錄',listHint:'3-2-3-1 生熟食分類儲存',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-2 餐點製備管理<br>評鑑指標：3-2-3 食品製備衛生安全。<br>查核內容：3-2-3-1 生熟食分類儲存，日期標清楚。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-2 餐點製備管理</td></tr><tr><td class="th">評鑑指標</td><td>3-2-3 食品製備衛生安全。</td></tr><tr><td class="th">查核內容</td><td>3-2-3-1 生熟食分類儲存，日期標清楚。</td></tr>',
+  photos:['說明：生熟食物，會依照蔬菜及水果做區分擺放。','說明：生熟食物，會依照蔬菜及水果做區分擺放。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'生熟食查核紀錄',printEmoji:'🥬'
+});
+
+var MEALPLACE=_buildFacilityCheckModule({
+  key:'xiaoBudiMealPlaceV1',fbPath:'xiaobuddyMealPlace',idPrefix:'mp',varName:'MEALPLACE',wrapId:'mealplaceWrap',
+  listSubtitle:'餐點配送及擺放位置查核紀錄',listHint:'3-2-3-2 餐點配送及擺放位置',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-2 餐點製備管理<br>評鑑指標：3-2-3 食品製備衛生安全。<br>查核內容：3-2-3-2 調理及處理食物時，砧板、刀具將生食、熟食、水果分開調理及使用，餐點備妥後運送時應加蓋，並避免用手直接接觸，且放置應注意衛生安全。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-2 餐點製備管理</td></tr><tr><td class="th">評鑑指標</td><td>3-2-3 食品製備衛生安全。</td></tr><tr><td class="th">查核內容</td><td>3-2-3-2 調理及處理食物時，砧板、刀具將生食、熟食、水果分開調理及使用，餐點備妥後運送時應加蓋，並避免用手直接接觸，且放置應注意衛生安全。</td></tr>',
+  photos:['說明：廚工調理完後的料理，會先加蓋，以免直接接觸食材。','說明：調理及處理食物，都有分類，熟食會利用藍色的砧板做區分。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'餐點配送及擺放位置查核紀錄',printEmoji:'🍱'
+});
+
 
 
 
@@ -14811,7 +14858,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 18:30</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 18:41</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
