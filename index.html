@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179129860520726';
+  var BUILD='179129976622370';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2286,11 +2286,91 @@ function _rosterKidsAsOf(cls,dateStr){
       <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-1 健康管理與疾病管控</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
     </div>
-    <div onclick="GO('pj-h-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+    <div onclick="GO('pj-h-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
       <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2 餐點備製管理</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
     </div>
+    <div onclick="GO('pj-h-3-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3 照護環境安全維護</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
   </div>
+</div>
+<div class="pg" id="pg-pj-h-3-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-health')">&#x2190; 衛生保健</button>
+    <span class="btitle">3-3 照護環境安全維護</span>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-h-3-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-1（專屬寢具）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-2</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3')">&#x2190; 3-3 照護環境安全維護</button>
+    <span class="btitle">3-3-1（專屬寢具）</span>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-h-3-3-1-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-1-1</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-1-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3-1')">&#x2190; 3-3-1（專屬寢具）</button>
+    <span class="btitle">3-3-1-1</span>
+  </div>
+  <div id="personalbeddingWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3')">&#x2190; 3-3 照護環境安全維護</button>
+    <span class="btitle">3-3-2</span>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-h-3-3-2-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-2-1（環境安全與防護）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-3-2-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-2-2（電器用品標示）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-3-2-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-3-2-3（清潔用品、藥品擺放位置）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-2-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3-2')">&#x2190; 3-3-2</button>
+    <span class="btitle">3-3-2-1（環境安全與防護）</span>
+  </div>
+  <div id="envsafetyWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-2-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3-2')">&#x2190; 3-3-2</button>
+    <span class="btitle">3-3-2-2（電器用品標示）</span>
+  </div>
+  <div id="appliancelabelWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-h-3-3-2-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-3-2')">&#x2190; 3-3-2</button>
+    <span class="btitle">3-3-2-3（清潔用品、藥品擺放位置）</span>
+  </div>
+  <div id="cleanerstoreWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-h-3-2">
   <div class="bbar">
@@ -3162,6 +3242,10 @@ function GO(id) {
   if (id === 'pj-h-3-2-4-1') { if (typeof PERSONALUTENSIL !== 'undefined') PERSONALUTENSIL.init(); }
   if (id === 'pj-h-3-2-5-1') { if (typeof KITCHENLIGHT !== 'undefined') KITCHENLIGHT.init(); }
   if (id === 'pj-h-3-2-5-2') { if (typeof KITCHENWINDOW !== 'undefined') KITCHENWINDOW.init(); }
+  if (id === 'pj-h-3-3-1-1') { if (typeof PERSONALBEDDING !== 'undefined') PERSONALBEDDING.init(); }
+  if (id === 'pj-h-3-3-2-1') { if (typeof ENVSAFETY !== 'undefined') ENVSAFETY.init(); }
+  if (id === 'pj-h-3-3-2-2') { if (typeof APPLIANCELABEL !== 'undefined') APPLIANCELABEL.init(); }
+  if (id === 'pj-h-3-3-2-3') { if (typeof CLEANERSTORE !== 'undefined') CLEANERSTORE.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -12366,6 +12450,50 @@ var KITCHENWINDOW=_buildFacilityCheckModule({
   printTitle:'廚房門窗查核紀錄',printEmoji:'🪟'
 });
 
+var PERSONALBEDDING=_buildFacilityCheckModule({
+  key:'xiaoBudiPersonalBeddingV1',fbPath:'xiaobuddyPersonalBedding',idPrefix:'pb',varName:'PERSONALBEDDING',wrapId:'personalbeddingWrap',
+  listSubtitle:'專屬寢具查核紀錄',listHint:'3-3-1-1 嬰幼兒專用寢具',
+  dateLabel:'紀錄日期（例：114年9月）',datePlaceholder:'114年9月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-3 照護環境安全維護<br>評鑑指標：3-3-1 嬰幼兒有專屬寢具並定期清洗。<br>查核內容：3-3-1-1 每位嬰兒均有專用的寢具或睡床（睡墊），隔離收納且通風良好，每週至少清洗一次，並有完整紀錄。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-3 照護環境安全維護</td></tr><tr><td class="th">評鑑指標</td><td>3-3-1 嬰幼兒有專屬寢具並定期清洗。</td></tr><tr><td class="th">查核內容</td><td>3-3-1-1 每位嬰兒均有專用的寢具或睡床（睡墊），隔離收納且通風良好，每週至少清洗一次，並有完整紀錄。</td></tr>',
+  photos:['說明：幼兒的寢具，會放置個人物品櫃，避免交叉感染。','說明：每天放學托育人員都會將棉被櫃打開通風。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'專屬寢具查核紀錄',printEmoji:'🛏️'
+});
+
+var ENVSAFETY=_buildFacilityCheckModule({
+  key:'xiaoBudiEnvSafetyV1',fbPath:'xiaobuddyEnvSafety',idPrefix:'es',varName:'ENVSAFETY',wrapId:'envsafetyWrap',
+  listSubtitle:'環境安全與防護查核紀錄',listHint:'3-3-2-1 門窗牆壁櫥櫃防護措施',
+  dateLabel:'紀錄日期（例：114年9月）',datePlaceholder:'114年9月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-3 照護環境安全維護<br>評鑑指標：3-3-2 定期檢視改善環境安全防護措施。<br>查核內容：3-3-2-1 門窗牆壁櫥櫃具防夾及防撞措施，並設有安全裝置與防護措施，避免攀爬掉落危險。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-3 照護環境安全維護</td></tr><tr><td class="th">評鑑指標</td><td>3-3-2 定期檢視改善環境安全防護措施。</td></tr><tr><td class="th">查核內容</td><td>3-3-2-1 門窗牆壁櫥櫃具防夾及防撞措施，並設有安全裝置與防護措施，避免攀爬掉落危險。</td></tr>',
+  photos:['說明：門縫會多一個透明板，避免幼兒手伸進去。','說明：幼兒的奶嘴鍊的長度要少於6公分，避免幼兒繞頸。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'環境安全與防護查核紀錄',printEmoji:'🛡️'
+});
+
+var APPLIANCELABEL=_buildFacilityCheckModule({
+  key:'xiaoBudiApplianceLabelV1',fbPath:'xiaobuddyApplianceLabel',idPrefix:'al',varName:'APPLIANCELABEL',wrapId:'appliancelabelWrap',
+  listSubtitle:'電器用品標示查核紀錄',listHint:'3-3-2-2 易燙傷電器用品管理',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-3 照護環境安全維護<br>評鑑指標：3-3-2 定期檢視改善環境安全防護措施。<br>查核內容：3-3-2-2 會產生燙傷的電器用品置於嬰幼兒無法觸碰的地方。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-3 照護環境安全維護</td></tr><tr><td class="th">評鑑指標</td><td>3-3-2 定期檢視改善環境安全防護措施。</td></tr><tr><td class="th">查核內容</td><td>3-3-2-2 會產生燙傷的電器用品置於嬰幼兒無法觸碰的地方。</td></tr>',
+  photos:['說明：霧化機會放置高處，並貼上警示標誌。','說明：托育人員會引導幼兒這個是危險物品，要注意安全。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'電器用品標示查核紀錄',printEmoji:'🔌'
+});
+
+var CLEANERSTORE=_buildFacilityCheckModule({
+  key:'xiaoBudiCleanerStoreV1',fbPath:'xiaobuddyCleanerStore',idPrefix:'cs',varName:'CLEANERSTORE',wrapId:'cleanerstoreWrap',
+  listSubtitle:'清潔用品、藥品擺放位置查核紀錄',listHint:'3-3-2-3 危險物品分區存放',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-3 照護環境安全維護<br>評鑑指標：3-3-2 定期檢視改善環境安全防護措施。<br>查核內容：3-3-2-3 藥品、清潔劑、殺蟲劑等危險物品標示清楚後，並分區存放，專人管理，並放置在嬰幼兒拿不到的地方。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-3 照護環境安全維護</td></tr><tr><td class="th">評鑑指標</td><td>3-3-2 定期檢視改善環境安全防護措施。</td></tr><tr><td class="th">查核內容</td><td>3-3-2-3 藥品、清潔劑、殺蟲劑等危險物品標示清楚後，並分區存放，專人管理，並放置在嬰幼兒拿不到的地方。</td></tr>',
+  photos:['說明：清潔用品放置處，避免幼兒入內拿取。','說明：清潔用品常使用的會放置高處，避免幼兒拿取。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'清潔用品、藥品擺放位置查核紀錄',printEmoji:'🧴'
+});
+
 
 
 
@@ -14930,7 +15058,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 22:56</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 23:16</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
