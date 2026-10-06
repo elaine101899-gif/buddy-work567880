@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179126369713716';
+  var BUILD='179126451123834';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -9904,11 +9904,13 @@ var GROWTHCASE=(function(){
     saveForm();var d=db[curCls][curFid]||{};
     _doPrint(_buildHTML(d));
   }
-  function _fitToTwoPages(doc){
+  /* 內容若超出一張 A4 就整體縮小，強制限制在一頁內
+     （261mm 為 A4 可印高度扣除 Safari 列印自帶頁首/頁尾的緩衝） */
+  function _fitToOnePage(doc){
     try{
       var wrap=doc.querySelector('.wrap2p');
       if(!wrap)return;
-      var capPx=522*96/25.4;
+      var capPx=261*96/25.4;
       var prevZoom=wrap.style.zoom;wrap.style.zoom='';
       var natural=wrap.scrollHeight;
       wrap.style.zoom=prevZoom;
@@ -9921,14 +9923,14 @@ var GROWTHCASE=(function(){
     var w=null;try{w=window.open('','_blank');}catch(e){}
     if(w){
       w.document.write(h);w.document.close();
-      setTimeout(function(){try{_fitToTwoPages(w.document);}catch(e){}try{w.print();}catch(e){}},600);
+      setTimeout(function(){try{_fitToOnePage(w.document);}catch(e){}try{w.print();}catch(e){}},600);
     }
     else{
       var ifr=document.createElement('iframe');
       ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
       document.body.appendChild(ifr);
       ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
-      setTimeout(function(){try{_fitToTwoPages(ifr.contentDocument);}catch(e){}try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+      setTimeout(function(){try{_fitToOnePage(ifr.contentDocument);}catch(e){}try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
     }
   }
 
@@ -9952,37 +9954,33 @@ var GROWTHCASE=(function(){
     var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
     var AC='#2d9c6f',AL='#e8f7f0';
     function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-    function ck(ok){return '<span style="display:inline-block;width:10px;height:10px;border:1px solid #888;border-radius:2px;margin-right:3px;vertical-align:middle;text-align:center;line-height:9px;font-size:7pt;">'+(ok?'✓':'')+'</span>';}
+    function ck(ok){return '<span style="display:inline-block;width:11px;height:11px;border:1px solid #888;border-radius:2px;margin-right:3px;vertical-align:middle;text-align:center;line-height:10px;font-size:8pt;">'+(ok?'✓':'')+'</span>';}
     function rs(cur,val){return ck(cur===val);}
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>追蹤異常個案矯治紀錄表</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
-    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:9pt;padding:12px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
-    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:8px;margin-bottom:6px;}';
-    p+='.hdr img{height:54px;width:auto;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:7px;margin-bottom:7px;}';
+    p+='.hdr img{height:52px;width:auto;}';
     p+='.hdr-txt{flex:1;text-align:center;}';
-    p+='.hdr-txt .t1{font-size:13pt;font-weight:900;color:#2d3057;}';
-    p+='.hdr-txt .t2{font-size:11pt;font-weight:800;color:'+AC+';margin-top:3px;}';
-    p+='.sig-line{font-size:9pt;display:flex;gap:24px;margin-bottom:10px;padding:0 4px;}';
-    p+='.sig-line span{display:flex;align-items:flex-end;gap:4px;}';
-    p+='.sig-line .ln{border-bottom:1px solid #888;min-width:80px;min-height:16px;display:inline-flex;align-items:flex-end;}';
-    p+='.sig-line .ln img{max-height:30px;max-width:100px;object-fit:contain;}';
-    p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:8px;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:9.5pt;padding:5px 12px;letter-spacing:.5px;}';
+    p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
+    p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
+    p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:11.5pt;padding:5px 12px;letter-spacing:.5px;}';
     p+='.card-body{padding:7px 10px;}';
-    p+='table.dt{width:100%;border-collapse:collapse;font-size:8.8pt;}';
+    p+='table.dt{width:100%;border-collapse:collapse;font-size:10.5pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.inpbox{border:1px solid #ddd;border-radius:5px;min-height:44px;font-size:8.8pt;padding:4px 7px;white-space:pre-wrap;}';
-    p+='@media print{body{padding:8px 12px;}@page{margin:10mm;size:A4 portrait;}}';
+    p+='.inpbox{border:1px solid #ddd;border-radius:5px;min-height:38px;font-size:10.5pt;padding:4px 7px;white-space:pre-wrap;}';
+    p+='.sig-sec{display:flex;gap:14px;margin-top:4px;}';
+    p+='.sig-box{flex:1;text-align:center;}';
+    p+='.sig-box .ln{border-bottom:1px solid #888;min-height:40px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:2px;}';
+    p+='.sig-box .ln img{max-height:38px;max-width:100%;object-fit:contain;}';
+    p+='.sig-box .lbl{font-size:10pt;color:#555;margin-top:3px;}';
+    p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
     p+='<div class="hdr">';
     if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
     p+='<div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">📋 追蹤異常個案矯治紀錄表</div></div>';
-    p+='</div>';
-    p+='<div class="sig-line">';
-    p+='<span>托育人員：<span class="ln">'+(d.gFillerSig?'<img src="'+d.gFillerSig+'">':'')+'</span></span>';
-    p+='<span>主任：<span class="ln">'+(d.gDirectorSig?'<img src="'+d.gDirectorSig+'">':'')+'</span></span>';
-    p+='<span>家長簽名：<span class="ln">'+(d.gParentSig?'<img src="'+d.gParentSig+'">':'')+'</span></span>';
     p+='</div>';
     p+='<div class="card"><div class="card-hd">📋 個案資料</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:16%;">姓名</td><td style="width:34%;">'+esc2(d.gChildName||'')+'</td><td class="th" style="width:12%;">性別</td><td>'+rs(d.gGender,'男')+'男　'+rs(d.gGender,'女')+'女</td></tr>';
@@ -9991,18 +9989,23 @@ var GROWTHCASE=(function(){
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📝 個案具體行為特徵描述</div><div class="card-body">';
     p+='<div class="inpbox">'+esc2(d.gBehavior||'')+'</div>';
-    p+='<div style="font-size:8.5pt;margin-top:5px;text-align:right;">觀察日期：'+esc2(d.gObserveDate||'')+'　記錄者：'+esc2(d.gRecorder1||'')+'</div>';
+    p+='<div style="font-size:10pt;margin-top:5px;text-align:right;">觀察日期：'+esc2(d.gObserveDate||'')+'　記錄者：'+esc2(d.gRecorder1||'')+'</div>';
     p+='</div></div>';
     p+='<div class="card"><div class="card-hd">🔍 原因推估</div><div class="card-body"><div class="inpbox">'+esc2(d.gReason||'')+'</div></div></div>';
     p+='<div class="card"><div class="card-hd">🛠️ 處理方式或輔導策略紀錄</div><div class="card-body"><div class="inpbox">'+esc2(d.gStrategy||'')+'</div></div></div>';
     p+='<div class="card"><div class="card-hd">📈 後續觀察追蹤以及輔導紀錄</div><div class="card-body">';
     p+='<div class="inpbox">'+esc2(d.gFollowUp||'')+'</div>';
-    p+='<div style="font-size:8.5pt;margin-top:5px;text-align:right;">結案日期：'+esc2(d.gCloseDate||'')+'　記錄者：'+esc2(d.gRecorder2||'')+'</div>';
+    p+='<div style="font-size:10pt;margin-top:5px;text-align:right;">結案日期：'+esc2(d.gCloseDate||'')+'　記錄者：'+esc2(d.gRecorder2||'')+'</div>';
     p+='</div></div>';
-    p+='<div class="card"><div class="card-body" style="display:flex;gap:20px;font-size:9pt;">';
+    p+='<div class="card"><div class="card-body" style="display:flex;gap:20px;font-size:11pt;">';
     p+='<span>'+ck(d.gClosed)+'結案</span>';
     p+='<span style="flex:1;">'+ck(d.gOtherChecked)+'其他說明：'+esc2(d.gOtherNote||'')+'</span>';
     p+='</div></div>';
+    p+='<div class="sig-sec">';
+    p+='<div class="sig-box"><div class="ln">'+(d.gFillerSig?'<img src="'+d.gFillerSig+'">':'')+'</div><div class="lbl">托育人員簽名</div></div>';
+    p+='<div class="sig-box"><div class="ln">'+(d.gDirectorSig?'<img src="'+d.gDirectorSig+'">':'')+'</div><div class="lbl">主任簽名</div></div>';
+    p+='<div class="sig-box"><div class="ln">'+(d.gParentSig?'<img src="'+d.gParentSig+'">':'')+'</div><div class="lbl">家長簽名</div></div>';
+    p+='</div>';
     p+='</div></body></html>';
     return p;
   }
@@ -12588,7 +12591,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 13:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 13:28</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
