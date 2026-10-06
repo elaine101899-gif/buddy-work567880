@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='1791274534205';
+  var BUILD='179127544725212';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2020,6 +2020,51 @@ var ROSTER=(function(){
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
   return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
+
+/* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
+   當時（那個月）在班的幼兒名單——不是永遠抓現在的名單。跟 PHONEVISIT 的
+   getKids() 邏輯相同：選的若不是當月，就把月初、月底兩天的名單取聯集，
+   這樣月中升班/入離園的孩子那個月份都還找得到。 */
+function _rosterKidsAsOf(cls,dateStr){
+  var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+  var useDate=dateStr||_todayISO();
+  var dObj=new Date(useDate+'T00:00:00');
+  if(isNaN(dObj.getTime()))dObj=new Date();
+  var now=new Date();
+  var isCurMonth=(dObj.getFullYear()===now.getFullYear())&&(dObj.getMonth()===now.getMonth());
+  var teachers,children;
+  if(!isCurMonth&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
+    var y=dObj.getFullYear(),m=dObj.getMonth()+1;
+    var mm=(m<10?'0':'')+m;
+    var lastDay=new Date(y,m,0).getDate();
+    var first=y+'-'+mm+'-01',last=y+'-'+mm+'-'+(lastDay<10?'0':'')+lastDay;
+    var rFirst=ROSTER.rosterAsOf(autoYr,first)||{teachers:[],children:{}};
+    var rLast=ROSTER.rosterAsOf(autoYr,last)||{teachers:[],children:{}};
+    teachers=(rFirst.teachers||[]).concat(rLast.teachers||[]);
+    children={};
+    [rFirst.children||{},rLast.children||{}].forEach(function(cm){
+      Object.keys(cm).forEach(function(tid){
+        if(!children[tid])children[tid]=[];
+        children[tid]=children[tid].concat(cm[tid]);
+      });
+    });
+  } else {
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    teachers=pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:[])||[];
+    children=pl.children||(typeof asrDB!=='undefined'?asrDB.children:{})||{};
+  }
+  var res=[],seenId={},seenName={};
+  teachers.forEach(function(t){
+    if(t.cls!==cls)return;
+    (children[t.id]||[]).forEach(function(c){
+      var nm=c.name&&c.name.trim();
+      if(!c.id||!nm||seenId[c.id]||seenName[nm])return;
+      seenId[c.id]=true;seenName[nm]=true;
+      res.push({id:c.id,name:nm,teacherId:t.id,teacherName:t.name});
+    });
+  });
+  return res;
+}
 </script>
 
 <!-- Admin FAB -->
@@ -9242,25 +9287,10 @@ var ENTEROVIRUS=(function(){
     h+='<button onclick="ENTEROVIRUS.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
     /* 基本資料 */
     h+='<div class="df-sec"><div class="df-lbl">📋 基本資料</div>';
-    (function(){
-      if(typeof asrDB==='undefined')return;
-      var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
-      h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">快速選擇幼兒</div>';
-      h+='<select id="eChildSel" class="df-inp" style="width:100%;" onchange="ENTEROVIRUS.onChildSel()">';
-      h+='<option value="">── 選擇幼兒（自動填入姓名、班級、托育人員）──</option>';
-      var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
-      var teachers=pl.teachers||asrDB.teachers||[];
-      [curCls].forEach(function(cls){
-        teachers.filter(function(t){return t.cls===cls;}).forEach(function(t){
-          var kids=(pl.children&&pl.children[t.id])||asrDB.children[t.id]||[];
-          kids.forEach(function(c){h+='<option value="'+c.id+'|'+t.id+'">【'+clsLabelMap[cls]+'】'+c.name+'</option>';});
-        });
-      });
-      h+='</select></div>';
-    })();
+    h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">快速選擇幼兒（依填表日期當月的名單）</div>';
+    h+='<select id="eChildSel" class="df-inp" style="width:100%;" onchange="ENTEROVIRUS.onChildSel()">'+_childSelOptionsHTML(curCls,d.eDate)+'</select></div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">填表日期</div><input type="date" id="eDate" class="df-inp" value="'+esc(d.eDate||'')+'"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">填表日期</div><input type="date" id="eDate" class="df-inp" onchange="ENTEROVIRUS.onDateChange()" value="'+esc(d.eDate||'')+'"></div>';
     h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">嬰幼兒姓名</div><input type="text" id="eChildName" class="df-inp" placeholder="請填寫" value="'+esc(d.eChildName||'')+'"></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
@@ -9539,20 +9569,29 @@ var ENTEROVIRUS=(function(){
     }
   }
 
-  /* ─── 快速選幼兒 ─── */
+  /* ─── 快速選幼兒（依填表日期當月的名單）─── */
+  function _childSelOptionsHTML(cls,dateStr){
+    var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+    var kids=(typeof _rosterKidsAsOf==='function')?_rosterKidsAsOf(cls,dateStr):[];
+    var h='<option value="">── 選擇幼兒（自動填入姓名、班級、托育人員）──</option>';
+    kids.forEach(function(c){h+='<option value="'+c.id+'|'+c.teacherId+'">【'+(clsLabelMap[cls]||cls)+'】'+c.name+'</option>';});
+    return h;
+  }
+  function onDateChange(){
+    var sel=document.getElementById('eChildSel'),dateEl=document.getElementById('eDate');
+    if(!sel||!dateEl)return;
+    sel.innerHTML=_childSelOptionsHTML(curCls,dateEl.value);
+  }
   function onChildSel(){
     var sel=document.getElementById('eChildSel');if(!sel||!sel.value)return;
     var parts=sel.value.split('|'),cid=parts[0],tid=parts[1];
-    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
-    var teachers=pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:[])||[];
-    var t=teachers.filter(function(x){return x.id===tid;})[0];
-    var kids=t?((pl.children&&pl.children[t.id])||(typeof asrDB!=='undefined'?asrDB.children[t.id]:[])||[]):[];
-    var c=kids.filter(function(x){return x.id===cid;})[0];
-    if(!c||!t)return;
+    var dateEl=document.getElementById('eDate');
+    var kids=(typeof _rosterKidsAsOf==='function')?_rosterKidsAsOf(curCls,dateEl?dateEl.value:''):[];
+    var c=kids.filter(function(x){return x.id===cid&&x.teacherId===tid;})[0];
+    if(!c)return;
     var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
     var nameEl=document.getElementById('eChildName'),clsEl=document.getElementById('eCls'),teacherEl=document.getElementById('eTeacher');
-    if(nameEl)nameEl.value=c.name;if(clsEl)clsEl.value=clsLabelMap[t.cls]||t.cls;if(teacherEl)teacherEl.value=t.name;
+    if(nameEl)nameEl.value=c.name;if(clsEl)clsEl.value=clsLabelMap[curCls]||curCls;if(teacherEl)teacherEl.value=c.teacherName;
   }
 
   /* ─── 列印 HTML ─── */
@@ -9653,7 +9692,7 @@ var ENTEROVIRUS=(function(){
     var sig=SIGLIB.get(_directorName());
     if(sig&&db[curCls][curFid]){db[curCls][curFid].eDirectorSig=sig;}
   }
-  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,download:download,_openFillerSig:_openFillerSig};
+  return{init:init,openClass:openClass,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onChildSel:onChildSel,onDateChange:onDateChange,download:download,_openFillerSig:_openFillerSig};
 })();
 
 
@@ -13344,7 +13383,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 16:15</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 16:30</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
