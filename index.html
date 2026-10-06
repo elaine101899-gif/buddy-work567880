@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17912850639335';
+  var BUILD='179128551431817';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2448,7 +2448,30 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
     <span class="btitle">3-2-5</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-h-3-2-5-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-5-1（廚房測光）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-2-5-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-5-2（廚房門窗）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-5-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2-5')">&#x2190; 3-2-5</button>
+    <span class="btitle">3-2-5-1（廚房測光）</span>
+  </div>
+  <div id="kitchenlightWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-5-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2-5')">&#x2190; 3-2-5</button>
+    <span class="btitle">3-2-5-2（廚房門窗）</span>
+  </div>
+  <div id="kitchenwindowWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-h-3-2-1">
   <div class="bbar">
@@ -3137,6 +3160,8 @@ function GO(id) {
   if (id === 'pj-h-3-2-3-1') { if (typeof RAWCOOKED !== 'undefined') RAWCOOKED.init(); }
   if (id === 'pj-h-3-2-3-2') { if (typeof MEALPLACE !== 'undefined') MEALPLACE.init(); }
   if (id === 'pj-h-3-2-4-1') { if (typeof PERSONALUTENSIL !== 'undefined') PERSONALUTENSIL.init(); }
+  if (id === 'pj-h-3-2-5-1') { if (typeof KITCHENLIGHT !== 'undefined') KITCHENLIGHT.init(); }
+  if (id === 'pj-h-3-2-5-2') { if (typeof KITCHENWINDOW !== 'undefined') KITCHENWINDOW.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -12319,6 +12344,28 @@ var PERSONALUTENSIL=_buildFacilityCheckModule({
   printTitle:'幼兒專屬餐具、水壺查核紀錄',printEmoji:'🍽️'
 });
 
+var KITCHENLIGHT=_buildFacilityCheckModule({
+  key:'xiaoBudiKitchenLightV1',fbPath:'xiaobuddyKitchenLight',idPrefix:'kl',varName:'KITCHENLIGHT',wrapId:'kitchenlightWrap',
+  listSubtitle:'廚房測光查核紀錄',listHint:'3-2-5-1 備餐區光線與通風',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-2 餐點製備管理<br>評鑑指標：3-2-5 備餐區（或廚房）光線與通風良好，並裝置防病媒措施。<br>查核內容：3-2-5-1 備餐區清潔乾爽，光線（照明設施光線應達100Lux以上，工作檯面或調理檯面應保持200Lux以上）及通風良好。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-2 餐點製備管理</td></tr><tr><td class="th">評鑑指標</td><td>3-2-5 備餐區（或廚房）光線與通風良好，並裝置防病媒措施。</td></tr><tr><td class="th">查核內容</td><td>3-2-5-1 備餐區清潔乾爽，光線（照明設施光線應達100Lux以上，工作檯面或調理檯面應保持200Lux以上）及通風良好。</td></tr>',
+  photos:['說明：中心會調整廚房亮度，避免造成廚工煮飯時眼睛不適。','說明：托育人員備餐區光線亮度，會依照天氣調整亮度。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'廚房測光查核紀錄',printEmoji:'💡'
+});
+
+var KITCHENWINDOW=_buildFacilityCheckModule({
+  key:'xiaoBudiKitchenWindowV1',fbPath:'xiaobuddyKitchenWindow',idPrefix:'kw',varName:'KITCHENWINDOW',wrapId:'kitchenwindowWrap',
+  listSubtitle:'廚房門窗查核紀錄',listHint:'3-2-5-2 廚房門窗防病媒措施',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：3-2 餐點製備管理<br>評鑑指標：3-2-5 備餐區（或廚房）光線與通風良好，並裝置防病媒措施。<br>查核內容：3-2-5-2 廚房門窗應裝有效病媒蚊防治措施（如紗窗、膠囊、空氣簾等），且無損壞。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>3-2 餐點製備管理</td></tr><tr><td class="th">評鑑指標</td><td>3-2-5 備餐區（或廚房）光線與通風良好，並裝置防病媒措施。</td></tr><tr><td class="th">查核內容</td><td>3-2-5-2 廚房門窗應裝有效病媒蚊防治措施（如紗窗、膠囊、空氣簾等），且無損壞。</td></tr>',
+  photos:['說明：托育人員會定期檢查廚房紗窗是否有損壞。','說明：日常進出時托育人員也會留意紗窗是否有損壞。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'廚房門窗查核紀錄',printEmoji:'🪟'
+});
+
 
 
 
@@ -14882,7 +14929,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 19:11</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 19:18</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
