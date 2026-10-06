@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179127810723257';
+  var BUILD='17912787569367';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2298,11 +2298,55 @@ function _rosterKidsAsOf(cls,dateStr){
     <span class="btitle">3-2 餐點備製管理</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;">
-    <div onclick="GO('pj-h-3-2-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+    <div onclick="GO('pj-h-3-2-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
       <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-1</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
     </div>
+    <div onclick="GO('pj-h-3-2-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-2</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-2-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-3</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-2-4')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-4（幼兒專屬餐具、水壺）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-h-3-2-5')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">3-2-5</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
   </div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
+    <span class="btitle">3-2-2</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
+    <span class="btitle">3-2-3</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-4">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
+    <span class="btitle">3-2-4（幼兒專屬餐具、水壺）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-h-3-2-5">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-h-3-2')">&#x2190; 3-2 餐點備製管理</button>
+    <span class="btitle">3-2-5</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
 </div>
 <div class="pg" id="pg-pj-h-3-2-1">
   <div class="bbar">
@@ -14328,7 +14372,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 17:15</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 17:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
