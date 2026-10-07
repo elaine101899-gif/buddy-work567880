@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913507082696';
+  var BUILD='179135127617755';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2759,7 +2759,7 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">5-1（定期清潔、消毒機構內設備）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="envcleanWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-5-3">
   <div class="bbar">
@@ -3406,6 +3406,7 @@ function GO(id) {
   if (id === 'pj-inf-3-1') { if (typeof YELLOWCARD !== 'undefined') YELLOWCARD.init(); }
   if (id === 'pj-inf-3-2') { if (typeof VACCINEINFO !== 'undefined') VACCINEINFO.init(); }
   if (id === 'pj-inf-4-1') { if (typeof TRAINMEETING !== 'undefined') TRAINMEETING.init(); }
+  if (id === 'pj-inf-5-1') { if (typeof ENVCLEAN !== 'undefined') ENVCLEAN.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -13337,6 +13338,17 @@ var TRAINMEETING=(function(){
   return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,addClass:addClass,removeClass:removeClass,onClassChange:onClassChange,download:download};
 })();
 
+var ENVCLEAN=_buildFacilityCheckModule({
+  key:'xiaoBudiEnvCleanV1',fbPath:'xiaobuddyEnvClean',idPrefix:'ec',varName:'ENVCLEAN',wrapId:'envcleanWrap',
+  listSubtitle:'定期清潔消毒機構內外環境查核紀錄',listHint:'5-1 環境清潔及病媒防治',
+  dateLabel:'紀錄日期（例：114年6月）',datePlaceholder:'114年6月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：環境清潔及病媒防治<br>查核內容：5.1 定期清潔,消毒機構內外環境及清潔維護通風設備,保持乾淨無異味。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>環境清潔及病媒防治</td></tr><tr><td class="th">查核內容</td><td>5.1 定期清潔,消毒機構內外環境及清潔維護通風設備,保持乾淨無異味。</td></tr>',
+  photos:['說明：托育人員每個月會用稀釋漂白水擦拭,消毒環境。','說明：托育人員每個月會用稀釋漂白水,進行拖地。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'定期清潔消毒機構內外環境查核紀錄',printEmoji:'🧹'
+});
+
 
 
 
@@ -15905,7 +15917,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:25</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:34</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
