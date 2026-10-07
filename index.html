@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179138344211585';
+  var BUILD='17913841179749';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2670,7 +2670,19 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
     <span class="btitle">&#x1F91D; 員工福利措施</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-w-4-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
+      <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">4-1（員工子女就學）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-w-4-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-welfare')">&#x2190; 員工福利措施</button>
+    <span class="btitle">4-1（員工子女就學）</span>
+  </div>
+  <div id="staffchildEduWrap" style="padding-bottom:40px;"></div>
 </div>
 <!-- ═══ 評鑑：感染管控 ═══ -->
 <div class="pg" id="pg-pingjian-infection">
@@ -3415,6 +3427,7 @@ function GO(id) {
   if (id === 'pj-inf-6-8') { if (typeof PPESTORE !== 'undefined') PPESTORE.init(); }
   if (id === 'pj-inf-6-9') { if (typeof WATERSAFETY !== 'undefined') WATERSAFETY.init(); }
   if (id === 'pj-inf-7-1') { if (typeof ISOLATIONROOM !== 'undefined') ISOLATIONROOM.init(); }
+  if (id === 'pj-w-4-1') { if (typeof STAFFCHILDEDU !== 'undefined') STAFFCHILDEDU.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -13695,6 +13708,17 @@ var ISOLATIONROOM=_buildFacilityCheckModule({
   printTitle:'隔離空間設置查核紀錄',printEmoji:'🚪'
 });
 
+var STAFFCHILDEDU=_buildFacilityCheckModule({
+  key:'xiaoBudiStaffChildEduV1',fbPath:'xiaobuddyStaffChildEdu',idPrefix:'se',varName:'STAFFCHILDEDU',wrapId:'staffchildEduWrap',
+  listSubtitle:'員工子女就學福利查核紀錄',listHint:'4-1 子女就讀學費及月費福利',
+  dateLabel:'項目名稱（例：年度績效獎金：子女就讀學費及月費福利）',datePlaceholder:'年度績效獎金：子女就讀學費及月費福利',dateLabelShort:'項目名稱',
+  infoHtml:'核心項目：福利措施<br>評鑑指標：員工福利措施<br>查核內容：福利措施',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>福利措施</td></tr><tr><td class="th">評鑑指標</td><td>員工福利措施</td></tr><tr><td class="th">查核內容</td><td>福利措施</td></tr>',
+  photos:['說明：子女就讀學費及月費福利。','說明：子女就讀學費及月費福利。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'員工子女就學福利查核紀錄',printEmoji:'🎓'
+});
+
 
 
 
@@ -16265,7 +16289,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:30</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:41</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
