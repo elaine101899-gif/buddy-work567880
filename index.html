@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179135127617755';
+  var BUILD='179136822230062';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13082,10 +13082,6 @@ var TRAINMEETING=(function(){
     h+='<div class="df-sec"><div class="df-lbl">📚 訓練事項</div>';
     h+='<textarea id="trTopic" class="df-ta" placeholder="例：什麼是玫瑰疹、傳染方式、常見症狀、防治措施…" style="min-height:80px;">'+pe(d.trTopic||'')+'</textarea>';
     h+='</div>';
-    /* 整體心得 */
-    h+='<div class="df-sec"><div class="df-lbl">📝 整體心得</div>';
-    h+='<textarea id="trSummary" class="df-ta" placeholder="這次教育訓練的整體收穫…" style="min-height:90px;">'+pe(d.trSummary||'')+'</textarea>';
-    h+='</div>';
     /* 各班級感想（可自由新增/刪除） */
     h+='<div class="df-sec"><div class="df-lbl">🏫 各班級感想</div>';
     h+='<div id="trClassList">';
@@ -13126,7 +13122,6 @@ var TRAINMEETING=(function(){
     d.trChair=v('trChair');
     d.trRecorder=v('trRecorder');
     d.trTopic=v('trTopic');
-    d.trSummary=v('trSummary');
     d.trOther=v('trOther');
     var classes=d.trClasses||[];
     classes.forEach(function(cls){
@@ -13315,7 +13310,6 @@ var TRAINMEETING=(function(){
     p+='<tr><td class="th">主席 / 記錄</td><td>'+esc2(d.trChair||'')+' / '+esc2(d.trRecorder||'')+'</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📚 訓練事項</div><div class="card-body">'+nl2br(d.trTopic||'')+'</div></div>';
-    p+='<div class="card"><div class="card-hd">📝 整體心得</div><div class="card-body">'+nl2br(d.trSummary||'')+'</div></div>';
     var classes=d.trClasses||[];
     if(classes.length){
       p+='<div class="card"><div class="card-hd">🏫 各班級感想</div><div class="card-body">';
@@ -15917,7 +15911,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:34</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 18:17</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
