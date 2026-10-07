@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913500886366';
+  var BUILD='17913507082696';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2752,7 +2752,7 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">4-1（開會教育訓練）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="trainmeetingWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-5-1">
   <div class="bbar">
@@ -3405,6 +3405,7 @@ function GO(id) {
   if (id === 'pj-h-3-3-2-3') { if (typeof CLEANERSTORE !== 'undefined') CLEANERSTORE.init(); }
   if (id === 'pj-inf-3-1') { if (typeof YELLOWCARD !== 'undefined') YELLOWCARD.init(); }
   if (id === 'pj-inf-3-2') { if (typeof VACCINEINFO !== 'undefined') VACCINEINFO.init(); }
+  if (id === 'pj-inf-4-1') { if (typeof TRAINMEETING !== 'undefined') TRAINMEETING.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -12959,6 +12960,386 @@ var VACCINEINFO=_buildFacilityCheckModule({
 });
 
 
+/* ════ 4-1 開會教育訓練紀錄（班級感想可自由新增） ════ */
+var TRAINMEETING=(function(){
+  var KEY='xiaoBudiTrainMeetingV1',FB_PATH='xiaobuddyTrainMeeting';
+  var curFid='',curStep='list';
+  var db={};
+  var _photos={1:null,2:null};
+
+  function loadLocal(){
+    try{var v=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');db=v||{};}
+    catch(e){db={};}
+  }
+  function _wrap(){return document.getElementById('trainmeetingWrap');}
+  function saveAll(){
+    var light={};
+    Object.keys(db).forEach(function(fid){
+      var d=db[fid],noP={};
+      Object.keys(d).forEach(function(k){if(k!=='trPhoto1'&&k!=='trPhoto2')noP[k]=d[k];});
+      light[fid]=noP;
+    });
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+  }
+  function pushFb(fid,data){
+    try{
+      var fb=_fbInit();if(!fb)return;
+      var payload={};
+      Object.keys(data).forEach(function(k){payload[k]=data[k];});
+      fb.ref(FB_PATH+'/'+fid).set(payload);
+    }catch(e){}
+  }
+  function loadFb(cb){
+    try{var fb=_fbInit();if(!fb){cb();return;}
+      fb.ref(FB_PATH).once('value',function(snap){
+        var d=snap.val()||{};
+        Object.keys(d).forEach(function(fid){
+          if(!db[fid])db[fid]=d[fid];
+          else Object.keys(d[fid]).forEach(function(k){
+            if((k==='trPhoto1'||k==='trPhoto2')&&db[fid][k])return;
+            db[fid][k]=d[fid][k];
+          });
+        });
+        saveAll();cb();
+      });
+    }catch(e){cb();}
+  }
+
+  function v(id){var e=document.getElementById(id);return e?(e.value||''):'';}
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function _dateInputHTML(n,dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="trPhotoDate'+n+'" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="TRAINMEETING.onPhotoDateChange('+n+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
+
+  /* ─── 列表 ─── */
+  function renderList(){
+    var fids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
+    h+='<div style="font-size:.8rem;color:#888;">開會教育訓練紀錄（每次會議）</div>';
+    h+='<button onclick="TRAINMEETING.newForm()" style="padding:8px 16px;background:var(--run-bd);color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增</button>';
+    h+='</div>';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無紀錄<br><br><button onclick="TRAINMEETING.newForm()" style="padding:12px 24px;background:var(--run-bd);color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=db[fid];
+        var dateStr=d.trMeetDate||'（未填日期）';
+        var topicStr=d.trTopic||'（未填訓練主題）';
+        var isRead=!!d.read;
+        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid var(--run-bd);">';
+        h+='<div style="padding:14px;cursor:pointer;" onclick="TRAINMEETING.editForm(\''+fid+'\')">';
+        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
+        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">🗓️ '+esc(dateStr)+'</div>';
+        h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">'+esc(topicStr.length>22?topicStr.slice(0,22)+'…':topicStr)+'</div>';
+        h+='</div>';
+        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div></div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="TRAINMEETING.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:var(--run-bd);font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="TRAINMEETING.downloadFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+        h+='<button onclick="TRAINMEETING.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
+        h+='<button onclick="TRAINMEETING.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 表單 ─── */
+  function renderClassItem(cls){
+    var h='<div style="position:relative;background:#f7f7f7;border-radius:10px;padding:10px;margin-bottom:8px;">';
+    h+='<button onclick="TRAINMEETING.removeClass(\''+cls.id+'\')" style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer;line-height:20px;padding:0;">✕</button>';
+    h+='<input type="text" id="trClsName'+cls.id+'" class="df-inp" placeholder="班級名稱（例：寶寶一班）" value="'+esc(cls.name||'')+'" onchange="TRAINMEETING.onClassChange(\''+cls.id+'\')" style="margin-bottom:6px;font-weight:700;max-width:260px;">';
+    h+='<textarea id="trClsText'+cls.id+'" class="df-ta" placeholder="這個班級的心得/感想…" onchange="TRAINMEETING.onClassChange(\''+cls.id+'\')" style="min-height:70px;">'+pe(cls.text||'')+'</textarea>';
+    h+='</div>';
+    return h;
+  }
+  function renderForm(d){
+    var classes=d.trClasses||[];
+    var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
+    h+='<button onclick="TRAINMEETING.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
+    /* 會議資訊 */
+    h+='<div class="df-sec"><div class="df-lbl">📋 會議資訊</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:150px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">會議日期</div><input type="date" id="trMeetDate" class="df-inp" value="'+esc(d.trMeetDate||'')+'"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">時間</div><input type="text" id="trTime" class="df-inp" placeholder="13:30" value="'+esc(d.trTime||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">地點</div><input type="text" id="trPlace" class="df-inp" placeholder="教室" value="'+esc(d.trPlace||'')+'"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">主席</div><input type="text" id="trChair" class="df-inp" value="'+esc(d.trChair||'')+'"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">記錄</div><input type="text" id="trRecorder" class="df-inp" value="'+esc(d.trRecorder||'')+'"></div>';
+    h+='</div>';
+    h+='</div>';
+    /* 訓練事項 */
+    h+='<div class="df-sec"><div class="df-lbl">📚 訓練事項</div>';
+    h+='<textarea id="trTopic" class="df-ta" placeholder="例：什麼是玫瑰疹、傳染方式、常見症狀、防治措施…" style="min-height:80px;">'+pe(d.trTopic||'')+'</textarea>';
+    h+='</div>';
+    /* 整體心得 */
+    h+='<div class="df-sec"><div class="df-lbl">📝 整體心得</div>';
+    h+='<textarea id="trSummary" class="df-ta" placeholder="這次教育訓練的整體收穫…" style="min-height:90px;">'+pe(d.trSummary||'')+'</textarea>';
+    h+='</div>';
+    /* 各班級感想（可自由新增/刪除） */
+    h+='<div class="df-sec"><div class="df-lbl">🏫 各班級感想</div>';
+    h+='<div id="trClassList">';
+    classes.forEach(function(cls){h+=renderClassItem(cls);});
+    h+='</div>';
+    h+='<button onclick="TRAINMEETING.addClass()" style="padding:8px 16px;background:var(--run-bd);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">＋ 新增班級</button>';
+    h+='</div>';
+    /* 臨時動議 */
+    h+='<div class="df-sec"><div class="df-lbl">💬 臨時動議</div>';
+    h+='<input type="text" id="trOther" class="df-inp" placeholder="無" value="'+esc(d.trOther||'')+'"></div>';
+    /* 照片 */
+    [1,2].forEach(function(n){
+      var dateVal=d['trPhotoDate'+n]||_todayISO();
+      h+='<div class="df-sec"><div class="df-lbl">📷 照片 '+n+'</div>';
+      h+='<div id="trPhotoBox'+n+'" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;position:relative;" onclick="TRAINMEETING.uploadPhoto('+n+')">';
+      var ph=_photos[n]||d['trPhoto'+n];
+      if(ph){h+='<img src="'+ph+'" style="width:100%;height:100%;object-fit:contain;">';}
+      else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+      h+=_dateInputHTML(n,dateVal);
+      h+='</div>';
+      h+='<input type="file" id="trPhotoInput'+n+'" accept="image/*" style="display:none">';
+      h+='</div>';
+    });
+    /* 按鈕 */
+    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
+    h+='<button class="lf-save-btn tr-save-btn" onclick="TRAINMEETING.saveForm()">💾 儲存</button>';
+    h+='<button class="lf-dl-btn" onclick="TRAINMEETING.download()">🖨️ 列印</button>';
+    h+='</div>';
+    h+='</div>';
+    return h;
+  }
+
+  function collectData(){
+    var d=JSON.parse(JSON.stringify(db[curFid]||{}));
+    d.trMeetDate=v('trMeetDate');
+    d.trTime=v('trTime');
+    d.trPlace=v('trPlace');
+    d.trChair=v('trChair');
+    d.trRecorder=v('trRecorder');
+    d.trTopic=v('trTopic');
+    d.trSummary=v('trSummary');
+    d.trOther=v('trOther');
+    var classes=d.trClasses||[];
+    classes.forEach(function(cls){
+      var nameEl=document.getElementById('trClsName'+cls.id);
+      var textEl=document.getElementById('trClsText'+cls.id);
+      if(nameEl)cls.name=nameEl.value;
+      if(textEl)cls.text=textEl.value;
+    });
+    d.trClasses=classes;
+    [1,2].forEach(function(n){
+      if(_photos[n])d['trPhoto'+n]=_photos[n];
+      var dv=v('trPhotoDate'+n);
+      d['trPhotoDate'+n]=dv||d['trPhotoDate'+n]||_todayISO();
+    });
+    return d;
+  }
+
+  function init(){
+    curStep='list';curFid='';
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderList();
+    loadFb(function(){if(curStep==='list')w.innerHTML=renderList();});
+  }
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var today=_todayISO();
+    db[curFid]={createdAt:Date.now(),read:false,trMeetDate:today,trClasses:[]};
+    _photos={1:null,2:null};curStep='form';
+    _wrap().innerHTML=renderForm(db[curFid]);
+  }
+  function editForm(fid){
+    curFid=fid;var d=db[fid]||{};
+    if(!d.trClasses)d.trClasses=[];
+    _photos={1:d.trPhoto1||null,2:d.trPhoto2||null};
+    curStep='form';_wrap().innerHTML=renderForm(d);
+    var missing=[1,2].some(function(n){return !_photos[n];});
+    if(missing){
+      try{var fb=_fbInit();if(fb){
+        fb.ref(FB_PATH+'/'+fid).once('value',function(snap){
+          var fd=snap.val();if(!fd)return;
+          var updated=false;
+          [1,2].forEach(function(n){
+            var key='trPhoto'+n;
+            if(fd[key]&&!_photos[n]){_photos[n]=fd[key];db[fid][key]=fd[key];updated=true;}
+          });
+          if(updated){
+            saveAll();
+            [1,2].forEach(function(n){
+              var box=document.getElementById('trPhotoBox'+n);
+              if(_photos[n]&&box)box.innerHTML='<img src="'+_photos[n]+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,db[fid]['trPhotoDate'+n]);
+            });
+          }
+        });
+      }}catch(e){}
+    }
+  }
+  function saveForm(){
+    var d=collectData();
+    var ex=db[curFid]||{};
+    d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;d.updatedAt=Date.now();
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+    var btn=document.querySelector('#trainmeetingWrap .tr-save-btn');
+    if(btn){btn.textContent='✅ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}
+  }
+  function toggleRead(fid){
+    if(!db[fid])return;
+    db[fid].read=!db[fid].read;
+    saveAll();pushFb(fid,db[fid]);
+    _wrap().innerHTML=renderList();
+  }
+  function deleteForm(fid){
+    if(!confirm('確定要刪除這份紀錄嗎？此操作無法復原。'))return;
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+fid).remove();}catch(e){}
+    delete db[fid];saveAll();
+    _wrap().innerHTML=renderList();
+  }
+  function downloadFid(fid){
+    var d=db[fid];if(!d)return;
+    _doPrint(_buildHTML(d,{1:d.trPhoto1,2:d.trPhoto2}));
+    if(!d.read){d.read=true;saveAll();pushFb(fid,d);if(curStep==='list')_wrap().innerHTML=renderList();}
+  }
+
+  /* ─── 班級感想：新增／刪除／變更 ─── */
+  function addClass(){
+    var d=collectData();
+    var id='c'+Date.now();
+    d.trClasses=d.trClasses||[];
+    d.trClasses.push({id:id,name:'',text:''});
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+    _wrap().innerHTML=renderForm(d);
+  }
+  function removeClass(id){
+    if(!confirm('確定要刪除這個班級的感想嗎？'))return;
+    var d=collectData();
+    d.trClasses=(d.trClasses||[]).filter(function(c){return c.id!==id;});
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+    _wrap().innerHTML=renderForm(d);
+  }
+  function onClassChange(id){
+    var d=collectData();
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+  }
+  function onPhotoDateChange(n){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+  }
+
+  /* ─── 照片上傳 ─── */
+  function uploadPhoto(n){
+    var inp=document.getElementById('trPhotoInput'+n);if(!inp)return;
+    inp.onchange=function(){
+      var f=inp.files[0];if(!f)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        _compressPhoto(e.target.result,function(compressed){
+          _photos[n]=compressed;
+          var d=collectData();
+          var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+          db[curFid]=d;saveAll();pushFb(curFid,d);
+          var box=document.getElementById('trPhotoBox'+n);
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,d['trPhotoDate'+n]);
+        });
+      };
+      reader.readAsDataURL(f);
+    };
+    inp.click();
+  }
+
+  /* ─── 列印 ─── */
+  function download(){
+    saveForm();var d=db[curFid]||{};
+    _doPrint(_buildHTML(d,{1:_photos[1]||d.trPhoto1,2:_photos[2]||d.trPhoto2}));
+  }
+  function _doPrint(h){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
+    else{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
+      setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+    }
+  }
+
+  /* ─── 列印 HTML ─── */
+  function _buildHTML(d,photos){
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var AC='#2d9c6f',AL='#e8f7f0';
+    function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    function nl2br(s){return esc2(s).replace(/\n/g,'<br>');}
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>開會教育訓練紀錄</title><style>';
+    p+='*{box-sizing:border-box;margin:0;padding:0;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:7px;margin-bottom:7px;}';
+    p+='.hdr img{height:52px;width:auto;}';
+    p+='.hdr-txt{flex:1;text-align:center;}';
+    p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
+    p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
+    p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:11pt;padding:5px 12px;letter-spacing:.5px;}';
+    p+='.card-body{padding:7px 10px;font-size:10pt;line-height:1.6;}';
+    p+='table.dt{width:100%;border-collapse:collapse;font-size:10pt;}';
+    p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
+    p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
+    p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;}';
+    p+='.cls-item:last-child{border-bottom:none;}';
+    p+='.cls-name{font-weight:800;color:'+AC+';margin-bottom:2px;}';
+    p+='.photo-row{display:flex;gap:12px;}';
+    p+='.photo-box{flex:1;text-align:center;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:200px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
+    p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
+    p+='</style></head><body>';
+    p+='<div class="hdr">';
+    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">📚 開會教育訓練紀錄</div></div>';
+    p+='</div>';
+    p+='<div class="card"><div class="card-hd">📋 會議資訊</div><div class="card-body"><table class="dt">';
+    p+='<tr><td class="th" style="width:22%;">會議日期</td><td>'+esc2(fmtDate(d.trMeetDate))+(d.trTime?'　'+esc2(d.trTime):'')+'</td></tr>';
+    p+='<tr><td class="th">地點</td><td>'+esc2(d.trPlace||'')+'</td></tr>';
+    p+='<tr><td class="th">主席 / 記錄</td><td>'+esc2(d.trChair||'')+' / '+esc2(d.trRecorder||'')+'</td></tr>';
+    p+='</table></div></div>';
+    p+='<div class="card"><div class="card-hd">📚 訓練事項</div><div class="card-body">'+nl2br(d.trTopic||'')+'</div></div>';
+    p+='<div class="card"><div class="card-hd">📝 整體心得</div><div class="card-body">'+nl2br(d.trSummary||'')+'</div></div>';
+    var classes=d.trClasses||[];
+    if(classes.length){
+      p+='<div class="card"><div class="card-hd">🏫 各班級感想</div><div class="card-body">';
+      classes.forEach(function(cls){
+        p+='<div class="cls-item"><div class="cls-name">'+esc2(cls.name||'（未填班級）')+'</div><div>'+nl2br(cls.text||'')+'</div></div>';
+      });
+      p+='</div></div>';
+    }
+    p+='<div class="card"><div class="card-hd">💬 臨時動議</div><div class="card-body">'+esc2(d.trOther||'無')+'</div></div>';
+    p+='<div class="card"><div class="card-hd">📷 照片</div><div class="card-body"><div class="photo-row">';
+    [1,2].forEach(function(n){
+      var ph=photos[n];
+      var ds=fmtDate(d['trPhotoDate'+n]);
+      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+(ph&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div></div>';
+    });
+    p+='</div></div></div>';
+    p+='</body></html>';
+    return p;
+  }
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,addClass:addClass,removeClass:removeClass,onClassChange:onClassChange,download:download};
+})();
+
+
+
+
 
 
 
@@ -15524,7 +15905,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:14</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:25</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
