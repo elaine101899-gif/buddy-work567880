@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179133131617879';
+  var BUILD='179133974013256';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -11062,6 +11062,11 @@ var MEDSTORE=(function(){
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _dateInputHTML(which,dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="mDate'+which+'" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="MEDSTORE.onPhotoDateChange(\''+which+'\')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
 
   /* ─── 列表 ─── */
   function renderList(){
@@ -11110,18 +11115,20 @@ var MEDSTORE=(function(){
     h+='</div></div>';
     /* 爬爬班 */
     h+='<div class="df-sec"><div class="df-lbl">🐛 爬爬班</div>';
-    h+='<div id="mCrawlPhotoBox" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="MEDSTORE.uploadPhoto(\'crawl\')">';
+    h+='<div id="mCrawlPhotoBox" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="MEDSTORE.uploadPhoto(\'crawl\')">';
     if(_mPhotos.crawl||d.mCrawlPhoto){h+='<img src="'+(_mPhotos.crawl||d.mCrawlPhoto)+'" style="width:100%;height:100%;object-fit:contain;">';}
     else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+    h+=_dateInputHTML('crawl',d.mCrawlDate);
     h+='</div>';
     h+='<input type="file" id="mPhotoInputcrawl" accept="image/*" style="display:none">';
     h+='<textarea id="mCrawlNote" class="df-ta" style="min-height:60px;">'+pe(d.mCrawlNote!=null?d.mCrawlNote:DEFAULT_NOTE_CRAWL)+'</textarea>';
     h+='</div>';
     /* 跑跑班 */
     h+='<div class="df-sec"><div class="df-lbl">🏃 跑跑班</div>';
-    h+='<div id="mRunPhotoBox" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="MEDSTORE.uploadPhoto(\'run\')">';
+    h+='<div id="mRunPhotoBox" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="MEDSTORE.uploadPhoto(\'run\')">';
     if(_mPhotos.run||d.mRunPhoto){h+='<img src="'+(_mPhotos.run||d.mRunPhoto)+'" style="width:100%;height:100%;object-fit:contain;">';}
     else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+    h+=_dateInputHTML('run',d.mRunDate);
     h+='</div>';
     h+='<input type="file" id="mPhotoInputrun" accept="image/*" style="display:none">';
     h+='<textarea id="mRunNote" class="df-ta" style="min-height:60px;">'+pe(d.mRunNote!=null?d.mRunNote:DEFAULT_NOTE_RUN)+'</textarea>';
@@ -11142,7 +11149,14 @@ var MEDSTORE=(function(){
     d.mRunNote=v('mRunNote');
     if(_mPhotos.crawl)d.mCrawlPhoto=_mPhotos.crawl;
     if(_mPhotos.run)d.mRunPhoto=_mPhotos.run;
+    d.mCrawlDate=v('mDatecrawl')||d.mCrawlDate||_todayISO();
+    d.mRunDate=v('mDaterun')||d.mRunDate||_todayISO();
     return d;
+  }
+  function onPhotoDateChange(which){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
   }
 
   function init(){
@@ -11173,8 +11187,8 @@ var MEDSTORE=(function(){
           if(updated){
             saveAll();
             var b1=document.getElementById('mCrawlPhotoBox'),b2=document.getElementById('mRunPhotoBox');
-            if(_mPhotos.crawl&&b1)b1.innerHTML='<img src="'+_mPhotos.crawl+'" style="width:100%;height:100%;object-fit:contain;">';
-            if(_mPhotos.run&&b2)b2.innerHTML='<img src="'+_mPhotos.run+'" style="width:100%;height:100%;object-fit:contain;">';
+            if(_mPhotos.crawl&&b1)b1.innerHTML='<img src="'+_mPhotos.crawl+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML('crawl',db[fid].mCrawlDate);
+            if(_mPhotos.run&&b2)b2.innerHTML='<img src="'+_mPhotos.run+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML('run',db[fid].mRunDate);
           }
         });
       }}catch(e){}
@@ -11219,7 +11233,7 @@ var MEDSTORE=(function(){
           var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curFid]=d;saveAll();pushFb(curFid,d);
           var box=document.getElementById(which==='crawl'?'mCrawlPhotoBox':'mRunPhotoBox');
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(which,which==='crawl'?d.mCrawlDate:d.mRunDate);
         });
       };
       reader.readAsDataURL(f);
@@ -11282,8 +11296,9 @@ var MEDSTORE=(function(){
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
     p+='.photo-row{display:flex;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:10pt;color:#333;margin-top:6px;line-height:1.5;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
@@ -11298,13 +11313,14 @@ var MEDSTORE=(function(){
     p+='<tr><td class="th">查核內容</td><td>3-1-3-1 藥物（包含托育人員個人藥品）存放位置安全適當。</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📷 現場照片</div><div class="card-body"><div class="photo-row">';
-    p+='<div class="photo-box"><div class="pic">'+(crawlPhoto?'<img src="'+crawlPhoto+'">':'')+'</div><div class="cap">'+esc2(d.mCrawlNote!=null?d.mCrawlNote:DEFAULT_NOTE_CRAWL)+'</div></div>';
-    p+='<div class="photo-box"><div class="pic">'+(runPhoto?'<img src="'+runPhoto+'">':'')+'</div><div class="cap">'+esc2(d.mRunNote!=null?d.mRunNote:DEFAULT_NOTE_RUN)+'</div></div>';
+    var dsC=fmtDate(d.mCrawlDate),dsR=fmtDate(d.mRunDate);
+    p+='<div class="photo-box"><div class="pic">'+(crawlPhoto?'<img src="'+crawlPhoto+'">':'')+(crawlPhoto&&dsC?'<span class="dstamp">'+esc2(dsC)+'</span>':'')+'</div><div class="cap">'+esc2(d.mCrawlNote!=null?d.mCrawlNote:DEFAULT_NOTE_CRAWL)+'</div></div>';
+    p+='<div class="photo-box"><div class="pic">'+(runPhoto?'<img src="'+runPhoto+'">':'')+(runPhoto&&dsR?'<span class="dstamp">'+esc2(dsR)+'</span>':'')+'</div><div class="cap">'+esc2(d.mRunNote!=null?d.mRunNote:DEFAULT_NOTE_RUN)+'</div></div>';
     p+='</div></div></div>';
     p+='</div></body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 })();
 
 
@@ -11364,6 +11380,11 @@ var TRIPLECHECK=(function(){
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _dateInputHTML(n,dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="tDate'+n+'" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="TRIPLECHECK.onPhotoDateChange('+n+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
 
   /* ─── 列表 ─── */
   function renderList(){
@@ -11412,11 +11433,13 @@ var TRIPLECHECK=(function(){
     h+='</div></div>';
     /* 四張照片 */
     [1,2,3,4].forEach(function(n){
+      var dateVal=d['tDate'+n]||_todayISO();
       h+='<div class="df-sec"><div class="df-lbl">📷 照片 '+n+'</div>';
-      h+='<div id="tPhotoBox'+n+'" style="min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="TRIPLECHECK.uploadPhoto('+n+')">';
+      h+='<div id="tPhotoBox'+n+'" style="min-height:160px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="TRIPLECHECK.uploadPhoto('+n+')">';
       var ph=_tPhotos[n]||d['tPhoto'+n];
       if(ph){h+='<img src="'+ph+'" style="width:100%;height:100%;object-fit:contain;">';}
       else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+      h+=_dateInputHTML(n,dateVal);
       h+='</div>';
       h+='<input type="file" id="tPhotoInput'+n+'" accept="image/*" style="display:none">';
       h+='<textarea id="tNote'+n+'" class="df-ta" style="min-height:54px;">'+pe(d['tNote'+n]!=null?d['tNote'+n]:DEFAULT_NOTE[n])+'</textarea>';
@@ -11437,8 +11460,15 @@ var TRIPLECHECK=(function(){
     [1,2,3,4].forEach(function(n){
       d['tNote'+n]=v('tNote'+n);
       if(_tPhotos[n])d['tPhoto'+n]=_tPhotos[n];
+      var dv=v('tDate'+n);
+      d['tDate'+n]=dv||d['tDate'+n]||_todayISO();
     });
     return d;
+  }
+  function onPhotoDateChange(n){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
   }
 
   function init(){
@@ -11473,7 +11503,7 @@ var TRIPLECHECK=(function(){
             saveAll();
             [1,2,3,4].forEach(function(n){
               var box=document.getElementById('tPhotoBox'+n);
-              if(_tPhotos[n]&&box)box.innerHTML='<img src="'+_tPhotos[n]+'" style="width:100%;height:100%;object-fit:contain;">';
+              if(_tPhotos[n]&&box)box.innerHTML='<img src="'+_tPhotos[n]+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,db[fid]['tDate'+n]);
             });
           }
         });
@@ -11519,7 +11549,7 @@ var TRIPLECHECK=(function(){
           var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curFid]=d;saveAll();pushFb(curFid,d);
           var box=document.getElementById('tPhotoBox'+n);
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,d['tDate'+n]);
         });
       };
       reader.readAsDataURL(f);
@@ -11582,8 +11612,9 @@ var TRIPLECHECK=(function(){
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
     p+='.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}';
     p+='.photo-box{text-align:center;}';
-    p+='.photo-box .pic{border:1px solid #ddd;border-radius:8px;overflow:hidden;height:150px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:150px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:9.5pt;color:#333;margin-top:5px;line-height:1.4;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
@@ -11600,13 +11631,14 @@ var TRIPLECHECK=(function(){
     p+='<div class="card"><div class="card-hd">📷 現場照片</div><div class="card-body"><div class="photo-grid">';
     [1,2,3,4].forEach(function(n){
       var ph=photos[n];
-      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+'</div><div class="cap">'+esc2(d['tNote'+n]!=null?d['tNote'+n]:DEFAULT_NOTE[n])+'</div></div>';
+      var ds=fmtDate(d['tDate'+n]);
+      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+(ph&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="cap">'+esc2(d['tNote'+n]!=null?d['tNote'+n]:DEFAULT_NOTE[n])+'</div></div>';
     });
     p+='</div></div></div>';
     p+='</div></body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 })();
 
 
@@ -11661,6 +11693,11 @@ var MEALNOTICE=(function(){
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _dateInputHTML(dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="nDate" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="MEALNOTICE.onPhotoDateChange()" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
 
   /* ─── 列表 ─── */
   function renderList(){
@@ -11709,9 +11746,10 @@ var MEALNOTICE=(function(){
     h+='</div></div>';
     /* 照片 */
     h+='<div class="df-sec"><div class="df-lbl">📷 公告照片</div>';
-    h+='<div id="nPhotoBox" style="min-height:220px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="MEALNOTICE.uploadPhoto()">';
+    h+='<div id="nPhotoBox" style="min-height:220px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="MEALNOTICE.uploadPhoto()">';
     if(_nPhoto||d.nPhoto){h+='<img src="'+(_nPhoto||d.nPhoto)+'" style="width:100%;height:100%;object-fit:contain;">';}
     else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+    h+=_dateInputHTML(d.nDate);
     h+='</div>';
     h+='<input type="file" id="nPhotoInput" accept="image/*" style="display:none">';
     h+='<textarea id="nNote" class="df-ta" style="min-height:60px;">'+pe(d.nNote!=null?d.nNote:DEFAULT_NOTE)+'</textarea>';
@@ -11730,7 +11768,14 @@ var MEALNOTICE=(function(){
     d.nMonth=v('nMonth');
     d.nNote=v('nNote');
     if(_nPhoto)d.nPhoto=_nPhoto;
+    var dv=v('nDate');
+    d.nDate=dv||d.nDate||_todayISO();
     return d;
+  }
+  function onPhotoDateChange(){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
   }
 
   function init(){
@@ -11758,7 +11803,7 @@ var MEALNOTICE=(function(){
           if(fd.nPhoto&&!_nPhoto){
             _nPhoto=fd.nPhoto;db[fid].nPhoto=fd.nPhoto;saveAll();
             var box=document.getElementById('nPhotoBox');
-            if(box)box.innerHTML='<img src="'+_nPhoto+'" style="width:100%;height:100%;object-fit:contain;">';
+            if(box)box.innerHTML='<img src="'+_nPhoto+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(db[fid].nDate);
           }
         });
       }}catch(e){}
@@ -11803,7 +11848,7 @@ var MEALNOTICE=(function(){
           var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curFid]=d;saveAll();pushFb(curFid,d);
           var box=document.getElementById('nPhotoBox');
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(d.nDate);
         });
       };
       reader.readAsDataURL(f);
@@ -11865,8 +11910,9 @@ var MEALNOTICE=(function(){
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
     p+='.photo-box{text-align:center;}';
-    p+='.photo-box .pic{border:1px solid #ddd;border-radius:8px;overflow:hidden;height:320px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:320px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:10pt;color:#333;margin-top:6px;line-height:1.5;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
@@ -11880,12 +11926,13 @@ var MEALNOTICE=(function(){
     p+='<tr><td class="th">查核內容</td><td>3-2-1-1 餐點公告</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📷 公告照片</div><div class="card-body">';
-    p+='<div class="photo-box"><div class="pic">'+(photo?'<img src="'+photo+'">':'')+'</div><div class="cap">'+esc2(d.nNote!=null?d.nNote:DEFAULT_NOTE)+'</div></div>';
+    var ds=fmtDate(d.nDate);
+    p+='<div class="photo-box"><div class="pic">'+(photo?'<img src="'+photo+'">':'')+(photo&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="cap">'+esc2(d.nNote!=null?d.nNote:DEFAULT_NOTE)+'</div></div>';
     p+='</div></div>';
     p+='</div></body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 })();
 
 
@@ -11943,6 +11990,11 @@ var COOKPHOTO=(function(){
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _dateInputHTML(n,dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="cDate'+n+'" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="COOKPHOTO.onPhotoDateChange('+n+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
 
   /* ─── 列表 ─── */
   function renderList(){
@@ -11991,11 +12043,13 @@ var COOKPHOTO=(function(){
     h+='</div></div>';
     /* 兩張照片 */
     [1,2].forEach(function(n){
+      var dateVal=d['cDate'+n]||_todayISO();
       h+='<div class="df-sec"><div class="df-lbl">📷 照片 '+n+'</div>';
-      h+='<div id="cPhotoBox'+n+'" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="COOKPHOTO.uploadPhoto('+n+')">';
+      h+='<div id="cPhotoBox'+n+'" style="min-height:180px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="COOKPHOTO.uploadPhoto('+n+')">';
       var ph=_cPhotos[n]||d['cPhoto'+n];
       if(ph){h+='<img src="'+ph+'" style="width:100%;height:100%;object-fit:contain;">';}
       else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+      h+=_dateInputHTML(n,dateVal);
       h+='</div>';
       h+='<input type="file" id="cPhotoInput'+n+'" accept="image/*" style="display:none">';
       h+='<textarea id="cNote'+n+'" class="df-ta" style="min-height:60px;">'+pe(d['cNote'+n]!=null?d['cNote'+n]:DEFAULT_NOTE[n])+'</textarea>';
@@ -12016,8 +12070,15 @@ var COOKPHOTO=(function(){
     [1,2].forEach(function(n){
       d['cNote'+n]=v('cNote'+n);
       if(_cPhotos[n])d['cPhoto'+n]=_cPhotos[n];
+      var dv=v('cDate'+n);
+      d['cDate'+n]=dv||d['cDate'+n]||_todayISO();
     });
     return d;
+  }
+  function onPhotoDateChange(n){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
   }
 
   function init(){
@@ -12052,7 +12113,7 @@ var COOKPHOTO=(function(){
             saveAll();
             [1,2].forEach(function(n){
               var box=document.getElementById('cPhotoBox'+n);
-              if(_cPhotos[n]&&box)box.innerHTML='<img src="'+_cPhotos[n]+'" style="width:100%;height:100%;object-fit:contain;">';
+              if(_cPhotos[n]&&box)box.innerHTML='<img src="'+_cPhotos[n]+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,db[fid]['cDate'+n]);
             });
           }
         });
@@ -12098,7 +12159,7 @@ var COOKPHOTO=(function(){
           var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curFid]=d;saveAll();pushFb(curFid,d);
           var box=document.getElementById('cPhotoBox'+n);
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(n,d['cDate'+n]);
         });
       };
       reader.readAsDataURL(f);
@@ -12161,8 +12222,9 @@ var COOKPHOTO=(function(){
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
     p+='.photo-row{display:flex;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:10pt;color:#333;margin-top:6px;line-height:1.5;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
@@ -12179,13 +12241,14 @@ var COOKPHOTO=(function(){
     p+='<div class="card"><div class="card-hd">📷 現場照片</div><div class="card-body"><div class="photo-row">';
     [1,2].forEach(function(n){
       var ph=photos[n];
-      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+'</div><div class="cap">'+esc2(d['cNote'+n]!=null?d['cNote'+n]:DEFAULT_NOTE[n])+'</div></div>';
+      var ds=fmtDate(d['cDate'+n]);
+      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+(ph&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="cap">'+esc2(d['cNote'+n]!=null?d['cNote'+n]:DEFAULT_NOTE[n])+'</div></div>';
     });
     p+='</div></div></div>';
     p+='</div></body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 })();
 
 
@@ -12242,6 +12305,7 @@ function _buildFacilityCheckModule(cfg){
   function vof(id){var e=document.getElementById(id);return e?(e.value||''):'';}
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
   function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
 
   function oc(method,fidArg){
@@ -12291,11 +12355,13 @@ function _buildFacilityCheckModule(cfg){
     h+='</div></div>';
     for(var n=1;n<=N;n++){
       (function(n){
+        var dateVal=d[P+'Date'+n]||_todayISO();
         h+='<div class="df-sec"><div class="df-lbl">📷 照片 '+n+'</div>';
-        h+='<div id="'+P+'PhotoBox'+n+'" style="min-height:'+cfg.photoBoxHeight+'px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;" onclick="'+VAR+'.uploadPhoto('+n+')">';
+        h+='<div id="'+P+'PhotoBox'+n+'" style="min-height:'+cfg.photoBoxHeight+'px;border:2px dashed #ccc;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;background:#fafafa;margin-bottom:8px;position:relative;" onclick="'+VAR+'.uploadPhoto('+n+')">';
         var ph=_photos[n]||d[P+'Photo'+n];
         if(ph){h+='<img src="'+ph+'" style="width:100%;height:100%;object-fit:contain;">';}
         else{h+='<div style="text-align:center;color:#bbb;font-size:.82rem;padding:8px;">📷<br>點擊上傳照片</div>';}
+        h+='<input type="date" id="'+P+'Date'+n+'" value="'+esc(dateVal)+'" onclick="event.stopPropagation()" onchange="'+VAR+'.onPhotoDateChange('+n+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
         h+='</div>';
         h+='<input type="file" id="'+P+'PhotoInput'+n+'" accept="image/*" style="display:none">';
         h+='<textarea id="'+P+'Note'+n+'" class="df-ta" style="min-height:54px;">'+pe(d[P+'Note'+n]!=null?d[P+'Note'+n]:cfg.photos[n-1])+'</textarea>';
@@ -12316,8 +12382,15 @@ function _buildFacilityCheckModule(cfg){
     for(var n=1;n<=N;n++){
       d[P+'Note'+n]=vof(P+'Note'+n);
       if(_photos[n])d[P+'Photo'+n]=_photos[n];
+      var dv=vof(P+'Date'+n);
+      d[P+'Date'+n]=dv||d[P+'Date'+n]||_todayISO();
     }
     return d;
+  }
+  function onPhotoDateChange(n){
+    var d=collectData();
+    var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
   }
 
   function init(){
@@ -12354,7 +12427,10 @@ function _buildFacilityCheckModule(cfg){
             saveAll();
             for(var n4=1;n4<=N;n4++){
               var box=document.getElementById(P+'PhotoBox'+n4);
-              if(_photos[n4]&&box)box.innerHTML='<img src="'+_photos[n4]+'" style="width:100%;height:100%;object-fit:contain;">';
+              if(_photos[n4]&&box){
+                var dv4=db[fid][P+'Date'+n4]||_todayISO();
+                box.innerHTML='<img src="'+_photos[n4]+'" style="width:100%;height:100%;object-fit:contain;">'+'<input type="date" id="'+P+'Date'+n4+'" value="'+esc(dv4)+'" onclick="event.stopPropagation()" onchange="'+VAR+'.onPhotoDateChange('+n4+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+              }
             }
           }
         });
@@ -12400,7 +12476,8 @@ function _buildFacilityCheckModule(cfg){
           var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
           db[curFid]=d;saveAll();pushFb(curFid,d);
           var box=document.getElementById(P+'PhotoBox'+n);
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">';
+          var dateVal=d[P+'Date'+n]||_todayISO();
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+'<input type="date" id="'+P+'Date'+n+'" value="'+esc(dateVal)+'" onclick="event.stopPropagation()" onchange="'+VAR+'.onPhotoDateChange('+n+')" style="position:absolute;right:6px;bottom:6px;z-index:3;font-size:.72rem;padding:3px 6px;border-radius:6px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
         });
       };
       reader.readAsDataURL(f);
@@ -12461,8 +12538,9 @@ function _buildFacilityCheckModule(cfg){
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
     p+='.photo-grid{display:grid;grid-template-columns:repeat('+cfg.gridCols+',1fr);gap:10px;}';
     p+='.photo-box{text-align:center;}';
-    p+='.photo-box .pic{border:1px solid #ddd;border-radius:8px;overflow:hidden;height:'+cfg.printPicHeight+'px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:'+cfg.printPicHeight+'px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
+    p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:9.5pt;color:#333;margin-top:5px;line-height:1.4;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body><div class="wrap2p">';
@@ -12477,13 +12555,14 @@ function _buildFacilityCheckModule(cfg){
     p+='<div class="card"><div class="card-hd">📷 現場照片</div><div class="card-body"><div class="photo-grid">';
     for(var n=1;n<=N;n++){
       var ph=photos[n];
-      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+'</div><div class="cap">'+esc2(d[P+'Note'+n]!=null?d[P+'Note'+n]:cfg.photos[n-1])+'</div></div>';
+      var dstamp=fmtDate(d[P+'Date'+n]);
+      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+(ph&&dstamp?'<span class="dstamp">'+esc2(dstamp)+'</span>':'')+'</div><div class="cap">'+esc2(d[P+'Note'+n]!=null?d[P+'Note'+n]:cfg.photos[n-1])+'</div></div>';
     }
     p+='</div></div></div>';
     p+='</div></body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 }
 
 var MILKFLOW=_buildFacilityCheckModule({
@@ -15215,7 +15294,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 08:01</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 10:22</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
