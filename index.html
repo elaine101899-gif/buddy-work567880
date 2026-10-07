@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913850155336';
+  var BUILD='179138576329867';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -10238,13 +10238,13 @@ var ENTEROVIRUS=(function(){
     saveForm();var d=db[curCls][curFid]||{};
     _doPrint(_buildHTML(d,_ePhotos[1]||d.photo1,_ePhotos[2]||d.photo2));
   }
-  /* 內容若超出兩張 A4 就整體縮小，強制限制在兩頁內
-     （261mm 為 A4 可印高度扣除 Safari 列印自帶頁首/頁尾的緩衝，兩頁共 522mm） */
-  function _fitToTwoPages(doc){
+  /* 內容若超出一張 A4 就整體縮小，強制限制在一頁內
+     （261mm 為 A4 可印高度扣除 Safari 列印自帶頁首/頁尾的緩衝） */
+  function _fitToOnePage(doc){
     try{
       var wrap=doc.querySelector('.wrap2p');
       if(!wrap)return;
-      var capPx=522*96/25.4;
+      var capPx=261*96/25.4;
       var prevZoom=wrap.style.zoom;wrap.style.zoom='';
       var natural=wrap.scrollHeight;
       wrap.style.zoom=prevZoom;
@@ -10257,14 +10257,14 @@ var ENTEROVIRUS=(function(){
     var w=null;try{w=window.open('','_blank');}catch(e){}
     if(w){
       w.document.write(h);w.document.close();
-      setTimeout(function(){try{_fitToTwoPages(w.document);}catch(e){}try{w.print();}catch(e){}},600);
+      setTimeout(function(){try{_fitToOnePage(w.document);}catch(e){}try{w.print();}catch(e){}},600);
     }
     else{
       var ifr=document.createElement('iframe');
       ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
       document.body.appendChild(ifr);
       ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
-      setTimeout(function(){try{_fitToTwoPages(ifr.contentDocument);}catch(e){}try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+      setTimeout(function(){try{_fitToOnePage(ifr.contentDocument);}catch(e){}try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
     }
   }
 
@@ -11512,9 +11512,9 @@ var MEDSTORE=(function(){
     p+='table.dt{width:100%;border-collapse:collapse;font-size:10.5pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.photo-row{display:flex;gap:12px;}';
+    p+='.photo-row{display:flex;flex-direction:column;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:340px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
     p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:10pt;color:#333;margin-top:6px;line-height:1.5;}';
@@ -12438,9 +12438,9 @@ var COOKPHOTO=(function(){
     p+='table.dt{width:100%;border-collapse:collapse;font-size:10.5pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.photo-row{display:flex;gap:12px;}';
+    p+='.photo-row{display:flex;flex-direction:column;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:220px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:340px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
     p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:10pt;color:#333;margin-top:6px;line-height:1.5;}';
@@ -12740,6 +12740,9 @@ function _buildFacilityCheckModule(cfg){
     var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
     var AC='#2d9c6f',AL='#e8f7f0';
     function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    var _is2=(N===2);
+    var _effGridCols=_is2?1:cfg.gridCols;
+    var _effPicH=_is2?340:cfg.printPicHeight;
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+cfg.printTitle+'</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
     p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
@@ -12754,9 +12757,9 @@ function _buildFacilityCheckModule(cfg){
     p+='table.dt{width:100%;border-collapse:collapse;font-size:10.5pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.photo-grid{display:grid;grid-template-columns:repeat('+cfg.gridCols+',1fr);gap:10px;}';
+    p+='.photo-grid{display:grid;grid-template-columns:repeat('+_effGridCols+',1fr);gap:10px;}';
     p+='.photo-box{text-align:center;}';
-    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:'+cfg.printPicHeight+'px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:'+_effPicH+'px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
     p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='.photo-box .cap{font-size:9.5pt;color:#333;margin-top:5px;line-height:1.4;}';
@@ -13522,9 +13525,9 @@ var TRAINMEETING=(function(){
     p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;}';
     p+='.cls-item:last-child{border-bottom:none;}';
     p+='.cls-name{font-weight:800;color:'+AC+';margin-bottom:2px;}';
-    p+='.photo-row{display:flex;gap:12px;}';
+    p+='.photo-row{display:flex;flex-direction:column;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:200px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:260px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
     p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
@@ -16565,7 +16568,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:56</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:09</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
