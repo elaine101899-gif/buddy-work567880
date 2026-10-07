@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913847882059';
+  var BUILD='17913850155336';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2356,7 +2356,74 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-c-2-1')">&#x2190; 2-1</button>
     <span class="btitle">2-1-2</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-c-2-1-2-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-1</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-2-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-2（空間照）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-2-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-3（托育人員舒適度）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-2-4')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-4（幼兒能自行使用）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-2-5')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-5（清潔照）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-2-6')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-2-6（測光照）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-1</span>
+  </div>
+  <div id="envDevWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-2（空間照）</span>
+  </div>
+  <div id="spaceLayoutWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-3（托育人員舒適度）</span>
+  </div>
+  <div id="staffComfortWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-4">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-4（幼兒能自行使用）</span>
+  </div>
+  <div id="kidsSelfUseWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-5">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-5（清潔照）</span>
+  </div>
+  <div id="envCleanPhotoWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-2-6">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-2')">&#x2190; 2-1-2</button>
+    <span class="btitle">2-1-2-6（測光照）</span>
+  </div>
+  <div id="lightCheckWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-c-2-1-3">
   <div class="bbar">
@@ -3543,6 +3610,12 @@ function GO(id) {
   if (id === 'pj-w-4-1') { if (typeof STAFFCHILDEDU !== 'undefined') STAFFCHILDEDU.init(); }
   if (id === 'pj-c-2-1-1-1') { if (typeof FIXEDCAREGIVER !== 'undefined') FIXEDCAREGIVER.init(); }
   if (id === 'pj-c-2-1-1-2') { if (typeof SUBSTITUTECAREGIVER !== 'undefined') SUBSTITUTECAREGIVER.init(); }
+  if (id === 'pj-c-2-1-2-1') { if (typeof ENVDEV !== 'undefined') ENVDEV.init(); }
+  if (id === 'pj-c-2-1-2-2') { if (typeof SPACELAYOUT !== 'undefined') SPACELAYOUT.init(); }
+  if (id === 'pj-c-2-1-2-3') { if (typeof STAFFCOMFORT !== 'undefined') STAFFCOMFORT.init(); }
+  if (id === 'pj-c-2-1-2-4') { if (typeof KIDSSELFUSE !== 'undefined') KIDSSELFUSE.init(); }
+  if (id === 'pj-c-2-1-2-5') { if (typeof ENVCLEANPHOTO !== 'undefined') ENVCLEANPHOTO.init(); }
+  if (id === 'pj-c-2-1-2-6') { if (typeof LIGHTCHECK !== 'undefined') LIGHTCHECK.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -13856,6 +13929,72 @@ var SUBSTITUTECAREGIVER=_buildFacilityCheckModule({
   printTitle:'代理照顧者交接查核紀錄',printEmoji:'🤝'
 });
 
+var ENVDEV=_buildFacilityCheckModule({
+  key:'xiaoBudiEnvDevV1',fbPath:'xiaobuddyEnvDev',idPrefix:'ed',varName:'ENVDEV',wrapId:'envDevWrap',
+  listSubtitle:'托育環境符合嬰幼兒發展需求查核紀錄',listHint:'2-1-2-1 托育環境符合嬰幼兒發展需求',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-1 托育環境符合嬰幼兒發展需求。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-1 托育環境符合嬰幼兒發展需求。</td></tr>',
+  photos:['說明：托育人員會與幼兒一起使用樂器。','說明：托育人員和幼兒一起閱讀繪本。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'托育環境符合嬰幼兒發展需求查核紀錄',printEmoji:'🧸'
+});
+
+var SPACELAYOUT=_buildFacilityCheckModule({
+  key:'xiaoBudiSpaceLayoutV1',fbPath:'xiaobuddySpaceLayout',idPrefix:'sl',varName:'SPACELAYOUT',wrapId:'spaceLayoutWrap',
+  listSubtitle:'空間動線規劃查核紀錄',listHint:'2-1-2-2 空間和動線規劃合宜',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-2 空間和動線規劃合宜，符合安全原則。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-2 空間和動線規劃合宜，符合安全原則。</td></tr>',
+  photos:['說明：活動空間和動線合宜，讓幼兒可以在安全環境活動。','說明：托育人員在合適的空間帶領幼兒玩溜滑梯。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'空間動線規劃查核紀錄',printEmoji:'🏠'
+});
+
+var STAFFCOMFORT=_buildFacilityCheckModule({
+  key:'xiaoBudiStaffComfortV1',fbPath:'xiaobuddyStaffComfort',idPrefix:'sf',varName:'STAFFCOMFORT',wrapId:'staffComfortWrap',
+  listSubtitle:'托育人員舒適度查核紀錄',listHint:'2-1-2-3 空間規劃顧及托育人員舒適度及近便性',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-3 空間規劃能顧及托育人員執行照顧工作時的舒適度及近便性。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-3 空間規劃能顧及托育人員執行照顧工作時的舒適度及近便性。</td></tr>',
+  photos:['說明：中心教室有熱水壺方便托育人員在教室泡奶給嬰幼兒。','說明：幼兒的床櫃，放置教室讓托育人員近便拿取幼兒物品。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'托育人員舒適度查核紀錄',printEmoji:'☕'
+});
+
+var KIDSSELFUSE=_buildFacilityCheckModule({
+  key:'xiaoBudiKidsSelfUseV1',fbPath:'xiaobuddyKidsSelfUse',idPrefix:'ku',varName:'KIDSSELFUSE',wrapId:'kidsSelfUseWrap',
+  listSubtitle:'幼兒能自行使用查核紀錄',listHint:'2-1-2-4 空間規劃能支持嬰幼兒自行使用',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-4 空間規劃能支持嬰幼兒自行使用。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-4 空間規劃能支持嬰幼兒自行使用。</td></tr>',
+  photos:['說明：適宜的桌椅可以讓幼兒自己吃飯。','說明：適宜的桌椅可以讓嬰幼兒自己操作教玩具。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'幼兒能自行使用查核紀錄',printEmoji:'🪑'
+});
+
+var ENVCLEANPHOTO=_buildFacilityCheckModule({
+  key:'xiaoBudiEnvCleanPhotoV1',fbPath:'xiaobuddyEnvCleanPhoto',idPrefix:'ec',varName:'ENVCLEANPHOTO',wrapId:'envCleanPhotoWrap',
+  listSubtitle:'定期清潔及維修托育環境查核紀錄',listHint:'2-1-2-5 定期清潔及維修托育環境',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-5 定期清潔及維修托育環境。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-5 定期清潔及維修托育環境。</td></tr>',
+  photos:['說明：托育人員每日會使用稀釋漂白水擦拭消毒環境。','說明：托育人員每日會使用稀釋漂白水擦拭嬰幼兒觸摸到的床墊櫃。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'定期清潔及維修托育環境查核紀錄',printEmoji:'🧼'
+});
+
+var LIGHTCHECK=_buildFacilityCheckModule({
+  key:'xiaoBudiLightCheckV1',fbPath:'xiaobuddyLightCheck',idPrefix:'lc',varName:'LIGHTCHECK',wrapId:'lightCheckWrap',
+  listSubtitle:'活動空間光線查核紀錄',listHint:'2-1-2-6 活動空間光線充足並適度調整',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。<br>查核內容：2-1-2-6 活動空間光線充足，並依作息對光線做適度調整。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-2 托育環境符合嬰幼兒發展需求，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-2-6 活動空間光線充足，並依作息對光線做適度調整。</td></tr>',
+  photos:['說明：幼兒閱讀區時，托育人員會留意光源是否充足。','說明：幼兒睡眠區時，托育人員會留意光源是否充足。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'活動空間光線查核紀錄',printEmoji:'💡'
+});
+
 
 
 
@@ -16426,7 +16565,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:53</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:56</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
