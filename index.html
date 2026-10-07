@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179133974013256';
+  var BUILD='179134980332756';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2738,7 +2738,7 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">3-1（托育人員黃卡）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="yellowcardWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-3-2">
   <div class="bbar">
@@ -3403,6 +3403,7 @@ function GO(id) {
   if (id === 'pj-h-3-3-2-1') { if (typeof ENVSAFETY !== 'undefined') ENVSAFETY.init(); }
   if (id === 'pj-h-3-3-2-2') { if (typeof APPLIANCELABEL !== 'undefined') APPLIANCELABEL.init(); }
   if (id === 'pj-h-3-3-2-3') { if (typeof CLEANERSTORE !== 'undefined') CLEANERSTORE.init(); }
+  if (id === 'pj-inf-3-1') { if (typeof YELLOWCARD !== 'undefined') YELLOWCARD.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -12731,6 +12732,222 @@ var CLEANERSTORE=_buildFacilityCheckModule({
 });
 
 
+/* ════ 3-1 托育人員黃卡紀錄（可自由新增/刪除） ════ */
+var YELLOWCARD=(function(){
+  var KEY='xiaoBudiYellowCardV1',FB_PATH='xiaobuddyYellowCard';
+  var db={cards:{},flu:{}};
+  var SECTIONS=[
+    {key:'cards',title:'托育人員黃卡紀錄',emoji:'🟡'},
+    {key:'flu',title:'托育人員施打流感疫苗紀錄',emoji:'💉'}
+  ];
+
+  function loadLocal(){
+    try{var v=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');db={cards:v.cards||{},flu:v.flu||{}};}
+    catch(e){db={cards:{},flu:{}};}
+  }
+  function _wrap(){return document.getElementById('yellowcardWrap');}
+  function saveAll(){
+    var light={cards:{},flu:{}};
+    ['cards','flu'].forEach(function(sec){
+      Object.keys(db[sec]).forEach(function(id){
+        var it=db[sec][id],noP={};
+        Object.keys(it).forEach(function(k){if(k!=='photo')noP[k]=it[k];});
+        light[sec][id]=noP;
+      });
+    });
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(light));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+  }
+  function pushItemFb(section,id,data){
+    try{
+      var fb=_fbInit();if(!fb)return;
+      var payload={};
+      Object.keys(data).forEach(function(k){payload[k]=data[k];});
+      fb.ref(FB_PATH+'/'+section+'/'+id).set(payload);
+    }catch(e){}
+  }
+  function removeItemFb(section,id){
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+section+'/'+id).remove();}catch(e){}
+  }
+  function loadFb(cb){
+    try{var fb=_fbInit();if(!fb){cb();return;}
+      var remaining=2;
+      ['cards','flu'].forEach(function(sec){
+        fb.ref(FB_PATH+'/'+sec).once('value',function(snap){
+          var d=snap.val()||{};
+          Object.keys(d).forEach(function(id){
+            if(!db[sec][id])db[sec][id]=d[id];
+            else Object.keys(d[id]).forEach(function(k){
+              if(k==='photo'&&db[sec][id][k])return;
+              db[sec][id][k]=d[id][k];
+            });
+          });
+          remaining--;
+          if(remaining===0){saveAll();cb();}
+        });
+      });
+    }catch(e){cb();}
+  }
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function fmtDate(s){if(!s)return'';var p=s.split('-');return p.length===3?(p[0]+'/'+p[1]+'/'+p[2]):s;}
+  function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1000,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
+  function _dateInputHTML(section,id,dateVal){
+    var dv=dateVal||_todayISO();
+    return '<input type="date" id="yc'+section+'Date'+id+'" value="'+esc(dv)+'" onclick="event.stopPropagation()" onchange="YELLOWCARD.onDateChange(\''+section+'\',\''+id+'\')" style="position:absolute;right:4px;bottom:4px;z-index:3;font-size:.68rem;padding:2px 4px;border-radius:5px;border:1px solid #d8a000;background:rgba(255,235,180,.95);color:#5a3d00;font-weight:700;">';
+  }
+
+  function renderSection(sec){
+    var items=db[sec.key];
+    var ids=Object.keys(items).sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
+    var h='<div class="df-sec"><div class="df-lbl">'+sec.emoji+' '+sec.title+'</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;margin-bottom:10px;">';
+    ids.forEach(function(id){
+      var it=items[id];
+      h+='<div style="position:relative;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">';
+      h+='<button onclick="YELLOWCARD.removeCard(\''+sec.key+'\',\''+id+'\')" style="position:absolute;top:4px;right:4px;z-index:5;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer;line-height:20px;padding:0;">✕</button>';
+      h+='<div id="yc'+sec.key+'Box'+id+'" style="height:130px;background:#fafafa;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;" onclick="YELLOWCARD.uploadCardPhoto(\''+sec.key+'\',\''+id+'\')">';
+      if(it.photo){h+='<img src="'+it.photo+'" style="width:100%;height:100%;object-fit:cover;">';}
+      else{h+='<div style="color:#bbb;font-size:.7rem;text-align:center;">📷<br>點擊上傳</div>';}
+      h+=_dateInputHTML(sec.key,id,it.date);
+      h+='</div>';
+      h+='<input type="file" id="yc'+sec.key+'Input'+id+'" accept="image/*" style="display:none">';
+      h+='<input type="text" id="yc'+sec.key+'Name'+id+'" placeholder="姓名" value="'+esc(it.name||'')+'" onchange="YELLOWCARD.onNameChange(\''+sec.key+'\',\''+id+'\')" style="width:100%;border:none;text-align:center;padding:6px 4px;font-size:.8rem;font-family:\'Noto Sans TC\',sans-serif;color:var(--navy);box-sizing:border-box;">';
+      h+='</div>';
+    });
+    h+='</div>';
+    h+='<button onclick="YELLOWCARD.addCard(\''+sec.key+'\')" style="padding:8px 16px;background:var(--run-bd);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">＋ 新增</button>';
+    h+='</div>';
+    return h;
+  }
+
+  function render(){
+    var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
+    h+='<div style="font-size:.78rem;color:#888;padding:0 16px 10px;">老師隨時異動時，點 ✕ 刪除、點「＋ 新增」加入新的照片即可。</div>';
+    SECTIONS.forEach(function(sec){h+=renderSection(sec);});
+    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
+    h+='<button class="lf-dl-btn" onclick="YELLOWCARD.download()" style="flex:none;padding:12px 28px;">🖨️ 列印</button>';
+    h+='</div>';
+    h+='</div>';
+    return h;
+  }
+
+  function init(){
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=render();
+    loadFb(function(){w.innerHTML=render();});
+  }
+
+  function addCard(section){
+    var id='c'+Date.now();
+    var ords=Object.keys(db[section]).map(function(k){return db[section][k].order||0;});
+    var maxOrd=ords.length?Math.max.apply(null,ords):0;
+    db[section][id]={name:'',photo:null,date:_todayISO(),order:maxOrd+1};
+    saveAll();pushItemFb(section,id,db[section][id]);
+    _wrap().innerHTML=render();
+  }
+  function removeCard(section,id){
+    if(!confirm('確定要刪除這張照片嗎？此操作無法復原。'))return;
+    delete db[section][id];
+    saveAll();removeItemFb(section,id);
+    _wrap().innerHTML=render();
+  }
+  function onNameChange(section,id){
+    var el=document.getElementById('yc'+section+'Name'+id);
+    if(!db[section][id]||!el)return;
+    db[section][id].name=el.value;
+    saveAll();pushItemFb(section,id,db[section][id]);
+  }
+  function onDateChange(section,id){
+    var el=document.getElementById('yc'+section+'Date'+id);
+    if(!db[section][id]||!el)return;
+    db[section][id].date=el.value;
+    saveAll();pushItemFb(section,id,db[section][id]);
+  }
+  function uploadCardPhoto(section,id){
+    var inp=document.getElementById('yc'+section+'Input'+id);if(!inp)return;
+    inp.onchange=function(){
+      var f=inp.files[0];if(!f)return;
+      var reader=new FileReader();
+      reader.onload=function(e){
+        _compressPhoto(e.target.result,function(compressed){
+          if(!db[section][id])return;
+          db[section][id].photo=compressed;
+          saveAll();pushItemFb(section,id,db[section][id]);
+          var box=document.getElementById('yc'+section+'Box'+id);
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:cover;">'+_dateInputHTML(section,id,db[section][id].date);
+        });
+      };
+      reader.readAsDataURL(f);
+    };
+    inp.click();
+  }
+
+  /* ─── 列印 ─── */
+  function download(){
+    _doPrint(_buildHTML());
+  }
+  function _doPrint(h){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
+    else{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
+      setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+    }
+  }
+  function _buildHTML(){
+    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+    var AC='#2d9c6f',AL='#e8f7f0';
+    function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>托育人員黃卡紀錄</title><style>';
+    p+='*{box-sizing:border-box;margin:0;padding:0;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:7px;margin-bottom:10px;}';
+    p+='.hdr img{height:52px;width:auto;}';
+    p+='.hdr-txt{flex:1;text-align:center;}';
+    p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
+    p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
+    p+='.sec-hd{background:'+AC+';color:#fff;font-weight:800;font-size:11pt;padding:5px 12px;border-radius:8px;margin:14px 0 10px;letter-spacing:.5px;}';
+    p+='.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}';
+    p+='.card{border:1px solid '+AC+';border-radius:8px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
+    p+='.card .pic{position:relative;height:110px;background:#fafafa;display:flex;align-items:center;justify-content:center;}';
+    p+='.card .pic img{max-width:100%;max-height:100%;object-fit:cover;width:100%;height:100%;}';
+    p+='.card .pic .dstamp{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:7pt;padding:1px 4px;border-radius:3px;}';
+    p+='.card .name{text-align:center;font-size:9pt;padding:4px 2px;background:'+AL+';color:'+AC+';font-weight:700;}';
+    p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
+    p+='</style></head><body>';
+    p+='<div class="hdr">';
+    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">🟡 托育人員黃卡紀錄</div></div>';
+    p+='</div>';
+    SECTIONS.forEach(function(sec){
+      p+='<div class="sec-hd">'+sec.emoji+' '+esc2(sec.title)+'</div>';
+      var items=db[sec.key];
+      var ids=Object.keys(items).sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
+      if(!ids.length){p+='<div style="color:#999;font-size:9.5pt;padding:4px 2px 10px;">尚無資料</div>';}
+      else{
+        p+='<div class="grid">';
+        ids.forEach(function(id){
+          var it=items[id];
+          var ds=fmtDate(it.date);
+          p+='<div class="card"><div class="pic">'+(it.photo?'<img src="'+it.photo+'">':'')+(it.photo&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="name">'+esc2(it.name||'（未填姓名）')+'</div></div>';
+        });
+        p+='</div>';
+      }
+    });
+    p+='</body></html>';
+    return p;
+  }
+  return{init:init,addCard:addCard,removeCard:removeCard,onNameChange:onNameChange,onDateChange:onDateChange,uploadCardPhoto:uploadCardPhoto,download:download};
+})();
+
+
+
+
 
 
 
@@ -15294,7 +15511,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 10:22</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 13:10</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
