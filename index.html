@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913715478510';
+  var BUILD='179138255630228';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2787,42 +2787,42 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">6-3（洗手設施和洗手用品效期）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="handwashWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-6-5">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">6-5（家長宣導咳嗽禮節）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="coughmannerWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-6-6">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
-    <span class="btitle">6-6</span>
+    <span class="btitle">6-6（訪客管理）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="visitormgmtWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-6-8">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">6-8（防護裝備物資，含口罩、手套等）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="ppestoreWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-6-9">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">6-9（訂定機構內飲用水安全用水）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="waterSafetyWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-7-1">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
     <span class="btitle">7-1（預先規劃獨立或隔離空間入住）</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div id="isolationroomWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ FORMS MENU（各式表單） ═══ -->
@@ -3409,6 +3409,12 @@ function GO(id) {
   if (id === 'pj-inf-5-1') { if (typeof ENVCLEAN !== 'undefined') ENVCLEAN.init(); }
   if (id === 'pj-inf-5-3') { if (typeof PESTCONTROL !== 'undefined') PESTCONTROL.init(); }
   if (id === 'pj-inf-6-1') { if (typeof ANNUALPLAN !== 'undefined') ANNUALPLAN.init(); }
+  if (id === 'pj-inf-6-3') { if (typeof HANDWASH !== 'undefined') HANDWASH.init(); }
+  if (id === 'pj-inf-6-5') { if (typeof COUGHMANNER !== 'undefined') COUGHMANNER.init(); }
+  if (id === 'pj-inf-6-6') { if (typeof VISITORMGMT !== 'undefined') VISITORMGMT.init(); }
+  if (id === 'pj-inf-6-8') { if (typeof PPESTORE !== 'undefined') PPESTORE.init(); }
+  if (id === 'pj-inf-6-9') { if (typeof WATERSAFETY !== 'undefined') WATERSAFETY.init(); }
+  if (id === 'pj-inf-7-1') { if (typeof ISOLATIONROOM !== 'undefined') ISOLATIONROOM.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -13618,6 +13624,73 @@ var ANNUALPLAN=(function(){
 })();
 
 
+var HANDWASH=_buildFacilityCheckModule({
+  key:'xiaoBudiHandWashV1',fbPath:'xiaobuddyHandWash',idPrefix:'hw',varName:'HANDWASH',wrapId:'handwashWrap',
+  listSubtitle:'洗手設施和洗手用品效期查核紀錄',listHint:'6-3 洗手設施和洗手用品效期',
+  dateLabel:'紀錄日期（例：114年03月）',datePlaceholder:'114年03月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：防疫機制之建置<br>查核內容：6.3 有充足且適當之洗手設施和洗手用品且符合效期。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.3 有充足且適當之洗手設施和洗手用品且符合效期。</td></tr>',
+  photos:['說明：廚房洗手設施及洗手乳效期。','說明：戶外活動洗手設施及洗手乳效期。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'洗手設施和洗手用品效期查核紀錄',printEmoji:'🧼'
+});
+
+var COUGHMANNER=_buildFacilityCheckModule({
+  key:'xiaoBudiCoughMannerV1',fbPath:'xiaobuddyCoughManner',idPrefix:'cm',varName:'COUGHMANNER',wrapId:'coughmannerWrap',
+  listSubtitle:'家長宣導咳嗽禮節查核紀錄',listHint:'6-5 咳嗽禮節衛教宣導',
+  dateLabel:'紀錄日期（例：114年3月）',datePlaceholder:'114年3月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：防疫機制之建置<br>查核內容：6.5 有宣導(如:張貼衛教海報、發送衛教單、電子網路等)和落實腸病毒防治、手部衛生及呼吸道衛生與咳嗽禮節。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.5 有宣導(如:張貼衛教海報、發送衛教單、電子網路等)和落實腸病毒防治、手部衛生及呼吸道衛生與咳嗽禮節。</td></tr>',
+  photos:['說明：跟家長宣導咳嗽禮節。','說明：跟家長宣導咳嗽禮節。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'家長宣導咳嗽禮節查核紀錄',printEmoji:'🤧'
+});
+
+var VISITORMGMT=_buildFacilityCheckModule({
+  key:'xiaoBudiVisitorMgmtV1',fbPath:'xiaobuddyVisitorMgmt',idPrefix:'vm',varName:'VISITORMGMT',wrapId:'visitormgmtWrap',
+  listSubtitle:'訪客管理查核紀錄',listHint:'6-6 訪客管理規範',
+  dateLabel:'紀錄日期（例：114年）',datePlaceholder:'114年',dateLabelShort:'紀錄日期',
+  infoHtml:'評鑑指標：防疫機制之建置<br>查核內容：6.6 訂定並落實訪客(含家屬)管理範圍，且有訪客紀錄。訪客管理規範張貼於明顯處，提供訪客手部衛生所需設施(乾洗手或溼洗手)，請訪客探訪前洗手及提醒訪客出入機構所需配戴口罩之情境，宣導訪客進入機構遵循呼吸道衛生與咳嗽禮節。',
+  infoRowsHtml:'<tr><td class="th">評鑑指標</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.6 訂定並落實訪客(含家屬)管理範圍，且有訪客紀錄。訪客管理規範張貼於明顯處，提供訪客手部衛生所需設施(乾洗手或溼洗手)，請訪客探訪前洗手及提醒訪客出入機構所需配戴口罩之情境，宣導訪客進入機構遵循呼吸道衛生與咳嗽禮節。</td></tr>',
+  photos:['說明：戶外設置洗手設施及洗手乳供訪客做使用。'],
+  gridCols:1,photoBoxHeight:260,printPicHeight:260,
+  printTitle:'訪客管理查核紀錄',printEmoji:'🚪'
+});
+
+var PPESTORE=_buildFacilityCheckModule({
+  key:'xiaoBudiPpeStoreV1',fbPath:'xiaobuddyPpeStore',idPrefix:'pp',varName:'PPESTORE',wrapId:'ppestoreWrap',
+  listSubtitle:'防護裝備物資儲放查核紀錄',listHint:'6-8 防護裝備物資儲放',
+  dateLabel:'紀錄日期（例：114年）',datePlaceholder:'114年',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：防疫機制之建置<br>查核內容：6.8 防護裝備物資(含口罩及手套等)應有適當儲備量，定期檢視有效期限並有紀錄，且儲放於乾淨且避免高溫、潮濕之場所(如:溫度≤35度C，相對濕度≤80%:或可依各類物資供應商之建議)，並放置於貨架、櫃子或粘版上，保持離地、離牆，且不應接觸天花板。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.8 防護裝備物資(含口罩及手套等)應有適當儲備量，定期檢視有效期限並有紀錄，且儲放於乾淨且避免高溫、潮濕之場所(如:溫度≤35度C，相對濕度≤80%:或可依各類物資供應商之建議)，並放置於貨架、櫃子或粘版上，保持離地、離牆，且不應接觸天花板。</td></tr>',
+  photos:['說明：口罩及手套的儲放地。'],
+  gridCols:1,photoBoxHeight:260,printPicHeight:260,
+  printTitle:'防護裝備物資儲放查核紀錄',printEmoji:'😷'
+});
+
+var WATERSAFETY=_buildFacilityCheckModule({
+  key:'xiaoBudiWaterSafetyV1',fbPath:'xiaobuddyWaterSafety',idPrefix:'ws',varName:'WATERSAFETY',wrapId:'waterSafetyWrap',
+  listSubtitle:'機構內飲用水安全查核紀錄',listHint:'6-9 飲用水安全管理',
+  dateLabel:'紀錄日期（例：114年）',datePlaceholder:'114年',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：防疫機制之建置<br>查核內容：6.9 訂定機構內飲用水安全(含配方奶配製用水)管理規範並有紀錄。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.9 訂定機構內飲用水安全(含配方奶配製用水)管理規範並有紀錄。</td></tr>',
+  photos:['說明：爬爬班泡奶配製熱水壺。','說明：寶寶班泡奶配製熱水壺。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'機構內飲用水安全查核紀錄',printEmoji:'💧'
+});
+
+var ISOLATIONROOM=_buildFacilityCheckModule({
+  key:'xiaoBudiIsolationRoomV1',fbPath:'xiaobuddyIsolationRoom',idPrefix:'ir',varName:'ISOLATIONROOM',wrapId:'isolationroomWrap',
+  listSubtitle:'隔離空間設置查核紀錄',listHint:'7-1 隔離空間設置及使用',
+  dateLabel:'紀錄日期（例：114年）',datePlaceholder:'114年',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：隔離空間設置及使用<br>查核內容：7.1 預先規劃獨立或隔離空間，供疑似感染者暫流或入住。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>隔離空間設置及使用</td></tr><tr><td class="th">查核內容</td><td>7.1 預先規劃獨立或隔離空間，供疑似感染者暫流或入住。</td></tr>',
+  photos:['說明：供疑似感染者的隔離空間。'],
+  gridCols:1,photoBoxHeight:260,printPicHeight:260,
+  printTitle:'隔離空間設置查核紀錄',printEmoji:'🚪'
+});
+
+
 
 
 
@@ -16187,7 +16260,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 19:12</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:15</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
