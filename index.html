@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179138576329867';
+  var BUILD='17913863923374';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -14208,13 +14208,17 @@ function _cleanBuildPrintHTML(title,theadHtml,rowsHtml){
 }
 function _cleanBuildCompactPrintHTML(title,bodyHtml,sectionCount){
   var n=sectionCount||1;
-  /* 區塊數越少，字級與留白可以放越大，盡量把整張 A4 填滿、減少底部空白 */
-  var fsH2=n<=1?20:(n===2?18:15), fsH3=n<=1?16:(n===2?14:12), fsTb=n<=1?15:(n===2?13:10);
-  var pad=n<=1?'9px 12px':(n===2?'7px 10px':'2px 3px');
-  var sigW=n<=1?64:(n===2?52:30), sigH=n<=1?32:(n===2?26:12);
-  var h3m=n<=1?'16px 0 6px':(n===2?'12px 0 4px':'6px 0 2px');
-  var pgm=n<=1?'10mm':(n===2?'10mm':'7mm');
-  var bpad=n<=1?'14px':(n===2?'12px':'8px');
+  /* 區塊數越少，字級與留白可以放越大，盡量把整張 A4 填滿、減少底部空白。
+     3個班（寶寶班/爬爬班）跟6個班（跑跑班）字級留白需求差很多，
+     所以4個班以上另外切一層更緊縮的級距，確保6個班也能印在一張裡。 */
+  var tier=n<=1?0:(n===2?1:(n===3?2:3));
+  var fsH2=[20,18,15,11][tier], fsH3=[16,14,12,9][tier], fsTb=[15,13,10,7.5][tier];
+  var pad=[  '9px 12px','7px 10px','2px 3px','1px 2px'][tier];
+  var sigW=[64,52,30,20][tier], sigH=[32,26,12,9][tier];
+  var h3m=['16px 0 6px','12px 0 4px','6px 0 2px','3px 0 1px'][tier];
+  var pgm=[  '10mm','10mm','7mm','5mm'][tier];
+  var bpad=['14px','12px','8px','5px'][tier];
+  var firstColW=[70,60,50,40][tier];
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+title+'</title>'+
     '<style>body{font-family:"Noto Sans TC",sans-serif;padding:'+bpad+';color:#1a2b4a;}'+
     '@page{size:A4;margin:'+pgm+';}'+
@@ -14222,13 +14226,18 @@ function _cleanBuildCompactPrintHTML(title,bodyHtml,sectionCount){
     'h3{margin:'+h3m+';font-size:'+fsH3+'px;color:#1a2b4a;background:#eef2fb;padding:3px 8px;border-radius:4px;}'+
     'table{width:100%;border-collapse:collapse;font-size:'+fsTb+'px;margin-bottom:6px;table-layout:fixed;}'+
     'th,td{border:1px solid #555;padding:'+pad+';text-align:center;overflow:hidden;word-break:break-all;line-height:1.2;}'+
-    'th:first-child,td:first-child{width:'+(n<=1?70:(n===2?60:50))+'px;}'+
+    'th:first-child,td:first-child{width:'+firstColW+'px;}'+
     'td .note-inner{max-height:'+(n<=2?'36px':'22px')+';overflow:hidden;text-overflow:ellipsis;}'+
     'th{background:#f4f6fb;}img.sig{width:'+sigW+'px;height:'+sigH+'px;object-fit:contain;}'+
-    '@media print{button{display:none;}}</style></head><body>'+
+    '@media print{button{display:none;}}</style></head><body><div class="wrap2p">'+
     '<div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:'+(n>=3?'6px':'12px')+'px;"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'" style="height:'+(n>=3?'36':'44')+'px;width:auto;"><div style="text-align:center;"><div style="font-size:'+fsH2+'px;font-weight:900;">'+_companyFullName()+'</div><div style="font-size:'+(fsH2-2)+'px;font-weight:700;">'+title+'</div></div></div>'+
     bodyHtml+
-    '<script>window.onload=function(){window.print();}<\/script></body></html>';
+    '</div>'+
+    '<script>window.onload=function(){'+
+    'try{var wrap=document.querySelector(".wrap2p");var capPx=261*96/25.4;var natural=wrap.scrollHeight;'+
+    'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
+    'window.print();'+
+    '}<\/script></body></html>';
 }
 function _cleanBuildLandscape2upHTML(title,sections){
   var pageHtml='';
@@ -16568,7 +16577,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:09</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:20</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
