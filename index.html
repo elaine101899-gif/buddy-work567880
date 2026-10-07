@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179138421929166';
+  var BUILD='17913847882059';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2326,7 +2326,30 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-c-2-1')">&#x2190; 2-1</button>
     <span class="btitle">2-1-1</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-c-2-1-1-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-1-1</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-1-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-1-2（交接照）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-1-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-1')">&#x2190; 2-1-1</button>
+    <span class="btitle">2-1-1-1</span>
+  </div>
+  <div id="fixedcaregiverWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-1-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-1')">&#x2190; 2-1-1</button>
+    <span class="btitle">2-1-1-2（交接照）</span>
+  </div>
+  <div id="substituteCaregiverWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-c-2-1-2">
   <div class="bbar">
@@ -3518,6 +3541,8 @@ function GO(id) {
   if (id === 'pj-inf-6-9') { if (typeof WATERSAFETY !== 'undefined') WATERSAFETY.init(); }
   if (id === 'pj-inf-7-1') { if (typeof ISOLATIONROOM !== 'undefined') ISOLATIONROOM.init(); }
   if (id === 'pj-w-4-1') { if (typeof STAFFCHILDEDU !== 'undefined') STAFFCHILDEDU.init(); }
+  if (id === 'pj-c-2-1-1-1') { if (typeof FIXEDCAREGIVER !== 'undefined') FIXEDCAREGIVER.init(); }
+  if (id === 'pj-c-2-1-1-2') { if (typeof SUBSTITUTECAREGIVER !== 'undefined') SUBSTITUTECAREGIVER.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -13809,6 +13834,28 @@ var STAFFCHILDEDU=_buildFacilityCheckModule({
   printTitle:'員工子女就學福利查核紀錄',printEmoji:'🎓'
 });
 
+var FIXEDCAREGIVER=_buildFacilityCheckModule({
+  key:'xiaoBudiFixedCaregiverV1',fbPath:'xiaobuddyFixedCaregiver',idPrefix:'fc',varName:'FIXEDCAREGIVER',wrapId:'fixedcaregiverWrap',
+  listSubtitle:'固定照顧者查核紀錄',listHint:'2-1-1-1 托育日誌與編制表呈現固定照顧者',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-1 由一至二位固定的托育人員負責嬰幼兒基本照護。<br>查核內容：2-1-1-1 托育日誌與托育人員編制表呈現嬰幼兒有固定照顧者。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-1 由一至二位固定的托育人員負責嬰幼兒基本照護。</td></tr><tr><td class="th">查核內容</td><td>2-1-1-1 托育日誌與托育人員編制表呈現嬰幼兒有固定照顧者。</td></tr>',
+  photos:['說明：托育人員和幼兒一起閱讀繪本。','說明：托育人員帶著幼兒操作小鼓。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'固定照顧者查核紀錄',printEmoji:'🧑‍🍼'
+});
+
+var SUBSTITUTECAREGIVER=_buildFacilityCheckModule({
+  key:'xiaoBudiSubstituteCaregiverV1',fbPath:'xiaobuddySubstituteCaregiver',idPrefix:'sc',varName:'SUBSTITUTECAREGIVER',wrapId:'substituteCaregiverWrap',
+  listSubtitle:'代理照顧者交接查核紀錄',listHint:'2-1-1-2 請假代理人員交接',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-1 由一至二位固定的托育人員負責嬰幼兒基本照護。<br>查核內容：2-1-1-2 托育人員請假時，由有核備且符合托育人員資格者代理。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-1 由一至二位固定的托育人員負責嬰幼兒基本照護。</td></tr><tr><td class="th">查核內容</td><td>2-1-1-2 托育人員請假時，由有核備且符合托育人員資格者代理。</td></tr>',
+  photos:['說明：托育人員休假前，會跟代理托育人員交接近期幼兒需要的備品。','說明：托育人員休假前，會跟代理托育人員交接班上學習檔案。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'代理照顧者交接查核紀錄',printEmoji:'🤝'
+});
+
 
 
 
@@ -16379,7 +16426,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:43</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:53</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
