@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179138255630228';
+  var BUILD='179138344211585';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -6944,6 +6944,10 @@ var DIARY=(function(){
     var i=dayNo-1;
     var acts=th.acts&&th.acts[dWk]||{};
     var act=(acts[cls]&&acts[cls][i])||{dom:'',ind:'',name:'',desc:''};
+    /* 不同主題的課程資料裡，活動內容欄位名稱不一致（舊資料用 desc，
+       新資料用 content），日誌只認得 desc，這裡統一補上，不然新資料的
+       活動內容永遠帶不進日誌。 */
+    if(!act.desc&&act.content)act=Object.assign({},act,{desc:act.content});
     var _origActName=act.name;
     if(typeof TEACHSYNC!=='undefined'){
       var _tsDate2=dayData.fn.slice(0,2)+'-'+dayData.fn.slice(2);
@@ -7373,6 +7377,7 @@ var DIARY=(function(){
     h+='</div>';
     h+='<div class="sec-val" style="font-size:.9rem;font-weight:700;margin-bottom:2px;">'+act.name+'</div>';
     if(act.ind)h+='<div style="font-size:.68rem;color:#666;">'+act.ind+'</div>';
+    if(act.desc)h+='<div style="font-size:.72rem;color:#444;margin-top:3px;line-height:1.5;">'+act.desc+'</div>';
     h+='</div>';
     if(!isGrowth){
       /* ── 教學資源 ── */
@@ -16260,7 +16265,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:15</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 22:30</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
