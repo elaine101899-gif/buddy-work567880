@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179129976622370';
+  var BUILD='179133131617879';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2256,6 +2256,11 @@ function _rosterKidsAsOf(cls,dateStr){
       <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">員工福利措施</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
     </div>
+    <div onclick="GO('pingjian-infection')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;">
+      <span style="font-size:1.8rem;">&#x1F9A0;</span>
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">感染管控</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
   </div>
 </div>
 
@@ -2664,6 +2669,158 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
     <span class="btitle">&#x1F91D; 員工福利措施</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<!-- ═══ 評鑑：感染管控 ═══ -->
+<div class="pg" id="pg-pingjian-infection">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
+    <span class="btitle">&#x1F9A0; 感染管控</span>
+  </div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-inf-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">3-1（托育人員黃卡）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">3-2（協助家長參照兒童健康手冊）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-4-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">4-1（開會教育訓練）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-5-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">5-1（定期清潔、消毒機構內設備）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-5-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">5-3（機構內具防蚊蟲設備或措施）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-1</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-2（托育人員疾管時數）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-3（洗手設施和洗手用品效期）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-5')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-5（家長宣導咳嗽禮節）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-6')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-6</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-8')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-8（防護裝備物資，含口罩、手套等）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-6-9')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-9（訂定機構內飲用水安全用水）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-inf-7-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">7-1（預先規劃獨立或隔離空間入住）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-inf-3-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">3-1（托育人員黃卡）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-3-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">3-2（協助家長參照兒童健康手冊）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-4-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">4-1（開會教育訓練）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-5-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">5-1（定期清潔、消毒機構內設備）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-5-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">5-3（機構內具防蚊蟲設備或措施）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-1</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-2（托育人員疾管時數）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-3（洗手設施和洗手用品效期）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-5">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-5（家長宣導咳嗽禮節）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-6">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-6</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-8">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-8（防護裝備物資，含口罩、手套等）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-6-9">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-9（訂定機構內飲用水安全用水）</span>
+  </div>
+  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+</div>
+<div class="pg" id="pg-pj-inf-7-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">7-1（預先規劃獨立或隔離空間入住）</span>
   </div>
   <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
 </div>
@@ -15058,7 +15215,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/6 23:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 08:01</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
