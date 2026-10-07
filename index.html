@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179136822230062';
+  var BUILD='17913692048612';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13054,10 +13054,14 @@ var TRAINMEETING=(function(){
   }
 
   /* ─── 表單 ─── */
-  function renderClassItem(cls){
-    var h='<div style="position:relative;background:#f7f7f7;border-radius:10px;padding:10px;margin-bottom:8px;">';
+  function renderClassItem(cls,idx,total){
+    var h='<div style="position:relative;background:#f7f7f7;border-radius:10px;padding:10px 10px 10px 40px;margin-bottom:8px;">';
+    h+='<div style="position:absolute;top:8px;left:6px;display:flex;flex-direction:column;gap:2px;">';
+    h+='<button onclick="TRAINMEETING.moveClass(\''+cls.id+'\',-1)"'+(idx===0?' disabled':'')+' style="width:22px;height:22px;border-radius:6px;border:1px solid #ccc;background:'+(idx===0?'#f0f0f0':'#fff')+';color:'+(idx===0?'#ccc':'#555')+';font-size:11px;cursor:'+(idx===0?'default':'pointer')+';padding:0;line-height:1;">▲</button>';
+    h+='<button onclick="TRAINMEETING.moveClass(\''+cls.id+'\',1)"'+(idx===total-1?' disabled':'')+' style="width:22px;height:22px;border-radius:6px;border:1px solid #ccc;background:'+(idx===total-1?'#f0f0f0':'#fff')+';color:'+(idx===total-1?'#ccc':'#555')+';font-size:11px;cursor:'+(idx===total-1?'default':'pointer')+';padding:0;line-height:1;">▼</button>';
+    h+='</div>';
     h+='<button onclick="TRAINMEETING.removeClass(\''+cls.id+'\')" style="position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer;line-height:20px;padding:0;">✕</button>';
-    h+='<input type="text" id="trClsName'+cls.id+'" class="df-inp" placeholder="班級名稱（例：寶寶一班）" value="'+esc(cls.name||'')+'" onchange="TRAINMEETING.onClassChange(\''+cls.id+'\')" style="margin-bottom:6px;font-weight:700;max-width:260px;">';
+    h+='<input type="text" id="trClsName'+cls.id+'" class="df-inp" placeholder="班級名稱（例：寶寶一班）" value="'+esc(cls.name||'')+'" onchange="TRAINMEETING.onClassChange(\''+cls.id+'\')" style="margin-bottom:6px;font-weight:700;max-width:230px;">';
     h+='<textarea id="trClsText'+cls.id+'" class="df-ta" placeholder="這個班級的心得/感想…" onchange="TRAINMEETING.onClassChange(\''+cls.id+'\')" style="min-height:70px;">'+pe(cls.text||'')+'</textarea>';
     h+='</div>';
     return h;
@@ -13085,7 +13089,7 @@ var TRAINMEETING=(function(){
     /* 各班級感想（可自由新增/刪除） */
     h+='<div class="df-sec"><div class="df-lbl">🏫 各班級感想</div>';
     h+='<div id="trClassList">';
-    classes.forEach(function(cls){h+=renderClassItem(cls);});
+    classes.forEach(function(cls,idx){h+=renderClassItem(cls,idx,classes.length);});
     h+='</div>';
     h+='<button onclick="TRAINMEETING.addClass()" style="padding:8px 16px;background:var(--run-bd);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">＋ 新增班級</button>';
     h+='</div>';
@@ -13226,6 +13230,17 @@ var TRAINMEETING=(function(){
     var d=collectData();
     db[curFid]=d;saveAll();pushFb(curFid,d);
   }
+  function moveClass(id,dir){
+    var d=collectData();
+    var arr=d.trClasses||[];
+    var i=arr.findIndex(function(c){return c.id===id;});
+    var j=i+dir;
+    if(i<0||j<0||j>=arr.length)return;
+    var tmp=arr[i];arr[i]=arr[j];arr[j]=tmp;
+    d.trClasses=arr;
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+    _wrap().innerHTML=renderForm(d);
+  }
   function onPhotoDateChange(n){
     var d=collectData();
     var ex=db[curFid]||{};d.createdAt=ex.createdAt||Date.now();d.read=ex.read||false;
@@ -13329,7 +13344,7 @@ var TRAINMEETING=(function(){
     p+='</body></html>';
     return p;
   }
-  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,addClass:addClass,removeClass:removeClass,onClassChange:onClassChange,download:download};
+  return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,addClass:addClass,removeClass:removeClass,moveClass:moveClass,onClassChange:onClassChange,download:download};
 })();
 
 var ENVCLEAN=_buildFacilityCheckModule({
@@ -15911,7 +15926,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 18:17</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 18:33</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
