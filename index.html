@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913863923374';
+  var BUILD='17913871537710';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -82,7 +82,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f7f5f2;min-height:100vh;}
   -webkit-tap-highlight-color:transparent;
 }
 .comp-card:active{transform:scale(.96);}
-.comp-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.16);transform:translateY(-2px);}
+/* :hover 只在滑鼠裝置生效，避免觸控螢幕第一下點擊被吃掉變成「先觸發 hover、
+   要點兩次才真的進得去」的經典 iOS Safari 問題 */
+@media (hover:hover){.comp-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.16);transform:translateY(-2px);}}
 .comp-card.comp-xbd{background:linear-gradient(135deg,#eafcfb 0%,#c7f0ee 100%);}
 .comp-card.comp-bam{background:linear-gradient(135deg,#fffaeb 0%,#ffe9a8 100%);}
 .comp-card:nth-child(2){animation-delay:.12s;}
@@ -98,7 +100,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#f7f5f2;min-height:100vh;}
 .comp-card-title{font-size:1.14rem;font-weight:900;color:#2d3057;margin-bottom:3px;}
 .comp-card-desc{font-size:.76rem;color:#6a6a78;}
 .comp-card-arr{font-size:1.5rem;color:rgba(0,0,0,.2);flex-shrink:0;transition:transform .2s;}
-.comp-card:hover .comp-card-arr{transform:translateX(4px);}
+@media (hover:hover){.comp-card:hover .comp-card-arr{transform:translateX(4px);}}
 .comp-xbd .comp-card-eyebrow,.comp-xbd .comp-card-arr{color:#2a9aa6;}
 .comp-bam .comp-card-eyebrow,.comp-bam .comp-card-arr{color:#c99a12;}
 @keyframes compCardIn{from{opacity:0;transform:translateY(18px) scale(.94);}to{opacity:1;transform:translateY(0) scale(1);}}
@@ -1589,11 +1591,11 @@ function pickCompany(companyId){
       cur.classList.remove('pg-leaving');
       applyCompany(companyId);
       GO('home');
-      var home=document.getElementById('pg-home');
-      if(home){
-        home.classList.add('pg-entering');
-        setTimeout(function(){home.classList.remove('pg-entering');},500);
-      }
+      /* 原本這裡會再幫首頁加一個 450ms 的進場動畫（pg-entering），
+         但這個動畫會讓首頁卡片在剛進來的那半秒內還處於動畫狀態，
+         使用者這時候如果馬上點卡片（例如「評鑑」），手機瀏覽器常常會
+         把第一下點擊吃掉、要點第二次才有反應。拿掉這個動畫，首頁
+         一出現就是完全靜止、可以立刻點擊的狀態，不再需要點兩次。 */
     },340);
   }else{
     applyCompany(companyId);
@@ -16577,7 +16579,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:20</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:32</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
