@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17914472244913';
+  var BUILD='179144803724330';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -2921,6 +2921,10 @@ function _rosterKidsAsOf(cls,dateStr){
       <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-6</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
     </div>
+    <div onclick="GO('pj-inf-6-7')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-7（器具、衛材、器械之清潔消毒滅菌管理）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
     <div onclick="GO('pj-inf-6-8')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
       <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">6-8（防護裝備物資，含口罩、手套等）</div></div>
       <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
@@ -3018,6 +3022,13 @@ function _rosterKidsAsOf(cls,dateStr){
     <span class="btitle">6-6（訪客管理）</span>
   </div>
   <div id="visitormgmtWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-inf-6-7">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pingjian-infection')">&#x2190; 感染管控</button>
+    <span class="btitle">6-7（器具、衛材、器械之清潔消毒滅菌管理）</span>
+  </div>
+  <div id="toolSterilizeWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-inf-6-8">
   <div class="bbar">
@@ -3631,6 +3642,7 @@ function GO(id) {
   if (id === 'pj-inf-6-4') { if (typeof HANDHYGIENE !== 'undefined') HANDHYGIENE.init(); }
   if (id === 'pj-inf-6-5') { if (typeof COUGHMANNER !== 'undefined') COUGHMANNER.init(); }
   if (id === 'pj-inf-6-6') { if (typeof VISITORMGMT !== 'undefined') VISITORMGMT.init(); }
+  if (id === 'pj-inf-6-7') { if (typeof TOOLSTERILIZE !== 'undefined') TOOLSTERILIZE.init(); }
   if (id === 'pj-inf-6-8') { if (typeof PPESTORE !== 'undefined') PPESTORE.init(); }
   if (id === 'pj-inf-6-9') { if (typeof WATERSAFETY !== 'undefined') WATERSAFETY.init(); }
   if (id === 'pj-inf-7-1') { if (typeof ISOLATIONROOM !== 'undefined') ISOLATIONROOM.init(); }
@@ -14198,6 +14210,17 @@ var HANDHYGIENE=_buildFacilityCheckModule({
   printTitle:'工作人員正確執行手部衛生查核紀錄',printEmoji:'🤲'
 });
 
+var TOOLSTERILIZE=_buildFacilityCheckModule({
+  key:'xiaoBudiToolSterilizeV1',fbPath:'xiaobuddyToolSterilize',idPrefix:'ts',varName:'TOOLSTERILIZE',wrapId:'toolSterilizeWrap',
+  listSubtitle:'器具衛材器械清潔消毒滅菌管理查核紀錄',listHint:'6-7 器具衛材器械之清潔消毒滅菌管理',
+  dateLabel:'紀錄日期（例：114年03月）',datePlaceholder:'114年03月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：防疫機制之建置<br>查核內容：6.7 確實執行器具(含奶瓶及玩具等)，衛材、器械之清潔、消毒或滅菌管理。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>防疫機制之建置</td></tr><tr><td class="th">查核內容</td><td>6.7 確實執行器具(含奶瓶及玩具等)，衛材、器械之清潔、消毒或滅菌管理。</td></tr>',
+  photos:['說明：廚房洗手設施及洗手乳效期。','說明：戶外活動洗手設施及洗手乳效期。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'器具衛材器械清潔消毒滅菌管理查核紀錄',printEmoji:'🧽'
+});
+
 var COUGHMANNER=_buildFacilityCheckModule({
   key:'xiaoBudiCoughMannerV1',fbPath:'xiaobuddyCoughManner',idPrefix:'cm',varName:'COUGHMANNER',wrapId:'coughmannerWrap',
   listSubtitle:'家長宣導咳嗽禮節查核紀錄',listHint:'6-5 咳嗽禮節衛教宣導',
@@ -16931,7 +16954,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 16:13</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 16:27</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
