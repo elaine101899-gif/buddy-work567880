@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179142913217089';
+  var BUILD='17914314439347';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13734,7 +13734,13 @@ var ANNUALPLAN=(function(){
   function backToList(){curStep='list';_wrap().innerHTML=renderList();}
   function newForm(){
     curFid='f'+Date.now();
-    db[curFid]={createdAt:Date.now(),read:false,apExec:{}};
+    /* 新增時直接把全部月份打勾，老師只需要把沒執行的月份取消勾選即可 */
+    var exec={};
+    ITEMS.forEach(function(item,ii){
+      exec[ii]={};
+      for(var m=1;m<=12;m++)exec[ii][m]=true;
+    });
+    db[curFid]={createdAt:Date.now(),read:false,apExec:exec};
     curStep='form';
     _wrap().innerHTML=renderForm(db[curFid]);
   }
@@ -16582,7 +16588,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 11:12</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 11:50</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
