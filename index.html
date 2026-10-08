@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179142688516937';
+  var BUILD='179142913217089';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13029,7 +13029,7 @@ var YELLOWCARD=(function(){
       h+='<div style="position:relative;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);">';
       h+='<button onclick="YELLOWCARD.removeCard(\''+sec.key+'\',\''+id+'\')" style="position:absolute;top:4px;right:4px;z-index:5;width:20px;height:20px;border-radius:50%;border:none;background:#e74c3c;color:#fff;font-size:11px;cursor:pointer;line-height:20px;padding:0;">✕</button>';
       h+='<div id="yc'+sec.key+'Box'+id+'" style="height:130px;background:#fafafa;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;" onclick="YELLOWCARD.uploadCardPhoto(\''+sec.key+'\',\''+id+'\')">';
-      if(it.photo){h+='<img src="'+it.photo+'" style="width:100%;height:100%;object-fit:cover;">';}
+      if(it.photo){h+='<img src="'+it.photo+'" style="width:100%;height:100%;object-fit:contain;">';}
       else{h+='<div style="color:#bbb;font-size:.7rem;text-align:center;">📷<br>點擊上傳</div>';}
       h+=_dateInputHTML(sec.key,id,it.date);
       h+='</div>';
@@ -13098,7 +13098,7 @@ var YELLOWCARD=(function(){
           db[section][id].photo=compressed;
           saveAll();pushItemFb(section,id,db[section][id]);
           var box=document.getElementById('yc'+section+'Box'+id);
-          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:cover;">'+_dateInputHTML(section,id,db[section][id].date);
+          if(box)box.innerHTML='<img src="'+compressed+'" style="width:100%;height:100%;object-fit:contain;">'+_dateInputHTML(section,id,db[section][id].date);
         });
       };
       reader.readAsDataURL(f);
@@ -13137,7 +13137,7 @@ var YELLOWCARD=(function(){
     p+='.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}';
     p+='.card{border:1px solid '+AC+';border-radius:8px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
     p+='.card .pic{position:relative;height:110px;background:#fafafa;display:flex;align-items:center;justify-content:center;}';
-    p+='.card .pic img{max-width:100%;max-height:100%;object-fit:cover;width:100%;height:100%;}';
+    p+='.card .pic img{max-width:100%;max-height:100%;object-fit:contain;width:100%;height:100%;}';
     p+='.card .pic .dstamp{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:7pt;padding:1px 4px;border-radius:3px;}';
     p+='.card .name{text-align:center;font-size:9pt;padding:4px 2px;background:'+AL+';color:'+AC+';font-weight:700;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
@@ -16582,7 +16582,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 10:34</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 11:12</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
