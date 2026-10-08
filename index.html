@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17913871537710';
+  var BUILD='179142688516937';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13519,17 +13519,20 @@ var TRAINMEETING=(function(){
     p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
     p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
     p+='.card{border:1.5px solid '+AC+';border-radius:10px;overflow:hidden;margin-bottom:7px;page-break-inside:avoid;break-inside:avoid;}';
+    /* 各班級感想可能很多班，不用整塊卡片一起被推到下一頁——
+       第一頁還有空間就讓內容往前填滿，只在「單一班級」的段落內部避免被切斷 */
+    p+='.card.card-flow{page-break-inside:auto;break-inside:auto;}';
     p+='.card-hd{background:'+AC+';color:#fff;font-weight:800;font-size:11pt;padding:5px 12px;letter-spacing:.5px;}';
     p+='.card-body{padding:7px 10px;font-size:10pt;line-height:1.6;}';
     p+='table.dt{width:100%;border-collapse:collapse;font-size:10pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;}';
+    p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;page-break-inside:avoid;break-inside:avoid;}';
     p+='.cls-item:last-child{border-bottom:none;}';
     p+='.cls-name{font-weight:800;color:'+AC+';margin-bottom:2px;}';
-    p+='.photo-row{display:flex;flex-direction:column;gap:12px;}';
+    p+='.photo-row{display:flex;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
-    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:260px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
+    p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:200px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
     p+='.photo-box .pic img{max-width:100%;max-height:100%;object-fit:contain;}';
     p+='.photo-box .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:8pt;padding:2px 5px;border-radius:3px;letter-spacing:.5px;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
@@ -13546,7 +13549,7 @@ var TRAINMEETING=(function(){
     p+='<div class="card"><div class="card-hd">📚 訓練事項</div><div class="card-body">'+nl2br(d.trTopic||'')+'</div></div>';
     var classes=d.trClasses||[];
     if(classes.length){
-      p+='<div class="card"><div class="card-hd">🏫 各班級感想</div><div class="card-body">';
+      p+='<div class="card card-flow"><div class="card-hd">🏫 各班級感想</div><div class="card-body">';
       classes.forEach(function(cls){
         p+='<div class="cls-item"><div class="cls-name">'+esc2(cls.name||'（未填班級）')+'</div><div>'+nl2br(cls.text||'')+'</div></div>';
       });
@@ -16579,7 +16582,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/7 23:32</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 10:34</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
