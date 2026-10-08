@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17914314439347';
+  var BUILD='17914322455751';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -13724,23 +13724,52 @@ var ANNUALPLAN=(function(){
     return d;
   }
 
-  function init(){
-    curStep='list';curFid='';
-    loadLocal();
-    var w=_wrap();if(!w)return;
-    w.innerHTML=renderList();
-    loadFb(function(){if(curStep==='list')w.innerHTML=renderList();});
-  }
-  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
-  function newForm(){
-    curFid='f'+Date.now();
-    /* 新增時直接把全部月份打勾，老師只需要把沒執行的月份取消勾選即可 */
+  function _allCheckedExec(){
     var exec={};
     ITEMS.forEach(function(item,ii){
       exec[ii]={};
       for(var m=1;m<=12;m++)exec[ii][m]=true;
     });
-    db[curFid]={createdAt:Date.now(),read:false,apExec:exec};
+    return exec;
+  }
+  /* 每個月月初自動新增這個月的感染管制計畫，不用老師自己手動新增。
+     用「年度」欄位（例如 115年10月）來判斷這個月是否已經建立過，
+     避免同一個月被重複建立。 */
+  function autoCreateMonthly(){
+    var now=new Date();
+    var ty=now.getFullYear()-1911, tm=now.getMonth()+1;
+    var yearLabel=ty+'年'+tm+'月';
+    var exists=Object.keys(db).some(function(fid){return db[fid].apYear===yearLabel;});
+    if(exists)return;
+    var fid='f'+Date.now();
+    db[fid]={
+      createdAt:Date.now(),read:false,
+      apYear:yearLabel,
+      apStaff:'黃苡綸',
+      apDirector:_directorName(),
+      apGoal:'預防托嬰中心內的感染事件，降低嬰幼兒交叉感染風險\n確保兒童、照顧人員與家庭的健康安全',
+      apExec:_allCheckedExec()
+    };
+    saveAll();
+    pushFb(fid,db[fid]);
+  }
+  function init(){
+    curStep='list';curFid='';
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderList();
+    loadFb(function(){
+      autoCreateMonthly();
+      if(curStep==='list')w.innerHTML=renderList();
+    });
+  }
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var now=new Date();
+    var yearLabel=(now.getFullYear()-1911)+'年'+(now.getMonth()+1)+'月';
+    /* 新增時直接把全部月份打勾，老師只需要把沒執行的月份取消勾選即可 */
+    db[curFid]={createdAt:Date.now(),read:false,apYear:yearLabel,apStaff:'黃苡綸',apExec:_allCheckedExec()};
     curStep='form';
     _wrap().innerHTML=renderForm(db[curFid]);
   }
@@ -16588,7 +16617,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 11:50</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/8 12:04</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
