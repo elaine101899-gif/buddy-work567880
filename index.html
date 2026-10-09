@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17915589794030';
+  var BUILD='179156050332368';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3575,7 +3575,7 @@ function renderWeekB() {
   _weekBRenderedTh = _thNoB;
   var thData = allThemes['115'][_thNoB] || {name:"待規劃",weeks:[],acts:{}};
   var btitleEl = document.querySelector('#pg-weekB .btitle');
-  if (btitleEl) btitleEl.textContent = '115年下半年 第'+['','一','二','三','四','五','六'][_thNoB]+'主題 — '+thData.name;
+  if (btitleEl) btitleEl.textContent = '第'+['','一','二','三','四','五','六'][_thNoB]+'主題 — '+thData.name;
 
   /* ── 1. 複製 site-header，更新學期資訊 ── */
   var existingHdr = document.querySelector('#pg-weekB .site-header');
@@ -4416,7 +4416,7 @@ function printSummaryB(cls) {
 <div class="pg" id="pg-weekB">
   <div class="bbar">
     <button class="bbtn" onclick="GO('teach')">&#x2190; 教學課程</button>
-    <span class="btitle">115年下半年 第一主題 &#x2014; 弟弟到底像誰</span>
+    <span class="btitle">第一主題 &#x2014; 弟弟到底像誰</span>
   </div>
   <div class="sticky-nav">
     <nav class="week-nav" id="weekNavB"></nav>
@@ -16993,7 +16993,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 23:16</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 23:41</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
