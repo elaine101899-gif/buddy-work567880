@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17915626317378';
+  var BUILD='17915634586099';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3395,8 +3395,6 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">電訪表</span>
-    <button class="bbtn" onclick="PHONEVISIT.printMonthly()" style="margin-left:auto;background:#e3f2fd;color:#1565c0;border:1.5px solid #90caf9;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月紀錄</button>
-    <button class="bbtn" onclick="PHONEVISIT.printForms()" style="background:#e8f5e9;color:#2e7d32;border:1.5px solid #81c784;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F5A8; 空白表</button>
   </div>
   <div style="padding:14px 16px 40px;" id="pv-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -16331,27 +16329,17 @@ var PHONEVISIT=(function(){
 
   function buildForm(){
     var h='';
-    // 列印本月紀錄選單
-    var now2=new Date(),ry=now2.getFullYear()-1911,rm=now2.getMonth()+1;
-    h+='<div style="display:flex;align-items:center;gap:8px;background:#e3f2fd;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
-    h+='<span style="font-size:.85rem;color:#1565c0;font-weight:700;">📅 列印本月紀錄</span>';
-    h+='<select id="pv-print-yr" style="padding:6px 8px;border:1.5px solid #90caf9;border-radius:8px;font-size:.88rem;background:#fff;">';
-    for(var py=ry;py>=ry-2;py--) h+='<option value="'+py+'"'+(py===ry?' selected':'')+'>'+py+' 年</option>';
-    h+='</select>';
-    h+='<select id="pv-print-mn" style="padding:6px 8px;border:1.5px solid #90caf9;border-radius:8px;font-size:.88rem;background:#fff;">';
-    for(var pm=1;pm<=12;pm++) h+='<option value="'+pm+'"'+(pm===rm?' selected':'')+'>'+pm+' 月</option>';
-    h+='</select>';
-    h+='<button onclick="PHONEVISIT.printMonthly()" style="padding:7px 18px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:.88rem;font-weight:700;cursor:pointer;">列印</button>';
-    h+='</div>';
+    var now2=new Date(),ry=now2.getFullYear()-1911;
     // class tabs
     h+='<div class="pv-cls-tabs">';
     ['baby','crawl','run'].forEach(function(cls){
       h+='<button class="pv-cls-tab'+(curCls===cls?' on':'')+'" onclick="PHONEVISIT.setCls(\''+cls+'\')">'+CLSLABEL[cls]+'</button>';
     });
     h+='</div>';
-    // 資料月份：決定下面「選擇幼兒」抓哪個月的名單、以及下方歷史記錄要看哪個月
+    // 資料月份：決定下面「選擇幼兒」抓哪個月的名單、以及下方歷史記錄要看哪個月；同一排也放列印按鈕（跟原本標題旁的按鈕合併，不重複放兩套年月選單）
     var _mr=_selectedMonthRange();
-    h+='<div style="display:flex;align-items:center;gap:8px;background:#fff6e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<div style="background:#fff6e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
     h+='<span style="font-size:.85rem;color:#a5680a;font-weight:700;">🗓️ 資料月份</span>';
     h+='<select id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
     for(var vy=ry;vy>=ry-2;vy--) h+='<option value="'+vy+'"'+(vy===_mr.roc?' selected':'')+'>'+vy+' 年</option>';
@@ -16359,7 +16347,16 @@ var PHONEVISIT=(function(){
     h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
     for(var vm=1;vm<=12;vm++) h+='<option value="'+vm+'"'+(vm===_mr.mo?' selected':'')+'>'+vm+' 月</option>';
     h+='</select>';
-    h+='<span style="font-size:.7rem;color:#a5680a;">還沒填完舊月份的電訪表，調到那個月，下面幼兒名單會自動換回那時候的名單</span>';
+    h+='<span style="margin-left:auto;display:flex;gap:8px;">';
+    h+='<button onclick="PHONEVISIT.printMonthly()" style="padding:6px 14px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月</button>';
+    h+='<button onclick="PHONEVISIT.printForms()" style="padding:6px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F5A8; 空白表</button>';
+    h+='</span>';
+    h+='</div>';
+    h+='<div style="margin-top:6px;font-size:.7rem;color:#a5680a;line-height:1.6;">';
+    h+='<div>還沒填完舊月份的電訪表，調到那個月，下面幼兒名單會自動換回那時候的名單</div>';
+    h+='<div>列印本月：依照上面選擇的年月，列印整月的電訪紀錄</div>';
+    h+='<div>空白表：列印空白電訪表單，供臨時手寫使用</div>';
+    h+='</div>';
     h+='</div>';
     // child selector
     var kids=getKids(curCls);
@@ -16519,8 +16516,8 @@ var PHONEVISIT=(function(){
   }
 
   function printMonthly(){
-    var yrEl=document.getElementById('pv-print-yr');
-    var mnEl=document.getElementById('pv-print-mn');
+    var yrEl=document.getElementById('pv-rec-yr');
+    var mnEl=document.getElementById('pv-rec-mn');
     var yr=yrEl?parseInt(yrEl.value):new Date().getFullYear()-1911;
     var mn=mnEl?parseInt(mnEl.value):new Date().getMonth()+1;
     if(!yr||!mn){return;}
@@ -17007,7 +17004,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:17</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:30</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
