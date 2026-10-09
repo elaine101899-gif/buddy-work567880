@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153050611469';
+  var BUILD='179153077618220';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3676,7 +3676,16 @@ function GO(id) {
   if (id === 'company') { document.title='邦迪小宇宙'; }
   if (id === 'week') { var _curYr=(new Date()>=new Date(2026,7,1))?'115':'114'; YR(_curYr); var _tw=findCurrentThWk(_curYr); SW(_tw.wk||1); }
   if (id === 'week5') { SW5(9); }
-  if (id === 'weekB') { renderWeekB(); if (_weekBForceTh) { SWB(1); } else { var _twB=findCurrentThWk('115'); SWB(_twB.wk||1); } }
+  if (id === 'weekB') {
+    renderWeekB();
+    var _twB=findCurrentThWk('115');
+    /* 點進去的主題剛好就是「現在這週」所屬的主題，就直接跳到那一週，
+       不然固定停在第1週——不然每次點同一個正在進行的主題，都還要自己
+       手動點到現在這週，很麻煩。 */
+    if (_weekBForceTh && _weekBForceTh === _twB.th) { SWB(_twB.wk||1); }
+    else if (_weekBForceTh) { SWB(1); }
+    else { SWB(_twB.wk||1); }
+  }
   if (id === 'teach') { YR((new Date()>=new Date(2026,7,1))?'115':'114'); }
   if (id === 'diary') { if (typeof DIARY !== 'undefined') DIARY.openDiary(); }
   if (id === 'leave') { if (typeof LEAVE !== 'undefined') LEAVE.init(); }
@@ -17030,7 +17039,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 15:21</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 15:26</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
