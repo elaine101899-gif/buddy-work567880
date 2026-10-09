@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='1791562151505';
+  var BUILD='17915626317378';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1624,8 +1624,8 @@ function _directorName(){return (COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).dire
 var _XBD_ONLY_PAGES=[];
 window._XBD_asrPreload114=window._asrPreload114;
 window._XBD_asrPreload115=window._asrPreload115;
-window._BAMBINO_asrPreload114={teachers:[{id:'tB01',name:'邱淳郁',cls:'run'},{id:'tB02',name:'珮淋',cls:'run'}],children:{tB01:[{id:'cB01',name:'洪羽太',age:'13-36M'},{id:'cB02',name:'洪羽星',age:'13-36M'},{id:'cB03',name:'林敬翰',age:'13-36M'},{id:'cB04',name:'陳羿鈞',age:'13-36M'},{id:'cB05',name:'陳瑞恩',age:'13-36M'}],tB02:[]},removed:[]};
-window._BAMBINO_asrPreload115={teachers:[{id:'tB01',name:'邱淳郁',cls:'run'},{id:'tB02',name:'珮淋',cls:'run'}],children:{tB01:[{id:'cB01',name:'洪羽太',age:'13-36M'},{id:'cB02',name:'洪羽星',age:'13-36M'},{id:'cB03',name:'林敬翰',age:'13-36M'},{id:'cB04',name:'陳羿鈞',age:'13-36M'},{id:'cB05',name:'陳瑞恩',age:'13-36M'}],tB02:[]},removed:[]};
+window._BAMBINO_asrPreload114={teachers:[{id:'tB01',name:'邱淳郁',cls:'run'},{id:'tB02',name:'郭珮淋',cls:'run'}],children:{tB01:[{id:'cB01',name:'洪羽太',age:'13-36M'},{id:'cB02',name:'洪羽星',age:'13-36M'},{id:'cB03',name:'林敬翰',age:'13-36M'},{id:'cB04',name:'陳羿鈞',age:'13-36M'},{id:'cB05',name:'陳瑞恩',age:'13-36M'}],tB02:[]},removed:[]};
+window._BAMBINO_asrPreload115={teachers:[{id:'tB01',name:'邱淳郁',cls:'run'},{id:'tB02',name:'郭珮淋',cls:'run'}],children:{tB01:[{id:'cB01',name:'洪羽太',age:'13-36M'},{id:'cB02',name:'洪羽星',age:'13-36M'},{id:'cB03',name:'林敬翰',age:'13-36M'},{id:'cB04',name:'陳羿鈞',age:'13-36M'},{id:'cB05',name:'陳瑞恩',age:'13-36M'}],tB02:[]},removed:[]};
 var CURRENT_COMPANY=null;
 try{CURRENT_COMPANY=localStorage.getItem('xbdCompany')||null;}catch(e){}
 /* 公司前綴現在統一由 _fbInit() 的 ref() 自動處理，這裡固定回傳同一個未加前綴的路徑即可 */
@@ -8938,7 +8938,7 @@ var LEAVE_BOSS=(function(){
 var LEAVE_FLEX=(function(){
   var KEY='xiaoBudiLeaveFlexV2';
   var FB_PATH='xiaobuddyLeaveFlex';
-  var FLEX_NAMES=['黃鈺雯','陳芓妍'];
+  var FLEX_NAMES=['黃鈺雯'];
   window._BAMBINO_FLEX_NAMES=[];
   function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_FLEX_NAMES:FLEX_NAMES;}
   var curName='',curFid='',curStep='hub';
@@ -14441,8 +14441,8 @@ var LIGHTCHECK=_buildFacilityCheckModule({
    SIGNERS 現在改為「主名單老師 + 不在班表裡的行政/廚房等人員」動態組成，
    主名單新增老師時透過 refreshSigners() 自動同步進來，不用手動維護。 */
 window._newTermActive=(new Date()>=new Date(2026,7,1));
-var STAFF_EXTRA_115=['洪逸惠','金佩樺','黃郁婷','陳芓妍','黃苡綸'];
-var STAFF_EXTRA_114=['林筠蓉','黃苡綸','洪逸惠','金佩樺','黃郁婷','陳芓妍'];
+var STAFF_EXTRA_115=['洪逸惠','金佩樺','黃郁婷','黃苡綸'];
+var STAFF_EXTRA_114=['林筠蓉','黃苡綸','洪逸惠','金佩樺','黃郁婷'];
 var STAFF_EXTRA_BAMBINO=['黃鈺雯','林素珍'];
 function _computeSigners(){
   var yr=window._newTermActive?'115':'114';
@@ -17007,7 +17007,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:09</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:17</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
