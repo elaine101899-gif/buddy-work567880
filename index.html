@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153077618220';
+  var BUILD='17915314097202';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -183,9 +183,26 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
 .site-foot{text-align:center;padding:12px;font-size:.68rem;color:#bbb;}
 
 /* ── BACK BAR ── */
-.bbar{background:#2d3057;color:white;padding:11px 15px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:300;}
-.bbtn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;padding:5px 12px;border-radius:8px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex-shrink:0;}
-.btitle{font-size:.83rem;font-weight:700;}
+.bbar{
+  background:#f2dc9b;color:#33302a;padding:13px 18px;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:300;
+  margin:10px 10px 0;border:3px solid #33302a;border-radius:24px 20px 26px 18px;
+  box-shadow:0 4px 0 rgba(51,48,42,.1);
+}
+.bbar::before{
+  content:'';position:absolute;top:-9px;left:14px;width:50px;height:18px;z-index:2;pointer-events:none;
+  border:1px solid rgba(255,255,255,.5);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.6) 0 7px,rgba(200,160,70,.55) 7px 14px);
+  transform:rotate(-8deg);
+}
+.bbar::after{
+  content:'';position:absolute;top:-9px;right:14px;width:50px;height:18px;z-index:2;pointer-events:none;
+  border:1px solid rgba(255,255,255,.5);
+  background:repeating-linear-gradient(135deg,rgba(255,255,255,.6) 0 7px,rgba(120,175,205,.55) 7px 14px);
+  transform:rotate(8deg);
+}
+.bbtn{background:#fff;border:2px solid #33302a;color:#33302a;padding:7px 16px;border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex-shrink:0;}
+.btitle{flex:1;text-align:center;font-size:.95rem;font-weight:900;color:#33302a;}
 
 /* ── TEACH HUB ── */
 .yr-tabs{display:flex;gap:10px;background:transparent;border-bottom:none;padding:12px 14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -17039,7 +17056,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 15:26</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 15:36</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
