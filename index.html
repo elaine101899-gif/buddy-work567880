@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17915634586099';
+  var BUILD='179156377212930';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -16347,15 +16347,11 @@ var PHONEVISIT=(function(){
     h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
     for(var vm=1;vm<=12;vm++) h+='<option value="'+vm+'"'+(vm===_mr.mo?' selected':'')+'>'+vm+' 月</option>';
     h+='</select>';
-    h+='<span style="margin-left:auto;display:flex;gap:8px;">';
     h+='<button onclick="PHONEVISIT.printMonthly()" style="padding:6px 14px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月</button>';
-    h+='<button onclick="PHONEVISIT.printForms()" style="padding:6px 14px;background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F5A8; 空白表</button>';
-    h+='</span>';
     h+='</div>';
     h+='<div style="margin-top:6px;font-size:.7rem;color:#a5680a;line-height:1.6;">';
     h+='<div>還沒填完舊月份的電訪表，調到那個月，下面幼兒名單會自動換回那時候的名單</div>';
     h+='<div>列印本月：依照上面選擇的年月，列印整月的電訪紀錄</div>';
-    h+='<div>空白表：列印空白電訪表單，供臨時手寫使用</div>';
     h+='</div>';
     h+='</div>';
     // child selector
@@ -17004,7 +17000,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:30</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:36</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
