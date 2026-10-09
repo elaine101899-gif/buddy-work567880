@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153325122669';
+  var BUILD='17915337589100';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -7132,7 +7132,7 @@ var DIARY=(function(){
     Object.keys(themes).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(k){
       var th=themes[k];
       if(!th.weeks||!th.weeks.length)return;
-      h+='<option value="'+k+'"'+(parseInt(k)===dTh?' selected':'')+'>第'+k+'主題 '+th.name+'</option>';
+      h+='<option value="'+k+'"'+(parseInt(k)===dTh?' selected':'')+'>第'+k+'主題</option>';
     });
     sel.innerHTML=h;
   }
@@ -7142,7 +7142,7 @@ var DIARY=(function(){
     if(!sel||!th)return;
     var h='';
     (th.weeks||[]).forEach(function(wk){
-      h+='<option value="'+wk.no+'"'+(wk.no===dWk?' selected':'')+'>第'+wk.no+'週 '+wk.dates+' '+wk.theme+'</option>';
+      h+='<option value="'+wk.no+'"'+(wk.no===dWk?' selected':'')+'>第'+wk.no+'週</option>';
     });
     sel.innerHTML=h;
   }
@@ -17063,7 +17063,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:07</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:15</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
