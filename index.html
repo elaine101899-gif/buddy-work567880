@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153299422016';
+  var BUILD='179153325122669';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -18,22 +18,7 @@
 })();
 </script>
 <title>邦迪小宇宙</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=ZCOOL+KuaiLe&display=swap">
-<script>
-/* 每個子頁面標題（.btitle）要用可愛體顯示，但中文字型是分批下載的，
-   瀏覽器不會自動把全部頁面標題用到的字都抓齊。這裡頁面一載入就把
-   DOM 裡所有 .btitle／.hero-name 會用到的字整段強制預先載入，
-   避免只有部分字缺字、跟其他字字體不一致的狀況（上次公司名稱就
-   是吃過這個虧才加的保險）。 */
-document.addEventListener('DOMContentLoaded', function(){
-  if(!(window.document && document.fonts && document.fonts.load))return;
-  try{
-    var txt='';
-    document.querySelectorAll('.btitle,.hero-name').forEach(function(el){txt+=el.textContent;});
-    if(txt)document.fonts.load("30px 'ZCOOL KuaiLe'", txt).catch(function(){});
-  }catch(e){}
-});
-</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -217,7 +202,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
   transform:rotate(8deg);
 }
 .bbtn{background:#fff;border:2px solid #33302a;color:#33302a;padding:7px 16px;border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex-shrink:0;}
-.btitle{flex:1;text-align:center;font-family:'ZCOOL KuaiLe','Noto Sans TC',sans-serif;font-size:1.1rem;font-weight:400;letter-spacing:1px;color:#33302a;}
+.btitle{flex:1;text-align:center;font-family:'Noto Sans TC',sans-serif;font-size:1.3rem;font-weight:900;letter-spacing:1px;color:#33302a;
+  text-shadow:0 0 6px #fff,0 0 6px #fff,0 0 10px #fff,1px 1px 0 #fff,-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff;}
 
 /* ── TEACH HUB ── */
 .yr-tabs{display:flex;gap:10px;background:transparent;border-bottom:none;padding:12px 14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -2349,7 +2335,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F4CB; 評鑑</span>
+    <span class="btitle">評鑑</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
     <div onclick="GO('pingjian-admin')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
@@ -2384,7 +2370,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian-admin">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
-    <span class="btitle">&#x1F4CB; 行政管理</span>
+    <span class="btitle">行政管理</span>
   </div>
   <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
 </div>
@@ -2392,7 +2378,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian-care">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
-    <span class="btitle">&#x1F9F8; 教保活動</span>
+    <span class="btitle">教保活動</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;">
     <div onclick="GO('pj-c-2-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
@@ -2580,7 +2566,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian-health">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
-    <span class="btitle">&#x1FA7A; 衛生保健</span>
+    <span class="btitle">衛生保健</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;">
     <div onclick="GO('pj-h-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;margin-bottom:12px;">
@@ -2964,7 +2950,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian-welfare">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
-    <span class="btitle">&#x1F91D; 員工福利措施</span>
+    <span class="btitle">員工福利措施</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;">
     <div onclick="GO('pj-w-4-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
@@ -2984,7 +2970,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-pingjian-infection">
   <div class="bbar">
     <button class="bbtn" onclick="GO('pingjian')">&#x2190; 評鑑</button>
-    <span class="btitle">&#x1F9A0; 感染管控</span>
+    <span class="btitle">感染管控</span>
   </div>
   <div style="max-width:680px;margin:0 auto;padding:16px;">
     <div onclick="GO('pj-inf-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;margin-bottom:12px;">
@@ -3170,7 +3156,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-forms-menu">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F5C2;&#xFE0F; 各式表單</span>
+    <span class="btitle">各式表單</span>
   </div>
   <div style="padding:20px 16px;">
     <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇表單</div>
@@ -3207,7 +3193,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-leave-menu">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F4CB; 請假交接單</span>
+    <span class="btitle">請假交接單</span>
   </div>
   <div style="padding:20px 16px;">
     <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇身份</div>
@@ -3240,7 +3226,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-leave">
   <div class="bbar">
     <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
-    <span class="btitle">&#x1F4CB; 托育人員請假交接單</span>
+    <span class="btitle">托育人員請假交接單</span>
   </div>
   <div id="leaveWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3258,7 +3244,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-leave-boss">
   <div class="bbar">
     <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
-    <span class="btitle">&#x1F4CB; 主管人員請假交接單</span>
+    <span class="btitle">主管人員請假交接單</span>
   </div>
   <div id="leaveBossWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3267,7 +3253,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-leave-flex">
   <div class="bbar">
     <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
-    <span class="btitle">&#x1F4CB; 機動人員請假交接單</span>
+    <span class="btitle">機動人員請假交接單</span>
   </div>
   <div id="leaveFlexWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3276,7 +3262,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-leave-cook">
   <div class="bbar">
     <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
-    <span class="btitle">&#x1F4CB; 廚工請假交接單</span>
+    <span class="btitle">廚工請假交接單</span>
   </div>
   <div id="leaveCookWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3285,7 +3271,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-incident">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F6A8; 幼兒事故單</span>
+    <span class="btitle">幼兒事故單</span>
   </div>
   <div id="incidentWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3294,7 +3280,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-enterovirus">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F9A0; 個案異常表</span>
+    <span class="btitle">個案異常表</span>
   </div>
   <div id="enterovirusWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -3303,7 +3289,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-clean">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F9FC; 清潔表單</span>
+    <span class="btitle">清潔表單</span>
   </div>
   <div id="cleanHub" class="cards-wrap" style="padding:14px 12px;">
     <div class="hcard c-blu" onclick="CLEAN.show('env')">
@@ -3341,15 +3327,15 @@ function _rosterKidsAsOf(cls,dateStr){
     </div>
   </div>
   <div id="cleanSecEnv" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">&#x1F9F9; 環境清潔</span></div>
+    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">環境清潔</span></div>
     <div id="cleanWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecBedding" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">&#x1F6CF;&#xFE0F; 班級寢具</span></div>
+    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">班級寢具</span></div>
     <div id="beddingWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecTemp" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">&#x1F321;&#xFE0F; 環境溫濕度</span></div>
+    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">環境溫濕度</span></div>
     <div id="tempWrap" style="padding:10px 12px 40px;"></div>
   </div>
 </div>
@@ -3358,7 +3344,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-bodytemp">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F321;&#xFE0F; 體溫管理</span>
+    <span class="btitle">體溫管理</span>
   </div>
   <div id="bodytempWrap" style="padding:10px 12px 40px;"></div>
 </div>
@@ -3367,7 +3353,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-phonevisit">
   <div class="bbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">&#x1F4DE; 電訪表</span>
+    <span class="btitle">電訪表</span>
     <button class="bbtn" onclick="PHONEVISIT.printMonthly()" style="margin-left:auto;background:#e3f2fd;color:#1565c0;border:1.5px solid #90caf9;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月紀錄</button>
     <button class="bbtn" onclick="PHONEVISIT.printForms()" style="background:#e8f5e9;color:#2e7d32;border:1.5px solid #81c784;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F5A8; 空白表</button>
   </div>
@@ -3379,7 +3365,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-extendcare">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F9F8; 延托幼兒</span>
+    <span class="btitle">延托幼兒</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ec-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -3405,7 +3391,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-teach">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F4DA; 教學課程</span>
+    <span class="btitle">教學課程</span>
   </div>
   <div class="yr-tabs">
     <button class="yr-tab on" id="yt-114" onclick="YR('114')">115年上半年</button>
@@ -4422,7 +4408,7 @@ function printSummaryB(cls) {
 <div class="pg" id="pg-asr">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">&#x1F4CB; 適齡適性記錄</span>
+    <span class="btitle">適齡適性記錄</span>
   </div>
   <div class="asr-yrth-bar">
     <span class="asr-yrth-lbl">年度</span>
@@ -17077,7 +17063,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:03</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:07</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
