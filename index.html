@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153457521036';
+  var BUILD='179154629431780';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1674,6 +1674,15 @@ function applyCompany(companyId){
       else if(ASR.refreshRoster)ASR.refreshRoster();
     }
   });
+  /* 老師體溫、教室/冰箱溫度的「自動補今天」原本只在有人實際打開那個頁面時
+     才會觸發（init() 裡才呼叫 autoFillToday），導致像邦比諾這種沒人點進去看
+     的公司，就算開著 App 待在別的頁面，也完全不會自動補。改成只要選定／
+     切換公司（等於只要有人打開這個 App），就直接呼叫這兩個模組的 init()，
+     不管使用者接下來要去哪一頁，都會先在背景把今天（含漏掉的工作日）補上。
+     兩邊 render() 本來就有「找不到自己的 wrap 就跳過」的防呆，所以在其他
+     頁面呼叫完全安全，不會動到畫面。 */
+  if(typeof BODYTEMP!=='undefined'&&BODYTEMP.init)BODYTEMP.init();
+  if(typeof TEMP!=='undefined'&&TEMP.init)TEMP.init();
 }
 function pickCompany(companyId){
   var cur=document.getElementById('pg-company');
@@ -15435,12 +15444,14 @@ var TEMP=(function(){
     var ty=now.getFullYear()-1911, tm=now.getMonth()+1, td=now.getDate();
     var fb=_fbInit();
     flatOptions().forEach(function(o){
+     try{
       var k=null;
       for(var i=0;i<TEMP_KINDS.length;i++)if(TEMP_KINDS[i].id===o.kind)k=TEMP_KINDS[i];
       if(!k)return;
       var key2=o.kind+(o.room?('_'+o.room):'')+'_'+ty+'_'+tm;
       if(!db.records[key2])db.records[key2]={vals:{},sig1:'',sig2:'',offType:{}};
       var rec=db.records[key2];
+      if(!rec.vals)rec.vals={};
       for(var d=1;d<=td;d++){
         if(_isWeekend(ty,tm,d))continue;
         if((rec.offType||{})[d])continue;
@@ -15452,11 +15463,18 @@ var TEMP=(function(){
         if(dayChanged&&fb){
           (function(dd){
             k.rows.forEach(function(rowLbl,ri){
-              fb.ref('xiaobuddyClean/temp/records/'+key2+'/vals/'+dd+'/'+ri).set(rec.vals[dd][ri]);
+              /* 防呆：自動補值跟雲端監聽器的回寫可能在同一輪事件圈裡交錯觸發，
+                 rec.vals[dd] 理論上這裡一定有值，但多裝置同時觸發時曾經看過
+                 ri 讀到 undefined 的例外，所以寫入前先確認真的有值再送出，
+                 避免丟出例外中斷這批自動補值。 */
+              if(rec.vals[dd]&&rec.vals[dd][ri]!==undefined){
+                fb.ref('xiaobuddyClean/temp/records/'+key2+'/vals/'+dd+'/'+ri).set(rec.vals[dd][ri]);
+              }
             });
           })(d);
         }
       }
+     }catch(e){}
     });
     save();
   }
@@ -16957,7 +16975,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:29</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 19:44</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
