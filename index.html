@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17915279487932';
+  var BUILD='179152876520104';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -19,6 +19,18 @@
 </script>
 <title>邦迪小宇宙</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=ZCOOL+KuaiLe&display=swap">
+<script>
+/* Google Fonts 的中文字型是依「用到的字」分批下載的，公司名稱是後來才用 JS
+   換上去的文字（例如換公司時才把「邦迪小宇宙」換成「小布迪音樂藝術托嬰中心」），
+   瀏覽器不一定會即時補抓新字的那個分包，導致部分字（例如「音」「藝」「術」）
+   暫時還是用預設字體顯示、跟其他字看起來不一致。這裡提前把公司名稱裡會用到
+   的所有字都強制預先載入 ZCOOL KuaiLe，就不會再有補抓不到的問題。 */
+if(window.document && document.fonts && document.fonts.load){
+  try{
+    document.fonts.load("32px 'ZCOOL KuaiLe'", "邦迪小宇宙小布迪音樂藝術托嬰中心比諾").catch(function(){});
+  }catch(e){}
+}
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -17021,7 +17033,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 14:39</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 14:52</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
