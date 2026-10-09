@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179156583528733';
+  var BUILD='179156642332266';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -17396,40 +17396,42 @@ var EXTENDCARE=(function(){
   }
 
   /* 給家長的延托明細：每個孩子一張，方便個別列印給家長 */
+  /* 給家長的延托明細：改成緊湊的「一行一筆」清單（不用表格框線），
+     目標尺寸接近薪資袋（約9×16公分），一張A4直向大約可以排下3張，
+     剪開後塞信封剛好，也比較省紙 */
   function feePrintSlips(){
     if(!_feeRows||!_feeRows.length){alert('這一期沒有資料可以列印');return;}
     var r=_feePeriodRange(_feeEndY,_feeEndM);
-    var periodStr=r.startRoc+'年'+r.startMo+'月27日 ～ '+_feeEndY+'年'+_feeEndM+'月26日';
+    var periodStr=r.startRoc+'年'+r.startMo+'月27日～'+_feeEndY+'年'+_feeEndM+'月26日';
     var pages='';
     _feeRows.forEach(function(row){
-      var rowsHTML='';
+      var entriesHTML='';
       row.entries.forEach(function(e){
-        rowsHTML+='<tr><td class="td-c">'+e.date+'</td><td class="td-c">'+e.time+'</td><td class="td-c">'+e.fee+'</td></tr>';
+        entriesHTML+='<div class="erow"><span>'+e.date+'</span><span>'+e.time+'</span><span>'+e.fee+' 元</span></div>';
       });
       pages+='<div class="slip">';
-      pages+='<div class="hd1">'+_companyName()+' &middot; 延托費明細</div>';
-      pages+='<div class="hd2">收費期間：'+periodStr+'</div>';
-      pages+='<div class="meta"><span>幼兒姓名：<b>'+row.name+'</b></span><span>班級：<b>'+(CLSLABEL[row.cls]||'')+'</b></span></div>';
-      pages+='<table><thead><tr><th>日期</th><th>離園時間</th><th>金額</th></tr></thead><tbody>'+rowsHTML+'</tbody></table>';
-      pages+='<div class="tot">延托共 '+row.entries.length+' 次，合計：'+_feeChildSub(row)+' 元</div>';
+      pages+='<div class="hd">'+_companyName()+'　延托費明細　'+periodStr+'</div>';
+      pages+='<div class="meta"><b>'+row.name+'</b><span>'+(CLSLABEL[row.cls]||'')+'</span></div>';
+      pages+='<div class="elist">'+entriesHTML+'</div>';
+      pages+='<div class="tot">共 '+row.entries.length+' 次　合計 '+_feeChildSub(row)+' 元</div>';
       pages+='</div>';
     });
-    var css='@page{size:A4 portrait;margin:14mm 14mm;}';
+    var css='@page{size:A4 portrait;margin:8mm;}';
     css+='*{box-sizing:border-box;}';
-    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:10.5pt;color:#2C2820;margin:0;background:#fff;}';
-    /* 不強制一人一頁：延托次數少的孩子明細很短，讓下一位接著往下排，
-       一張A4能放幾位是幾位，老師自己剪開；用虛線當剪裁參考線，
-       只避免同一人的明細被硬生生從中間切頁 */
-    css+='.slip{page-break-inside:avoid;border-bottom:1.5px dashed #c8bca0;padding-bottom:5mm;margin-bottom:5mm;}';
+    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;color:#2C2820;margin:0;background:#fff;}';
+    /* 不強制固定高度（怕某個孩子延托次數太多被切掉），但壓縮內距跟字級，
+       大部分孩子（1~5次）一張大約落在8~9公分高，3張剛好排滿一頁A4。
+       用虛線當裁剪線，剪下來就接近薪資袋大小，可以直接塞信封。 */
+    css+='.slip{page-break-inside:avoid;border-bottom:1.5px dashed #c8bca0;padding:3mm 1mm;}';
     css+='.slip:last-child{border-bottom:none;}';
-    css+='.hd1{font-size:16pt;font-weight:700;text-align:center;margin-bottom:3mm;}';
-    css+='.hd2{font-size:10.5pt;color:#555;text-align:center;margin-bottom:6mm;}';
-    css+='.meta{display:flex;gap:14mm;font-size:11.5pt;margin-bottom:6mm;padding-bottom:3mm;border-bottom:1px solid #D8D0C4;}';
-    css+='table{width:100%;border-collapse:collapse;font-size:10.5pt;margin-bottom:6mm;}';
-    css+='th{background:#f0c97a;color:#4a3300;padding:6px 8px;border:1px solid #d8c8a0;}';
-    css+='td{border:1px solid #D8D0C4;padding:6px 8px;}';
-    css+='.td-c{text-align:center;}';
-    css+='.tot{text-align:right;font-weight:800;font-size:13pt;color:#a5680a;}';
+    css+='.hd{font-size:8pt;color:#888;margin-bottom:2mm;}';
+    css+='.meta{display:flex;align-items:baseline;gap:4mm;font-size:14pt;font-weight:800;margin-bottom:2mm;border-bottom:1px solid #D8D0C4;padding-bottom:1.5mm;}';
+    css+='.meta span{font-size:10pt;font-weight:400;color:#777;}';
+    css+='.elist{display:flex;flex-wrap:wrap;gap:1mm 6mm;font-size:9.5pt;color:#4A4540;margin-bottom:2mm;}';
+    css+='.erow{display:flex;gap:3mm;white-space:nowrap;}';
+    css+='.erow span:first-child{color:#2C2820;}';
+    css+='.erow span:last-child{color:#a5680a;font-weight:700;}';
+    css+='.tot{text-align:right;font-weight:800;font-size:12pt;color:#a5680a;}';
     var html='<!doctype html><html><head><meta charset="utf-8"><title>延托費明細</title><style>'+css+'</style></head><body>'+pages+'</body></html>';
     var w=window.open('','_blank','width=1000,height=860');
     if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
@@ -17445,7 +17447,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 01:10</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 01:20</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
