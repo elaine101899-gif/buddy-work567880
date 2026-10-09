@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179154629431780';
+  var BUILD='179155745220016';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -1779,6 +1779,13 @@ var WEEK_SONGS={
   '115_2_6':'audio/qiutiandege.mp3','115_2_7':'audio/qiutiandege.mp3',
   '115_2_8':'audio/raozhesenlin.mp3','115_2_9':'audio/raozhesenlin.mp3'
 };
+/* 每週歌曲旁邊的「跳舞示範影片」，key 跟 WEEK_SONGS 同一套（學年_主題_週次），
+   檔案放在 video/ 資料夾（跟著網站一起部署）。老師點歌曲旁邊的影片鈕，
+   會開新分頁播放，上課前先看一下怎麼帶動跳。目前只有「第二主題第三週
+   （你家在哪裡）」這支，其餘週次等拿到影片檔案再補。 */
+var WEEK_VIDEOS={
+  '115_2_3':'video/nijiazainali.mp4'
+};
 /* 依週頁面的 id 反推這一週是「學年_主題_週次」，才能查表找音檔。
    week-N／week5-N 是舊的靜態週頁面，內容其實是 114 學年度的主題；
    weekB-N 是切換其他主題時動態產生的頁面，年度固定 115，主題用
@@ -1836,6 +1843,17 @@ function _restyleWeekHeader(wp){
     playBtn.style.cssText='margin-left:6px;border:none;background:none;cursor:pointer;font-size:.85rem;vertical-align:middle;padding:0 2px;';
     playBtn.onclick=function(e){e.stopPropagation();_toggleWeekSong(playBtn,audioSrc);};
     songLn.appendChild(playBtn);
+  }
+  var videoSrc=songKey?WEEK_VIDEOS[songKey]:null;
+  if(videoSrc){
+    var vidBtn=document.createElement('button');
+    vidBtn.type='button';
+    vidBtn.className='week-video-play';
+    vidBtn.textContent='🎬 跳舞示範';
+    vidBtn.title='上課前先看一下怎麼帶動跳';
+    vidBtn.style.cssText='margin-left:8px;border:1px solid #d8a000;background:rgba(255,235,180,.6);color:#5a3d00;border-radius:999px;cursor:pointer;font-size:.72rem;font-weight:700;vertical-align:middle;padding:2px 9px;';
+    vidBtn.onclick=function(e){e.stopPropagation();window.open(videoSrc,'_blank');};
+    songLn.appendChild(vidBtn);
   }
   info.insertBefore(songLn,info.firstChild);
   info.insertBefore(themeLn,info.firstChild);
@@ -16975,7 +16993,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 19:44</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 22:50</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
