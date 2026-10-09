@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153391132006';
+  var BUILD='17915341022562';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -4433,7 +4433,6 @@ function printSummaryB(cls) {
       <span>&#x1F469;&#x200D;&#x1F3EB; 托育人員</span>
       <button class="asr-add-btn" id="btnAddT">&#xFF0B; 新增老師</button>
       <button class="asr-add-btn" id="btnSyncRoster" style="background:#4a90c0" title="如果新增老師/幼兒後沒有出現，按這裡強制重新抓取最新名單">&#x1F504; 立即同步</button>
-      <button class="asr-save-btn" onclick="saveHTMLWithData()" title="將老師與幼兒資料寫入 HTML，下載後取代 iCloud 舊檔即可跨裝置同步">&#x1F4BE; 儲存並下載 HTML</button>
     </div>
     <div class="asr-grid" id="teacherGrid"><div style="color:#8a8a9a;font-size:.78rem">尚無老師，請點「新增老師」</div></div>
     <div id="childSec" style="display:none">
@@ -4995,47 +4994,6 @@ function asrLoad() {
      老師，只要重新整理頁面，就會被這份舊快照原封不動地覆蓋回來，變成「老師
      刪除後又跑出來」。現在 ROSTER 模組（forceSync/resetForCompany/refreshRoster）
      已經是即時、正確處理刪除與升班的權威來源，不再需要這個舊的備援路徑。 */
-}
-
-/* ════ 儲存並下載更新版 HTML ════ */
-function saveHTMLWithData() {
-  /* 1. 取得當前完整 HTML 原始碼 */
-  var src = document.documentElement.outerHTML;
-
-  /* 2. 把 _asrPreload 整行替換成最新的 teachers + children */
-  var newPreload = JSON.stringify({ teachers: asrDB.teachers, children: asrDB.children });
-  src = src.replace(
-    /window\._asrPreload\s*=\s*\{[\s\S]*?\};(?=<\/script>)/,
-    'window._asrPreload=' + newPreload + ';'
-  );
-
-  /* 3. 下載 */
-  var blob = new Blob([src], { type: 'text/html;charset=utf-8' });
-  var a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '小布迪.html';
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
-
-  /* 同步寫入 Firebase，讓其他手機即時同步 */
-  try {
-    var _fb = _fbInit();
-    if (_fb) {
-      _fb.ref('xiaobuddyMeta/childrenPreload').set({
-        teachers: asrDB.teachers,
-        children: asrDB.children,
-        updatedAt: Date.now()
-      });
-    }
-  } catch(e) {}
-
-  /* 提示 */
-  var t = document.createElement('div');
-  t.style.cssText = 'position:fixed;top:70px;right:16px;z-index:9999;background:#2c3e6b;color:white;padding:12px 18px;border-radius:12px;font-weight:700;font-size:.82rem;box-shadow:0 4px 14px rgba(0,0,0,.3);line-height:1.6;max-width:260px;';
-  t.innerHTML = '&#x1F4BE; 已下載 <b>小布迪.html</b><br><span style="font-weight:400;font-size:.75rem">請用這份新檔案取代 iCloud 裡的舊檔，即可在其他裝置看到最新資料。</span>';
-  document.body.appendChild(t);
-  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 5000);
 }
 
 
@@ -17063,7 +17021,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:18</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:21</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
