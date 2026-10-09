@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179153197226948';
+  var BUILD='179153299422016';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -18,7 +18,22 @@
 })();
 </script>
 <title>邦迪小宇宙</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=ZCOOL+KuaiLe&display=swap">
+<script>
+/* 每個子頁面標題（.btitle）要用可愛體顯示，但中文字型是分批下載的，
+   瀏覽器不會自動把全部頁面標題用到的字都抓齊。這裡頁面一載入就把
+   DOM 裡所有 .btitle／.hero-name 會用到的字整段強制預先載入，
+   避免只有部分字缺字、跟其他字字體不一致的狀況（上次公司名稱就
+   是吃過這個虧才加的保險）。 */
+document.addEventListener('DOMContentLoaded', function(){
+  if(!(window.document && document.fonts && document.fonts.load))return;
+  try{
+    var txt='';
+    document.querySelectorAll('.btitle,.hero-name').forEach(function(el){txt+=el.textContent;});
+    if(txt)document.fonts.load("30px 'ZCOOL KuaiLe'", txt).catch(function(){});
+  }catch(e){}
+});
+</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700;900&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -202,7 +217,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
   transform:rotate(8deg);
 }
 .bbtn{background:#fff;border:2px solid #33302a;color:#33302a;padding:7px 16px;border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex-shrink:0;}
-.btitle{flex:1;text-align:center;font-size:.95rem;font-weight:900;color:#33302a;}
+.btitle{flex:1;text-align:center;font-family:'ZCOOL KuaiLe','Noto Sans TC',sans-serif;font-size:1.1rem;font-weight:400;letter-spacing:1px;color:#33302a;}
 
 /* ── TEACH HUB ── */
 .yr-tabs{display:flex;gap:10px;background:transparent;border-bottom:none;padding:12px 14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
@@ -17062,7 +17077,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 15:46</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 16:03</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
