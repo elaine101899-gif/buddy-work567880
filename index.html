@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='17915649411668';
+  var BUILD='179156525823538';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3421,8 +3421,19 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
     <span class="btitle">延托幼兒</span>
+    <button class="bbtn" style="margin-left:auto;" onclick="GO('extendcare-fee')">&#x1F4B0; 延托費總表</button>
   </div>
   <div style="padding:14px 16px 40px;" id="ec-root">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<!-- ═══ 延托費總表 ═══ -->
+<div class="pg" id="pg-extendcare-fee">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('extendcare')">&#x2190; 延托幼兒</button>
+    <span class="btitle">延托費總表</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="ecfee-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
@@ -3824,6 +3835,7 @@ function GO(id) {
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
   if (id === 'monthcheck') { if (typeof MONTHCHECK !== 'undefined') MONTHCHECK.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
+  if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
   if (id === 'leave-flex') { if (typeof LEAVE_FLEX !== 'undefined') LEAVE_FLEX.init(); }
   if (id === 'leave-boss') { if (typeof LEAVE_BOSS !== 'undefined') LEAVE_BOSS.init(); }
   if (id === 'asr') {
@@ -17210,12 +17222,171 @@ var EXTENDCARE=(function(){
   }
 
   function init(){curViewKey=todayKey();load();render();}
-  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday};
+
+  /* ════ 延托費總表：收費期間每月27號～次月26號 ════ */
+  var _feeEndY=0,_feeEndM=0;
+  var _feeRows=null; // [{id,name,cls,entries:[{date,time}],fee}]
+
+  function _feeDefaultEnd(){
+    var now=new Date(),roc=now.getFullYear()-1911,mo=now.getMonth()+1,dd=now.getDate();
+    /* 26號（含）以前：這次要出的是「本月26號」結尾的這一期。
+       27號之後：新的一期才剛開始，預設抓「下個月26號」結尾那一期比較合理。 */
+    if(dd>=27){mo++;if(mo>12){mo=1;roc++;}}
+    return{roc:roc,mo:mo};
+  }
+  function _feePeriodRange(endRoc,endMo){
+    var startMo=endMo-1,startRoc=endRoc;
+    if(startMo<1){startMo=12;startRoc--;}
+    var ceEndYr=endRoc+1911,ceStartYr=startRoc+1911;
+    return{
+      startRoc:startRoc,startMo:startMo,
+      startDate:new Date(ceStartYr,startMo-1,27),
+      endDate:new Date(ceEndYr,endMo-1,26)
+    };
+  }
+  function _feeDateKey(d){
+    return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());
+  }
+  function _feeCollect(endRoc,endMo){
+    var range=_feePeriodRange(endRoc,endMo);
+    var groups=getKidsByCls();
+    var clsOf={};
+    CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){clsOf[k.id]=cls;});});
+    var byChild={};
+    var d=new Date(range.startDate.getTime());
+    while(d<=range.endDate){
+      var k=_feeDateKey(d);
+      var dayRec=db.records[k]||{};
+      Object.keys(dayRec).forEach(function(cid){
+        var rec=dayRec[cid];
+        if(!rec||!rec.status)return;
+        if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[],fee:98};
+        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),time:rec.end||(rec.status==='active'?'（延托中）':'')});
+      });
+      d.setDate(d.getDate()+1);
+    }
+    var out=[];
+    CLSORDER.forEach(function(cls){
+      Object.keys(byChild).forEach(function(cid){if(byChild[cid].cls===cls)out.push(byChild[cid]);});
+    });
+    Object.keys(byChild).forEach(function(cid){if(!byChild[cid].cls)out.push(byChild[cid]);});
+    return{range:range,rows:out};
+  }
+
+  function feeRender(){
+    var wrap=document.getElementById('ecfee-root');
+    if(!wrap)return;
+    var col=_feeCollect(_feeEndY,_feeEndM);
+    _feeRows=col.rows;
+    var r=col.range;
+    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">&#x1F4C5; 收費期間（到第幾個月的26號）</div>';
+    h+='<select class="df-inp" style="width:auto;" id="ecfeeYr" onchange="EXTENDCARE.feeChangeYM()">';
+    for(var y=_feeEndY;y>=_feeEndY-1;y--)h+='<option value="'+y+'"'+(y===_feeEndY?' selected':'')+'>'+y+' 年</option>';
+    h+='</select>';
+    h+='<select class="df-inp" style="width:auto;" id="ecfeeMn" onchange="EXTENDCARE.feeChangeYM()">';
+    for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_feeEndM?' selected':'')+'>'+m+' 月</option>';
+    h+='</select>';
+    h+='<span style="font-size:.78rem;color:#888;">（即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_feeEndY+'/'+_feeEndM+'/26）</span>';
+    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="EXTENDCARE.feePrint()">&#x1F5A8; 列印總表</button>';
+    h+='</div>';
+    if(!_feeRows.length){
+      h+='<div style="color:#aaa;text-align:center;padding:40px 0;">這一期沒有任何延托紀錄</div>';
+      wrap.innerHTML=h;
+      return;
+    }
+    h+='<div class="df-sec" style="overflow-x:auto;">';
+    h+='<table class="cln-table"><thead><tr><th>姓名</th><th>班級</th><th>延托日期／離園時間</th><th>次數</th><th>每次金額</th><th>小計</th></tr></thead><tbody id="ecfeeBody">';
+    _feeRows.forEach(function(row,ri){
+      h+='<tr>';
+      h+='<td style="font-weight:700;white-space:nowrap;">'+row.name+'</td>';
+      h+='<td style="white-space:nowrap;">'+(CLSLABEL[row.cls]||'')+'</td>';
+      h+='<td style="font-size:.78rem;color:#555;">'+row.entries.map(function(e){return e.date+' '+e.time;}).join('、')+'</td>';
+      h+='<td style="text-align:center;">'+row.entries.length+'</td>';
+      h+='<td style="text-align:center;"><input type="number" class="cln-txt" style="width:70px;text-align:center;" value="'+row.fee+'" min="0" onchange="EXTENDCARE.feeSetFee('+ri+',this.value)"></td>';
+      h+='<td style="text-align:center;font-weight:700;" id="ecfeeSub'+ri+'">'+(row.entries.length*row.fee)+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<div class="df-sec" style="text-align:right;font-weight:800;font-size:1rem;color:#a5680a;" id="ecfeeTotal">總計：'+_feeGrandTotal()+' 元</div>';
+    wrap.innerHTML=h;
+  }
+  function _feeGrandTotal(){
+    if(!_feeRows)return 0;
+    var t=0;
+    _feeRows.forEach(function(row){t+=row.entries.length*row.fee;});
+    return t;
+  }
+  function feeSetFee(ri,val){
+    if(!_feeRows||!_feeRows[ri])return;
+    var fee=parseFloat(val);
+    if(isNaN(fee)||fee<0)fee=0;
+    _feeRows[ri].fee=fee;
+    var sub=document.getElementById('ecfeeSub'+ri);
+    if(sub)sub.textContent=_feeRows[ri].entries.length*fee;
+    var tot=document.getElementById('ecfeeTotal');
+    if(tot)tot.textContent='總計：'+_feeGrandTotal()+' 元';
+  }
+  function feeChangeYM(){
+    var yEl=document.getElementById('ecfeeYr'),mEl=document.getElementById('ecfeeMn');
+    _feeEndY=yEl?parseInt(yEl.value,10):_feeEndY;
+    _feeEndM=mEl?parseInt(mEl.value,10):_feeEndM;
+    feeRender();
+  }
+  function feeInit(){
+    var def=_feeDefaultEnd();
+    _feeEndY=def.roc;_feeEndM=def.mo;
+    load();
+    feeRender();
+  }
+  function feePrint(){
+    if(!_feeRows||!_feeRows.length){alert('這一期沒有資料可以列印');return;}
+    var r=_feePeriodRange(_feeEndY,_feeEndM);
+    var periodStr=r.startRoc+'年'+r.startMo+'月27日 ～ '+_feeEndY+'年'+_feeEndM+'月26日';
+    var rowsHTML='';
+    _feeRows.forEach(function(row){
+      rowsHTML+='<tr>';
+      rowsHTML+='<td class="td-c" style="font-weight:700;">'+row.name+'</td>';
+      rowsHTML+='<td class="td-c">'+(CLSLABEL[row.cls]||'')+'</td>';
+      rowsHTML+='<td class="td-list">'+row.entries.map(function(e){return e.date+' '+e.time;}).join('、')+'</td>';
+      rowsHTML+='<td class="td-c">'+row.entries.length+'</td>';
+      rowsHTML+='<td class="td-c">'+row.fee+'</td>';
+      rowsHTML+='<td class="td-c" style="font-weight:700;">'+(row.entries.length*row.fee)+'</td>';
+      rowsHTML+='</tr>';
+    });
+    var css='@page{size:A4 portrait;margin:10mm 10mm;}';
+    css+='*{box-sizing:border-box;}';
+    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:9pt;color:#2C2820;margin:0;background:#fff;}';
+    css+='.hd1{font-size:14pt;font-weight:700;text-align:center;margin-bottom:2mm;}';
+    css+='.hd2{font-size:9.5pt;color:#555;text-align:center;margin-bottom:5mm;}';
+    css+='table{width:100%;border-collapse:collapse;font-size:8.5pt;}';
+    css+='th{background:#f0c97a;color:#4a3300;padding:4px 5px;border:1px solid #d8c8a0;}';
+    css+='td{border:1px solid #D8D0C4;padding:3px 5px;}';
+    css+='tr{page-break-inside:avoid;}';
+    css+='.td-c{text-align:center;white-space:nowrap;}';
+    css+='.td-list{font-size:7.8pt;line-height:1.5;}';
+    css+='.tot{text-align:right;font-weight:800;font-size:11pt;margin-top:4mm;color:#a5680a;}';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>延托費總表</title><style>'+css+'</style></head><body>';
+    html+='<div class="hd1">'+_companyName()+' &middot; 延托費總表</div>';
+    html+='<div class="hd2">收費期間：'+periodStr+'</div>';
+    html+='<table><thead><tr><th>姓名</th><th>班級</th><th>延托日期／離園時間</th><th>次數</th><th>每次金額</th><th>小計</th></tr></thead><tbody>'+rowsHTML+'</tbody></table>';
+    html+='<div class="tot">總計：'+_feeGrandTotal()+' 元</div>';
+    html+='</body></html>';
+    var w=window.open('','_blank','width=1000,height=860');
+    if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
+    w.document.write(html);w.document.close();
+    var printed=false;
+    var doPrint=function(){if(printed)return;printed=true;setTimeout(function(){try{w.print();}catch(e){}},250);};
+    if(w.document.readyState==='complete')setTimeout(doPrint,80);
+    else{w.onload=doPrint;setTimeout(doPrint,900);}
+  }
+
+  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetFee:feeSetFee,feePrint:feePrint};
 })();
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:55</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 01:00</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
