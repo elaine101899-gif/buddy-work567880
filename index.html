@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179156050332368';
+  var BUILD='179156068510001';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3584,7 +3584,7 @@ function renderWeekB() {
   if (srcHdr) {
     var newHdr = srcHdr.cloneNode(true);
     var meta = newHdr.querySelector('.header-meta');
-    if (meta) meta.innerHTML = '<strong>115年</strong><br>第一學期月計畫表<br>主題繪本：'+thData.name;
+    if (meta) meta.innerHTML = '<strong>115年度月計劃表</strong><br>主題繪本：'+thData.name;
     var sNav = document.querySelector('#pg-weekB .sticky-nav');
     sNav.parentNode.insertBefore(newHdr, sNav);
   }
@@ -16993,7 +16993,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 23:41</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/9 23:44</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
