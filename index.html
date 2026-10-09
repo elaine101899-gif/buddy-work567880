@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179156377212930';
+  var BUILD='17915649411668';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -3227,7 +3227,23 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">電訪表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">家長電訪記錄，全機同步</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('monthcheck')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #8a6ac0;">
+        <span style="font-size:1.8rem;">&#x1F50D;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#6a4aa0;">月檢查</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月底一次確認四張表有沒有填齊</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
     </div>
+  </div>
+</div>
+
+<!-- ═══ MONTH CHECK ═══ -->
+<div class="pg" id="pg-monthcheck">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <span class="btitle">月檢查</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="monthcheckWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <!-- ═══ LEAVE MENU ═══ -->
@@ -3806,6 +3822,7 @@ function GO(id) {
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
+  if (id === 'monthcheck') { if (typeof MONTHCHECK !== 'undefined') MONTHCHECK.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'leave-flex') { if (typeof LEAVE_FLEX !== 'undefined') LEAVE_FLEX.init(); }
   if (id === 'leave-boss') { if (typeof LEAVE_BOSS !== 'undefined') LEAVE_BOSS.init(); }
@@ -15007,7 +15024,25 @@ var CLEAN=(function(){
 
   function init(){show('hub');}
 
-  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType,addSpace:addSpace,removeSpace:removeSpace,resetForms:resetForms};
+  /* 月檢查用：這個月（y=民國年,m=月）每個清潔區域、每個平日，格子沒勾齊或沒簽名都列出來 */
+  function checkMonth(y,m){
+    var now=new Date(),isCur=(y===(now.getFullYear()-1911)&&m===(now.getMonth()+1));
+    var endDay=isCur?now.getDate():daysInMonth(y,m);
+    var issues=[];
+    CLEAN_FORMS.forEach(function(fm){
+      var rec=db.records[fm.id+'_'+y+'_'+m];
+      for(var d=1;d<=endDay;d++){
+        if(_isWeekend(y,m,d))continue;
+        var dayRec=rec&&rec.days[d];
+        if(dayRec&&dayRec.offType)continue;
+        var missingItems=!dayRec||fm.items.some(function(it,i){return !dayRec['i'+i];});
+        var missingSig=!dayRec||!dayRec.sig;
+        if(missingItems||missingSig)issues.push({area:fm.label,day:d,missingItems:missingItems,missingSig:missingSig});
+      }
+    });
+    return issues;
+  }
+  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType,addSpace:addSpace,removeSpace:removeSpace,resetForms:resetForms,checkMonth:checkMonth};
 })();
 
 /* ── 清潔表單：班級寢具 ──
@@ -15400,7 +15435,31 @@ var BEDDING=(function(){
     }
     render();
   }
-  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel,resetClasses:resetClasses,addSpace:addSpace,removeSpace:removeSpace};
+  /* 月檢查用：這個月（y=民國年,m=月）到目前為止應該有幾次禮拜五，每個班級每個孩子
+     的日期格子跟簽名欄位有沒有補齊，沒補齊的列出來 */
+  function checkMonth(y,m){
+    var now=new Date(),isCur=(y===(now.getFullYear()-1911)&&m===(now.getMonth()+1));
+    var ceYr=y+1911,lastDay=new Date(ceYr,m,0).getDate();
+    var countTo=isCur?now.getDate():lastDay;
+    var expected=0;
+    for(var d=1;d<=countTo;d++){if(new Date(ceYr,m-1,d).getDay()===5)expected++;}
+    var issues=[];
+    if(expected<=0)return issues;
+    BEDDING_CLASSES.forEach(function(c){
+      var rec=db.records[c.id+'_'+y+'_'+m];
+      if(!rec){issues.push({area:c.label,missingChildren:['（本月尚未開始填寫）'],missingSig:true});return;}
+      var missingChildren=[];
+      (rec.rows||[]).forEach(function(row){
+        var filled=(row.d||[]).filter(function(v){return v;}).length;
+        if(filled<expected)missingChildren.push(row.name);
+      });
+      var sigCount=(rec.sigs||[]).filter(function(v){return v;}).length;
+      var missingSig=sigCount<expected;
+      if(missingChildren.length||missingSig)issues.push({area:c.label,missingChildren:missingChildren,missingSig:missingSig});
+    });
+    return issues;
+  }
+  return{init:init,selectCls:selectCls,backToClsHub:backToClsHub,changeCls:changeCls,changeYM:changeYM,setCell:setCell,setDatePart:setDatePart,addRow:addRow,deleteRow:deleteRow,openSig:openSig,download:download,downloadLevel:downloadLevel,resetClasses:resetClasses,addSpace:addSpace,removeSpace:removeSpace,checkMonth:checkMonth};
 })();
 
 /* ── 清潔表單：環境溫濕度 ──
@@ -15767,7 +15826,29 @@ var TEMP=(function(){
     }
     render();
   }
-  return{init:init,selectOption:selectOption,backToOptHub:backToOptHub,changeKind:changeKind,changeRoom:changeRoom,changeYM:changeYM,setVal:setVal,cycleOffType:cycleOffType,openSig:openSig,download:download,downloadMonth:downloadMonth,addSpace:addSpace,removeSpace:removeSpace,resetKinds:resetKinds};
+  /* 月檢查用：這個月（y=民國年,m=月）每個教室/冰箱、每個平日，格子沒填齊或兩個簽名沒簽都列出來 */
+  function checkMonth(y,m){
+    var now=new Date(),isCur=(y===(now.getFullYear()-1911)&&m===(now.getMonth()+1));
+    var endDay=isCur?now.getDate():daysInMonth(y,m);
+    var issues=[];
+    flatOptions().forEach(function(o){
+      var kd=null;TEMP_KINDS.forEach(function(x){if(x.id===o.kind)kd=x;});
+      if(!kd)return;
+      var rec=db.records[o.kind+(o.room?('_'+o.room):'')+'_'+y+'_'+m];
+      var missingDays=[];
+      for(var d=1;d<=endDay;d++){
+        if(_isWeekend(y,m,d))continue;
+        if(rec&&(rec.offType||{})[d])continue;
+        var dv=rec&&rec.vals&&rec.vals[d];
+        var missing=!dv||kd.rows.some(function(rl,ri){return dv[ri]===undefined||dv[ri]==='';});
+        if(missing)missingDays.push(d);
+      }
+      var missingSig=!rec||!rec.sig1||!rec.sig2;
+      if(missingDays.length||missingSig)issues.push({area:o.label,missingDays:missingDays,missingSig:missingSig});
+    });
+    return issues;
+  }
+  return{init:init,selectOption:selectOption,backToOptHub:backToOptHub,changeKind:changeKind,changeRoom:changeRoom,changeYM:changeYM,setVal:setVal,cycleOffType:cycleOffType,openSig:openSig,download:download,downloadMonth:downloadMonth,addSpace:addSpace,removeSpace:removeSpace,resetKinds:resetKinds,checkMonth:checkMonth};
 })();
 
 /* ── 空間／班級後台：清潔表單、寢具表、溫濕度教室的「空間、班級」清單統一由這裡
@@ -16289,10 +16370,16 @@ var PHONEVISIT=(function(){
     var lastDay=new Date(ceYr,mo,0).getDate();
     return {roc:roc,mo:mo,first:ceYr+'-'+mm+'-01',last:ceYr+'-'+mm+'-'+(lastDay<10?'0':'')+lastDay};
   }
-  function getKids(cls){
+  function _rangeFor(roc,mo){
+    var ceYr=roc+1911;
+    var mm=(mo<10?'0':'')+mo;
+    var lastDay=new Date(ceYr,mo,0).getDate();
+    return {roc:roc,mo:mo,first:ceYr+'-'+mm+'-01',last:ceYr+'-'+mm+'-'+(lastDay<10?'0':'')+lastDay};
+  }
+  function getKids(cls){return _kidsForMonth(cls,_selectedMonthRange());}
+  function _kidsForMonth(cls,range){
     /* 永遠用正確學期的 preload 名單，避免 localStorage 舊學期資料干擾 */
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var range=_selectedMonthRange();
     var isCurMonth=(range.roc===(new Date().getFullYear()-1911))&&(range.mo===(new Date().getMonth()+1));
     var teachers,children;
     if(!isCurMonth&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
@@ -16793,7 +16880,135 @@ var PHONEVISIT=(function(){
     renderRecords();
   }
 
-  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange};
+  /* 月檢查用：這個月（y=民國年,m=月）每個孩子是否至少有1筆電訪紀錄，沒有的列出來 */
+  function checkMonth(y,m){
+    var prefix=y+'.'+(m<10?'0':'')+m+'.';
+    var counts={};
+    Object.keys(db).forEach(function(id){
+      var r=db[id];
+      if(r.date&&r.date.indexOf(prefix)===0)counts[r.childId]=(counts[r.childId]||0)+1;
+    });
+    var issues=[],range=_rangeFor(y,m);
+    ['baby','crawl','run'].forEach(function(cls){
+      _kidsForMonth(cls,range).forEach(function(k){
+        if(!counts[k.id])issues.push({area:CLSLABEL[cls],child:k.name});
+      });
+    });
+    return issues;
+  }
+
+  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange,checkMonth:checkMonth};
+})();
+
+/* ════ 月檢查 MONTHCHECK：月底一次確認電訪表／清潔表單／環境溫濕度／班級寢具
+   這四張表是否都填齊（格子沒空白、簽名沒漏簽），取代人工一頁一頁翻查 ════ */
+var MONTHCHECK=(function(){
+  var curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
+
+  function _ready(){
+    /* 四個模組都掛上雲端監聽、把本機快取的資料載進來，之後才有東西可以檢查 */
+    if(typeof CLEAN!=='undefined')CLEAN.init();
+    if(typeof TEMP!=='undefined')TEMP.init();
+    if(typeof BEDDING!=='undefined')BEDDING.init();
+    if(typeof PHONEVISIT!=='undefined')PHONEVISIT.init();
+  }
+
+  function _sec(title,color,bodyHTML){
+    return '<div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid '+color+';">'
+      +'<div style="font-weight:800;font-size:.95rem;color:'+color+';margin-bottom:8px;">'+title+'</div>'+bodyHTML+'</div>';
+  }
+  function _ok(){return '<div style="color:#3d7030;font-size:.85rem;">&#x2705; 全部正常，沒有缺漏</div>';}
+
+  function _phoneHTML(){
+    var issues=(typeof PHONEVISIT!=='undefined'&&PHONEVISIT.checkMonth)?PHONEVISIT.checkMonth(curY,curM):[];
+    if(!issues.length)return _sec('&#x1F4DE; 電訪表 — 每位幼兒當月至少1次','#1565c0',_ok());
+    var h='<div style="font-size:.82rem;color:#c0392b;line-height:1.9;">';
+    issues.forEach(function(it){h+='<div>&#x274C; '+it.area+'：<b>'+it.child+'</b> 本月還沒有電訪紀錄</div>';});
+    h+='</div><button class="cln-sig-btn" style="margin-top:8px;" onclick="GO(\'phonevisit\')">前往電訪表補登</button>';
+    return _sec('&#x1F4DE; 電訪表 — 每位幼兒當月至少1次（共'+issues.length+'筆缺漏）','#c0392b',h);
+  }
+  function _cleanHTML(){
+    var issues=(typeof CLEAN!=='undefined'&&CLEAN.checkMonth)?CLEAN.checkMonth(curY,curM):[];
+    if(!issues.length)return _sec('&#x1F9F9; 環境清潔','#30588a',_ok());
+    var h='<div style="font-size:.82rem;color:#c0392b;line-height:1.9;">';
+    issues.forEach(function(it){
+      var parts=[];
+      if(it.missingItems)parts.push('項目沒勾齊');
+      if(it.missingSig)parts.push('沒簽名');
+      h+='<div>&#x274C; '+it.area+'　'+curM+'/'+it.day+'：'+parts.join('、')+'</div>';
+    });
+    h+='</div><button class="cln-sig-btn" style="margin-top:8px;" onclick="GO(\'clean\');CLEAN.show(\'env\')">前往清潔表單補登</button>';
+    return _sec('&#x1F9F9; 環境清潔（共'+issues.length+'筆缺漏）','#c0392b',h);
+  }
+  function _tempHTML(){
+    var issues=(typeof TEMP!=='undefined'&&TEMP.checkMonth)?TEMP.checkMonth(curY,curM):[];
+    if(!issues.length)return _sec('&#x1F321;&#xFE0F; 環境溫濕度','#a5680a',_ok());
+    var h='<div style="font-size:.82rem;color:#c0392b;line-height:1.9;">';
+    issues.forEach(function(it){
+      var parts=[];
+      if(it.missingDays&&it.missingDays.length)parts.push('缺'+it.missingDays.length+'天（'+it.missingDays.map(function(d){return curM+'/'+d;}).join('、')+'）');
+      if(it.missingSig)parts.push('簽名沒簽齊');
+      h+='<div>&#x274C; '+it.area+'：'+parts.join('、')+'</div>';
+    });
+    h+='</div><button class="cln-sig-btn" style="margin-top:8px;" onclick="GO(\'clean\');CLEAN.show(\'temp\')">前往環境溫濕度補登</button>';
+    return _sec('&#x1F321;&#xFE0F; 環境溫濕度（共'+issues.length+'筆缺漏）','#c0392b',h);
+  }
+  function _beddingHTML(){
+    var issues=(typeof BEDDING!=='undefined'&&BEDDING.checkMonth)?BEDDING.checkMonth(curY,curM):[];
+    if(!issues.length)return _sec('&#x1F6CF;&#xFE0F; 班級寢具','#6a4aa0',_ok());
+    var h='<div style="font-size:.82rem;color:#c0392b;line-height:1.9;">';
+    issues.forEach(function(it){
+      var parts=[];
+      if(it.missingChildren&&it.missingChildren.length)parts.push('未填齊：'+it.missingChildren.join('、'));
+      if(it.missingSig)parts.push('簽名沒簽齊');
+      h+='<div>&#x274C; '+it.area+'：'+parts.join('；')+'</div>';
+    });
+    h+='</div><button class="cln-sig-btn" style="margin-top:8px;" onclick="GO(\'clean\');CLEAN.show(\'bedding\')">前往班級寢具補登</button>';
+    return _sec('&#x1F6CF;&#xFE0F; 班級寢具（共'+issues.length+'筆缺漏）','#c0392b',h);
+  }
+
+  function render(){
+    var wrap=document.getElementById('monthcheckWrap');
+    if(!wrap)return;
+    var h='';
+    h+='<div style="display:flex;align-items:center;gap:8px;background:#f3f0fa;border-radius:10px;padding:10px 14px;margin-bottom:14px;">';
+    h+='<span style="font-size:.85rem;color:#6a4aa0;font-weight:700;">&#x1F5D3;&#xFE0F; 檢查月份</span>';
+    h+='<select id="mc-yr" onchange="MONTHCHECK.changeYM()" style="padding:6px 8px;border:1.5px solid #c8b8e8;border-radius:8px;font-size:.88rem;background:#fff;">';
+    var ny=(new Date().getFullYear()-1911);
+    for(var y=ny;y>=ny-2;y--)h+='<option value="'+y+'"'+(y===curY?' selected':'')+'>'+y+' 年</option>';
+    h+='</select>';
+    h+='<select id="mc-mn" onchange="MONTHCHECK.changeYM()" style="padding:6px 8px;border:1.5px solid #c8b8e8;border-radius:8px;font-size:.88rem;background:#fff;">';
+    for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+' 月</option>';
+    h+='</select>';
+    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="MONTHCHECK.refresh()">&#x1F504; 重新整理</button>';
+    h+='</div>';
+    h+='<div id="mc-sections">'+_phoneHTML()+_cleanHTML()+_tempHTML()+_beddingHTML()+'</div>';
+    wrap.innerHTML=h;
+  }
+
+  function changeYM(){
+    var yEl=document.getElementById('mc-yr'),mEl=document.getElementById('mc-mn');
+    curY=yEl?parseInt(yEl.value,10):curY;
+    curM=mEl?parseInt(mEl.value,10):curM;
+    render();
+  }
+  function refresh(){
+    var sec=document.getElementById('mc-sections');
+    if(sec)sec.innerHTML='<div style="color:#aaa;text-align:center;padding:20px 0;font-size:.85rem;">重新整理中…</div>';
+    _ready();
+    setTimeout(render,1200);
+  }
+
+  function init(){
+    curY=(new Date().getFullYear()-1911);curM=(new Date().getMonth()+1);
+    render();
+    _ready();
+    /* 四個模組的雲端資料是非同步載入的，第一次打開這頁時先用本機快取資料算一次，
+       等雲端資料回來後再算一次，確保看到的是最新狀態 */
+    setTimeout(render,1500);
+  }
+
+  return{init:init,changeYM:changeYM,refresh:refresh};
 })();
 
 /* ── 延托幼兒：延托起訖時段記錄 ── */
@@ -17000,7 +17215,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:36</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 00:55</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
