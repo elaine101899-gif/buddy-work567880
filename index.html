@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179156642332266';
+  var BUILD='179160035123741';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   var u=location.href.split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
@@ -7330,7 +7330,9 @@ var DIARY=(function(){
       h+='<div class="df-sec"><div class="df-lbl">📋 活動引導重點<button class="df-add-btn" onclick="DIARY.addStep()">＋ 新增步驟</button></div>';
       h+='<div id="dFSteps">';
       steps.forEach(function(st,idx){h+=renderStep(idx,st);});
-      h+='</div></div>';
+      h+='</div>';
+      h+='<button class="df-add-btn" style="margin-top:8px;background:#fff6e0;color:#a5680a;border:1px solid #f0c97a;" onclick="DIARY.applyToOtherClasses()">📋 套用到本週其他班級的同一課程</button>';
+      h+='</div>';
     }
 
     /* 照片 */
@@ -7447,6 +7449,43 @@ var DIARY=(function(){
     _pushDiaryEntry(key,0);
     _pushDiaryResource(key,0);
     dToast('✓ 已儲存');
+  }
+  /* 「套用到本週其他班級的同一課程」：很多課程在同一週會被好幾個班級（年段）
+     重複安排，內容幾乎一樣。老師在其中一班打好「活動引導重點」後按這顆鈕，
+     就把目前打的內容直接複製貼到本週其他班級「同名」的那筆日誌，
+     省得每個班都要重打一次，貼完之後老師再各自去做細部微調即可。
+     只比對「本週」是因為這是最常見、最安全的情境；跨週同名課程不在此範圍。 */
+  function applyToOtherClasses(){
+    if(!dCtx)return;
+    var th=allThemes[dYr]&&allThemes[dYr][dTh];
+    if(!th)return;
+    var acts=th.acts&&th.acts[dWk]||{};
+    var curResource=(document.getElementById('dFResource')||{}).value||'';
+    var curSteps=collectSteps();
+    var targets=[];
+    ['baby','crawl','run'].forEach(function(cls){
+      if(cls===dCtx.cls)return;
+      var arr=acts[cls]||[];
+      arr.forEach(function(a,i){
+        if(a&&a.name===dCtx.origName)targets.push({cls:cls,dayNo:i+1});
+      });
+    });
+    if(!targets.length){dToast('本週其他班級沒有找到同名課程「'+dCtx.origName+'」',true);return;}
+    if(!confirm('會把目前的「教學資源／活動引導重點」套用到本週其他 '+targets.length+' 個班級的「'+dCtx.origName+'」，覆蓋掉它們原本填寫的內容，確定要套用嗎？'))return;
+    saveForm();
+    targets.forEach(function(t){
+      var key=dbKey(dYr,dTh,dWk,t.dayNo,t.cls);
+      var existing=diaryDB.entries[key]||{};
+      diaryDB.entries[key]=Object.assign({},existing,{
+        resource:curResource,
+        steps:curSteps.slice(),
+        _ts:Date.now()
+      });
+      _pushDiaryEntry(key,0);
+      _pushDiaryResource(key,0);
+    });
+    dbSave();
+    dToast('✓ 已套用到 '+targets.length+' 個班級，記得各班再去微調');
   }
   /* 只有小布迪填的「教學資源／活動引導重點」會推到共用路徑給邦比諾沿用；
      邦比諾自己存檔不會回推，避免邦比諾自訂的內容反過來蓋掉小布迪的版本。 */
@@ -7786,7 +7825,7 @@ var DIARY=(function(){
     openForm:openForm,backToList:backToList,
     addStep:addStep,removeStep:removeStep,resetToTpl:resetToTpl,loadPhoto:loadPhoto,
     dCrpOpen:dCrpOpen,dCrpDone:dCrpDone,dDelPhoto:dDelPhoto,
-    saveForm:saveForm,downloadEntry:downloadEntry,printEntry:printEntry,
+    saveForm:saveForm,applyToOtherClasses:applyToOtherClasses,downloadEntry:downloadEntry,printEntry:printEntry,
     download:downloadEntry /* 向後相容 */
   };
 })();
@@ -17447,7 +17486,7 @@ var EXTENDCARE=(function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 01:20</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/10 10:45</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
