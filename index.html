@@ -9,11 +9,15 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179168164518325';
+  var BUILD='179168329127564';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
-  var u=location.href.split('?')[0];
+  /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
+     切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
+     字串），location.search 永遠偵測不到已經加過版本號，會一直重新導向。 */
+  var hash=location.hash||'';
+  var u=location.href.split('#')[0].split('?')[0];
   if(location.search.indexOf('_v='+BUILD)===-1){
-    location.replace(u+'?_v='+BUILD);
+    location.replace(u+'?_v='+BUILD+hash);
   }
 })();
 </script>
@@ -1727,6 +1731,7 @@ document.addEventListener('DOMContentLoaded',function(){
 <!-- ── 清潔表單雲端同步（Firebase Realtime Database） ── -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 var FIREBASE_CONFIG={
   apiKey: "AIzaSyC0b2FWX-8Sc8ZiPIeb1Ao8vK0IDCsioGE",
@@ -1892,6 +1897,13 @@ function _fbInit(){
   return{
     ref:function(path){return raw.ref(_fbCompanyPrefix(path));}
   };
+}
+/* 登入功能試用中：只給 LOGINTEST 這個隱藏測試頁用，不影響其他任何功能，
+   也還沒有任何頁面真的要求登入才能用。 */
+function _fbAuth(){
+  if(!_fbInitRaw())return null;
+  if(typeof firebase==='undefined'||!firebase.auth)return null;
+  try{return firebase.auth();}catch(e){return null;}
 }
 
 /* ── ROSTER：老師/幼兒名單雲端同步（讓「＋新增老師/幼兒」跨裝置生效） ──
@@ -2256,6 +2268,23 @@ function _rosterKidsAsOf(cls,dateStr){
         <div class="comp-card-desc">進入邦比諾的系統</div>
       </div>
       <div class="comp-card-arr">&#x203A;</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOGIN TEST（隱藏試用頁，只能用網址 #logintest 進來，不影響任何現有功能） ═══ -->
+<div class="pg" id="pg-logintest">
+  <div class="bbar">
+    <button class="bbtn" onclick="location.hash='';GO('company')">&#x2190; 離開</button>
+    <span class="btitle">登入試用</span>
+  </div>
+  <div style="padding:20px 16px;max-width:360px;margin:0 auto;">
+    <div style="font-size:.8rem;color:#888;margin-bottom:16px;text-align:center;">這是測試頁，只有你知道這個網址，不影響其他人使用 App 的方式</div>
+    <div id="ltStatus" style="margin-bottom:14px;"></div>
+    <div id="ltForm">
+      <div class="df-sec"><div class="df-lbl">帳號（Email）</div><input type="text" id="ltEmail" class="df-inp" autocomplete="username" placeholder="你剛剛在 Firebase 建的帳號"></div>
+      <div class="df-sec"><div class="df-lbl">密碼</div><input type="password" id="ltPass" class="df-inp" autocomplete="current-password" placeholder="密碼"></div>
+      <button class="cln-sig-btn" style="width:100%;padding:12px;font-size:.95rem;margin-top:6px;" onclick="LOGINTEST.login()">登入</button>
     </div>
   </div>
 </div>
@@ -3836,6 +3865,7 @@ function GO(id) {
   if (id === 'monthcheck') { if (typeof MONTHCHECK !== 'undefined') MONTHCHECK.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
+  if (id === 'logintest') { if (typeof LOGINTEST !== 'undefined') LOGINTEST.init(); }
   if (id === 'leave-flex') { if (typeof LEAVE_FLEX !== 'undefined') LEAVE_FLEX.init(); }
   if (id === 'leave-boss') { if (typeof LEAVE_BOSS !== 'undefined') LEAVE_BOSS.init(); }
   if (id === 'asr') {
@@ -17518,9 +17548,73 @@ var EXTENDCARE=(function(){
   return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips};
 })();
 
+/* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
+   目的只是讓組長自己先試試看 Firebase 帳號登入順不順，完全不影響
+   其他任何人現在使用 App 的方式——沒有任何頁面因為這個功能被擋住，
+   也還沒有把資料庫規則收緊。確定要全面上線時才會再擴大範圍。 */
+var LOGINTEST=(function(){
+  var _attached=false;
+
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+
+  function render(user){
+    var statusEl=document.getElementById('ltStatus');
+    var formEl=document.getElementById('ltForm');
+    if(!statusEl||!formEl)return;
+    if(user){
+      statusEl.innerHTML='<div style="background:#e8f7f0;border:1.5px solid #36b27e;border-radius:10px;padding:14px;text-align:center;">'
+        +'<div style="font-size:1.3rem;margin-bottom:4px;">&#x2705;</div>'
+        +'<div style="font-weight:800;color:#1f7a54;margin-bottom:2px;">登入成功</div>'
+        +'<div style="font-size:.8rem;color:#555;">目前登入帳號：'+esc(user.email||user.uid)+'</div>'
+        +'<button class="cln-sig-btn" style="margin-top:10px;" onclick="LOGINTEST.logout()">登出</button>'
+        +'</div>';
+      formEl.style.display='none';
+    } else {
+      statusEl.innerHTML='';
+      formEl.style.display='';
+    }
+  }
+
+  function login(){
+    var auth=_fbAuth();
+    if(!auth){alert('Firebase Authentication 還沒設定好，請確認已經在 Firebase 後台開啟「電子郵件/密碼」登入方式。');return;}
+    var email=(document.getElementById('ltEmail')||{}).value||'';
+    var pass=(document.getElementById('ltPass')||{}).value||'';
+    if(!email||!pass){alert('請輸入帳號和密碼');return;}
+    auth.signInWithEmailAndPassword(email.trim(),pass).catch(function(err){
+      alert('登入失敗：'+(err&&err.message?err.message:'請確認帳號密碼是否正確'));
+    });
+  }
+  function logout(){
+    var auth=_fbAuth();
+    if(auth)auth.signOut();
+  }
+
+  function init(){
+    var auth=_fbAuth();
+    if(!auth){
+      var statusEl=document.getElementById('ltStatus');
+      if(statusEl)statusEl.innerHTML='<div style="color:#c0392b;font-size:.85rem;text-align:center;">Firebase Authentication 尚未初始化，請確認網路連線或稍後再試。</div>';
+      return;
+    }
+    render(auth.currentUser);
+    if(!_attached){
+      _attached=true;
+      auth.onAuthStateChanged(function(user){render(user);});
+    }
+  }
+
+  return{init:init,login:login,logout:logout};
+})();
+
+/* 隱藏入口：只有網址帶 #logintest 才會跳進試用頁，不出現在任何選單或按鈕裡 */
+document.addEventListener('DOMContentLoaded',function(){
+  if(location.hash==='#logintest')GO('logintest');
+});
+
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 09:20</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 09:48</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
