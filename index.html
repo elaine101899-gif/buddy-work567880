@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179168329127564';
+  var BUILD='179168434220846';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1899,11 +1899,22 @@ function _fbInit(){
   };
 }
 /* 登入功能試用中：只給 LOGINTEST 這個隱藏測試頁用，不影響其他任何功能，
-   也還沒有任何頁面真的要求登入才能用。 */
+   也還沒有任何頁面真的要求登入才能用。
+   persistence 明確設成 LOCAL：登入一次之後瀏覽器會記住，下次打開 App（包括
+   關掉瀏覽器、重開手機）都不用再登入一次，除非使用者自己按登出。這本來就是
+   Firebase 的預設行為，這裡用明寫的方式確保不會被其他設定意外改掉。 */
+var _fbAuthPersistSet=false;
 function _fbAuth(){
   if(!_fbInitRaw())return null;
   if(typeof firebase==='undefined'||!firebase.auth)return null;
-  try{return firebase.auth();}catch(e){return null;}
+  try{
+    var auth=firebase.auth();
+    if(!_fbAuthPersistSet){
+      _fbAuthPersistSet=true;
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+    }
+    return auth;
+  }catch(e){return null;}
 }
 
 /* ── ROSTER：老師/幼兒名單雲端同步（讓「＋新增老師/幼兒」跨裝置生效） ──
@@ -17597,10 +17608,18 @@ var LOGINTEST=(function(){
       if(statusEl)statusEl.innerHTML='<div style="color:#c0392b;font-size:.85rem;text-align:center;">Firebase Authentication 尚未初始化，請確認網路連線或稍後再試。</div>';
       return;
     }
-    render(auth.currentUser);
+    /* 瀏覽器本來就把登入狀態存起來了（預設會一直記住，直到按登出），
+       但 Firebase 要花一點點時間從本機讀回來，這段時間先顯示「確認登入狀態中」，
+       不要讓使用者看到表單閃一下又變成「登入成功」，感覺像是要重新登入。 */
+    var statusEl0=document.getElementById('ltStatus');
+    var formEl0=document.getElementById('ltForm');
+    if(statusEl0)statusEl0.innerHTML='<div style="text-align:center;color:#aaa;font-size:.85rem;padding:20px 0;">確認登入狀態中…</div>';
+    if(formEl0)formEl0.style.display='none';
     if(!_attached){
       _attached=true;
       auth.onAuthStateChanged(function(user){render(user);});
+    } else {
+      render(auth.currentUser);
     }
   }
 
@@ -17614,7 +17633,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 09:48</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 10:05</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
