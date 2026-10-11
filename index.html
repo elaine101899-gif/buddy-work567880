@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179168434220846';
+  var BUILD='179168831513219';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5176,7 +5176,83 @@ var _xbdDB=(function(){
   return{set:set,get:get,showErr:showErr};
 })();
 
+/* ════ 適齡適性記錄雲端同步 ════
+   原本 asrDB.reports 只存在 localStorage/IndexedDB，從頭到尾沒有推上雲端
+   （asrSave() 裡呼叫的 SYNC.push() 其實是個從來沒定義過的物件，等於完全
+   沒作用）。這代表老師在某一台裝置打完的適性紀錄，只有那台裝置自己看得到，
+   換一台手機、或是清過瀏覽器資料，就會像是「紀錄不見了」——這正是老師
+   反應「適性打完後又不見了」的根本原因。這裡比照日誌（diarySync）那一套
+   「存檔時間戳＋雲端監聽」的作法，把紀錄真正同步到 Firebase。 */
+var _fbAsrAttachedCompany=null;
+var _fbAsrRef=null;
+function _pushAsrReport(key,retryCount){
+  var fb=_fbInit();
+  if(!fb)return;
+  var rep=asrDB.reports[key];
+  if(!rep)return;
+  var done=false;
+  var timer=setTimeout(function(){
+    if(done)return;done=true;
+    if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
+  },8000);
+  try{
+    fb.ref('xiaobuddyClean/asr/reports/'+key).set(rep,function(err){
+      if(done)return;done=true;clearTimeout(timer);
+      if(err){
+        if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
+      }
+    });
+  }catch(e){
+    clearTimeout(timer);
+    if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
+  }
+}
+function _attachAsrFb(){
+  if(_fbAsrAttachedCompany===CURRENT_COMPANY)return;
+  var fb=_fbInit();
+  if(!fb)return;
+  if(_fbAsrRef){try{_fbAsrRef.off('value');}catch(e){}}
+  _fbAsrAttachedCompany=CURRENT_COMPANY;
+  _fbAsrRef=fb.ref('xiaobuddyClean/asr/reports');
+  _fbAsrRef.on('value',function(snap){
+    var incoming=snap.val()||{};
+    var changed=false;
+    Object.keys(incoming).forEach(function(k){
+      var e=incoming[k];
+      if(!e)return;
+      if(!asrDB.reports[k]){
+        asrDB.reports[k]=e;changed=true;
+      } else {
+        /* 用存檔時間戳判斷哪份較新：本機這筆比雲端新（代表剛存檔但還沒推送
+           成功），就保留本機內容並重新推一次，而不是被舊的雲端資料蓋掉。 */
+        var localTs=asrDB.reports[k]._ts||0;
+        var remoteTs=e._ts||0;
+        if(localTs>remoteTs){
+          _pushAsrReport(k,0);
+          return;
+        }
+        if(JSON.stringify(asrDB.reports[k])!==JSON.stringify(e)){
+          asrDB.reports[k]=e;changed=true;
+        }
+      }
+    });
+    if(changed){
+      try{
+        if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('asrDB'),JSON.stringify(asrDB));
+      }catch(ex){}
+      /* rdrT/rdrW 假設對應的 DOM 一定在畫面上（沒有 null 檢查），但這個監聽器
+         任何時候都可能觸發（使用者可能根本不在適性頁面），所以用 try/catch
+         包起來，避免雲端同步的背景更新把使用者正在別的頁面操作的畫面弄錯。 */
+      if(typeof ASR!=='undefined'){
+        try{if(ASR.rdrT)ASR.rdrT();}catch(ex){}
+        try{if(ASR.rdrW)ASR.rdrW();}catch(ex){}
+      }
+    }
+  });
+}
+
 asrLoad();
+_attachAsrFb();
 /* IDB 救援：若 localStorage 的 asrDB 空白，異步從 IndexedDB 復原 */
 (function(){
   var lsHasData=false;
@@ -5228,6 +5304,9 @@ var ASR = (function() {
     selT=null;selC=null;
     var childSec=document.getElementById('childSec'); if(childSec)childSec.style.display='none';
     var weekSec=document.getElementById('weekSec'); if(weekSec)weekSec.style.display='none';
+    /* 換公司等於換了雲端路徑前綴，監聽器要重新掛到新公司的 reports 路徑，
+       不然會一直看著舊公司的適性紀錄。 */
+    if(typeof _attachAsrFb==='function')_attachAsrFb();
     rdrT();
   }
   function refreshRoster(){
@@ -5804,6 +5883,7 @@ var ASR = (function() {
         _cpKeys.push(key);
       });
       asrSave();
+      _cpKeys.forEach(function(k){_pushAsrReport(k,0);});
       toast('✅ 已複製給 '+sel.length+' 個小孩！');
     };
   }
@@ -5815,7 +5895,7 @@ var ASR = (function() {
     var _saveKey=selYear+"_"+selTheme+"_"+fCtx.tid+fCtx.cid+fCtx.wno;
     asrDB.reports[_saveKey]={wno:fCtx.wno,reflection:r?r.value:'',parentFeedback:p?p.value:'',photos:fCtx.photos,cropStates:crpSt,acts:_actsArr,_ts:Date.now()};
     _idbDel(_draftKey());
-    asrSave();cf();rdrW();rdrC();toast('已儲存！');
+    asrSave();_pushAsrReport(_saveKey,0);cf();rdrW();rdrC();toast('已儲存！');
   }
   function setYrTh(){
     var yr=document.getElementById("selYrDrop").value;
@@ -6655,6 +6735,7 @@ var ASR = (function() {
       _rwKeys.push(key);
     });
     asrSave();
+    _rwKeys.forEach(function(k){_pushAsrReport(k,0);});
     rdrC();
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
@@ -17633,7 +17714,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 10:05</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 11:11</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
