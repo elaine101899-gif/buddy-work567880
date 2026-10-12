@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='179168831513219';
+  var BUILD='179178712418234';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5183,20 +5183,34 @@ var _xbdDB=(function(){
    換一台手機、或是清過瀏覽器資料，就會像是「紀錄不見了」——這正是老師
    反應「適性打完後又不見了」的根本原因。這裡比照日誌（diarySync）那一套
    「存檔時間戳＋雲端監聽」的作法，把紀錄真正同步到 Firebase。 */
+/* 照片（base64）體積非常大，絕對不能放進會整批同步的 reports 路徑——
+   不然光5筆紀錄帶照片就有11MB，只要任何一位老師存檔，所有裝置都要重新
+   下載＋解析這一大包，手機瀏覽器記憶體撐不住，就是老師反應「適性一直
+   跳出重複發生問題」（網頁一直當機重整）的直接原因。改成：
+   - xiaobuddyClean/asr/reports/{key}：只放文字內容（不含照片），輕量，
+     用來讓所有裝置都能即時看到「這週填了沒」「心得寫了什麼」。
+   - xiaobuddyClean/asr/photos/{key}：只放照片，不掛常駐監聽，只有真的
+     打開那個孩子那一週的表單時才單次抓取（_fetchAsrPhotos）。 */
 var _fbAsrAttachedCompany=null;
 var _fbAsrRef=null;
+function _stripPhotos(rep){
+  var copy={};
+  for(var k in rep){if(k!=='photos')copy[k]=rep[k];}
+  return copy;
+}
 function _pushAsrReport(key,retryCount){
   var fb=_fbInit();
   if(!fb)return;
   var rep=asrDB.reports[key];
   if(!rep)return;
+  var lightRep=_stripPhotos(rep);
   var done=false;
   var timer=setTimeout(function(){
     if(done)return;done=true;
     if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
   },8000);
   try{
-    fb.ref('xiaobuddyClean/asr/reports/'+key).set(rep,function(err){
+    fb.ref('xiaobuddyClean/asr/reports/'+key).set(lightRep,function(err){
       if(done)return;done=true;clearTimeout(timer);
       if(err){
         if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
@@ -5206,6 +5220,20 @@ function _pushAsrReport(key,retryCount){
     clearTimeout(timer);
     if(retryCount<1)setTimeout(function(){_pushAsrReport(key,retryCount+1);},4000);
   }
+  /* 照片走獨立路徑、獨立推送，失敗不影響文字內容已經存成功這件事 */
+  if(rep.photos&&Object.keys(rep.photos).length){
+    try{fb.ref('xiaobuddyClean/asr/photos/'+key).set(rep.photos);}catch(e2){}
+  }
+}
+/* 打開某個孩子某一週的表單時才呼叫：只抓這一筆的照片，不會把整批資料載進來 */
+function _fetchAsrPhotos(key,cb){
+  var fb=_fbInit();
+  if(!fb){cb(null);return;}
+  try{
+    fb.ref('xiaobuddyClean/asr/photos/'+key).once('value',function(snap){
+      cb(snap.val());
+    },function(){cb(null);});
+  }catch(e){cb(null);}
 }
 function _attachAsrFb(){
   if(_fbAsrAttachedCompany===CURRENT_COMPANY)return;
@@ -5231,8 +5259,11 @@ function _attachAsrFb(){
           _pushAsrReport(k,0);
           return;
         }
-        if(JSON.stringify(asrDB.reports[k])!==JSON.stringify(e)){
-          asrDB.reports[k]=e;changed=true;
+        /* 這個路徑現在不含照片，合併時要保留本機原本已經有的照片，
+           不能讓「沒有 photos 欄位」的雲端資料把本機的照片蓋掉。 */
+        var merged=Object.assign({},e,{photos:asrDB.reports[k].photos});
+        if(JSON.stringify(asrDB.reports[k])!==JSON.stringify(merged)){
+          asrDB.reports[k]=merged;changed=true;
         }
       }
     });
@@ -5778,6 +5809,32 @@ var ASR = (function() {
           });
         }catch(e){}
       });
+    }
+    /* 這台裝置本機（localStorage/IDB）都還沒有照片：可能是別的裝置填的，
+       照片只在雲端的 xiaobuddyClean/asr/photos/{key} 裡，單獨抓這一筆就好，
+       不會像以前那樣把全公司所有孩子的照片一次全部載進來。 */
+    if(typeof _fetchAsrPhotos==='function'){
+      var _fKey=selYear+'_'+selTheme+'_'+selT+selC+wno;
+      var _fTid=selT,_fCid=selC,_fWno=wno;
+      var _curHasPh0=Object.keys(fCtx.photos).some(function(ai){var ph=fCtx.photos[ai];return ph&&(ph[0]||ph[1]);});
+      if(!_curHasPh0){
+        _fetchAsrPhotos(_fKey,function(photos){
+          if(!photos)return;
+          if(fCtx.tid!==_fTid||fCtx.cid!==_fCid||fCtx.wno!==_fWno)return;
+          var curHasPh=Object.keys(fCtx.photos).some(function(ai){var ph=fCtx.photos[ai];return ph&&(ph[0]||ph[1]);});
+          if(curHasPh)return;
+          fCtx.photos=photos;
+          if(asrDB.reports[_fKey])asrDB.reports[_fKey].photos=photos;
+          asrSave();
+          Object.keys(photos).forEach(function(ai){
+            var ph=photos[ai]||[null,null];
+            var sl0=document.getElementById('asrSla'+ai);
+            var sl1=document.getElementById('asrSlb'+ai);
+            if(sl0&&ph[0])sl0.innerHTML=mkCrpBg(parseInt(ai),0,ph[0],crpSt[ai+'_0']||null);
+            if(sl1&&ph[1])sl1.innerHTML=mkCrpBg(parseInt(ai),1,ph[1],crpSt[ai+'_1']||null);
+          });
+        });
+      }
     }
   }
   function hp(ai,si,input){
@@ -17714,7 +17771,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/11 11:11</div>
+<div id="appVerTag" style="position:fixed;bottom:8px;left:10px;font-size:11px;color:#888;background:rgba(255,255,255,0.85);padding:2px 5px;border-radius:4px;pointer-events:none;z-index:9999;">10/12 14:38</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
