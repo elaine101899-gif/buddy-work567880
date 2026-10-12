@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013002148';
+  var BUILD='20261013003239';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18391,6 +18391,18 @@ var CHILDFEE=(function(){
     {k:'deposit',label:'訂金'},
     {k:'refund',label:'退費(請假)'}
   ];
+  /* 月費單自動帶入預設金額：月費/餐費每一期都有；註冊費/保險只有7月、1月（開學期）才收。
+     月費不同的5位小孩(跟延托/請假退費是同一批人)用15800，其他小孩用16415。
+     只在欄位還沒填過(undefined)的時候才帶入，存檔過的數字不會被蓋掉。 */
+  var SPECIAL_MONTHFEE_NAMES=['王品承','韓宇棠','蕭聖龍','黃晨維','呂婕瑄'];
+  function _applyFeeDefaults(rec,name,endM){
+    if(rec.monthFee===undefined)rec.monthFee=SPECIAL_MONTHFEE_NAMES.indexOf(name)>=0?15800:16415;
+    if(rec.mealFee===undefined)rec.mealFee=2000;
+    if(endM===7||endM===1){
+      if(rec.regFee===undefined)rec.regFee=18000;
+      if(rec.insurance===undefined)rec.insurance=848;
+    }
+  }
 
   function pad2(n){return (n<10?'0':'')+n;}
   function getKidsByCls(){
@@ -18484,6 +18496,7 @@ var CHILDFEE=(function(){
     var rec=stored?Object.assign({},stored):{};
     if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
     if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
+    _applyFeeDefaults(rec,k.name,_endM);
     var total=_total(rec);
     var paid=rec.payMethod&&rec.payMethod!=='未繳';
     var h='<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
@@ -18555,19 +18568,20 @@ var CHILDFEE=(function(){
   function setField(cid,field,val){
     var pk=periodKey(_endY,_endM);
     var rec=_getRec(pk,cid);
-    /* 使用者真的開始編輯這筆了，這時候才把延托費/退費的即時試算金額鎖進這筆帳單
-       （如果欄位本來就還沒填過），避免之後延托/請假資料再變動，帳單金額偷偷跟著變 */
+    var groups=getKidsByCls();
+    var found=null;
+    CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){if(k.id===cid)found=k.name;});});
+    /* 使用者真的開始編輯這筆了，這時候才把延托費/退費的即時試算金額、月費/餐費/註冊費/保險的
+       預設金額鎖進這筆帳單（如果欄位本來就還沒填過），避免之後資料再變動，帳單金額偷偷跟著變 */
     if(rec.extendFee===undefined&&field!=='extendFee'){
       try{if(typeof EXTENDCARE!=='undefined'){var et=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);if(et&&et[cid]!==undefined)rec.extendFee=et[cid];}}catch(e){}
     }
     if(rec.refund===undefined&&field!=='refund'){
       try{if(typeof CHILDLEAVE!=='undefined'){var rt=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);if(rt&&rt[cid]!==undefined)rec.refund=rt[cid];}}catch(e){}
     }
+    if(found)_applyFeeDefaults(rec,found,_endM);
     if(field==='payMethod'||field==='payDate'||field==='last5'||field==='receiptNo'||field==='note')rec[field]=val;
     else rec[field]=val===''?undefined:parseFloat(val);
-    var groups=getKidsByCls();
-    var found=null;
-    CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){if(k.id===cid)found=k.name;});});
     if(found)rec.name=found;
     save();pushRec(pk,cid);
     render();
@@ -19091,7 +19105,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013002148</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013003239</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
