@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012231145';
+  var BUILD='20261012231909';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18392,6 +18392,38 @@ var CHILDFEE=(function(){
     });
     return t;
   }
+  var _selCls='baby',_selChild=null;
+  function setCls(cls){_selCls=cls;_selChild=null;render();}
+  function setChild(cid){_selChild=cid||null;render();}
+  function _childCard(k,pk,extendTotals,refundTotals){
+    var stored=_peekRec(pk,k.id);
+    var rec=stored?Object.assign({},stored):{};
+    if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
+    if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
+    var total=_total(rec);
+    var paid=rec.payMethod&&rec.payMethod!=='未繳';
+    var h='<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+    h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
+    h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;">'+k.name+'</div>';
+    h+='<span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:'+(paid?'#e8f7f0':'#fdecea')+';color:'+(paid?'#1f7a54':'#c0392b')+';">'+(paid?'已繳':'未繳')+'</span>';
+    h+='<div style="margin-left:auto;font-weight:800;color:#2a6a3f;font-size:.92rem;">總金額 '+total+' 元</div>';
+    h+='</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
+    FIELDS.forEach(function(f){
+      h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
+    });
+    h+='</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px 10px;">';
+    h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">付款方式</div><select class="df-inp" style="width:100%;" onchange="CHILDFEE.setField(\''+k.id+'\',\'payMethod\',this.value)">';
+    ['','現金','匯款','未繳'].forEach(function(opt){h+='<option value="'+opt+'"'+(rec.payMethod===opt?' selected':'')+'>'+(opt||'（未選）')+'</option>';});
+    h+='</select></div>';
+    h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">付款日期</div><input type="date" class="df-inp" style="width:100%;" value="'+(rec.payDate||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'payDate\',this.value)"></div>';
+    h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">轉帳後五碼</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.last5||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'last5\',this.value)"></div>';
+    h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">收據編號</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.receiptNo||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'receiptNo\',this.value)"></div>';
+    h+='<div style="grid-column:span 2;"><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">備註</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.note||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'note\',this.value)"></div>';
+    h+='</div></div>';
+    return h;
+  }
   function render(){
     var wrap=document.getElementById('cf-root');
     if(!wrap)return;
@@ -18417,39 +18449,23 @@ var CHILDFEE=(function(){
     h+='</div>';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費／退費(請假) 兩欄第一次看這一期時會自動帶入系統算好的金額，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
 
-    CLSORDER.forEach(function(cls){
-      var kids=groups[cls];
-      if(!kids.length)return;
-      h+='<div class="df-lbl" style="margin-top:14px;">'+CLSLABEL[cls]+'</div>';
-      kids.forEach(function(k){
-        var stored=_peekRec(pk,k.id);
-        var rec=stored?Object.assign({},stored):{};
-        if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
-        if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
-        var total=_total(rec);
-        var paid=rec.payMethod&&rec.payMethod!=='未繳';
-        h+='<div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-        h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
-        h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;">'+k.name+'</div>';
-        h+='<span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:'+(paid?'#e8f7f0':'#fdecea')+';color:'+(paid?'#1f7a54':'#c0392b')+';">'+(paid?'已繳':'未繳')+'</span>';
-        h+='<div style="margin-left:auto;font-weight:800;color:#2a6a3f;font-size:.92rem;">總金額 '+total+' 元</div>';
-        h+='</div>';
-        h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
-        FIELDS.forEach(function(f){
-          h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
-        });
-        h+='</div>';
-        h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px 10px;">';
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">付款方式</div><select class="df-inp" style="width:100%;" onchange="CHILDFEE.setField(\''+k.id+'\',\'payMethod\',this.value)">';
-        ['','現金','匯款','未繳'].forEach(function(opt){h+='<option value="'+opt+'"'+(rec.payMethod===opt?' selected':'')+'>'+(opt||'（未選）')+'</option>';});
-        h+='</select></div>';
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">付款日期</div><input type="date" class="df-inp" style="width:100%;" value="'+(rec.payDate||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'payDate\',this.value)"></div>';
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">轉帳後五碼</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.last5||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'last5\',this.value)"></div>';
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">收據編號</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.receiptNo||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'receiptNo\',this.value)"></div>';
-        h+='<div style="grid-column:span 2;"><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">備註</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.note||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'note\',this.value)"></div>';
-        h+='</div></div>';
-      });
-    });
+    var kids=groups[_selCls]||[];
+    h+='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<select class="df-inp" style="width:auto;" id="cfClsSel" onchange="CHILDFEE.setCls(this.value)">';
+    CLSORDER.forEach(function(cls){h+='<option value="'+cls+'"'+(cls===_selCls?' selected':'')+'>'+CLSLABEL[cls]+'</option>';});
+    h+='</select>';
+    h+='<select class="df-inp" style="width:auto;" id="cfChildSel" onchange="CHILDFEE.setChild(this.value)">';
+    h+='<option value="">請選擇幼兒…</option>';
+    kids.forEach(function(k){h+='<option value="'+k.id+'"'+(k.id===_selChild?' selected':'')+'>'+k.name+'</option>';});
+    h+='</select>';
+    h+='</div>';
+
+    var chosen=kids.filter(function(k){return k.id===_selChild;})[0];
+    if(chosen){
+      h+=_childCard(chosen,pk,extendTotals,refundTotals);
+    } else {
+      h+='<div style="color:#aaa;text-align:center;padding:40px 0;">請先選擇班級與幼兒</div>';
+    }
     wrap.innerHTML=h;
   }
   function setField(cid,field,val){
@@ -18594,7 +18610,7 @@ var CHILDFEE=(function(){
     incRender();
   }
 
-  return{init:init,changeYM:changeYM,setField:setField,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -18671,7 +18687,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012231145</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012231909</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
