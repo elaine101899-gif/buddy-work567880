@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012235706';
+  var BUILD='20261012235925';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2378,9 +2378,9 @@ function _rosterKidsAsOf(cls,dateStr){
         <div class="hcard-bar"></div>
         <div class="hcard-img"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="34" r="20" fill="none" stroke="#2b90d9" stroke-width="3.5"/><line x1="32" y1="34" x2="32" y2="21" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="34" x2="41" y2="38" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="34" r="2.6" fill="#2b90d9"/><line x1="24" y1="8" x2="20" y2="13" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><line x1="40" y1="8" x2="44" y2="13" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/></svg></div>
         <div class="hcard-body">
-          <div class="hcard-lbl">Billing</div>
-          <div class="hcard-title">&#x1F4B0; 收費</div>
-          <div class="hcard-desc">延托幼兒 &#xB7; 幼兒請假記錄</div>
+          <div class="hcard-lbl">Admin</div>
+          <div class="hcard-title">&#x1F5C2;&#xFE0F; 行政</div>
+          <div class="hcard-desc">延托 &#xB7; 請假 &#xB7; 月費單 &#xB7; 每日回報</div>
         </div>
         <div class="hcard-arr">&#x203A;</div>
       </div>
@@ -3290,7 +3290,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 每日回報（老師請假追蹤＋育嬰留停＋一鍵產生回報文字） ═══ -->
 <div class="pg" id="pg-teacherleave">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">每日回報</span>
     <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
   </div>
@@ -3499,7 +3499,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-billing">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">收費</span>
+    <span class="btitle">行政</span>
   </div>
   <div style="padding:20px 16px;">
     <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
@@ -3529,7 +3529,7 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <div class="pg" id="pg-extendcare">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">延托幼兒</span>
     <button class="bbtn" style="margin-left:auto;" onclick="GO('extendcare-fee')">&#x1F4B0; 延托費總表</button>
   </div>
@@ -3550,7 +3550,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 幼兒請假記錄 ═══ -->
 <div class="pg" id="pg-childleave">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">幼兒請假記錄</span>
     <button class="bbtn" style="margin-left:auto;" onclick="GO('childleave-summary')">&#x1F4CA; 請假總表</button>
   </div>
@@ -3570,7 +3570,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 月費單 ═══ -->
 <div class="pg" id="pg-childfee">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">月費單</span>
     <button class="bbtn" style="margin-left:auto;" onclick="GO('childfee-income')">&#x1F4CA; 收入及退費總表</button>
   </div>
@@ -19044,7 +19044,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012235706</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012235925</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
