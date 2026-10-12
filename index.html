@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012230800';
+  var BUILD='20261012231145';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3543,6 +3543,16 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="cfinc-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="pin-ov" id="cfPinOv" style="display:none">
+  <div class="pin-box">
+    <h3>&#x1F512; 月費單</h3>
+    <p>只有園長跟主任能進入，請輸入密碼</p>
+    <input type="password" class="pin-inp" id="cfPinI" maxlength="6" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;">
+    <div class="pin-err" id="cfPinE" style="display:none;">密碼錯誤</div>
+    <button class="pin-ok" onclick="CHILDFEE.checkPw()">確認進入</button>
+    <button class="pin-cl" onclick="CHILDFEE.closePinOv()">取消</button>
   </div>
 </div>
 <div class="asr-modal" id="cfWdOv">
@@ -18258,6 +18268,31 @@ var CHILDLEAVE=(function(){
    整頁僅限解鎖後台（組長自己）才能看跟編輯，一般老師不會用到這個功能。 */
 var CHILDFEE=(function(){
   var db={records:{},withdrawals:{}};
+  /* 月費單單獨用一組密碼鎖（只有園長跟主任知道），跟其他頁面共用的組長後台密碼分開，
+     解鎖狀態只存在這次瀏覽的 session，重新整理頁面要重新輸入 */
+  var PW='080611';
+  var _unlocked=false;
+  function checkPw(){
+    var val=document.getElementById('cfPinI').value;
+    if(val===PW){
+      _unlocked=true;
+      closePinOv();
+      render();incRender();
+    } else {
+      document.getElementById('cfPinE').style.display='block';
+      document.getElementById('cfPinI').value='';
+    }
+  }
+  function openPinOv(){
+    document.getElementById('cfPinE').style.display='none';
+    document.getElementById('cfPinI').value='';
+    document.getElementById('cfPinOv').style.display='flex';
+    setTimeout(function(){var el=document.getElementById('cfPinI');if(el)el.focus();},100);
+  }
+  function closePinOv(){
+    var ov=document.getElementById('cfPinOv');
+    if(ov)ov.style.display='none';
+  }
   var _fbAttachedCompany=null;
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
@@ -18360,9 +18395,8 @@ var CHILDFEE=(function(){
   function render(){
     var wrap=document.getElementById('cf-root');
     if(!wrap)return;
-    var isAdm=document.body.classList.contains('adm');
-    if(!isAdm){
-      wrap.innerHTML='<div style="color:#aaa;text-align:center;padding:60px 0;font-size:.9rem;">🔒 月費單僅限解鎖後台後查看與編輯<br>請先點右下角鑰匙圖示解鎖</div>';
+    if(!_unlocked){
+      wrap.innerHTML='<div style="color:#aaa;text-align:center;padding:60px 0;font-size:.9rem;">🔒 月費單需要密碼才能查看<br><button class="bbtn" style="margin-top:14px;" onclick="CHILDFEE.openPinOv()">輸入密碼</button></div>';
       return;
     }
     var pk=periodKey(_endY,_endM);
@@ -18455,9 +18489,8 @@ var CHILDFEE=(function(){
   function incRender(){
     var wrap=document.getElementById('cfinc-root');
     if(!wrap)return;
-    var isAdm=document.body.classList.contains('adm');
-    if(!isAdm){
-      wrap.innerHTML='<div style="color:#aaa;text-align:center;padding:60px 0;font-size:.9rem;">🔒 僅限解鎖後台後查看<br>請先點右下角鑰匙圖示解鎖</div>';
+    if(!_unlocked){
+      wrap.innerHTML='<div style="color:#aaa;text-align:center;padding:60px 0;font-size:.9rem;">🔒 月費單需要密碼才能查看<br><button class="bbtn" style="margin-top:14px;" onclick="CHILDFEE.openPinOv()">輸入密碼</button></div>';
       return;
     }
     var pk=periodKey(_incEndY,_incEndM);
@@ -18561,7 +18594,7 @@ var CHILDFEE=(function(){
     incRender();
   }
 
-  return{init:init,changeYM:changeYM,setField:setField,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender};
+  return{init:init,changeYM:changeYM,setField:setField,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -18638,7 +18671,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012230800</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012231145</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
