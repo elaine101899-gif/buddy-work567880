@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012223556';
+  var BUILD='20261012224755';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4254,6 +4254,7 @@ var ADM = (function() {
     var dEls = document.querySelectorAll('.act-domain'), di;
     for (di = 0; di < dEls.length; di++) { dEls[di].classList.add('domain-editable'); dEls[di].addEventListener('click', onDomainClick); }
     if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
+    if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refresh)CHILDLEAVE.refresh();
   }
   function onDomainClick(e){ pickDomain(e.currentTarget, e); }
   function _onIndicatorClick(e){ pickIndicator(e.currentTarget, e); }
@@ -4328,6 +4329,7 @@ var ADM = (function() {
     var ed=document.querySelectorAll('.activity.edited');
     for(i=0;i<ed.length;i++){ed[i].classList.remove('edited');}
     if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
+    if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refresh)CHILDLEAVE.refresh();
     var dEls=document.querySelectorAll('.act-domain'),di;
     for(di=0;di<dEls.length;di++){dEls[di].classList.remove('domain-editable');dEls[di].removeEventListener('click',onDomainClick);}
     _closeDomainMenu();
@@ -17925,6 +17927,7 @@ var CHILDLEAVE=(function(){
     var wrap=document.getElementById('cl-root');
     if(!wrap)return;
     var groups=getKidsByCls();
+    var isAdm=document.body.classList.contains('adm');
     var dayRec=db.records[curViewKey]||{};
     var clCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].type;}).length;
 
@@ -17934,11 +17937,13 @@ var CHILDLEAVE=(function(){
     if(curViewKey!==todayKey())h+='<button class="cln-sig-btn" onclick="CHILDLEAVE.backToday()">回到今天</button>';
     h+='<span style="margin-left:auto;font-weight:800;color:#9a6a1a;font-size:.88rem;">當天共 '+clCount+' 人請假</span>';
     h+='</div>';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">點一下可以登記或修改這一天的請假紀錄</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+(isAdm?'🔓 後台模式：點一下可以登記或修改這一天的請假紀錄':'請假紀錄僅供查詢，不能修改')+'</div>';
 
     var any=false;
     CLSORDER.forEach(function(cls){
       var kids=groups[cls];
+      /* 一般模式下只列出當天真的有請假的小孩；只有解鎖後台才會列出全部名單方便登記/修改 */
+      if(!isAdm)kids=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].type;});
       if(!kids.length)return;
       any=true;
       h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
@@ -17951,14 +17956,15 @@ var CHILDLEAVE=(function(){
           bg='#fdf6ec';border=c;txt=c;tag=rec.type+(rec.note?'：'+rec.note:'');
         }
         var nameEsc=k.name.replace(/'/g,"\\'");
-        h+='<div onclick="CHILDLEAVE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        var clickAttr=isAdm?' onclick="CHILDLEAVE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;':' style="cursor:default;';
+        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
         h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
         h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
         h+='</div>';
       });
       h+='</div></div>';
     });
-    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">尚無幼兒名單</div>';
+    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">'+(isAdm?'尚無幼兒名單':'這一天沒有幼兒請假紀錄')+'</div>';
     wrap.innerHTML=h;
   }
   function viewDate(inputVal){
@@ -17981,6 +17987,7 @@ var CHILDLEAVE=(function(){
   }
   function pickType(t){_curEditType=t;_renderTypeBtns();}
   function openEdit(childId,name){
+    if(!document.body.classList.contains('adm'))return;
     _curEditChild={id:childId,name:name};
     _curEditKey=curViewKey;
     var rec=(db.records[curViewKey]||{})[childId]||{};
@@ -18240,7 +18247,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012223556</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012224755</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
