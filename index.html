@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013063726';
+  var BUILD='20261013064136';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3572,8 +3572,7 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">月費單</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>
-    <button class="bbtn" onclick="GO('childfee-income')">&#x1F4CA; 收入及退費總表</button>
+    <button class="bbtn" style="margin-left:auto;" onclick="GO('childfee-income')">&#x1F4CA; 收入及退費總表</button>
   </div>
   <div style="padding:14px 16px 40px;" id="cf-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -18593,6 +18592,7 @@ var CHILDFEE=(function(){
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_endY,_endM)+'）</span>';
     h+='</div>';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費／退費(請假) 兩欄第一次看這一期時會自動帶入系統算好的金額，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
+    h+='<button class="bbtn" style="margin-bottom:14px;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒（新生入托）</button>';
 
     var kids=groups[_selCls]||[];
     h+='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
@@ -19232,7 +19232,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013063726</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013064136</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
