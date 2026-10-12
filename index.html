@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013000605';
+  var BUILD='20261013001602';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4354,6 +4354,7 @@ var ADM = (function() {
     if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
     if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refresh)CHILDLEAVE.refresh();
     if(typeof CHILDFEE!=='undefined'){if(CHILDFEE.refresh)CHILDFEE.refresh();if(CHILDFEE.incRefresh)CHILDFEE.incRefresh();}
+    if(typeof TEACHERLEAVE!=='undefined'&&TEACHERLEAVE.refresh)TEACHERLEAVE.refresh();
   }
   function onDomainClick(e){ pickDomain(e.currentTarget, e); }
   function _onIndicatorClick(e){ pickIndicator(e.currentTarget, e); }
@@ -4430,6 +4431,7 @@ var ADM = (function() {
     if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
     if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refresh)CHILDLEAVE.refresh();
     if(typeof CHILDFEE!=='undefined'){if(CHILDFEE.refresh)CHILDFEE.refresh();if(CHILDFEE.incRefresh)CHILDFEE.incRefresh();}
+    if(typeof TEACHERLEAVE!=='undefined'&&TEACHERLEAVE.refresh)TEACHERLEAVE.refresh();
     var dEls=document.querySelectorAll('.act-domain'),di;
     for(di=0;di<dEls.length;di++){dEls[di].classList.remove('domain-editable');dEls[di].removeEventListener('click',onDomainClick);}
     _closeDomainMenu();
@@ -16670,8 +16672,7 @@ var BODYTEMP=(function(){
     _fillTimer=setInterval(function(){autoFillToday();render();},5*60*1000);
   }
   /* 給每日回報用：今天每位在職老師的請假/體溫狀況 */
-  function todaySummary(){
-    var now=new Date(),ty=now.getFullYear()-1911,tm=now.getMonth()+1,td=now.getDate();
+  function summaryForDate(ty,tm,td){
     var out=[];
     SIGNERS.forEach(function(name){
       var k=name+'_'+ty+'_'+tm;
@@ -16682,7 +16683,11 @@ var BODYTEMP=(function(){
     });
     return out;
   }
-  return{init:init,show:show,selectTeacher:selectTeacher,changeT:changeT,changeYM:changeYM,setVal:setVal,setLeave:setLeave,setOffType:setOffType,download:download,downloadMonth:downloadMonth,todaySummary:todaySummary};
+  function todaySummary(){
+    var now=new Date();
+    return summaryForDate(now.getFullYear()-1911,now.getMonth()+1,now.getDate());
+  }
+  return{init:init,show:show,selectTeacher:selectTeacher,changeT:changeT,changeYM:changeYM,setVal:setVal,setLeave:setLeave,setOffType:setOffType,download:download,downloadMonth:downloadMonth,todaySummary:todaySummary,summaryForDate:summaryForDate};
 })();
 
 /* ── 教學課程雲端同步（admin 後台編輯即時同步到所有裝置） ── */
@@ -18748,16 +18753,29 @@ var TEACHERLEAVE=(function(){
     attachFb();
   }
 
+  var curViewKey=todayKey();
+  function keyToDateInputVal(k){var p=k.split('_');return (parseInt(p[0],10)+1911)+'-'+p[1]+'-'+p[2];}
+  function dateInputValToKey(v){var p=v.split('-');return (parseInt(p[0],10)-1911)+'_'+p[1]+'_'+p[2];}
+  function viewDate(v){if(!v)return;curViewKey=dateInputValToKey(v);render();}
+  function backToday(){curViewKey=todayKey();render();}
+
   function render(){
     var wrap=document.getElementById('tl-root');
     if(!wrap)return;
-    var dk=todayKey();
-    var iso=todayIso();
+    var dk=curViewKey;
+    var iso=keyToDateInputVal(dk);
+    var isToday=(dk===todayKey());
+    var isAdm=document.body.classList.contains('adm');
     var todayRec=db.today[dk]||{};
     var parentalSet=_activeParentalSet(iso);
     var teachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
 
-    var h='<div style="font-size:.8rem;color:#888;margin-bottom:10px;">今天請假的老師要自己手動勾選（不會從體溫管理自動帶入，避免老師還沒key資料造成誤判）。已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
+    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
+    h+='<input type="date" class="df-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
+    if(!isToday)h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.backToday()">回到今天</button>';
+    h+='</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin:10px 0;">請假老師要手動勾選新增（不會自動從體溫管理帶入）。'+(isAdm?'🔓 後台模式：可以新增/移除請假老師。':'要新增或移除請假老師，請先解鎖後台。')+' 已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
     h+='<div class="df-lbl">老師出缺勤</div>';
     if(!teachers.length){
       h+='<div style="color:#aaa;text-align:center;padding:20px 0;">目前沒有在職老師名單</div>';
@@ -18765,16 +18783,17 @@ var TEACHERLEAVE=(function(){
       h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
       teachers.forEach(function(name,i){
         var t=todayRec[name]||{};
-        h+='<div style="padding:10px 0;'+(i<teachers.length-1?'border-bottom:1px solid #eee;':'')+'">';
-        h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-        h+='<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#2d3057;min-width:90px;"><input type="checkbox" '+(t.onLeave?'checked':'')+' onchange="TEACHERLEAVE.toggleLeave(\''+name+'\',this.checked)">'+name+'</label>';
+        h+='<div style="padding:10px 0;overflow-x:auto;'+(i<teachers.length-1?'border-bottom:1px solid #eee;':'')+'">';
+        h+='<div style="display:flex;align-items:center;gap:8px;white-space:nowrap;">';
+        h+='<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#2d3057;flex:0 0 auto;"><input type="checkbox" '+(t.onLeave?'checked':'')+' onchange="TEACHERLEAVE.toggleLeave(\''+name+'\',this.checked)">'+name+'</label>';
         if(t.onLeave){
-          h+='<select class="df-inp" style="width:auto;" onchange="TEACHERLEAVE.setLeaveType(\''+name+'\',this.value)">';
-          h+='<option value="">請選假別</option>';
+          h+='<select class="df-inp" style="width:84px;flex:0 0 auto;" onchange="TEACHERLEAVE.setLeaveType(\''+name+'\',this.value)">';
+          h+='<option value="">假別</option>';
           LEAVE_TYPE_OPTS.forEach(function(opt){h+='<option value="'+opt+'"'+(t.leaveType===opt?' selected':'')+'>'+opt+'</option>';});
           h+='</select>';
-          h+='<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:.78rem;color:#666;"><input type="checkbox" '+(t.formWritten?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'formWritten\',this.checked)">已寫假單</label>';
-          h+='<label style="display:flex;align-items:center;gap:4px;font-size:.78rem;color:#666;"><input type="checkbox" '+(t.printed?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'printed\',this.checked)">已列印交接單</label>';
+          h+='<input type="text" class="df-inp" style="width:70px;flex:0 0 auto;" placeholder="例如半天" value="'+(t.note||'').replace(/"/g,'&quot;')+'" onchange="TEACHERLEAVE.setNote(\''+name+'\',this.value)">';
+          h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.formWritten?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'formWritten\',this.checked)">假單</label>';
+          h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.printed?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'printed\',this.checked)">交接單</label>';
         }
         h+='</div></div>';
       });
@@ -18806,20 +18825,31 @@ var TEACHERLEAVE=(function(){
     return db.today[dk][name];
   }
   function toggleLeave(name,checked){
-    var dk=todayKey();
+    if(!document.body.classList.contains('adm')){
+      alert('要新增或移除請假老師，請先點右下角鑰匙解鎖後台。');
+      render();
+      return;
+    }
+    var dk=curViewKey;
     var t=_getToday(dk,name);
     t.onLeave=checked;
     save();pushToday(dk,name);
     render();
   }
   function setLeaveType(name,val){
-    var dk=todayKey();
+    var dk=curViewKey;
     var t=_getToday(dk,name);
     t.leaveType=val;
     save();pushToday(dk,name);
   }
+  function setNote(name,val){
+    var dk=curViewKey;
+    var t=_getToday(dk,name);
+    t.note=val;
+    save();pushToday(dk,name);
+  }
   function toggleFlag(name,field,checked){
-    var dk=todayKey();
+    var dk=curViewKey;
     var t=_getToday(dk,name);
     t[field]=checked;
     save();pushToday(dk,name);
@@ -18860,9 +18890,8 @@ var TEACHERLEAVE=(function(){
 
   var REPORT_LEAVE_ORDER=['公假','病假','特休','喪假','事假','家庭照顧假','婚假','生理假','公傷假','安胎假','福利假','產檢假'];
   function buildReportText(){
-    var now=new Date();
-    var dateStr=now.getFullYear()+'/'+pad2(now.getMonth()+1)+'/'+pad2(now.getDate());
-    var dk=todayKey(),iso=todayIso();
+    var dk=curViewKey,iso=keyToDateInputVal(dk);
+    var dateStr=iso.replace(/-/g,'/');
     var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
     var companyName=isBambino?'邦比諾':'小布迪';
     var kitchenName=isBambino?'林素珍':'黃郁婷';
@@ -18916,7 +18945,8 @@ var TEACHERLEAVE=(function(){
     L.push('育嬰留停：'+plist.map(function(p){return nick(p.name)+'('+mdFromIso(p.start)+'-'+mdFromIso(p.end)+')';}).join('、'));
     L.push('');
 
-    var btSummary=(typeof BODYTEMP!=='undefined')?BODYTEMP.todaySummary():[];
+    var keyParts=dk.split('_');
+    var btSummary=(typeof BODYTEMP!=='undefined'&&BODYTEMP.summaryForDate)?BODYTEMP.summaryForDate(parseInt(keyParts[0],10),parseInt(keyParts[1],10),parseInt(keyParts[2],10)):[];
     var feverCount=btSummary.filter(function(t){return t.fever;}).length;
     L.push('🔴本日超過38.0體溫的老師人數：'+feverCount+'（請依據規定不能進班）');
     L.push('');
@@ -18930,7 +18960,9 @@ var TEACHERLEAVE=(function(){
     onLeave.forEach(function(n){
       var lt=(todayRec[n]&&todayRec[n].leaveType)||'其他';
       if(!byType[lt])byType[lt]=[];
-      byType[lt].push(nick(n));
+      var label=nick(n);
+      if(todayRec[n]&&todayRec[n].note)label+='('+todayRec[n].note+')';
+      byType[lt].push(label);
     });
     REPORT_LEAVE_ORDER.forEach(function(lt){
       var arr=byType[lt]||[];
@@ -18972,9 +19004,9 @@ var TEACHERLEAVE=(function(){
     _flashCopied(ok);
   }
 
-  function init(){load();render();}
+  function init(){curViewKey=todayKey();load();render();}
 
-  return{init:init,toggleLeave:toggleLeave,setLeaveType:setLeaveType,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -19051,7 +19083,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013000605</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013001602</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
