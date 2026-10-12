@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012215109';
+  var BUILD='20261012215959';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4193,6 +4193,7 @@ var ADM = (function() {
     for (i = 0; i < a.length; i++) { setupM(a[i]); }
     var dEls = document.querySelectorAll('.act-domain'), di;
     for (di = 0; di < dEls.length; di++) { dEls[di].classList.add('domain-editable'); dEls[di].addEventListener('click', onDomainClick); }
+    if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
   }
   function onDomainClick(e){ pickDomain(e.currentTarget, e); }
   function _onIndicatorClick(e){ pickIndicator(e.currentTarget, e); }
@@ -4266,6 +4267,7 @@ var ADM = (function() {
     for(i=0;i<ab.length;i++){ab[i].parentNode.removeChild(ab[i]);}
     var ed=document.querySelectorAll('.activity.edited');
     for(i=0;i<ed.length;i++){ed[i].classList.remove('edited');}
+    if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refresh)EXTENDCARE.refresh();
     var dEls=document.querySelectorAll('.act-domain'),di;
     for(di=0;di<dEls.length;di++){dEls[di].classList.remove('domain-editable');dEls[di].removeEventListener('click',onDomainClick);}
     _closeDomainMenu();
@@ -17388,6 +17390,7 @@ var EXTENDCARE=(function(){
     if(!wrap)return;
     var groups=getKidsByCls();
     var isToday=(curViewKey===todayKey());
+    var isAdm=document.body.classList.contains('adm');
     var dayRec=db.records[curViewKey]||{};
     var ecCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].status;}).length;
 
@@ -17398,10 +17401,13 @@ var EXTENDCARE=(function(){
     h+='<span style="margin-left:auto;font-weight:800;color:#a5680a;font-size:.88rem;">當天共 '+ecCount+' 人次延托</span>';
     h+='</div>';
 
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+(isToday?'點一下開始延托，再點一下記錄離園':'點一下可以補登或修改這一天的紀錄')+'</div>';
+    var hint=isToday?'點一下開始延托，再點一下記錄離園':(isAdm?'🔓 後台模式：點一下可以補登或修改這一天的紀錄':'歷史紀錄僅供查詢，不能修改');
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+hint+'</div>';
     var any=false;
     CLSORDER.forEach(function(cls){
       var kids=groups[cls];
+      /* 一般模式下，過去日期只列出當天真的有延托的小孩；只有解鎖後台才會列出全部名單方便補登 */
+      if(!isToday&&!isAdm)kids=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].status;});
       if(!kids.length)return;
       any=true;
       h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
@@ -17413,7 +17419,11 @@ var EXTENDCARE=(function(){
         if(status==='active'){bg='#fff6e0';border='#e8a030';txt='#a5680a';tag='延托中 '+(rec.start||'');}
         else if(status==='done'){bg='#e8f7f0';border='#36b27e';txt='#1f7a54';tag=(rec.start||'')+' ～ '+(rec.end||'');}
         var nameEsc=k.name.replace(/'/g,"\\'");
-        var clickAttr=isToday?' onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;':' onclick="EXTENDCARE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
+        var canClick=isToday||isAdm;
+        var clickAttr;
+        if(isToday)clickAttr=' onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
+        else if(isAdm)clickAttr=' onclick="EXTENDCARE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
+        else clickAttr=' style="cursor:default;';
         h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
         h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
         h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
@@ -17421,7 +17431,7 @@ var EXTENDCARE=(function(){
       });
       h+='</div></div>';
     });
-    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">尚無幼兒名單</div>';
+    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">'+(isToday?'尚無幼兒名單':'這一天沒有幼兒延托紀錄')+'</div>';
     wrap.innerHTML=h;
   }
   function viewDate(inputVal){
@@ -17506,6 +17516,7 @@ var EXTENDCARE=(function(){
 
   var _curEditChild=null,_curEditKey=null;
   function openEdit(childId,name){
+    if(!document.body.classList.contains('adm'))return;
     _curEditChild={id:childId,name:name};
     _curEditKey=curViewKey;
     var rec=(db.records[curViewKey]||{})[childId]||{};
@@ -17767,7 +17778,7 @@ var EXTENDCARE=(function(){
     else{w.onload=doPrint;setTimeout(doPrint,900);}
   }
 
-  return{init:init,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips};
+  return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -17844,7 +17855,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012215109</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012215959</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
