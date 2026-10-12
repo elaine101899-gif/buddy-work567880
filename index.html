@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012231909';
+  var BUILD='20261012232210';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -17419,14 +17419,19 @@ var EXTENDCARE=(function(){
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
   /* 延托分級：A=17:30-18:00算98元，超過18:00多收147元；B=17:15-17:45算98元，超過17:45多收147元
-     依家長確認的名單勾選結果整理，未列入的小孩維持原本固定98元計算 */
-  var TIER_BY_NAME={
+     小布迪：依家長確認的名單勾選結果整理，未列入的小孩維持原本固定98元計算(不分級)。
+     邦比諾：只有陳瑞恩、林敬翰、洪羽星、洪羽太是A級(17:30起)，其餘幼兒一律是B級(17:15起)預設值。 */
+  var TIER_BY_NAME_XBD={
     '江尚騰':'B','杜予安':'B','林育陞':'B','吳澈':'B','陳芃佑':'B','蔡睿妍':'B','杜予宇':'B','鄭允宸':'B','吳苡僑':'B','謝弘昊':'B',
     '王品承':'A','胡語心':'A','林昕妍':'B','何唯榛':'A','許恩愷':'B','曾語洋':'A','韓宇棠':'A','宋依澄':'B','張宇睿':'A','黃芯悅':'A','陳宥維':'B','廖玥忻':'B','吳宇祈':'B',
     '劉煦琳':'A','吳品希':'A','呂婕瑄':'A','陳嶼樂':'A','黃沐霏':'B','蔡沐妘':'A','詹瑾侑':'A','江品嬡':'B','林資振':'A','蕭知熙':'B','蔡沛紜':'A','黃晨維':'A','蕭聖龍':'A','歐奕亨':'A','蕭昀婕':'A','吳雨恩':'A','江昀諭':'B','徐銳安':'B','蕭牧恒':'A','蘇思瑾':'B','宋沐澄':'A','陳希寧':'A','李岳恩':'A','林品叡':'B','黃珞涵':'B'
   };
+  var TIER_BY_NAME_BAMBINO={
+    '陳瑞恩':'A','林敬翰':'A','洪羽星':'A','洪羽太':'A'
+  };
   function _tierFee(name,endTime,status){
-    var tier=TIER_BY_NAME[name];
+    var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
+    var tier=isBambino?(TIER_BY_NAME_BAMBINO[name]||'B'):TIER_BY_NAME_XBD[name];
     if(!tier||status==='active'||!endTime)return 98;
     var p=endTime.split(':');
     var mins=parseInt(p[0],10)*60+parseInt(p[1],10);
@@ -18687,7 +18692,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012231909</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012232210</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
