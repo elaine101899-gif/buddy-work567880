@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012221545';
+  var BUILD='20261012222642';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3524,7 +3524,7 @@ function _rosterKidsAsOf(cls,dateStr){
     <h3>&#x1F915; <span id="clEditName"></span> 請假登記</h3>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">日期：<span id="clEditDate"></span></div>
     <div style="font-size:.78rem;color:#888;margin-bottom:8px;">假別</div>
-    <div id="clTypeBtns" style="display:flex;gap:8px;margin-bottom:10px;"></div>
+    <div id="clTypeBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">備註（選填）</div>
     <input type="text" class="asr-mi" id="clEditNote" placeholder="例如：發燒、旅遊...">
     <div class="asr-mbtns">
@@ -17849,8 +17849,17 @@ var CHILDLEAVE=(function(){
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
-  var TYPES=['事假','病假','其他'];
-  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','其他':'#7a7a8a'};
+  var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課'];
+  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f'};
+  /* 退費規則（2026-10 確認）：
+     事假、停托：不退費（停托之後規則太複雜，先不計算）
+     病假、住院：請假要「連續跨過一個完整六日」（六日前後都還有平日在請假，證明真的連續生病，
+       不是剛好請到週末結束）才退費，退費天數只算六日前後連起來的「平日」，六日本身不算也不退費。
+       沒跨過六日的話，整段都不退費。一天 67 元。
+     腸病毒、腸-停課：不用管連續或跨六日，平日請假就退，一天 259 元。 */
+  var REFUND_RATE={'病假':67,'住院':67,'腸病毒':259,'腸-停課':259,'事假':0,'停托':0};
+  var SICK_TYPES=['病假','住院'];
+  var FLAT_REFUND_TYPES=['腸病毒','腸-停課'];
 
   function pad2(n){return (n<10?'0':'')+n;}
   function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
@@ -17965,7 +17974,7 @@ var CHILDLEAVE=(function(){
     TYPES.forEach(function(t){
       var on=(_curEditType===t);
       var c=TYPE_COLOR[t];
-      h+='<button type="button" class="asr-mok" onclick="CHILDLEAVE.pickType(\''+t+'\')" style="flex:1;background:'+(on?c:'#eee')+';color:'+(on?'#fff':'#666')+';">'+t+'</button>';
+      h+='<button type="button" class="asr-mok" onclick="CHILDLEAVE.pickType(\''+t+'\')" style="flex:1 1 28%;background:'+(on?c:'#eee')+';color:'+(on?'#fff':'#666')+';">'+t+'</button>';
     });
     wrap.innerHTML=h;
   }
@@ -18024,12 +18033,60 @@ var CHILDLEAVE=(function(){
     return{startRoc:startRoc,startMo:startMo,startDate:new Date(ceStartYr,startMo-1,27),endDate:new Date(ceEndYr,endMo-1,26)};
   }
   function _sumDateKey(d){return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
+  /* 掃過該幼兒「全部」請假紀錄（不限這一期），抓出指定假別的日期，由舊到新排序 */
+  function _fullTypeDatesForChild(cid,types){
+    var out=[];
+    Object.keys(db.records).forEach(function(dk){
+      var rec=db.records[dk][cid];
+      if(rec&&rec.type&&types.indexOf(rec.type)>=0){
+        var p=dk.split('_');
+        var dt=new Date(parseInt(p[0],10)+1911,parseInt(p[1],10)-1,parseInt(p[2],10));
+        out.push({date:dt,dateKey:dk});
+      }
+    });
+    out.sort(function(a,b){return a.date-b.date;});
+    return out;
+  }
+  /* d1、d2 之間（不含頭尾）如果全部都是六或日，回傳 true──代表這兩天中間只隔了一個週末，算連續 */
+  function _onlyWeekendBetween(d1,d2){
+    var t=new Date(d1.getTime());
+    for(;;){
+      t.setDate(t.getDate()+1);
+      if(t>=d2)break;
+      var wd=t.getDay();
+      if(wd!==0&&wd!==6)return false;
+    }
+    return true;
+  }
+  /* 病假／住院：把日期串成一段一段連續請假，只有「中間確實跨過一個完整六日」
+     （前後都還有平日請假）的那一段，整段平日才算退費天數 */
+  function _eligibleSickDateKeys(cid){
+    var dates=_fullTypeDatesForChild(cid,SICK_TYPES);
+    var eligible={};
+    var i=0;
+    while(i<dates.length){
+      var run=[dates[i]];
+      var j=i+1;
+      while(j<dates.length&&_onlyWeekendBetween(run[run.length-1].date,dates[j].date)){
+        run.push(dates[j]);j++;
+      }
+      var bridgesWeekend=false;
+      for(var k2=1;k2<run.length;k2++){
+        var gapDays=Math.round((run[k2].date-run[k2-1].date)/86400000);
+        if(gapDays>1){bridgesWeekend=true;break;}
+      }
+      if(bridgesWeekend)run.forEach(function(e){eligible[e.dateKey]=true;});
+      i=j;
+    }
+    return eligible;
+  }
   function _sumCollect(endRoc,endMo){
     var range=_sumPeriodRange(endRoc,endMo);
     var groups=getKidsByCls();
     var clsOf={};
     CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){clsOf[k.id]=cls;});});
     var byChild={};
+    var sickEligCache={};
     var d=new Date(range.startDate.getTime());
     while(d<=range.endDate){
       var k=_sumDateKey(d);
@@ -18037,8 +18094,16 @@ var CHILDLEAVE=(function(){
       Object.keys(dayRec).forEach(function(cid){
         var rec=dayRec[cid];
         if(!rec||!rec.type)return;
-        if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[]};
-        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||''});
+        if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[],refundTotal:0};
+        var refund=0;
+        if(FLAT_REFUND_TYPES.indexOf(rec.type)>=0){
+          refund=REFUND_RATE[rec.type]||0;
+        } else if(SICK_TYPES.indexOf(rec.type)>=0){
+          if(!sickEligCache[cid])sickEligCache[cid]=_eligibleSickDateKeys(cid);
+          if(sickEligCache[cid][k])refund=REFUND_RATE[rec.type]||0;
+        }
+        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||'',refund:refund});
+        byChild[cid].refundTotal+=refund;
       });
       d.setDate(d.getDate()+1);
     }
@@ -18070,14 +18135,17 @@ var CHILDLEAVE=(function(){
       return;
     }
     var curCls='';
+    var grandTotal=0;
+    col.rows.forEach(function(row){grandTotal+=row.refundTotal;});
+    h+='<div style="text-align:right;font-weight:800;color:#9a6a1a;font-size:.92rem;margin:6px 0 14px;">這一期預估退費總計：'+grandTotal+' 元</div>';
     col.rows.forEach(function(row){
       if(row.cls!==curCls){curCls=row.cls;h+='<div class="df-lbl" style="margin-top:16px;">'+(CLSLABEL[curCls]||'未分班')+'</div>';}
       h+='<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-      h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:6px;">'+row.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+row.entries.length+' 天</span></div>';
+      h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:6px;">'+row.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+row.entries.length+' 天</span>'+(row.refundTotal?'　<span style="font-weight:700;font-size:.78rem;color:#9a6a1a;">退費 '+row.refundTotal+' 元</span>':'')+'</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;">';
       row.entries.forEach(function(e){
         var c=TYPE_COLOR[e.type]||'#888';
-        h+='<span><b style="color:#2C2820;">'+e.date+'</b> <span style="color:'+c+';font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+'</span>';
+        h+='<span><b style="color:#2C2820;">'+e.date+'</b> <span style="color:'+c+';font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+(e.refund?'<span style="color:#9a6a1a;font-weight:700;"> 退'+e.refund+'元</span>':'<span style="color:#ccc;"> 不退</span>')+'</span>';
       });
       h+='</div></div>';
     });
@@ -18171,7 +18239,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012221545</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012222642</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
