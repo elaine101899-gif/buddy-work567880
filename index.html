@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012224755';
+  var BUILD='20261012225556';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -17852,17 +17852,27 @@ var CHILDLEAVE=(function(){
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
-  var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課'];
-  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f'};
+  var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課','颱風假','豪雨假'];
+  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f','颱風假':'#2b6ca3','豪雨假':'#2b6ca3'};
   /* 退費規則（2026-10 確認）：
      事假、停托：不退費（停托之後規則太複雜，先不計算）
      病假、住院：請假要「連續跨過一個完整六日」（六日前後都還有平日在請假，證明真的連續生病，
        不是剛好請到週末結束）才退費，退費天數只算六日前後連起來的「平日」，六日本身不算也不退費。
-       沒跨過六日的話，整段都不退費。一天 67 元。
-     腸病毒、腸-停課：不用管連續或跨六日，平日請假就退，一天 259 元。 */
-  var REFUND_RATE={'病假':67,'住院':67,'腸病毒':259,'腸-停課':259,'事假':0,'停托':0};
+       沒跨過六日的話，整段都不退費。一天 67 元（所有人都一樣）。
+     腸病毒、腸-停課：不用管連續或跨六日，平日請假就退，一天 259 元。
+     颱風假、豪雨假：跟腸病毒一樣不用管連續，平日請假就退，一天 324 元。
+     月費不同的 5 位小孩（王品承、韓宇棠、蕭聖龍、黃晨維、呂婕瑄）退費金額不同：
+       腸病毒/腸-停課 一天 251 元、颱風假/豪雨假 一天 314 元，病假/住院一樣是 67 元。 */
   var SICK_TYPES=['病假','住院'];
-  var FLAT_REFUND_TYPES=['腸病毒','腸-停課'];
+  var FLAT_REFUND_TYPES=['腸病毒','腸-停課','颱風假','豪雨假'];
+  var SPECIAL_FEE_NAMES=['王品承','韓宇棠','蕭聖龍','黃晨維','呂婕瑄'];
+  function _refundRate(name,type){
+    if(SICK_TYPES.indexOf(type)>=0)return 67;
+    var special=SPECIAL_FEE_NAMES.indexOf(name)>=0;
+    if(type==='腸病毒'||type==='腸-停課')return special?251:259;
+    if(type==='颱風假'||type==='豪雨假')return special?314:324;
+    return 0;
+  }
 
   function pad2(n){return (n<10?'0':'')+n;}
   function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
@@ -18105,10 +18115,10 @@ var CHILDLEAVE=(function(){
         if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[],refundTotal:0};
         var refund=0;
         if(FLAT_REFUND_TYPES.indexOf(rec.type)>=0){
-          refund=REFUND_RATE[rec.type]||0;
+          refund=_refundRate(rec.name,rec.type);
         } else if(SICK_TYPES.indexOf(rec.type)>=0){
           if(!sickEligCache[cid])sickEligCache[cid]=_eligibleSickDateKeys(cid);
-          if(sickEligCache[cid][k])refund=REFUND_RATE[rec.type]||0;
+          if(sickEligCache[cid][k])refund=_refundRate(rec.name,rec.type);
         }
         byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||'',refund:refund});
         byChild[cid].refundTotal+=refund;
@@ -18247,7 +18257,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012224755</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012225556</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
