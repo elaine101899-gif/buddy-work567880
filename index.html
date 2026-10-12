@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012215959';
+  var BUILD='20261012221545';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2372,14 +2372,14 @@ function _rosterKidsAsOf(cls,dateStr){
         <div class="hcard-arr">&#x203A;</div>
       </div>
     </div>
-    <div class="hcard c-sky" onclick="GO('extendcare')">
+    <div class="hcard c-sky" onclick="GO('billing')">
       <div class="hcard-in">
         <div class="hcard-bar"></div>
         <div class="hcard-img"><svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="34" r="20" fill="none" stroke="#2b90d9" stroke-width="3.5"/><line x1="32" y1="34" x2="32" y2="21" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><line x1="32" y1="34" x2="41" y2="38" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><circle cx="32" cy="34" r="2.6" fill="#2b90d9"/><line x1="24" y1="8" x2="20" y2="13" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/><line x1="40" y1="8" x2="44" y2="13" stroke="#2b90d9" stroke-width="3" stroke-linecap="round"/></svg></div>
         <div class="hcard-body">
-          <div class="hcard-lbl">Extended Care</div>
-          <div class="hcard-title">&#x1F9F8; 延托幼兒</div>
-          <div class="hcard-desc">延托起訖時段記錄<br>全機同步</div>
+          <div class="hcard-lbl">Billing</div>
+          <div class="hcard-title">&#x1F4B0; 收費</div>
+          <div class="hcard-desc">延托幼兒 &#xB7; 幼兒請假記錄</div>
         </div>
         <div class="hcard-arr">&#x203A;</div>
       </div>
@@ -3457,9 +3457,31 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
 </div>
 <!-- ═══ 延托幼兒 ═══ -->
-<div class="pg" id="pg-extendcare">
+<!-- ═══ 收費 HUB ═══ -->
+<div class="pg" id="pg-billing">
   <div class="bbar">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
+    <span class="btitle">收費</span>
+  </div>
+  <div style="padding:20px 16px;">
+    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div onclick="GO('extendcare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90d9;">
+        <span style="font-size:1.8rem;">&#x1F9F8;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">延托幼兒</div><div style="font-size:.78rem;color:#888;margin-top:2px;">延托起訖時段記錄，全機同步</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="GO('childleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
+        <span style="font-size:1.8rem;">&#x1F915;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">幼兒請假記錄</div><div style="font-size:.78rem;color:#888;margin-top:2px;">記錄請假天數與假別，供退費試算</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-extendcare">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
     <span class="btitle">延托幼兒</span>
     <button class="bbtn" style="margin-left:auto;" onclick="GO('extendcare-fee')">&#x1F4B0; 延托費總表</button>
   </div>
@@ -3475,6 +3497,41 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="ecfee-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<!-- ═══ 幼兒請假記錄 ═══ -->
+<div class="pg" id="pg-childleave">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 收費</button>
+    <span class="btitle">幼兒請假記錄</span>
+    <button class="bbtn" style="margin-left:auto;" onclick="GO('childleave-summary')">&#x1F4CA; 請假總表</button>
+  </div>
+  <div style="padding:14px 16px 40px;" id="cl-root">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="pg" id="pg-childleave-summary">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('childleave')">&#x2190; 幼兒請假記錄</button>
+    <span class="btitle">請假總表</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="clsum-root">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="clEditOv">
+  <div class="asr-mbox">
+    <h3>&#x1F915; <span id="clEditName"></span> 請假登記</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">日期：<span id="clEditDate"></span></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:8px;">假別</div>
+    <div id="clTypeBtns" style="display:flex;gap:8px;margin-bottom:10px;"></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">備註（選填）</div>
+    <input type="text" class="asr-mi" id="clEditNote" placeholder="例如：發燒、旅遊...">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="CHILDLEAVE.closeEdit()">取消</button>
+      <button class="asr-mok" style="background:#e85a5a;" onclick="CHILDLEAVE.deleteEdit()">&#x1F5D1; 刪除這筆</button>
+      <button class="asr-mok" onclick="CHILDLEAVE.saveEdit()">&#x2713; 儲存</button>
+    </div>
   </div>
 </div>
 <div class="asr-modal" id="ecDepartOv">
@@ -3891,6 +3948,8 @@ function GO(id) {
   if (id === 'monthcheck') { if (typeof MONTHCHECK !== 'undefined') MONTHCHECK.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
+  if (id === 'childleave') { if (typeof CHILDLEAVE !== 'undefined') CHILDLEAVE.init(); }
+  if (id === 'childleave-summary') { if (typeof CHILDLEAVE !== 'undefined') CHILDLEAVE.sumInit(); }
   if (id === 'logintest') { if (typeof LOGINTEST !== 'undefined') LOGINTEST.init(); }
   if (id === 'leave-flex') { if (typeof LEAVE_FLEX !== 'undefined') LEAVE_FLEX.init(); }
   if (id === 'leave-boss') { if (typeof LEAVE_BOSS !== 'undefined') LEAVE_BOSS.init(); }
@@ -17781,6 +17840,263 @@ var EXTENDCARE=(function(){
   return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips};
 })();
 
+/* ════ CHILDLEAVE：幼兒請假記錄 ════
+   先只記錄「哪個小孩、哪一天、請什麼假」，收費期間跟延托費一樣是每月27號～次月26號。
+   退費公式還沒定案，所以這裡只統計天數，不計算金額。 */
+var CHILDLEAVE=(function(){
+  var db={records:{}};
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
+  var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
+  var CLSORDER=['baby','crawl','run'];
+  var TYPES=['事假','病假','其他'];
+  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','其他':'#7a7a8a'};
+
+  function pad2(n){return (n<10?'0':'')+n;}
+  function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
+  var curViewKey=todayKey();
+  function keyToDateInputVal(k){var p=k.split('_');return (parseInt(p[0],10)+1911)+'-'+p[1]+'-'+p[2];}
+  function dateInputValToKey(v){var p=v.split('-');return (parseInt(p[0],10)-1911)+'_'+p[1]+'_'+p[2];}
+
+  function getKidsByCls(){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||[];
+    var children=pl.children||{};
+    var groups={baby:[],crawl:[],run:[]};
+    var seenId={};
+    teachers.forEach(function(t){
+      if(!groups[t.cls])return;
+      (children[t.id]||[]).forEach(function(c){
+        if(!c.id||!c.name||seenId[c.id])return;
+        seenId[c.id]=true;
+        groups[t.cls].push({id:c.id,name:c.name,teacherName:t.name});
+      });
+    });
+    return groups;
+  }
+
+  function getRec(childId,dk){
+    var k=dk||todayKey();
+    if(!db.records[k])db.records[k]={};
+    if(!db.records[k][childId])db.records[k][childId]={};
+    return db.records[k][childId];
+  }
+  function save(){
+    var json=JSON.stringify(db);
+    try{localStorage.setItem(_ckey('childleaveDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('childleaveDB'),json);
+  }
+  function pushRec(childId,dk){
+    var fb=_fbInit();
+    var k=dk||todayKey();
+    if(fb)fb.ref('xiaobuddyClean/childleave/records/'+k+'/'+childId).set(getRec(childId,k));
+  }
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _fbRef=fb.ref('xiaobuddyClean/childleave');
+    _fbRef.on('value',function(snap){
+      var v=snap.val();
+      db=(v&&v.records)?v:{records:{}};
+      try{localStorage.setItem(_ckey('childleaveDB'),JSON.stringify(db));}catch(e){}
+      render();
+    });
+  }
+  function load(){
+    try{var r=localStorage.getItem(_ckey('childleaveDB'));if(r){var d=JSON.parse(r);if(d&&d.records)db=d;}}catch(e){}
+    attachFb();
+  }
+
+  function render(){
+    var wrap=document.getElementById('cl-root');
+    if(!wrap)return;
+    var groups=getKidsByCls();
+    var dayRec=db.records[curViewKey]||{};
+    var clCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].type;}).length;
+
+    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
+    h+='<input type="date" class="df-inp" style="width:auto;" id="clViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="CHILDLEAVE.viewDate(this.value)">';
+    if(curViewKey!==todayKey())h+='<button class="cln-sig-btn" onclick="CHILDLEAVE.backToday()">回到今天</button>';
+    h+='<span style="margin-left:auto;font-weight:800;color:#9a6a1a;font-size:.88rem;">當天共 '+clCount+' 人請假</span>';
+    h+='</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">點一下可以登記或修改這一天的請假紀錄</div>';
+
+    var any=false;
+    CLSORDER.forEach(function(cls){
+      var kids=groups[cls];
+      if(!kids.length)return;
+      any=true;
+      h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+      kids.forEach(function(k){
+        var rec=dayRec[k.id]||{};
+        var bg='#f7f7fa',border='#ddd',txt='#888',tag='未請假';
+        if(rec.type){
+          var c=TYPE_COLOR[rec.type]||'#888';
+          bg='#fdf6ec';border=c;txt=c;tag=rec.type+(rec.note?'：'+rec.note:'');
+        }
+        var nameEsc=k.name.replace(/'/g,"\\'");
+        h+='<div onclick="CHILDLEAVE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
+        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+    if(!any)h+='<div style="color:#aaa;text-align:center;padding:40px 0;">尚無幼兒名單</div>';
+    wrap.innerHTML=h;
+  }
+  function viewDate(inputVal){
+    if(!inputVal)return;
+    curViewKey=dateInputValToKey(inputVal);
+    render();
+  }
+  function backToday(){curViewKey=todayKey();render();}
+
+  var _curEditChild=null,_curEditKey=null,_curEditType=null;
+  function _renderTypeBtns(){
+    var wrap=document.getElementById('clTypeBtns');
+    var h='';
+    TYPES.forEach(function(t){
+      var on=(_curEditType===t);
+      var c=TYPE_COLOR[t];
+      h+='<button type="button" class="asr-mok" onclick="CHILDLEAVE.pickType(\''+t+'\')" style="flex:1;background:'+(on?c:'#eee')+';color:'+(on?'#fff':'#666')+';">'+t+'</button>';
+    });
+    wrap.innerHTML=h;
+  }
+  function pickType(t){_curEditType=t;_renderTypeBtns();}
+  function openEdit(childId,name){
+    _curEditChild={id:childId,name:name};
+    _curEditKey=curViewKey;
+    var rec=(db.records[curViewKey]||{})[childId]||{};
+    _curEditType=rec.type||null;
+    document.getElementById('clEditName').textContent=name;
+    document.getElementById('clEditDate').textContent=keyToDateInputVal(curViewKey);
+    document.getElementById('clEditNote').value=rec.note||'';
+    _renderTypeBtns();
+    document.getElementById('clEditOv').classList.add('on');
+  }
+  function closeEdit(){
+    var ov=document.getElementById('clEditOv');
+    if(ov)ov.classList.remove('on');
+    _curEditChild=null;
+  }
+  function saveEdit(){
+    if(!_curEditChild)return;
+    if(!_curEditType){alert('請先選擇假別');return;}
+    var rec=getRec(_curEditChild.id,_curEditKey);
+    rec.name=_curEditChild.name;
+    rec.type=_curEditType;
+    rec.note=document.getElementById('clEditNote').value||'';
+    save();pushRec(_curEditChild.id,_curEditKey);
+    closeEdit();
+    render();
+  }
+  function deleteEdit(){
+    if(!_curEditChild)return;
+    if(!confirm('確定要刪除 '+_curEditChild.name+' 這一天的請假紀錄嗎？'))return;
+    var k=_curEditKey,cid=_curEditChild.id;
+    if(db.records[k])delete db.records[k][cid];
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/childleave/records/'+k+'/'+cid).remove();
+    closeEdit();
+    render();
+  }
+  function init(){curViewKey=todayKey();load();render();}
+
+  /* ════ 請假總表：跟延托費一樣，收費期間每月27號～次月26號 ════ */
+  var _sumEndY=0,_sumEndM=0;
+  function _sumDefaultEnd(){
+    var now=new Date(),roc=now.getFullYear()-1911,mo=now.getMonth()+1,dd=now.getDate();
+    if(dd>=27){mo++;if(mo>12){mo=1;roc++;}}
+    return{roc:roc,mo:mo};
+  }
+  function _sumPeriodRange(endRoc,endMo){
+    var startMo=endMo-1,startRoc=endRoc;
+    if(startMo<1){startMo=12;startRoc--;}
+    var ceEndYr=endRoc+1911,ceStartYr=startRoc+1911;
+    return{startRoc:startRoc,startMo:startMo,startDate:new Date(ceStartYr,startMo-1,27),endDate:new Date(ceEndYr,endMo-1,26)};
+  }
+  function _sumDateKey(d){return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
+  function _sumCollect(endRoc,endMo){
+    var range=_sumPeriodRange(endRoc,endMo);
+    var groups=getKidsByCls();
+    var clsOf={};
+    CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){clsOf[k.id]=cls;});});
+    var byChild={};
+    var d=new Date(range.startDate.getTime());
+    while(d<=range.endDate){
+      var k=_sumDateKey(d);
+      var dayRec=db.records[k]||{};
+      Object.keys(dayRec).forEach(function(cid){
+        var rec=dayRec[cid];
+        if(!rec||!rec.type)return;
+        if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[]};
+        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||''});
+      });
+      d.setDate(d.getDate()+1);
+    }
+    var out=[];
+    CLSORDER.forEach(function(cls){
+      Object.keys(byChild).forEach(function(cid){if(byChild[cid].cls===cls)out.push(byChild[cid]);});
+    });
+    Object.keys(byChild).forEach(function(cid){if(!byChild[cid].cls)out.push(byChild[cid]);});
+    return{range:range,rows:out};
+  }
+  function sumRender(){
+    var wrap=document.getElementById('clsum-root');
+    if(!wrap)return;
+    var col=_sumCollect(_sumEndY,_sumEndM);
+    var r=col.range;
+    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">📅 收費期間（到第幾個月的26號）</div>';
+    h+='<select class="df-inp" style="width:auto;" id="clsumEndRoc" onchange="CHILDLEAVE.sumChangeYM()">';
+    [114,115,116].forEach(function(y){h+='<option value="'+y+'"'+(y===_sumEndY?' selected':'')+'>'+y+' 年</option>';});
+    h+='</select>';
+    h+='<select class="df-inp" style="width:auto;" id="clsumEndMo" onchange="CHILDLEAVE.sumChangeYM()">';
+    for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_sumEndM?' selected':'')+'>'+m+' 月</option>';
+    h+='</select>';
+    h+='<span style="color:#aaa;font-size:.8rem;">（即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_sumEndY+'/'+_sumEndM+'/26）</span>';
+    h+='</div>';
+    if(!col.rows.length){
+      h+='<div style="color:#aaa;text-align:center;padding:40px 0;">這一期沒有請假紀錄</div>';
+      wrap.innerHTML=h;
+      return;
+    }
+    var curCls='';
+    col.rows.forEach(function(row){
+      if(row.cls!==curCls){curCls=row.cls;h+='<div class="df-lbl" style="margin-top:16px;">'+(CLSLABEL[curCls]||'未分班')+'</div>';}
+      h+='<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+      h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:6px;">'+row.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+row.entries.length+' 天</span></div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;">';
+      row.entries.forEach(function(e){
+        var c=TYPE_COLOR[e.type]||'#888';
+        h+='<span><b style="color:#2C2820;">'+e.date+'</b> <span style="color:'+c+';font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+'</span>';
+      });
+      h+='</div></div>';
+    });
+    wrap.innerHTML=h;
+  }
+  function sumChangeYM(){
+    _sumEndY=parseInt(document.getElementById('clsumEndRoc').value,10);
+    _sumEndM=parseInt(document.getElementById('clsumEndMo').value,10);
+    sumRender();
+  }
+  function sumInit(){
+    var def=_sumDefaultEnd();
+    _sumEndY=def.roc;_sumEndM=def.mo;
+    load();sumRender();
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM};
+})();
+
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
    目的只是讓組長自己先試試看 Firebase 帳號登入順不順，完全不影響
    其他任何人現在使用 App 的方式——沒有任何頁面因為這個功能被擋住，
@@ -17855,7 +18171,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012215959</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012221545</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
