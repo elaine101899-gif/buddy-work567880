@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012222642';
+  var BUILD='20261012223556';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18239,12 +18240,16 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012222642</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012223556</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
   if(el){
-    var t=el.innerHTML.replace('<!--','').replace('-->','').trim();
+    /* iOS Safari 的電話號碼自動偵測有時候會搶先把這串純數字包成 <a href="tel:..">，
+       所以不能信任 innerHTML 一定還是乾淨的註解文字，要先把任何 HTML 標籤拔掉再處理，
+       不然會把 <a href=..> 這些標籤符號當成文字整個顯示出來。 */
+    var raw=el.innerHTML.replace(/<[^>]*>/g,'');
+    var t=raw.replace('<!--','').replace('-->','').trim();
     /* BUILD_TS 格式是 YYYYMMDDHHMMSS，壓成跟以前一樣短的 MM/DD HH:MM 顯示 */
     if(/^\d{14}$/.test(t))t=t.slice(4,6)+'/'+t.slice(6,8)+' '+t.slice(8,10)+':'+t.slice(10,12);
     if(t)el.textContent=t;
