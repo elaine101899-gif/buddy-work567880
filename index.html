@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012235925';
+  var BUILD='20261013000605';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18863,8 +18863,10 @@ var TEACHERLEAVE=(function(){
     var now=new Date();
     var dateStr=now.getFullYear()+'/'+pad2(now.getMonth()+1)+'/'+pad2(now.getDate());
     var dk=todayKey(),iso=todayIso();
-    var companyName='';
-    try{if(typeof _companyName==='function')companyName=_companyName();}catch(e){}
+    var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
+    var companyName=isBambino?'邦比諾':'小布迪';
+    var kitchenName=isBambino?'林素珍':'黃郁婷';
+    var kitchenLabel=isBambino?'(廚工)':'(丁媽-廚工)';
     var total=0,tally={};
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();total=CHILDLEAVE.totalEnrolled();tally=CHILDLEAVE.tallyForDate(dk);}}catch(e){}
     var uniqueAbsent={};
@@ -18898,10 +18900,15 @@ var TEACHERLEAVE=(function(){
 
     var todayRec=db.today[dk]||{};
     var parentalSet=_activeParentalSet(iso);
-    var teachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
+    var allTeachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
+    var kitchenActive=allTeachers.indexOf(kitchenName)>=0;
+    var teachers=allTeachers.filter(function(n){return n!==kitchenName;});
     var onLeave=teachers.filter(function(n){return todayRec[n]&&todayRec[n].onLeave;});
     var presentNames=teachers.filter(function(n){return !(todayRec[n]&&todayRec[n].onLeave);}).map(nick);
-    L.push(presentNames.join('、'));
+    var kitchenPresent=kitchenActive&&!(todayRec[kitchenName]&&todayRec[kitchenName].onLeave);
+    var presentNamesDisplay=presentNames.slice();
+    if(kitchenPresent)presentNamesDisplay.push(nick(kitchenName)+kitchenLabel);
+    L.push(presentNamesDisplay.join('、'));
     L.push('');
 
     var plist=Object.keys(db.parental).map(function(id){return db.parental[id];})
@@ -18914,8 +18921,8 @@ var TEACHERLEAVE=(function(){
     L.push('🔴本日超過38.0體溫的老師人數：'+feverCount+'（請依據規定不能進班）');
     L.push('');
 
-    var totalT=teachers.length;
-    var presentT=presentNames.length;
+    var totalT=teachers.length+(kitchenActive?'+1(廚工)':'');
+    var presentT=presentNames.length+(kitchenPresent?'+1(廚工)':'');
     L.push('老師總人數：'+totalT);
     L.push('出席人數：'+presentT);
     L.push('請假人數：');
@@ -19044,7 +19051,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012235925</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013000605</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
