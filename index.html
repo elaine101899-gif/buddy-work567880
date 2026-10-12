@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012232210';
+  var BUILD='20261012234221';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3273,6 +3273,11 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#6a4aa0;">月檢查</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月底一次確認四張表有沒有填齊</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('teacherleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
+        <span style="font-size:1.8rem;">&#x1F4CB;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">每日回報</div><div style="font-size:.78rem;color:#888;margin-top:2px;">老師請假追蹤、育嬰留停名單，一鍵產生LINE回報文字</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
     </div>
   </div>
 </div>
@@ -3285,6 +3290,43 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="monthcheckWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<!-- ═══ 每日回報（老師請假追蹤＋育嬰留停＋一鍵產生回報文字） ═══ -->
+<div class="pg" id="pg-teacherleave">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <span class="btitle">每日回報</span>
+    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
+  </div>
+  <div style="padding:14px 16px 40px;" id="tl-root">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="tlParentalOv">
+  <div class="asr-mbox">
+    <h3>&#x1F476; 育嬰留停登記</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">老師姓名</div>
+    <input type="text" class="asr-mi" id="tlPName" placeholder="例如：王小美">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">開始日期</div>
+    <input type="date" class="asr-mi" id="tlPStart">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">結束日期</div>
+    <input type="date" class="asr-mi" id="tlPEnd">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="TEACHERLEAVE.closeParental()">取消</button>
+      <button class="asr-mok" style="background:#e85a5a;" id="tlPDelBtn" onclick="TEACHERLEAVE.deleteParental()">&#x1F5D1; 刪除</button>
+      <button class="asr-mok" onclick="TEACHERLEAVE.saveParental()">&#x2713; 儲存</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="tlReportOv">
+  <div class="asr-mbox" style="max-width:520px;">
+    <h3>&#x1F4CB; 今日回報文字</h3>
+    <textarea id="tlReportText" readonly style="width:100%;min-height:360px;font-size:.82rem;line-height:1.6;border:1.5px solid #ddd;border-radius:10px;padding:10px;box-sizing:border-box;"></textarea>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="TEACHERLEAVE.closeReport()">關閉</button>
+      <button class="asr-mok" id="tlCopyBtn" onclick="TEACHERLEAVE.copyReport()">&#x1F4CB; 複製</button>
+    </div>
   </div>
 </div>
 <!-- ═══ LEAVE MENU ═══ -->
@@ -4000,6 +4042,7 @@ function GO(id) {
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
   if (id === 'monthcheck') { if (typeof MONTHCHECK !== 'undefined') MONTHCHECK.init(); }
+  if (id === 'teacherleave') { if (typeof TEACHERLEAVE !== 'undefined') TEACHERLEAVE.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
   if (id === 'childleave') { if (typeof CHILDLEAVE !== 'undefined') CHILDLEAVE.init(); }
@@ -16342,7 +16385,7 @@ var SPACES=(function(){
 })();
 
 /* ── 體溫管理 ── */
-var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'];
+var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','公假','公傷假','福利假','產檢假','其他'];
 var BODYTEMP_SYMPTOMS=['發燒','咳嗽','喉嚨痛','流鼻涕','頭痛'];
 var BODYTEMP=(function(){
   var curT=SIGNERS[0], curY=(new Date().getFullYear()-1911), curM=(new Date().getMonth()+1);
@@ -16626,7 +16669,20 @@ var BODYTEMP=(function(){
     if(_fillTimer)clearInterval(_fillTimer);
     _fillTimer=setInterval(function(){autoFillToday();render();},5*60*1000);
   }
-  return{init:init,show:show,selectTeacher:selectTeacher,changeT:changeT,changeYM:changeYM,setVal:setVal,setLeave:setLeave,setOffType:setOffType,download:download,downloadMonth:downloadMonth};
+  /* 給每日回報用：今天每位在職老師的請假/體溫狀況 */
+  function todaySummary(){
+    var now=new Date(),ty=now.getFullYear()-1911,tm=now.getMonth()+1,td=now.getDate();
+    var out=[];
+    SIGNERS.forEach(function(name){
+      var k=name+'_'+ty+'_'+tm;
+      var dayRec=(db.records[k]&&db.records[k].days&&db.records[k].days[td])||{};
+      var feverVals=[dayRec.t1,dayRec.t2,dayRec.t3].filter(function(v){return v&&v!=='請假'&&!isNaN(parseFloat(v));}).map(parseFloat);
+      var fever=feverVals.some(function(v){return v>38.0;});
+      out.push({name:name,leave:!!dayRec.leave,leaveType:dayRec.leaveType||'',offType:dayRec.offType||'',fever:fever});
+    });
+    return out;
+  }
+  return{init:init,show:show,selectTeacher:selectTeacher,changeT:changeT,changeYM:changeYM,setVal:setVal,setLeave:setLeave,setOffType:setOffType,download:download,downloadMonth:downloadMonth,todaySummary:todaySummary};
 })();
 
 /* ── 教學課程雲端同步（admin 後台編輯即時同步到所有裝置） ── */
@@ -17926,8 +17982,8 @@ var CHILDLEAVE=(function(){
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
-  var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課','颱風假','豪雨假'];
-  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f','颱風假':'#2b6ca3','豪雨假':'#2b6ca3'};
+  var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課','颱風假','豪雨假','RSV','流感','新冠'];
+  var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f','颱風假':'#2b6ca3','豪雨假':'#2b6ca3','RSV':'#2f8a6a','流感':'#2f8a6a','新冠':'#2f8a6a'};
   /* 退費規則（2026-10 確認）：
      事假、停托：不退費（停托之後規則太複雜，先不計算）
      病假、住院：請假要「連續跨過一個完整六日」（六日前後都還有平日在請假，證明真的連續生病，
@@ -18262,7 +18318,25 @@ var CHILDLEAVE=(function(){
     return out;
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod};
+  /* 給每日回報用：某一天每個假別各有哪些小孩（姓名）*/
+  function tallyForDate(dateKey){
+    var dayRec=db.records[dateKey]||{};
+    var byType={};
+    Object.keys(dayRec).forEach(function(cid){
+      var rec=dayRec[cid];
+      if(!rec||!rec.type)return;
+      if(!byType[rec.type])byType[rec.type]=[];
+      byType[rec.type].push(rec.name||'');
+    });
+    return byType;
+  }
+  function totalEnrolled(){
+    var groups=getKidsByCls();
+    var n=0;
+    CLSORDER.forEach(function(cls){n+=groups[cls].length;});
+    return n;
+  }
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled};
 })();
 
 /* ════ CHILDFEE：月費單（每位幼兒的繳費紀錄）════
@@ -18618,6 +18692,239 @@ var CHILDFEE=(function(){
   return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv};
 })();
 
+/* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
+   一鍵把今天的幼兒請假狀況＋老師出缺勤組成文字，方便複製貼到LINE群組。 ════ */
+var TEACHERLEAVE=(function(){
+  var db={flags:{},parental:{}};
+  var _fbAttachedCompany=null;
+  var _fbRef=null;
+
+  function pad2(n){return (n<10?'0':'')+n;}
+  function todayKey(){var d=new Date();return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
+  function todayIso(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+  function nick(name){return name&&name.length>1?name.slice(1):(name||'');}
+  function mdFromIso(iso){if(!iso)return'';var p=iso.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);}
+
+  function save(){
+    var json=JSON.stringify(db);
+    try{localStorage.setItem(_ckey('teacherleaveDB'),json);}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey('teacherleaveDB'),json);
+  }
+  function pushFlag(dk,name){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/teacherleave/flags/'+dk+'/'+name).set((db.flags[dk]||{})[name]||{});
+  }
+  function pushParental(id){
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/teacherleave/parental/'+id).set(db.parental[id]||null);
+  }
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _fbRef=fb.ref('xiaobuddyClean/teacherleave');
+    _fbRef.on('value',function(snap){
+      var v=snap.val();
+      db={flags:(v&&v.flags)||{},parental:(v&&v.parental)||{}};
+      try{localStorage.setItem(_ckey('teacherleaveDB'),JSON.stringify(db));}catch(e){}
+      render();
+    });
+  }
+  function load(){
+    try{var r=localStorage.getItem(_ckey('teacherleaveDB'));if(r){var d=JSON.parse(r);if(d)db={flags:d.flags||{},parental:d.parental||{}};}}catch(e){}
+    attachFb();
+  }
+
+  function render(){
+    var wrap=document.getElementById('tl-root');
+    if(!wrap)return;
+    var dk=todayKey();
+    var iso=todayIso();
+    var summary=(typeof BODYTEMP!=='undefined')?BODYTEMP.todaySummary():[];
+    var onLeave=summary.filter(function(t){return t.leave;});
+    var flags=db.flags[dk]||{};
+
+    var h='<div class="df-lbl">今天請假的老師</div>';
+    if(!onLeave.length){
+      h+='<div style="color:#aaa;text-align:center;padding:20px 0;">今天沒有老師請假（資料來自體溫管理）</div>';
+    } else {
+      h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
+      onLeave.forEach(function(t,i){
+        var f=flags[t.name]||{};
+        h+='<div style="display:flex;align-items:center;gap:12px;padding:10px 0;flex-wrap:wrap;'+(i<onLeave.length-1?'border-bottom:1px solid #eee;':'')+'">';
+        h+='<div style="font-weight:700;color:#2d3057;min-width:70px;">'+t.name+'</div>';
+        h+='<span style="font-size:.74rem;color:#c08a3a;font-weight:700;">'+(t.leaveType||'（未選假別）')+'</span>';
+        h+='<label style="margin-left:auto;display:flex;align-items:center;gap:4px;font-size:.78rem;color:#666;"><input type="checkbox" '+(f.formWritten?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+t.name+'\',\'formWritten\',this.checked)">已寫假單</label>';
+        h+='<label style="display:flex;align-items:center;gap:4px;font-size:.78rem;color:#666;"><input type="checkbox" '+(f.printed?'checked':'')+' onchange="TEACHERLEAVE.toggleFlag(\''+t.name+'\',\'printed\',this.checked)">已列印交接單</label>';
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+
+    h+='<div style="display:flex;align-items:center;margin-bottom:8px;"><div class="df-lbl" style="margin:0;">育嬰留停名單</div>';
+    h+='<button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openParental()">＋ 新增</button></div>';
+    var plist=Object.keys(db.parental).map(function(id){var p=db.parental[id];p.id=id;return p;}).filter(function(p){return p&&p.name;});
+    if(!plist.length){
+      h+='<div style="color:#aaa;text-align:center;padding:20px 0;">尚未登記育嬰留停名單</div>';
+    } else {
+      h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+      plist.forEach(function(p,i){
+        var active=p.start&&p.end&&p.start<=iso&&p.end>=iso;
+        h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;'+(i<plist.length-1?'border-bottom:1px solid #eee;':'')+'cursor:pointer;" onclick="TEACHERLEAVE.openParental(\''+p.id+'\')">';
+        h+='<div style="font-weight:700;color:#2d3057;">'+p.name+'</div>';
+        h+='<div style="color:#999;font-size:.8rem;">'+mdFromIso(p.start)+' ～ '+mdFromIso(p.end)+'</div>';
+        if(active)h+='<span style="margin-left:auto;font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:#e8f7f0;color:#1f7a54;">進行中</span>';
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    wrap.innerHTML=h;
+  }
+  function toggleFlag(name,field,checked){
+    var dk=todayKey();
+    if(!db.flags[dk])db.flags[dk]={};
+    if(!db.flags[dk][name])db.flags[dk][name]={};
+    db.flags[dk][name][field]=checked;
+    save();pushFlag(dk,name);
+    render();
+  }
+
+  var _curParentalId=null;
+  function openParental(id){
+    _curParentalId=id||('tp'+Date.now());
+    var p=id?db.parental[id]:null;
+    document.getElementById('tlPName').value=(p&&p.name)||'';
+    document.getElementById('tlPStart').value=(p&&p.start)||'';
+    document.getElementById('tlPEnd').value=(p&&p.end)||'';
+    document.getElementById('tlPDelBtn').style.display=id?'':'none';
+    document.getElementById('tlParentalOv').classList.add('on');
+  }
+  function closeParental(){
+    var ov=document.getElementById('tlParentalOv');
+    if(ov)ov.classList.remove('on');
+    _curParentalId=null;
+  }
+  function saveParental(){
+    var name=document.getElementById('tlPName').value.trim();
+    if(!name){alert('請輸入老師姓名');return;}
+    db.parental[_curParentalId]={name:name,start:document.getElementById('tlPStart').value||'',end:document.getElementById('tlPEnd').value||''};
+    save();pushParental(_curParentalId);
+    closeParental();
+    render();
+  }
+  function deleteParental(){
+    if(!_curParentalId)return;
+    if(!confirm('確定要刪除這筆育嬰留停紀錄嗎？'))return;
+    delete db.parental[_curParentalId];
+    save();pushParental(_curParentalId);
+    closeParental();
+    render();
+  }
+
+  var REPORT_LEAVE_ORDER=['公假','病假','特休','喪假','事假','家庭照顧假','婚假','生理假','公傷假','安胎假','福利假','產檢假'];
+  function buildReportText(){
+    var now=new Date();
+    var dateStr=now.getFullYear()+'/'+pad2(now.getMonth()+1)+'/'+pad2(now.getDate());
+    var dk=todayKey(),iso=todayIso();
+    var companyName='';
+    try{if(typeof _companyName==='function')companyName=_companyName();}catch(e){}
+    var total=0,tally={};
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();total=CHILDLEAVE.totalEnrolled();tally=CHILDLEAVE.tallyForDate(dk);}}catch(e){}
+    var uniqueAbsent={};
+    Object.keys(tally).forEach(function(t){tally[t].forEach(function(n){uniqueAbsent[n]=true;});});
+    var present=total-Object.keys(uniqueAbsent).length;
+
+    function namesFor(t){return (tally[t]||[]).map(nick).join('、');}
+    function cntFor(t){var n=(tally[t]||[]).length;return n||'';}
+
+    var L=[];
+    L.push(dateStr);
+    L.push(companyName+'學生總人數：'+total);
+    L.push('學生出席人數：'+present);
+    L.push('');
+    L.push('病假('+cntFor('病假')+')：'+namesFor('病假'));
+    L.push('');
+    L.push('事假('+cntFor('事假')+')：'+namesFor('事假'));
+    L.push('');
+    L.push('RSV('+cntFor('RSV')+')：'+namesFor('RSV'));
+    L.push('');
+    L.push('流感('+cntFor('流感')+')：'+namesFor('流感'));
+    L.push('');
+    L.push('新冠('+cntFor('新冠')+')：'+namesFor('新冠'));
+    L.push('');
+    L.push('腸病毒('+cntFor('腸病毒')+')：'+namesFor('腸病毒'));
+    L.push('');
+    L.push('自主隔離('+cntFor('腸-停課')+')：'+namesFor('腸-停課'));
+    L.push('');
+    L.push('早上體溫高()：');
+    L.push('');
+
+    var summary=(typeof BODYTEMP!=='undefined')?BODYTEMP.todaySummary():[];
+    var onLeave=summary.filter(function(t){return t.leave;});
+    var presentNames=summary.filter(function(t){return !t.leave;}).map(function(t){return nick(t.name);});
+    L.push(presentNames.join('、'));
+    L.push('');
+
+    var plist=Object.keys(db.parental).map(function(id){return db.parental[id];})
+      .filter(function(p){return p&&p.name&&p.start&&p.end&&p.start<=iso&&p.end>=iso;});
+    L.push('育嬰留停：'+plist.map(function(p){return nick(p.name)+'('+mdFromIso(p.start)+'-'+mdFromIso(p.end)+')';}).join('、'));
+    L.push('');
+
+    var feverCount=summary.filter(function(t){return t.fever;}).length;
+    L.push('🔴本日超過38.0體溫的老師人數：'+feverCount+'（請依據規定不能進班）');
+    L.push('');
+
+    var totalT=(typeof SIGNERS!=='undefined')?SIGNERS.length:0;
+    var presentT=presentNames.length;
+    L.push('老師總人數：'+totalT);
+    L.push('出席人數：'+presentT);
+    L.push('請假人數：');
+    var byType={};
+    onLeave.forEach(function(t){
+      var lt=t.leaveType||'其他';
+      if(!byType[lt])byType[lt]=[];
+      byType[lt].push(nick(t.name));
+    });
+    REPORT_LEAVE_ORDER.forEach(function(lt){
+      var arr=byType[lt]||[];
+      L.push(lt+'('+(arr.length||'')+')：'+arr.join('、'));
+    });
+    var pj=byType['產假']||[];
+    L.push('產假：'+pj.join('、'));
+
+    return L.join('\n');
+  }
+  function openReport(){
+    document.getElementById('tlReportText').value=buildReportText();
+    document.getElementById('tlReportOv').classList.add('on');
+  }
+  function closeReport(){
+    var ov=document.getElementById('tlReportOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function copyReport(){
+    var ta=document.getElementById('tlReportText');
+    ta.focus();ta.select();
+    var ok=false;
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value);
+        ok=true;
+      }
+    }catch(e){}
+    if(!ok){try{ok=document.execCommand('copy');}catch(e2){}}
+    var btn=document.getElementById('tlCopyBtn');
+    if(ok&&btn){var old=btn.textContent;btn.textContent='✓ 已複製';setTimeout(function(){btn.textContent=old;},1500);}
+    else if(!ok)alert('複製失敗，請手動選取文字複製');
+  }
+
+  function init(){load();render();}
+
+  return{init:init,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport};
+})();
+
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
    目的只是讓組長自己先試試看 Firebase 帳號登入順不順，完全不影響
    其他任何人現在使用 App 的方式——沒有任何頁面因為這個功能被擋住，
@@ -18692,7 +18999,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012232210</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012234221</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
