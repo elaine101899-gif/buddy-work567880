@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013064136';
+  var BUILD='20261013064959';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18375,7 +18375,21 @@ var CHILDLEAVE=(function(){
     CLSORDER.forEach(function(cls){n+=groups[cls].length;});
     return n;
   }
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled};
+  /* 給月費單收入報表用：這一期每個假別各退了多少錢、幾天，彙總成一張清單 */
+  function refundBreakdownForPeriod(endRoc,endMo){
+    var col=_sumCollect(endRoc,endMo);
+    var byType={};
+    col.rows.forEach(function(row){
+      row.entries.forEach(function(e){
+        if(!e.refund)return;
+        if(!byType[e.type])byType[e.type]={days:0,amount:0};
+        byType[e.type].days++;
+        byType[e.type].amount+=e.refund;
+      });
+    });
+    return byType;
+  }
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
 })();
 
 /* ════ CHILDFEE：月費單（每位幼兒的繳費紀錄）════
@@ -18658,15 +18672,22 @@ var CHILDFEE=(function(){
     var pk=periodKey(_incEndY,_incEndM);
     var groups=getKidsByCls();
     var income=0,childCount=0;
+    var fieldTotals={};
+    FIELDS.forEach(function(f){fieldTotals[f.k]=0;});
     CLSORDER.forEach(function(cls){
       groups[cls].forEach(function(k){
         var rec=(db.records[pk]||{})[k.id];
-        if(_isBilled(rec)){income+=_total(rec);childCount++;}
+        if(_isBilled(rec)){
+          income+=_total(rec);childCount++;
+          FIELDS.forEach(function(f){fieldTotals[f.k]+=(parseFloat(rec[f.k])||0);});
+        }
       });
     });
     var wds=db.withdrawals[pk]||[];
     var wdTotal=0;
     wds.forEach(function(w){wdTotal+=(parseFloat(w.amount)||0);});
+    var leaveRefundByType={};
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_incEndY,_incEndM)||{};}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
     h+='<div class="df-lbl" style="margin:0;">📅 收費期間（到第幾個月的26號）</div>';
@@ -18677,6 +18698,7 @@ var CHILDFEE=(function(){
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_incEndM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_incEndY,_incEndM)+'）</span>';
+    h+='<button class="bbtn" style="margin-left:auto;" onclick="CHILDFEE.printIncomeReport()">&#x1F5A8; 列印</button>';
     h+='</div>';
 
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 18px;">';
@@ -18687,6 +18709,40 @@ var CHILDFEE=(function(){
     h+='<div style="flex:1 1 140px;background:#fff;border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
     h+='<div style="font-size:.7rem;color:#aaa;">淨收入</div><div style="font-weight:800;font-size:1.1rem;color:#2d3057;margin-top:4px;">'+(income-wdTotal)+' 元</div></div>';
     h+='</div>';
+
+    h+='<div class="df-lbl">收入細項加總</div>';
+    h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
+    FIELDS.forEach(function(f,i){
+      if(f.k==='refund')return;
+      h+='<div style="display:flex;align-items:center;padding:8px 0;'+(i<FIELDS.length-2?'border-bottom:1px solid #eee;':'')+'">';
+      h+='<div style="color:#555;">'+f.label+'</div>';
+      h+='<div style="margin-left:auto;font-weight:700;color:#2a6a3f;">'+fieldTotals[f.k]+' 元</div>';
+      h+='</div>';
+    });
+    h+='</div>';
+
+    h+='<div class="df-lbl">請假退費細項（依假別）</div>';
+    var leaveTypeKeys=Object.keys(leaveRefundByType);
+    if(!leaveTypeKeys.length){
+      h+='<div style="color:#aaa;text-align:center;padding:16px 0;margin-bottom:18px;">這一期沒有請假退費</div>';
+    } else {
+      h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
+      var leaveRefundTotal=0;
+      leaveTypeKeys.forEach(function(t,i){
+        var d=leaveRefundByType[t];
+        leaveRefundTotal+=d.amount;
+        h+='<div style="display:flex;align-items:center;padding:8px 0;'+(i<leaveTypeKeys.length-1?'border-bottom:1px solid #eee;':'')+'">';
+        h+='<div style="color:#555;">'+t+'</div>';
+        h+='<div style="color:#aaa;font-size:.76rem;margin-left:8px;">共'+d.days+'天</div>';
+        h+='<div style="margin-left:auto;font-weight:700;color:#c0392b;">'+d.amount+' 元</div>';
+        h+='</div>';
+      });
+      h+='<div style="display:flex;align-items:center;padding:8px 0;border-top:1.5px solid #ddd;margin-top:4px;">';
+      h+='<div style="font-weight:800;color:#2d3057;">請假退費總計</div>';
+      h+='<div style="margin-left:auto;font-weight:800;color:#c0392b;">'+leaveRefundTotal+' 元</div>';
+      h+='</div>';
+      h+='</div>';
+    }
 
     h+='<div style="display:flex;align-items:center;margin-bottom:8px;"><div class="df-lbl" style="margin:0;">退托退費明細</div>';
     h+='<button class="bbtn" style="margin-left:auto;" onclick="CHILDFEE.openWd()">＋ 新增退托退費</button></div>';
@@ -18754,6 +18810,92 @@ var CHILDFEE=(function(){
     save();pushWd(pk);
     closeWd();
     incRender();
+  }
+
+  function printIncomeReport(){
+    var pk=periodKey(_incEndY,_incEndM);
+    var groups=getKidsByCls();
+    var income=0,childCount=0;
+    var fieldTotals={};
+    FIELDS.forEach(function(f){fieldTotals[f.k]=0;});
+    CLSORDER.forEach(function(cls){
+      groups[cls].forEach(function(k){
+        var rec=(db.records[pk]||{})[k.id];
+        if(_isBilled(rec)){
+          income+=_total(rec);childCount++;
+          FIELDS.forEach(function(f){fieldTotals[f.k]+=(parseFloat(rec[f.k])||0);});
+        }
+      });
+    });
+    var wds=db.withdrawals[pk]||[];
+    var wdTotal=0;
+    wds.forEach(function(w){wdTotal+=(parseFloat(w.amount)||0);});
+    var leaveRefundByType={};
+    try{if(typeof CHILDLEAVE!=='undefined')leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_incEndY,_incEndM)||{};}catch(e){}
+    var leaveRefundTotal=0;
+    Object.keys(leaveRefundByType).forEach(function(t){leaveRefundTotal+=leaveRefundByType[t].amount;});
+
+    var css='@page{size:A4 portrait;margin:12mm 12mm;}';
+    css+='*{box-sizing:border-box;}';
+    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:10pt;color:#2C2820;margin:0;background:#fff;}';
+    css+='.hd1{font-size:15pt;font-weight:700;text-align:center;margin-bottom:2mm;}';
+    css+='.hd2{font-size:10pt;color:#555;text-align:center;margin-bottom:6mm;}';
+    css+='.sec{font-weight:800;font-size:10.5pt;margin:5mm 0 2mm;border-bottom:1.5px solid #333;padding-bottom:1mm;}';
+    css+='table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:2mm;}';
+    css+='td,th{border:1px solid #D8D0C4;padding:4px 8px;}';
+    css+='th{background:#f0c97a;color:#4a3300;}';
+    css+='.num{text-align:right;font-variant-numeric:tabular-nums;}';
+    css+='.tot-row td{font-weight:800;background:#fdf6ec;}';
+    css+='.grand{text-align:right;font-weight:800;font-size:13pt;color:#a5680a;margin-top:6mm;}';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+css+'</style></head><body>';
+    html+='<div class="hd1">'+_companyName()+' &middot; 月費單收支總表</div>';
+    html+='<div class="hd2">收費期間：'+periodLabel(_incEndY,_incEndM)+'</div>';
+
+    html+='<div class="sec">收入細項（共 '+childCount+' 位已繳費幼兒）</div>';
+    html+='<table><thead><tr><th>科目</th><th class="num">金額</th></tr></thead><tbody>';
+    FIELDS.forEach(function(f){
+      if(f.k==='refund')return;
+      html+='<tr><td>'+f.label+'</td><td class="num">'+fieldTotals[f.k]+'</td></tr>';
+    });
+    html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+income+'</td></tr>';
+    html+='</tbody></table>';
+
+    html+='<div class="sec">請假退費細項（依假別）</div>';
+    var leaveKeys=Object.keys(leaveRefundByType);
+    if(!leaveKeys.length){
+      html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期沒有請假退費</td></tr></tbody></table>';
+    } else {
+      html+='<table><thead><tr><th>假別</th><th class="num">天數</th><th class="num">退費金額</th></tr></thead><tbody>';
+      leaveKeys.forEach(function(t){
+        var d=leaveRefundByType[t];
+        html+='<tr><td>'+t+'</td><td class="num">'+d.days+'</td><td class="num">'+d.amount+'</td></tr>';
+      });
+      html+='<tr class="tot-row"><td>請假退費總計</td><td></td><td class="num">'+leaveRefundTotal+'</td></tr>';
+      html+='</tbody></table>';
+    }
+
+    html+='<div class="sec">退托退費明細（共 '+wds.length+' 筆）</div>';
+    if(!wds.length){
+      html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期沒有退托退費紀錄</td></tr></tbody></table>';
+    } else {
+      html+='<table><thead><tr><th>姓名</th><th>離園日期</th><th>備註</th><th class="num">退費金額</th></tr></thead><tbody>';
+      wds.forEach(function(w){
+        html+='<tr><td>'+w.name+'</td><td>'+(w.date||'')+'</td><td>'+(w.note||'')+'</td><td class="num">'+(w.amount||0)+'</td></tr>';
+      });
+      html+='<tr class="tot-row"><td colspan="3">退托退費總計</td><td class="num">'+wdTotal+'</td></tr>';
+      html+='</tbody></table>';
+    }
+
+    html+='<div class="grand">淨收入：'+(income-wdTotal)+' 元</div>';
+    html+='</body></html>';
+
+    var w=window.open('','_blank','width=900,height=800');
+    if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
+    w.document.write(html);w.document.close();
+    var printed=false;
+    var doPrint=function(){if(printed)return;printed=true;setTimeout(function(){try{w.print();}catch(e){}},250);};
+    if(w.document.readyState==='complete')setTimeout(doPrint,80);
+    else{w.onload=doPrint;setTimeout(doPrint,900);}
   }
 
   /* ════ 新生入托：取代原本適性那邊的「新增幼兒」，新增完直接算好這一期的比例月費/餐費
@@ -18835,7 +18977,7 @@ var CHILDFEE=(function(){
     alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+proratedMonthFee+'元（'+days+'天比例）\n餐費 '+proratedMealFee+'元\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -19232,7 +19374,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013064136</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013064959</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
