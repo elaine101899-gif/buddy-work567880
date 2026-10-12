@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012235006';
+  var BUILD='20261012235706';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18704,6 +18704,16 @@ var TEACHERLEAVE=(function(){
   function todayIso(){var d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
   function nick(name){return name&&name.length>1?name.slice(1):(name||'');}
   function mdFromIso(iso){if(!iso)return'';var p=iso.split('-');return parseInt(p[1],10)+'/'+parseInt(p[2],10);}
+  /* 已經在育嬰留停名單裡、而且今天落在起訖區間內的老師，不列進每天的出缺勤名單，
+     避免跟育嬰留停那邊重複出現 */
+  function _activeParentalSet(iso){
+    var set={};
+    Object.keys(db.parental).forEach(function(id){
+      var p=db.parental[id];
+      if(p&&p.name&&p.start&&p.end&&p.start<=iso&&p.end>=iso)set[p.name]=true;
+    });
+    return set;
+  }
   var LEAVE_TYPE_OPTS=['公假','病假','特休','喪假','事假','家庭照顧假','婚假','生理假','公傷假','安胎假','福利假','產檢假','產假','其他'];
 
   function save(){
@@ -18744,9 +18754,10 @@ var TEACHERLEAVE=(function(){
     var dk=todayKey();
     var iso=todayIso();
     var todayRec=db.today[dk]||{};
-    var teachers=(typeof SIGNERS!=='undefined')?SIGNERS:[];
+    var parentalSet=_activeParentalSet(iso);
+    var teachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
 
-    var h='<div style="font-size:.8rem;color:#888;margin-bottom:10px;">今天請假的老師要自己手動勾選（不會從體溫管理自動帶入，避免老師還沒key資料造成誤判）</div>';
+    var h='<div style="font-size:.8rem;color:#888;margin-bottom:10px;">今天請假的老師要自己手動勾選（不會從體溫管理自動帶入，避免老師還沒key資料造成誤判）。已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
     h+='<div class="df-lbl">老師出缺勤</div>';
     if(!teachers.length){
       h+='<div style="color:#aaa;text-align:center;padding:20px 0;">目前沒有在職老師名單</div>';
@@ -18886,7 +18897,8 @@ var TEACHERLEAVE=(function(){
     L.push('');
 
     var todayRec=db.today[dk]||{};
-    var teachers=(typeof SIGNERS!=='undefined')?SIGNERS:[];
+    var parentalSet=_activeParentalSet(iso);
+    var teachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
     var onLeave=teachers.filter(function(n){return todayRec[n]&&todayRec[n].onLeave;});
     var presentNames=teachers.filter(function(n){return !(todayRec[n]&&todayRec[n].onLeave);}).map(nick);
     L.push(presentNames.join('、'));
@@ -19032,7 +19044,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012235006</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012235706</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
