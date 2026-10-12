@@ -9,7 +9,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261012214515';
+  var BUILD='20261012214818';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -17844,7 +17844,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012214515</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;right:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261012214818</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -17852,7 +17852,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var t=el.innerHTML.replace('<!--','').replace('-->','').trim();
     /* BUILD_TS 格式是 YYYYMMDDHHMMSS，壓成跟以前一樣短的 MM/DD HH:MM 顯示 */
     if(/^\d{14}$/.test(t))t=t.slice(4,6)+'/'+t.slice(6,8)+' '+t.slice(8,10)+':'+t.slice(10,12);
-    if(t)el.textContent='v'+t;
+    if(t)el.textContent=t;
   }
 })();
 </script>
