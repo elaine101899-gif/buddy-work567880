@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013135410';
+  var BUILD='20261013140324';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4921,6 +4921,12 @@ function printSummaryB(cls) {
       <option value="run" selected>跑跑班</option>
     </select>
     <input class="asr-mi" id="inpTBedCls" type="text" placeholder="第幾班（選填，例如：跑跑一班；會自動建立寢具表班級）">
+    <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">身分（請假交接單會依這個分類）</div>
+    <select class="asr-msel" id="inpTRole">
+      <option value="teacher" selected>托育人員</option>
+      <option value="flex">機動人員</option>
+      <option value="boss">主管人員</option>
+    </select>
     <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">資格</div>
     <div style="display:flex;gap:16px;margin-bottom:6px;">
       <label style="display:flex;align-items:center;gap:4px;font-size:.85rem;"><input type="radio" name="inpTCertType" value="edu" checked onchange="ASR.onCertTypeChange()">相關科系</label>
@@ -5363,6 +5369,16 @@ function _lookupTeacherCert(name){
   }
   return null;
 }
+/* 給機動人員/主管人員交接單用：把目前名冊裡被設定成這個身分的老師名字抓出來，
+   這樣老師在後台被改身分(調班)，假單名單就會自動跟著動，不用另外手動改名單陣列。 */
+function _roleAssignedNames(role){
+  var yr=(typeof selYear!=='undefined'&&selYear)?selYear:((new Date()>=new Date(2026,7,1))?'115':'114');
+  var pl=window['_asrPreload'+yr]||window._asrPreload||{};
+  var teachers=pl.teachers||[];
+  var out=[];
+  teachers.forEach(function(t){if(t.role===role&&out.indexOf(t.name)<0)out.push(t.name);});
+  return out;
+}
 /* 代理人欄位打完名字(onchange)就呼叫這個，找得到同名老師才會自動勾資格/帶證號，
    找不到就完全不動，不會把使用者已經手動填的東西清掉。 */
 function _applyTeacherCertAutofill(name,eduId,babyId,noId){
@@ -5720,7 +5736,7 @@ var ASR = (function() {
       h+='<div class="asr-person'+(isSel?' sel':'')+'" data-tid="'+t.id+'">';
       h+='<div class="asr-avatar">'+t.name.slice(-1)+'</div>';
       h+='<div class="asr-pname">'+t.name+'</div>';
-      h+='<div class="asr-page">'+(CLS[t.cls]||t.cls)+(t.bedCls?'　·　'+t.bedCls:'')+(t.certType==='baby'?'　·　保母證'+(t.certNo?'('+t.certNo+')':''):'　·　相關科系')+'</div>';
+      h+='<div class="asr-page">'+(t.role==='flex'?'機動人員':t.role==='boss'?'主管人員':(t.bedCls||CLS[t.cls]||t.cls))+'</div>';
       h+='<button class="asr-edit-btn" data-edit-tid="'+t.id+'" style="display:none;margin-top:5px;background:#eee;color:#555;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openEditTeacher(this.getAttribute(\'data-edit-tid\'))">&#x270E; 編輯</button>';
       h+='<button class="asr-del-btn" data-del-tid="'+t.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delT(this.getAttribute(\'data-del-tid\'))">&#x2715; 刪除</button>';
       h+='</div>';
@@ -5969,6 +5985,7 @@ var ASR = (function() {
     document.getElementById('inpTN').value=t.name||'';
     document.getElementById('inpTC').value=t.cls||'run';
     document.getElementById('inpTBedCls').value=t.bedCls||'';
+    document.getElementById('inpTRole').value=t.role||'teacher';
     var isBaby=t.certType==='baby';
     document.querySelector('input[name="inpTCertType"][value="'+(isBaby?'baby':'edu')+'"]').checked=true;
     document.getElementById('inpTCertNo').value=t.certNo||'';
@@ -5980,16 +5997,18 @@ var ASR = (function() {
     var n=(document.getElementById('inpTN').value||'').trim();
     var c=document.getElementById('inpTC').value;
     var bedCls=(document.getElementById('inpTBedCls').value||'').trim();
+    var role=document.getElementById('inpTRole').value;
     var certType=document.querySelector('input[name="inpTCertType"]:checked').value;
     var certNo=(document.getElementById('inpTCertNo').value||'').trim();
     if(!n){alert('請輸入姓名');return;}
     if(_editingTeacherId){
       var tid=_editingTeacherId;
-      var patch={name:n,cls:c,bedCls:bedCls||null,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
+      var patch={name:n,cls:c,bedCls:bedCls||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
       asrDB.teachers=asrDB.teachers.map(function(t){
         if(t.id!==tid)return t;
         var merged={id:t.id,name:n,cls:c};
         if(bedCls)merged.bedCls=bedCls;
+        merged.role=role;
         merged.certType=certType;
         if(certType==='baby'&&certNo)merged.certNo=certNo;
         return merged;
@@ -6003,6 +6022,7 @@ var ASR = (function() {
     }
     var newTeacher={id:'t'+Date.now(),name:n,cls:c};
     if(bedCls)newTeacher.bedCls=bedCls;
+    newTeacher.role=role;
     newTeacher.certType=certType;
     if(certType==='baby'&&certNo)newTeacher.certNo=certNo;
     asrDB.teachers.push(newTeacher);
@@ -6574,6 +6594,7 @@ var ASR = (function() {
       document.getElementById('asrModalTTitle').textContent='👩‍🏫 新增托育人員';
       document.getElementById('asrModalTOkBtn').textContent='新增';
       document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';
+      document.getElementById('inpTRole').value='teacher';
       document.querySelector('input[name="inpTCertType"][value="edu"]').checked=true;
       document.getElementById('inpTCertNo').value='';document.getElementById('inpTCertNo').style.display='none';
       om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);
@@ -8591,7 +8612,9 @@ var LEAVE=(function(){
     /* 依今天日期選正確學期的老師名單，避免因 ASR 未切換學期而顯示舊名單 */
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
     var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
-    var teachers=pl.teachers||asrDB.teachers||[];
+    /* 被改成機動人員/主管人員身分的老師，不列在托育人員交接單名單裡，
+       請假交接單要跟著去機動人員/主管人員那邊才找得到他們 */
+    var teachers=(pl.teachers||asrDB.teachers||[]).filter(function(t){return t.role!=='flex'&&t.role!=='boss';});
     var groups={baby:[],crawl:[],run:[]};
     teachers.forEach(function(t){if(groups[t.cls])groups[t.cls].push(t);else groups.run.push(t);});
     var clsNames={baby:'🍼 寶寶班',crawl:'🐛 爬爬班',run:'🏃 跑跑班'};
@@ -9277,7 +9300,13 @@ var LEAVE_BOSS=(function(){
   var FB_PATH='xiaobuddyLeaveBoss';
   var BOSS_NAMES=['金佩樺','黃苡綸','洪逸惠'];
   window._BAMBINO_BOSS_NAMES=['黃鈺雯'];
-  function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_BOSS_NAMES:BOSS_NAMES;}
+  /* 固定名單 + 後台被改成「主管人員」身分的老師，兩邊合併、不重複 */
+  function _names(){
+    var base=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_BOSS_NAMES:BOSS_NAMES;
+    var out=base.slice();
+    (typeof _roleAssignedNames==='function'?_roleAssignedNames('boss'):[]).forEach(function(n){if(out.indexOf(n)<0)out.push(n);});
+    return out;
+  }
   var curName='',curFid='',curStep='hub';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
@@ -9624,7 +9653,13 @@ var LEAVE_FLEX=(function(){
   var FB_PATH='xiaobuddyLeaveFlex';
   var FLEX_NAMES=['郭于綺','徐郁婷'];
   window._BAMBINO_FLEX_NAMES=[];
-  function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_FLEX_NAMES:FLEX_NAMES;}
+  /* 固定名單 + 後台被改成「機動人員」身分的老師，兩邊合併、不重複 */
+  function _names(){
+    var base=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_FLEX_NAMES:FLEX_NAMES;
+    var out=base.slice();
+    (typeof _roleAssignedNames==='function'?_roleAssignedNames('flex'):[]).forEach(function(n){if(out.indexOf(n)<0)out.push(n);});
+    return out;
+  }
   var curName='',curFid='',curStep='hub';
   var TX='#3d7030',BGC='#e8f0e5',BDC='#7aaa6a';
 
@@ -19705,7 +19740,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013135410</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013140324</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
