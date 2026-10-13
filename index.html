@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013092627';
+  var BUILD='20261013123703';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2614,7 +2614,52 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-c-2-1')">&#x2190; 2-1</button>
     <span class="btitle">2-1-3</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-c-2-1-3-1')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-3-1（玩具安全標章）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-3-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-3-2（扮演、粗大、精細、生活自理）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-3-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-3-3</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-3-4')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-3-4（玩具維修、汰換）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-3-1">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-3')">&#x2190; 2-1-3</button>
+    <span class="btitle">2-1-3-1（玩具安全標章）</span>
+  </div>
+  <div id="toySafetyWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-3-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-3')">&#x2190; 2-1-3</button>
+    <span class="btitle">2-1-3-2（扮演、粗大、精細、生活自理）</span>
+  </div>
+  <div id="toyAgeFitWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-3-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-3')">&#x2190; 2-1-3</button>
+    <span class="btitle">2-1-3-3</span>
+  </div>
+  <div id="toyQtyWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-3-4">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-3')">&#x2190; 2-1-3</button>
+    <span class="btitle">2-1-3-4（玩具維修、汰換）</span>
+  </div>
+  <div id="toyMaintainWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-c-2-1-4">
   <div class="bbar">
@@ -4066,6 +4111,10 @@ function GO(id) {
   if (id === 'pj-c-2-1-2-4') { if (typeof KIDSSELFUSE !== 'undefined') KIDSSELFUSE.init(); }
   if (id === 'pj-c-2-1-2-5') { if (typeof ENVCLEANPHOTO !== 'undefined') ENVCLEANPHOTO.init(); }
   if (id === 'pj-c-2-1-2-6') { if (typeof LIGHTCHECK !== 'undefined') LIGHTCHECK.init(); }
+  if (id === 'pj-c-2-1-3-1') { if (typeof TOYSAFETY !== 'undefined') TOYSAFETY.init(); }
+  if (id === 'pj-c-2-1-3-2') { if (typeof TOYAGEFIT !== 'undefined') TOYAGEFIT.init(); }
+  if (id === 'pj-c-2-1-3-3') { if (typeof TOYQTY !== 'undefined') TOYQTY.init(); }
+  if (id === 'pj-c-2-1-3-4') { if (typeof TOYMAINTAIN !== 'undefined') TOYMAINTAIN.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -14907,6 +14956,50 @@ var LIGHTCHECK=_buildFacilityCheckModule({
   printTitle:'活動空間光線查核紀錄',printEmoji:'💡'
 });
 
+var TOYSAFETY=_buildFacilityCheckModule({
+  key:'xiaoBudiToySafetyV1',fbPath:'xiaobuddyToySafety',idPrefix:'ts',varName:'TOYSAFETY',wrapId:'toySafetyWrap',
+  listSubtitle:'教玩具與材料符合安全規範查核紀錄',listHint:'2-1-3-1 教玩具與材料符合安全規範',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。<br>查核內容：2-1-3-1 教玩具與材料符合安全規範。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-3-1 教玩具與材料符合安全規範。</td></tr>',
+  photos:['說明：教玩具符合安全認證。','說明：托育人員測量教玩具組寬度是否符合標準。','說明：托育人員引導幼兒認識教具。','說明：托育人員引導幼兒如何使用教具。'],
+  gridCols:2,photoBoxHeight:160,printPicHeight:160,
+  printTitle:'教玩具與材料符合安全規範查核紀錄',printEmoji:'🧸'
+});
+
+var TOYAGEFIT=_buildFacilityCheckModule({
+  key:'xiaoBudiToyAgeFitV1',fbPath:'xiaobuddyToyAgeFit',idPrefix:'ta',varName:'TOYAGEFIT',wrapId:'toyAgeFitWrap',
+  listSubtitle:'教玩具與材料及圖書適齡符合嬰幼兒發展需求查核紀錄',listHint:'2-1-3-2 教玩具與材料及圖書適齡符合嬰幼兒發展需求（扮演、粗大、精細、生活自理）',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>關鍵評鑑指標：2-1-3 提供多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書並定期清潔及維護。<br>查核內容：2-1-3-2 教玩具與材料及圖書適齡符合嬰幼兒發展需求。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">關鍵評鑑指標</td><td>2-1-3 提供多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-3-2 教玩具與材料及圖書適齡符合嬰幼兒發展需求。</td></tr>',
+  photos:['說明：托育人員請幼兒扮演小烘焙師進行遊戲。','說明：托育人員請幼兒玩感統活動，踩踏平衡行走的遊戲。','說明：多元的教具讓幼兒在操作的過程增加幼兒的手眼協調。','說明：托育人員引導幼兒進行掃地，培養良好的自理能力。'],
+  gridCols:2,photoBoxHeight:160,printPicHeight:160,
+  printTitle:'教玩具與材料及圖書適齡符合嬰幼兒發展需求查核紀錄',printEmoji:'🎭'
+});
+
+var TOYQTY=_buildFacilityCheckModule({
+  key:'xiaoBudiToyQtyV1',fbPath:'xiaobuddyToyQty',idPrefix:'tq',varName:'TOYQTY',wrapId:'toyQtyWrap',
+  listSubtitle:'教玩具與材料及圖書數量查核紀錄',listHint:'2-1-3-3 教玩具與材料及圖書數量至少達到收托嬰幼兒人數之3倍',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>關鍵評鑑指標：2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。<br>查核內容：2-1-3-3 教玩具與材料及圖書數量至少達到收托嬰幼兒人數之3倍。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">關鍵評鑑指標</td><td>2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-3-3 教玩具與材料及圖書數量至少達到收托嬰幼兒人數之3倍。</td></tr>',
+  photos:['說明：托育人員協助幼兒操作擦掉影子找動物。','說明：托育人員引導幼兒製作中秋節卡片。','說明：托育人員引導幼兒幫動物洗澡。','說明：托育人員引導幼兒學習脫掉帽子。'],
+  gridCols:2,photoBoxHeight:160,printPicHeight:160,
+  printTitle:'教玩具與材料及圖書數量查核紀錄',printEmoji:'📚'
+});
+
+var TOYMAINTAIN=_buildFacilityCheckModule({
+  key:'xiaoBudiToyMaintainV1',fbPath:'xiaobuddyToyMaintain',idPrefix:'tm',varName:'TOYMAINTAIN',wrapId:'toyMaintainWrap',
+  listSubtitle:'定期清潔、維護及汰換教玩具查核紀錄',listHint:'2-1-3-4 定期清潔、維護及汰換教玩具',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。<br>查核內容：2-1-3-4 定期清潔、維護及汰換教玩具。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-3 提供安全、多元、適量且適合嬰幼兒發展的設備、教玩具與材料及圖書，並定期清潔及維護。</td></tr><tr><td class="th">查核內容</td><td>2-1-3-4 定期清潔、維護及汰換教玩具。</td></tr>',
+  photos:['說明：托育人員發現玩具有裂痕破損。','說明：托育人員發現玩具無法修理，淘汰處理。','說明：托育人員發現玩具車摔落斷裂。','說明：托育人員經過維修依然無法使用淘汰處理。'],
+  gridCols:2,photoBoxHeight:160,printPicHeight:160,
+  printTitle:'定期清潔、維護及汰換教玩具查核紀錄',printEmoji:'🧰'
+});
+
 
 
 
@@ -19432,7 +19525,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013092627</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013123703</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
