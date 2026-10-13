@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013123703';
+  var BUILD='20261013132628';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2666,7 +2666,41 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="GO('pj-c-2-1')">&#x2190; 2-1</button>
     <span class="btitle">2-1-4</span>
   </div>
-  <div style="padding:30px 16px;text-align:center;color:#999;font-size:.85rem;">內容準備中。</div>
+  <div style="max-width:680px;margin:0 auto;padding:16px;">
+    <div onclick="GO('pj-c-2-1-4-2')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-4-2（引導幼兒生活自理）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-4-3')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;margin-bottom:12px;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-4-3（自由探索、團體）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div onclick="GO('pj-c-2-1-4-4')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
+      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">2-1-4-4（個別化引導）</div></div>
+      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-4-2">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-4')">&#x2190; 2-1-4</button>
+    <span class="btitle">2-1-4-2（引導幼兒生活自理）</span>
+  </div>
+  <div id="selfCareWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-4-3">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-4')">&#x2190; 2-1-4</button>
+    <span class="btitle">2-1-4-3（自由探索、團體）</span>
+  </div>
+  <div id="freeExploreWrap" style="padding-bottom:40px;"></div>
+</div>
+<div class="pg" id="pg-pj-c-2-1-4-4">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('pj-c-2-1-4')">&#x2190; 2-1-4</button>
+    <span class="btitle">2-1-4-4（個別化引導）</span>
+  </div>
+  <div id="individGuideWrap" style="padding-bottom:40px;"></div>
 </div>
 <div class="pg" id="pg-pj-c-2-1-5">
   <div class="bbar">
@@ -4115,6 +4149,9 @@ function GO(id) {
   if (id === 'pj-c-2-1-3-2') { if (typeof TOYAGEFIT !== 'undefined') TOYAGEFIT.init(); }
   if (id === 'pj-c-2-1-3-3') { if (typeof TOYQTY !== 'undefined') TOYQTY.init(); }
   if (id === 'pj-c-2-1-3-4') { if (typeof TOYMAINTAIN !== 'undefined') TOYMAINTAIN.init(); }
+  if (id === 'pj-c-2-1-4-2') { if (typeof SELFCARE !== 'undefined') SELFCARE.init(); }
+  if (id === 'pj-c-2-1-4-3') { if (typeof FREEEXPLORE !== 'undefined') FREEEXPLORE.init(); }
+  if (id === 'pj-c-2-1-4-4') { if (typeof INDIVIDGUIDE !== 'undefined') INDIVIDGUIDE.init(); }
   if (id === 'clean') { if (typeof CLEAN !== 'undefined') CLEAN.init(); }
   if (id === 'bodytemp') { if (typeof BODYTEMP !== 'undefined') BODYTEMP.init(); }
   if (id === 'phonevisit') { if (typeof PHONEVISIT !== 'undefined') PHONEVISIT.init(); }
@@ -15000,6 +15037,39 @@ var TOYMAINTAIN=_buildFacilityCheckModule({
   printTitle:'定期清潔、維護及汰換教玩具查核紀錄',printEmoji:'🧰'
 });
 
+var SELFCARE=_buildFacilityCheckModule({
+  key:'xiaoBudiSelfCareV1',fbPath:'xiaobuddySelfCare',idPrefix:'sc',varName:'SELFCARE',wrapId:'selfCareWrap',
+  listSubtitle:'引導嬰幼兒生活自理查核紀錄',listHint:'2-1-4-2 引導嬰幼兒學習生活自理並養成良好生活習慣',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。<br>查核內容：2-1-4-2 引導嬰幼兒學習生活自理並養成良好生活習慣。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。</td></tr><tr><td class="th">查核內容</td><td>2-1-4-2 引導嬰幼兒學習生活自理並養成良好生活習慣。</td></tr>',
+  photos:['說明：托育人員從旁引導幼兒自己練習收教玩具(依照圖案，依序將教玩具分類收拾)。','說明：當幼兒能自己完成練習收教玩具時，托育人員會給予正向鼓勵。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'引導嬰幼兒生活自理查核紀錄',printEmoji:'🧺'
+});
+
+var FREEEXPLORE=_buildFacilityCheckModule({
+  key:'xiaoBudiFreeExploreV1',fbPath:'xiaobuddyFreeExplore',idPrefix:'fe',varName:'FREEEXPLORE',wrapId:'freeExploreWrap',
+  listSubtitle:'嬰幼兒自由探索與團體活動查核紀錄',listHint:'2-1-4-3 提供嬰幼兒自由探索與團體活動的機會',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。<br>查核內容：2-1-4-3 提供嬰幼兒自由探索與團體活動的機會。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。</td></tr><tr><td class="th">查核內容</td><td>2-1-4-3 提供嬰幼兒自由探索與團體活動的機會。</td></tr>',
+  photos:['說明：托育人員準備樂器-棒棒糖鼓，搭配音樂一同讓幼兒們自行探索操作。','說明：托育人員佈置溫馨的慶生會，讓幼兒們一同替小壽星拍手及揮手慶生，體驗生日的儀式感。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'嬰幼兒自由探索與團體活動查核紀錄',printEmoji:'🎈'
+});
+
+var INDIVIDGUIDE=_buildFacilityCheckModule({
+  key:'xiaoBudiIndividGuideV1',fbPath:'xiaobuddyIndividGuide',idPrefix:'ig',varName:'INDIVIDGUIDE',wrapId:'individGuideWrap',
+  listSubtitle:'嬰幼兒個別化引導查核紀錄',listHint:'2-1-4-4 給予嬰幼兒個別化的引導與鼓勵',
+  dateLabel:'紀錄日期（例：114年09月）',datePlaceholder:'114年09月',dateLabelShort:'紀錄日期',
+  infoHtml:'核心項目：2-1 適齡適性<br>評鑑指標：2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。<br>查核內容：2-1-4-4 給予嬰幼兒個別化的引導與鼓勵。',
+  infoRowsHtml:'<tr><td class="th">核心項目</td><td>2-1 適齡適性</td></tr><tr><td class="th">評鑑指標</td><td>2-1-4 依據嬰幼兒發展規劃適齡適性的教保活動。</td></tr><tr><td class="th">查核內容</td><td>2-1-4-4 給予嬰幼兒個別化的引導與鼓勵。</td></tr>',
+  photos:['說明：托育人員設計語言溝通-形狀的家，引導幼兒認識形狀及練習操作。','說明：托育人員設計語言溝通-形狀的家，幼兒能回答及完成操作，托育人員則從旁給予拍手鼓勵。'],
+  gridCols:2,photoBoxHeight:220,printPicHeight:220,
+  printTitle:'嬰幼兒個別化引導查核紀錄',printEmoji:'🧩'
+});
+
 
 
 
@@ -19525,7 +19595,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013123703</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013132628</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
