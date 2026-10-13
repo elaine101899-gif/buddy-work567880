@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013132628';
+  var BUILD='20261013135410';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1271,6 +1271,7 @@ body.adm .add-mat{display:inline-block;background:rgba(76,184,194,.12);border:1.
 .asr-add-btn{background:#e8a030;color:white;border:none;border-radius:8px;padding:6px 14px;font-size:.77rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;display:none;}
 body.adm .asr-add-btn{display:inline-block !important;}
 body.adm .asr-del-btn{display:block !important;}
+body.adm .asr-edit-btn{display:block !important;}
 body.adm .asr-promote-btn{display:block !important;}
 .asr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:16px;}
 .asr-person{background:white;border:1.5px solid #ecdfc8;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -2079,6 +2080,29 @@ var ROSTER=(function(){
       if(typeof refreshSigners==='function')refreshSigners();
     }
   }
+  /* 更新老師本身的資料（例如調班、補填資格證號），不是新增/刪除。
+     patch 裡某個欄位給 null 表示清掉那個欄位（例如把保母證號清空改回相關科系）。 */
+  function updateTeacher(yr,teacherId,patch,cb){
+    var fb=_fbInit();
+    if(fb){
+      var fbPatch={};
+      Object.keys(patch).forEach(function(k){fbPatch[k]=(patch[k]===null)?null:patch[k];});
+      fb.ref(_rosterFbBase()+'/'+yr+'/teachers/'+teacherId).update(fbPatch,function(err){ if(cb)cb(!err); });
+    }else if(cb)cb(false);
+    var cur=window['_asrPreload'+yr];
+    if(cur){
+      cur.teachers=cur.teachers.map(function(t){
+        if(t.id!==teacherId)return t;
+        var merged={};
+        Object.keys(t).forEach(function(k){merged[k]=t[k];});
+        Object.keys(patch).forEach(function(k){if(patch[k]===null)delete merged[k];else merged[k]=patch[k];});
+        return merged;
+      });
+      window['_asrPreload'+yr]=cur;
+      if(typeof refreshSigners==='function')refreshSigners();
+      if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+    }
+  }
   function addChild(yr,teacherId,child,cb){
     var fb=_fbInit();
     if(fb)fb.ref(_rosterFbBase()+'/'+yr+'/children/'+teacherId+'/'+child.id).set(child,function(err){ if(cb)cb(!err); });
@@ -2171,7 +2195,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -4566,7 +4590,7 @@ var ADM = (function() {
     }
 
     /* Remove admin UI */
-    var rm = cl.querySelectorAll('#aFab,#pinOv,#aBar,.add-mat,.asr-del-btn');
+    var rm = cl.querySelectorAll('#aFab,#pinOv,#aBar,.add-mat,.asr-del-btn,.asr-edit-btn');
     var i;
     for (i = 0; i < rm.length; i++) { rm[i].parentNode.removeChild(rm[i]); }
     var ce = cl.querySelectorAll('[contenteditable]');
@@ -4889,17 +4913,23 @@ function printSummaryB(cls) {
 
 <div class="asr-modal" id="asrModalT">
   <div class="asr-mbox">
-    <h3>&#x1F469;&#x200D;&#x1F3EB; 新增托育人員</h3>
+    <h3 id="asrModalTTitle">&#x1F469;&#x200D;&#x1F3EB; 新增托育人員</h3>
     <input class="asr-mi" id="inpTN" type="text" placeholder="姓名">
     <select class="asr-msel" id="inpTC">
       <option value="baby">寶寶班</option>
       <option value="crawl">爬爬班</option>
       <option value="run" selected>跑跑班</option>
     </select>
-    <input class="asr-mi" id="inpTBedCls" type="text" placeholder="班別（選填，例如：寶寶一班；會自動建立寢具表班級）">
+    <input class="asr-mi" id="inpTBedCls" type="text" placeholder="第幾班（選填，例如：跑跑一班；會自動建立寢具表班級）">
+    <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">資格</div>
+    <div style="display:flex;gap:16px;margin-bottom:6px;">
+      <label style="display:flex;align-items:center;gap:4px;font-size:.85rem;"><input type="radio" name="inpTCertType" value="edu" checked onchange="ASR.onCertTypeChange()">相關科系</label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:.85rem;"><input type="radio" name="inpTCertType" value="baby" onchange="ASR.onCertTypeChange()">保母證</label>
+    </div>
+    <input class="asr-mi" id="inpTCertNo" type="text" placeholder="保母證號" style="display:none;">
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="ASR.cm('T')">取消</button>
-      <button class="asr-mok" onclick="ASR.okT()">新增</button>
+      <button class="asr-mok" id="asrModalTOkBtn" onclick="ASR.okT()">新增</button>
     </div>
   </div>
 </div>
@@ -5321,6 +5351,31 @@ function findCurrentThWk(yr){
   return exactTh?{th:exactTh,wk:exactWk}:{th:bestTh||1,wk:bestWk||1};
 }
 
+/* 給請假交接單「代理人」欄位用：打完名字後自動帶出這位老師後台設定的資格（相關科系／保母證號），
+   省得每次交接單都要重填一次；還是可以手動改掉，不會鎖住。找不到同名老師就不動作。 */
+function _lookupTeacherCert(name){
+  if(!name)return null;
+  var yr=(typeof selYear!=='undefined'&&selYear)?selYear:((new Date()>=new Date(2026,7,1))?'115':'114');
+  var pl=window['_asrPreload'+yr]||window._asrPreload||{};
+  var teachers=pl.teachers||[];
+  for(var i=0;i<teachers.length;i++){
+    if(teachers[i].name===name)return teachers[i];
+  }
+  return null;
+}
+/* 代理人欄位打完名字(onchange)就呼叫這個，找得到同名老師才會自動勾資格/帶證號，
+   找不到就完全不動，不會把使用者已經手動填的東西清掉。 */
+function _applyTeacherCertAutofill(name,eduId,babyId,noId){
+  var t=_lookupTeacherCert(name);
+  if(!t||!t.certType)return;
+  var eduEl=document.getElementById(eduId),babyEl=document.getElementById(babyId),noEl=document.getElementById(noId);
+  if(!eduEl||!babyEl)return;
+  var isBaby=t.certType==='baby';
+  eduEl.checked=!isBaby;
+  babyEl.checked=isBaby;
+  if(noEl)noEl.value=isBaby?(t.certNo||''):'';
+}
+
 var selYear="114";
 var _initThWk=findCurrentThWk(selYear);
 var selTheme=_initThWk.th;
@@ -5606,6 +5661,7 @@ _attachAsrFb();
 
 var ASR = (function() {
   var selT=null, selC=null;
+  var _editingTeacherId=null;
   var fCtx={tid:null,cid:null,wno:null,photos:{}};
   var CLS={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
   var DC={'社會情緒':'#d46a8a','語言溝通':'#6a9ad4','身體動作發展':'#5ab870','認知探索':'#c8a830','生活自理':'#9870c8','成長紀錄':'#4aaac0','國定假日':'#e04040','生活花絮':'#5a9a5a'};
@@ -5664,7 +5720,8 @@ var ASR = (function() {
       h+='<div class="asr-person'+(isSel?' sel':'')+'" data-tid="'+t.id+'">';
       h+='<div class="asr-avatar">'+t.name.slice(-1)+'</div>';
       h+='<div class="asr-pname">'+t.name+'</div>';
-      h+='<div class="asr-page">'+(CLS[t.cls]||t.cls)+(t.bedCls?'　·　'+t.bedCls:'')+'</div>';
+      h+='<div class="asr-page">'+(CLS[t.cls]||t.cls)+(t.bedCls?'　·　'+t.bedCls:'')+(t.certType==='baby'?'　·　保母證'+(t.certNo?'('+t.certNo+')':''):'　·　相關科系')+'</div>';
+      h+='<button class="asr-edit-btn" data-edit-tid="'+t.id+'" style="display:none;margin-top:5px;background:#eee;color:#555;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openEditTeacher(this.getAttribute(\'data-edit-tid\'))">&#x270E; 編輯</button>';
       h+='<button class="asr-del-btn" data-del-tid="'+t.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delT(this.getAttribute(\'data-del-tid\'))">&#x2715; 刪除</button>';
       h+='</div>';
     }
@@ -5896,13 +5953,58 @@ var ASR = (function() {
   }
   function om(id){document.getElementById('asrModal'+id).classList.add('on');}
   function cm(id){document.getElementById('asrModal'+id).classList.remove('on');}
+  function onCertTypeChange(){
+    var isBaby=document.querySelector('input[name="inpTCertType"]:checked').value==='baby';
+    document.getElementById('inpTCertNo').style.display=isBaby?'':'none';
+  }
+  /* 點「編輯」：把這位老師現在的資料帶進新增老師那個 modal，切成編輯模式，
+     存檔時改呼叫 ROSTER.updateTeacher 而不是新增一筆。 */
+  function openEditTeacher(tid){
+    var t=null,i;
+    for(i=0;i<asrDB.teachers.length;i++){if(asrDB.teachers[i].id===tid){t=asrDB.teachers[i];break;}}
+    if(!t)return;
+    _editingTeacherId=tid;
+    document.getElementById('asrModalTTitle').textContent='✏️ 編輯托育人員';
+    document.getElementById('asrModalTOkBtn').textContent='儲存';
+    document.getElementById('inpTN').value=t.name||'';
+    document.getElementById('inpTC').value=t.cls||'run';
+    document.getElementById('inpTBedCls').value=t.bedCls||'';
+    var isBaby=t.certType==='baby';
+    document.querySelector('input[name="inpTCertType"][value="'+(isBaby?'baby':'edu')+'"]').checked=true;
+    document.getElementById('inpTCertNo').value=t.certNo||'';
+    document.getElementById('inpTCertNo').style.display=isBaby?'':'none';
+    om('T');
+    setTimeout(function(){document.getElementById('inpTN').focus();},150);
+  }
   function okT(){
     var n=(document.getElementById('inpTN').value||'').trim();
     var c=document.getElementById('inpTC').value;
     var bedCls=(document.getElementById('inpTBedCls').value||'').trim();
+    var certType=document.querySelector('input[name="inpTCertType"]:checked').value;
+    var certNo=(document.getElementById('inpTCertNo').value||'').trim();
     if(!n){alert('請輸入姓名');return;}
+    if(_editingTeacherId){
+      var tid=_editingTeacherId;
+      var patch={name:n,cls:c,bedCls:bedCls||null,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
+      asrDB.teachers=asrDB.teachers.map(function(t){
+        if(t.id!==tid)return t;
+        var merged={id:t.id,name:n,cls:c};
+        if(bedCls)merged.bedCls=bedCls;
+        merged.certType=certType;
+        if(certType==='baby'&&certNo)merged.certNo=certNo;
+        return merged;
+      });
+      asrSave();cm('T');rdrT();toast('已更新 '+n);
+      if(typeof ROSTER!=='undefined')ROSTER.updateTeacher(selYear,tid,patch,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
+      });
+      _editingTeacherId=null;
+      return;
+    }
     var newTeacher={id:'t'+Date.now(),name:n,cls:c};
     if(bedCls)newTeacher.bedCls=bedCls;
+    newTeacher.certType=certType;
+    if(certType==='baby'&&certNo)newTeacher.certNo=certNo;
     asrDB.teachers.push(newTeacher);
     asrSave();cm('T');rdrT();toast('已新增 '+n);
     /* 同步寫入雲端名單，讓所有裝置（適齡適性/請假/事故單/體溫/簽名庫等）都看得到這位老師 */
@@ -6364,7 +6466,7 @@ var ASR = (function() {
     css += '.asr-ta{display:block;width:100%;min-height:52px;border:1px solid #e0e0e0;border-radius:5px;padding:5px;font-size:7.5px;font-family:sans-serif;}';
 
     /* Hide UI elements */
-    css += '.pdel,.pcpy,.asr-del-btn,.asr-form-bbar,.afrshare,input[type=file],.add-mat,.sync-setup{display:none!important;}';
+    css += '.pdel,.pcpy,.asr-del-btn,.asr-edit-btn,.asr-form-bbar,.afrshare,input[type=file],.add-mat,.sync-setup{display:none!important;}';
     /* Ensure crp-bg fills slot in popup window (global CSS not available there) */
     css += '.crp-bg{width:100%;height:100%;}';
 
@@ -6467,7 +6569,15 @@ var ASR = (function() {
     /* Render saved teachers on load */
     rdrT();
     var bT=document.getElementById('btnAddT');
-    if(bT)bT.onclick=function(){document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);};
+    if(bT)bT.onclick=function(){
+      _editingTeacherId=null;
+      document.getElementById('asrModalTTitle').textContent='👩‍🏫 新增托育人員';
+      document.getElementById('asrModalTOkBtn').textContent='新增';
+      document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';
+      document.querySelector('input[name="inpTCertType"][value="edu"]').checked=true;
+      document.getElementById('inpTCertNo').value='';document.getElementById('inpTCertNo').style.display='none';
+      om('T');setTimeout(function(){document.getElementById('inpTN').focus();},150);
+    };
     var bC=document.getElementById('btnAddC');
     if(bC)bC.onclick=function(){document.getElementById('inpCN').value='';document.getElementById('inpCEnroll').value='';om('C');setTimeout(function(){document.getElementById('inpCN').focus();},150);};
     var bResetWk=document.getElementById('btnResetWeekPhotos');
@@ -7092,7 +7202,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,rdrW:rdrW,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,rdrW:rdrW,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids,openEditTeacher:openEditTeacher,onCertTypeChange:onCertTypeChange};
 })();
 
 </script>
@@ -8660,7 +8770,7 @@ var LEAVE=(function(){
     h+='</select></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人</div><input type="text" id="lHdrSub" class="df-inp" value="'+(hdr.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人</div><input type="text" id="lHdrSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'lHdrCertEdu\',\'lHdrCertBaby\',\'lHdrCertNo\')" value="'+(hdr.sub||'').replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">代理人資格</div>';
@@ -9270,7 +9380,7 @@ var LEAVE_BOSS=(function(){
     h+='</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="bUnit" class="df-inp" placeholder="填寫班別" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'" style="flex:1;"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="bSub" class="df-inp" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="bSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'bCertEdu\',\'bCertBaby\',\'bCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div>';
     h+='<div class="lf-ck-row"><label><input type="checkbox" id="bCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div>';
     h+='<input type="text" id="bCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'">';
@@ -9597,7 +9707,7 @@ var LEAVE_FLEX=(function(){
     ['主任','副主任','行政主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="fRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
     h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="fUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="fSub" class="df-inp" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="fSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'fCertEdu\',\'fCertBaby\',\'fCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="fCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="fCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="fCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
@@ -9801,7 +9911,7 @@ var LEAVE_COOK=(function(){
     ['主任','副主任','行政','主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="cRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
     h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="cUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="cSub" class="df-inp" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="cSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'cCertEdu\',\'cCertBaby\',\'cCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="cCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="cCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="cCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
@@ -19595,7 +19705,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013132628</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013135410</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
