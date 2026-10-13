@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013141144';
+  var BUILD='20261013143626';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5379,6 +5379,43 @@ function _roleAssignedNames(role){
   teachers.forEach(function(t){if(t.role===role&&out.indexOf(t.name)<0)out.push(t.name);});
   return out;
 }
+/* 托育人員/機動人員/主管人員三種請假交接單是各自獨立存檔的（托育人員用老師id當key，
+   機動/主管用姓名當key），所以在後台把老師身分改掉（或改名字）時，舊的假單歷史
+   不會自動跟著過去——這裡負責把舊資料整批搬到新的那一邊，搬完舊的那邊就清掉，
+   使用者體感上就是「身分一改，假單歷史跟著過去」。 */
+function _leaveStorageInfo(role){
+  if(role==='flex')return{key:'xiaoBudiLeaveFlexV2',path:'xiaobuddyLeaveFlex',byName:true};
+  if(role==='boss')return{key:'xiaoBudiLeaveBossV2',path:'xiaobuddyLeaveBoss',byName:true};
+  return{key:'xiaoBudiLeaveV2',path:'xiaobuddyLeave',byName:false};
+}
+function _migrateLeaveHistory(teacherId,oldName,newName,oldRole,newRole){
+  try{
+    var oldInfo=_leaveStorageInfo(oldRole||'teacher'),newInfo=_leaveStorageInfo(newRole||'teacher');
+    var oldKey=oldInfo.byName?oldName:teacherId;
+    var newKey=newInfo.byName?newName:teacherId;
+    if(oldInfo.key===newInfo.key&&oldKey===newKey)return;
+    var oldAll={};
+    try{oldAll=JSON.parse(localStorage.getItem(_ckey(oldInfo.key))||'{}');}catch(e){}
+    var forms=oldAll[oldKey];
+    if(!forms||!Object.keys(forms).length)return;
+    var newAll={};
+    try{newAll=JSON.parse(localStorage.getItem(_ckey(newInfo.key))||'{}');}catch(e){}
+    if(!newAll[newKey])newAll[newKey]={};
+    Object.keys(forms).forEach(function(fid){newAll[newKey][fid]=forms[fid];});
+    localStorage.setItem(_ckey(newInfo.key),JSON.stringify(newAll));
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(newInfo.key),JSON.stringify(newAll));
+    delete oldAll[oldKey];
+    localStorage.setItem(_ckey(oldInfo.key),JSON.stringify(oldAll));
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(oldInfo.key),JSON.stringify(oldAll));
+    var fb=(typeof _fbInit==='function')?_fbInit():null;
+    if(fb){
+      Object.keys(forms).forEach(function(fid){
+        try{fb.ref(newInfo.path+'/'+newKey+'/'+fid).set(forms[fid]);}catch(e2){}
+        try{fb.ref(oldInfo.path+'/'+oldKey+'/'+fid).remove();}catch(e3){}
+      });
+    }
+  }catch(e){}
+}
 /* 代理人欄位打完名字(onchange)就呼叫這個，找得到同名老師才會自動勾資格/帶證號，
    找不到就完全不動，不會把使用者已經手動填的東西清掉。 */
 function _applyTeacherCertAutofill(name,eduId,babyId,noId){
@@ -6003,6 +6040,8 @@ var ASR = (function() {
     if(!n){alert('請輸入姓名');return;}
     if(_editingTeacherId){
       var tid=_editingTeacherId;
+      var _oldT=asrDB.teachers.filter(function(t){return t.id===tid;})[0]||{};
+      var _oldName=_oldT.name,_oldRole=_oldT.role;
       var patch={name:n,cls:c,bedCls:bedCls||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
       asrDB.teachers=asrDB.teachers.map(function(t){
         if(t.id!==tid)return t;
@@ -6014,6 +6053,7 @@ var ASR = (function() {
         return merged;
       });
       asrSave();cm('T');rdrT();toast('已更新 '+n);
+      if(typeof _migrateLeaveHistory==='function')_migrateLeaveHistory(tid,_oldName,n,_oldRole,role);
       if(typeof ROSTER!=='undefined')ROSTER.updateTeacher(selYear,tid,patch,function(ok){
         if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
       });
@@ -19740,7 +19780,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013141144</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013143626</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
