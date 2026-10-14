@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261013143626';
+  var BUILD='20261014095648';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5361,7 +5361,10 @@ function findCurrentThWk(yr){
    省得每次交接單都要重填一次；還是可以手動改掉，不會鎖住。找不到同名老師就不動作。 */
 function _lookupTeacherCert(name){
   if(!name)return null;
-  var yr=(typeof selYear!=='undefined'&&selYear)?selYear:((new Date()>=new Date(2026,7,1))?'115':'114');
+  /* 用日期自動判斷目前學年，不要信任 selYear——那是適性後台「目前正在看哪一年」
+     的狀態，使用者這個瀏覽階段如果沒特別切換過，它會停在預設值'114'，跟系統
+     實際現在是115學年度對不上，會抓到錯的（甚至是空的）老師名冊。 */
+  var yr=(new Date()>=new Date(2026,7,1))?'115':'114';
   var pl=window['_asrPreload'+yr]||window._asrPreload||{};
   var teachers=pl.teachers||[];
   for(var i=0;i<teachers.length;i++){
@@ -5372,7 +5375,10 @@ function _lookupTeacherCert(name){
 /* 給機動人員/主管人員交接單用：把目前名冊裡被設定成這個身分的老師名字抓出來，
    這樣老師在後台被改身分(調班)，假單名單就會自動跟著動，不用另外手動改名單陣列。 */
 function _roleAssignedNames(role){
-  var yr=(typeof selYear!=='undefined'&&selYear)?selYear:((new Date()>=new Date(2026,7,1))?'115':'114');
+  /* 用日期自動判斷目前學年，不要信任 selYear——那是適性後台「目前正在看哪一年」
+     的狀態，使用者這個瀏覽階段如果沒特別切換過，它會停在預設值'114'，跟系統
+     實際現在是115學年度對不上，會抓到錯的（甚至是空的）老師名冊。 */
+  var yr=(new Date()>=new Date(2026,7,1))?'115':'114';
   var pl=window['_asrPreload'+yr]||window._asrPreload||{};
   var teachers=pl.teachers||[];
   var out=[];
@@ -8895,6 +8901,12 @@ var LEAVE=(function(){
 
     h+='</div>';
     wrap.innerHTML=h;
+    /* 這張單原本就存好的代理人姓名，打開來看的時候要自動補一次資格，
+       不然只有「使用者自己重新打一次名字」才會觸發 onchange，之前已經存檔
+       的單子（代理人欄位是程式填進去的，不是使用者打的）永遠不會自動帶出來 */
+    if(hdr.sub&&!hdr.certEdu&&!hdr.certBaby){
+      try{_applyTeacherCertAutofill(hdr.sub,'lHdrCertEdu','lHdrCertBaby','lHdrCertNo');}catch(e){}
+    }
   }
 
   function renderChild(kid,idx,cd,cls){
@@ -9546,6 +9558,12 @@ var LEAVE_BOSS=(function(){
     var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(dSig)d.sigDir=dSig;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    /* 之前存檔時代理人欄位是程式帶進去的，不是使用者重新打一次，onchange 不會觸發，
+       要在打開舊單的時候自己補一次資格自動帶入 */
+    var _hd=d.header||{};
+    if(_hd.sub&&!_hd.certEdu&&!_hd.certBaby){
+      try{_applyTeacherCertAutofill(_hd.sub,'bCertEdu','bCertBaby','bCertNo');}catch(e){}
+    }
   }
   function deleteFid(fid){
     if(!confirm('確定要刪除這份假單嗎？'))return;
@@ -9840,6 +9858,10 @@ var LEAVE_FLEX=(function(){
     curFid=fid;var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    var _hd=d.header||{};
+    if(_hd.sub&&!_hd.certEdu&&!_hd.certBaby){
+      try{_applyTeacherCertAutofill(_hd.sub,'fCertEdu','fCertBaby','fCertNo');}catch(e){}
+    }
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
   function toggleRead(fid){
@@ -10041,6 +10063,10 @@ var LEAVE_COOK=(function(){
     curFid=fid;var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    var _hd=d.header||{};
+    if(_hd.sub&&!_hd.certEdu&&!_hd.certBaby){
+      try{_applyTeacherCertAutofill(_hd.sub,'cCertEdu','cCertBaby','cCertNo');}catch(e){}
+    }
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
   function toggleRead(fid){
@@ -19780,7 +19806,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261013143626</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261014095648</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
