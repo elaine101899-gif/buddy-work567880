@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261014103321';
+  var BUILD='20261015001238';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9257,8 +9257,12 @@ var LEAVE=(function(){
 
   function _openSubSig(){
     var d=getTeacherForms(lTid)[lFid]||{};
-    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL){
+    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL,name){
       d.sigSub=dataURL;
+      if(name){
+        var inp=document.getElementById('lHdrSub');if(inp)inp.value=name;
+        try{_applyTeacherCertAutofill(name,'lHdrCertEdu','lHdrCertBaby','lHdrCertNo');}catch(e){}
+      }
       var merged=Object.assign({},d,{header:collectHdr(),children:collectChildren(),postHandover:v('lPostHandover')});
       saveLocal(lTid,lFid,merged);pushFb(lTid,lFid,merged);renderBody();
     });
@@ -9468,7 +9472,11 @@ var LEAVE_BOSS=(function(){
     h+='</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="bUnit" class="df-inp" placeholder="填寫班別" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'" style="flex:1;"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="bSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'bCertEdu\',\'bCertBaby\',\'bCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="bSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'bCertEdu\',\'bCertBaby\',\'bCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;">';
+    var _sSig=data.sigSub||'';
+    if(_sSig){h+='<img id="bSubSigImg" src="'+_sSig+'" onclick="LEAVE_BOSS._openSubSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE_BOSS._openSubSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="bSubSigBtn" onclick="LEAVE_BOSS._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="bSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div>';
     h+='<div class="lf-ck-row"><label><input type="checkbox" id="bCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div>';
     h+='<input type="text" id="bCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'">';
@@ -9596,6 +9604,22 @@ var LEAVE_BOSS=(function(){
       if(btn)btn.style.display='none';
     });
   }
+  /* ─── 代理人簽名 ─── */
+  function _openSubSig(){
+    var d=getForms(curName)[curFid]||{};
+    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL,name){
+      d.sigSub=dataURL;
+      if(name){
+        var inp=document.getElementById('bSub');if(inp)inp.value=name;
+        try{_applyTeacherCertAutofill(name,'bCertEdu','bCertBaby','bCertNo');}catch(e){}
+      }
+      saveFid(curName,curFid,collectData(d));
+      var img=document.getElementById('bSubSigImg');
+      var btn=document.getElementById('bSubSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}
+      if(btn)btn.style.display='none';
+    });
+  }
 
   /* ─── 收集 / 儲存 ─── */
   function collectData(existing){
@@ -9615,7 +9639,7 @@ var LEAVE_BOSS=(function(){
       bEmgAnnounce:v('bEmgAnnounce'),bEmgParent:v('bEmgParent'),
       viceDir:v('bViceDir'),admin:v('bAdmin'),handover:v('bHandover'),
       createdAt:ex.createdAt||Date.now(),
-      sigMgr:ex.sigMgr||'',sigDir:ex.sigDir||''
+      sigMgr:ex.sigMgr||'',sigDir:ex.sigDir||'',sigSub:ex.sigSub||''
     };
     return d;
   }
@@ -9673,7 +9697,7 @@ var LEAVE_BOSS=(function(){
     p+='<td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return ck((hd.roles||[]).indexOf(r)>=0)+r;}).join('　');
     p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td>';
-    p+='<td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td>';
+    p+='<td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+(data.sigSub?'<br><img src="'+data.sigSub+'" style="max-height:32px;max-width:90px;object-fit:contain;">':'')+'</td>';
     p+='<td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
     p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(data.sigMgr?'<img src="'+data.sigMgr+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td>';
     p+='<td class="th">主任<br>簽名</td><td colspan="3">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td></tr>';
@@ -9709,7 +9733,7 @@ var LEAVE_BOSS=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
 })();
 
 /* ════ 機動人員請假交接單 ════ */
@@ -9807,7 +9831,11 @@ var LEAVE_FLEX=(function(){
     ['主任','副主任','行政主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="fRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
     h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="fUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="fSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'fCertEdu\',\'fCertBaby\',\'fCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="fSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'fCertEdu\',\'fCertBaby\',\'fCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;">';
+    var _sSig=data.sigSub||'';
+    if(_sSig){h+='<img id="fSubSigImg" src="'+_sSig+'" onclick="LEAVE_FLEX._openSubSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE_FLEX._openSubSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="fSubSigBtn" onclick="LEAVE_FLEX._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="fSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="fCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="fCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="fCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
@@ -9885,11 +9913,24 @@ var LEAVE_FLEX=(function(){
       if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
     });
   }
+  function _openSubSig(){
+    var d=getForms(curName)[curFid]||{};
+    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL,name){
+      d.sigSub=dataURL;
+      if(name){
+        var inp=document.getElementById('fSub');if(inp)inp.value=name;
+        try{_applyTeacherCertAutofill(name,'fCertEdu','fCertBaby','fCertNo');}catch(e){}
+      }
+      saveFid(curName,curFid,collectData(d));
+      var img=document.getElementById('fSubSigImg');var btn=document.getElementById('fSubSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
+    });
+  }
 
   function collectData(ex){
     var existing=ex||getForms(curName)[curFid]||{};
     var roles=[];['主任','副主任','行政主管','其它'].forEach(function(r){if(vcb('fRole_'+r))roles.push(r);});
-    return {header:{date:v('fDate'),name:curName,leaveType:v('fLeaveType'),from:(v('fFromD')||'')+(v('fFromT')?'T'+v('fFromT'):''),to:(v('fToD')||'')+(v('fToT')?'T'+v('fToT'):''),roles:roles,unit:v('fUnit'),sub:v('fSub'),certBaby:vcb('fCertBaby'),certNo:v('fCertNo'),certEdu:vcb('fCertEdu')},fDailyArea:v('fDailyArea'),fDailySweep:v('fDailySweep'),fDailyProxy:v('fDailyProxy'),cleanNote:v('fCleanNote'),note:v('fNote'),handover:v('fHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||''};
+    return {header:{date:v('fDate'),name:curName,leaveType:v('fLeaveType'),from:(v('fFromD')||'')+(v('fFromT')?'T'+v('fFromT'):''),to:(v('fToD')||'')+(v('fToT')?'T'+v('fToT'):''),roles:roles,unit:v('fUnit'),sub:v('fSub'),certBaby:vcb('fCertBaby'),certNo:v('fCertNo'),certEdu:vcb('fCertEdu')},fDailyArea:v('fDailyArea'),fDailySweep:v('fDailySweep'),fDailyProxy:v('fDailyProxy'),cleanNote:v('fCleanNote'),note:v('fNote'),handover:v('fHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||'',sigSub:existing.sigSub||''};
   }
   function saveForm(){var d=collectData();saveFid(curName,curFid,d);var btn=document.querySelector('#leaveFlexWrap .lf-flex-save');if(btn){btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}}
 
@@ -9906,7 +9947,7 @@ var LEAVE_FLEX=(function(){
     p+='<table><tr><td class="th" style="width:80px;">交接日期</td><td colspan="5">'+fmtDate(hd.date)+'</td></tr>';
     p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 '+fmtDateTime(hd.from)+'<br>至 '+fmtDateTime(hd.to)+'</td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     var roleStr=['主任','副主任','行政主管','其它'].map(function(r){return ck((hd.roles||[]).indexOf(r)>=0)+r;}).join('　');
-    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
+    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+(data.sigSub?'<br><img src="'+data.sigSub+'" style="max-height:32px;max-width:90px;object-fit:contain;">':'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
     p+='<tr><td class="th">部門主管<br>簽名</td><td>'+(data.sigMgr?'<img src="'+data.sigMgr+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td><td class="th">主任<br>簽名</td><td colspan="3">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:36px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
     ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
@@ -9923,7 +9964,7 @@ var LEAVE_FLEX=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
 })();
 
 var LEAVE_COOK=(function(){
@@ -10015,7 +10056,11 @@ var LEAVE_COOK=(function(){
     ['主任','副主任','行政','主管','其它'].forEach(function(r){h+='<label><input type="checkbox" id="cRole_'+r+'" '+((hd.roles||[]).indexOf(r)>=0?'checked':'')+'>'+r+'</label>';});
     h+='</div><div style="display:flex;align-items:center;gap:6px;margin-top:5px;"><span style="font-size:.8rem;color:#666;">班別：</span><input type="text" id="cUnit" class="df-inp" style="flex:1;" value="'+(hd.unit||'').replace(/"/g,'&quot;')+'"></div></div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="cSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'cCertEdu\',\'cCertBaby\',\'cCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div><input type="text" id="cSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'cCertEdu\',\'cCertBaby\',\'cCertNo\')" value="'+(hd.sub||'').replace(/"/g,'&quot;')+'" style="margin-bottom:6px;">';
+    var _sSig=data.sigSub||'';
+    if(_sSig){h+='<img id="cSubSigImg" src="'+_sSig+'" onclick="LEAVE_COOK._openSubSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE_COOK._openSubSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
+    else{h+='<button id="cSubSigBtn" onclick="LEAVE_COOK._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="cSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">代理人保母資格</div><div class="lf-ck-row"><label><input type="checkbox" id="cCertBaby" '+(hd.certBaby?'checked':'')+'>保母證號</label></div><input type="text" id="cCertNo" class="df-inp" style="margin-top:4px;" placeholder="請填寫保母證號" value="'+(hd.certNo||'').replace(/"/g,'&quot;')+'"><div class="lf-ck-row" style="margin-top:4px;"><label><input type="checkbox" id="cCertEdu" '+(hd.certEdu?'checked':'')+'>相關科系畢</label></div></div></div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">部門主管簽名</div>';
@@ -10090,11 +10135,24 @@ var LEAVE_COOK=(function(){
       if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
     });
   }
+  function _openSubSig(){
+    var d=getForms(curName)[curFid]||{};
+    _sigPad.open('代理人簽名',d.sigSub||'',function(dataURL,name){
+      d.sigSub=dataURL;
+      if(name){
+        var inp=document.getElementById('cSub');if(inp)inp.value=name;
+        try{_applyTeacherCertAutofill(name,'cCertEdu','cCertBaby','cCertNo');}catch(e){}
+      }
+      saveFid(curName,curFid,collectData(d));
+      var img=document.getElementById('cSubSigImg');var btn=document.getElementById('cSubSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}if(btn)btn.style.display='none';
+    });
+  }
 
   function collectData(ex){
     var existing=ex||getForms(curName)[curFid]||{};
     var roles=[];['主任','副主任','行政','主管','其它'].forEach(function(r){if(vcb('cRole_'+r))roles.push(r);});
-    return {header:{date:v('cDate'),name:curName,leaveType:v('cLeaveType'),from:(v('cFromD')||'')+(v('cFromT')?'T'+v('cFromT'):''),to:(v('cToD')||'')+(v('cToT')?'T'+v('cToT'):''),roles:roles,unit:v('cUnit'),sub:v('cSub'),certBaby:vcb('cCertBaby'),certNo:v('cCertNo'),certEdu:vcb('cCertEdu')},cBreakfast:v('cBreakfast'),cFruit:v('cFruit'),cLunch:v('cLunch'),cSnack:v('cSnack'),cTrash:v('cTrash'),mealNote:v('cMealNote'),handover:v('cHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||''};
+    return {header:{date:v('cDate'),name:curName,leaveType:v('cLeaveType'),from:(v('cFromD')||'')+(v('cFromT')?'T'+v('cFromT'):''),to:(v('cToD')||'')+(v('cToT')?'T'+v('cToT'):''),roles:roles,unit:v('cUnit'),sub:v('cSub'),certBaby:vcb('cCertBaby'),certNo:v('cCertNo'),certEdu:vcb('cCertEdu')},cBreakfast:v('cBreakfast'),cFruit:v('cFruit'),cLunch:v('cLunch'),cSnack:v('cSnack'),cTrash:v('cTrash'),mealNote:v('cMealNote'),handover:v('cHandover'),createdAt:existing.createdAt||Date.now(),sigMgr:existing.sigMgr||'',sigDir:existing.sigDir||'',sigSub:existing.sigSub||''};
   }
   function saveForm(){var d=collectData();saveFid(curName,curFid,d);var btn=document.querySelector('#leaveCookWrap .lf-cook-save');if(btn){btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}}
 
@@ -10112,7 +10170,7 @@ var LEAVE_COOK=(function(){
     p+='<tr><td class="th">請假人姓名<br>（簽名）</td><td>'+(hd.name||'')+'</td><td class="th" style="width:55px;">請假日期</td><td>自 <span style="white-space:nowrap;">'+fmtDateTime(hd.from)+'</span>　至 <span style="white-space:nowrap;">'+fmtDateTime(hd.to)+'</span></td><td class="th" style="width:36px;">假別</td><td>'+(hd.leaveType||'')+'</td></tr>';
     /* 每個選項各自不換行，避免「主管」被拆成兩行 */
     var roleStr=['主任','副主任','行政','主管','其它'].map(function(r){return '<span style="white-space:nowrap;">'+ck((hd.roles||[]).indexOf(r)>=0)+r+'</span>';}).join('　');
-    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
+    p+='<tr><td class="th">請假人<br>職務／班別</td><td>'+roleStr+'<br>班別：'+(hd.unit||'')+'</td><td class="th">代理人<br>簽名</td><td>'+(hd.sub||'')+(data.sigSub?'<br><img src="'+data.sigSub+'" style="max-height:32px;max-width:90px;object-fit:contain;">':'')+'</td><td class="th" colspan="2">'+ck(hd.certBaby)+'保母證號：'+(hd.certNo||'')+'<br>'+ck(hd.certEdu)+'相關科系畢</td></tr>';
     p+='<tr><td class="th">主任<br>簽名</td><td colspan="5">'+(data.sigDir?'<img src="'+data.sigDir+'" style="max-height:28px;max-width:100px;object-fit:contain;">':'')+'</td></tr></table>';
     p+='<div class="rules"><b>請假職務代理人規定如下：</b><ol>';
     ['本請假職務代理交接單請於請假前七天交接並填寫完畢。','其請假人應於請假前交由行政／及部門主管機構核備交由主任簽章。','行政主管簽章並影印留存','公開告知相關人員','填寫完畢在請假前三天讓代理人（需含早或晚值）實際了解物品擺放位置','以下幼兒交接事項說明請每一欄清楚填寫'].forEach(function(t){p+='<li>'+t+'</li>';});p+='</ol></div>';
@@ -10132,7 +10190,7 @@ var LEAVE_COOK=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -15423,7 +15481,7 @@ var _sigPad=(function(){
     armedName=name;
     var saved=(typeof SIGLIB!=='undefined')?SIGLIB.get(name):'';
     if(saved){
-      if(onSaveCb)onSaveCb(saved);
+      if(onSaveCb)onSaveCb(saved,name);
       var ov=document.getElementById('sigPadOv');
       if(ov)ov.style.display='none';
       return;
@@ -15469,7 +15527,7 @@ var _sigPad=(function(){
       var cvs=document.getElementById('sigPadCvs');
       var url=cvs.toDataURL('image/png');
       if(armedName&&typeof SIGLIB!=='undefined')SIGLIB.set(armedName,url);
-      if(onSaveCb)onSaveCb(url);
+      if(onSaveCb)onSaveCb(url,armedName);
     }
     if(ov)ov.style.display='none';
   }
@@ -19813,7 +19871,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261014103321</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015001238</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
