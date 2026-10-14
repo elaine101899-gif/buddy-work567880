@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261014095648';
+  var BUILD='20261014103321';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1962,6 +1962,13 @@ var ROSTER=(function(){
     var teachers=b.teachers.filter(function(t){return !removedT[t.id];});
     var tIds={}; teachers.forEach(function(t){tIds[t.id]=true;});
     var cloudT=(cloud&&cloud.teachers)||{};
+    /* 底稿（base）只是建置當下的靜態快照，老師在後台被編輯過的最新資料
+       （班級／第幾班／身分／資格證號等）只會寫進雲端，不會回頭改到底稿本身。
+       原本這裡只有「雲端有、底稿沒有」才會補進來，底稿已經有的那些老師
+       （絕大多數現職老師都在底稿裡）就算雲端有更新過的版本也完全被忽略，
+       編輯存檔後畫面看起來有改到，下次重新整理/切頁又被底稿的舊資料蓋回去。
+       改成：底稿裡的老師，雲端有對應紀錄就直接用雲端版本整筆取代。 */
+    teachers=teachers.map(function(t){return cloudT[t.id]?cloudT[t.id]:t;});
     Object.keys(cloudT).forEach(function(id){
       if(!tIds[id]&&!removedT[id]){teachers.push(cloudT[id]);tIds[id]=true;}
     });
@@ -19806,7 +19813,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261014095648</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261014103321</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
