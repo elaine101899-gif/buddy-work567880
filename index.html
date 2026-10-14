@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261015001238';
+  var BUILD='20261015001838';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1968,9 +1968,12 @@ var ROSTER=(function(){
        （絕大多數現職老師都在底稿裡）就算雲端有更新過的版本也完全被忽略，
        編輯存檔後畫面看起來有改到，下次重新整理/切頁又被底稿的舊資料蓋回去。
        改成：底稿裡的老師，雲端有對應紀錄就直接用雲端版本整筆取代。 */
-    teachers=teachers.map(function(t){return cloudT[t.id]?cloudT[t.id]:t;});
+    /* cloudT[id] 是 Firebase 存的「值」，id 本身是 Firebase 路徑的 key，
+       不會重複存在值裡面，整筆取代一定要自己把 id 補回去，不然這個老師底下
+       掛的幼兒名單（children[t.id]）會整組查不到、變成完全消失。 */
+    teachers=teachers.map(function(t){return cloudT[t.id]?Object.assign({},t,cloudT[t.id],{id:t.id}):t;});
     Object.keys(cloudT).forEach(function(id){
-      if(!tIds[id]&&!removedT[id]){teachers.push(cloudT[id]);tIds[id]=true;}
+      if(!tIds[id]&&!removedT[id]){teachers.push(Object.assign({},cloudT[id],{id:id}));tIds[id]=true;}
     });
     var children={};
     Object.keys(b.children||{}).forEach(function(tid){
@@ -19871,7 +19874,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015001238</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015001838</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
