@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261015001838';
+  var BUILD='20261015092414';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2028,6 +2028,12 @@ var ROSTER=(function(){
        雲端資料若比那個時間點晚到（手機網路較慢時常見），要主動補進目前畫面，
        不然要等使用者手動重新整理或切換學期才會看到新增的老師/幼兒。 */
     if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+    /* 日誌的「觀察學生」名單是用 rosterAsOf() 現算的，依賴 lastCloud[yr]；
+       如果使用者在雲端名單同步完成前就已經點開某一天的日誌表單，那時候
+       lastCloud[yr] 還是空的，會先看到底稿的原始名單（升班/離園都還沒套用）。
+       雲端資料一到，這裡主動幫忙重新渲染一次目前開著的表單，名單就會自動
+       變成正確版本，不用使用者自己發現不對再重整頁面。 */
+    if(typeof DIARY!=='undefined'&&DIARY.refreshIfOpen)DIARY.refreshIfOpen();
   }
   /* 查詢「某一天」的名單快照（例如寢具/日誌/電訪表查 9 月資料時，要用 9 月
      那天的名單，不是今天的名單）。dateStr 格式 'YYYY-MM-DD'（西元年）。
@@ -8508,6 +8514,14 @@ var DIARY=(function(){
     return h;
   }
 
+  /* 開啟表單當下，名單名冊的雲端資料（升班/離園/新生）如果還沒同步完成，
+     getStudents() 會先用底稿的原始名單頂著；等 ROSTER 真正同步到最新資料時
+     會呼叫這裡，如果現在正好有開著一份日誌表單，就用同一天同一班重新渲染
+     一次，畫面上的觀察學生名單就會自動變成正確版本，不用使用者自己重整。 */
+  function refreshIfOpen(){
+    if(dCtx&&dCtx.dayNo&&dCtx.cls)openForm(dCtx.dayNo,dCtx.cls);
+  }
+
   /* ── 初始化 ── */
   dbLoad();
   // 預設自動跳到今天對應的主題與週
@@ -8521,7 +8535,8 @@ var DIARY=(function(){
     addStep:addStep,removeStep:removeStep,resetToTpl:resetToTpl,loadPhoto:loadPhoto,
     dCrpOpen:dCrpOpen,dCrpDone:dCrpDone,dDelPhoto:dDelPhoto,
     saveForm:saveForm,applyToOtherClasses:applyToOtherClasses,downloadEntry:downloadEntry,printEntry:printEntry,
-    download:downloadEntry /* 向後相容 */
+    download:downloadEntry /* 向後相容 */,
+    refreshIfOpen:refreshIfOpen
   };
 })();
 
@@ -19874,7 +19889,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015001838</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015092414</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
