@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016084444';
+  var BUILD='20261016100420';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -19672,6 +19672,10 @@ var TEACHERLEAVE=(function(){
           h+='<input type="text" class="df-inp" style="width:70px;flex:0 0 auto;" '+dis+' placeholder="例如半天" value="'+(t.note||'').replace(/"/g,'&quot;')+'" onchange="TEACHERLEAVE.setNote(\''+name+'\',this.value)">';
           h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.formWritten?'checked':'')+dis+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'formWritten\',this.checked)">假單</label>';
           h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.printed?'checked':'')+dis+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'printed\',this.checked)">交接單</label>';
+          /* 晚補單常見：假單/交接單當下還沒寫好，不確定要不要先勾，
+             這個按鈕直接跳去那位老師自己的請假交接單列表查閱，
+             確認真的寫好了再回來勾選，不用自己記得去哪裡找。 */
+          h+='<button type="button" class="cln-sig-btn" style="font-size:.68rem;padding:3px 9px;flex:0 0 auto;" onclick="event.stopPropagation();TEACHERLEAVE.reviewForm(\''+name+'\')">🔍 查看</button>';
         }
         h+='</div></div>';
       });
@@ -19888,7 +19892,43 @@ var TEACHERLEAVE=(function(){
 
   function init(){curViewKey=todayKey();load();render();}
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport};
+  /* 點「🔍 查看」直接跳到這位老師自己的請假交接單列表，方便晚補單的情況
+     先進去查閱有沒有真的寫、寫了什麼，確認過再回來把假單/交接單勾起來，
+     不用自己記得去行政選單裡一層層翻找是哪一種身分的交接單。
+     依照身分分流到四種交接單模組之一；廚工不在適性老師名冊裡，
+     主管/機動人員則先看後台名冊身分，查不到才退回固定名單比對
+     （固定名單本來就是那幾個模組自己預設的身分名單，保留當備援）。 */
+  function reviewForm(name){
+    var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
+    var cookNames=isBambino?['林素珍']:['黃郁婷','林素珍'];
+    var bossNames=isBambino?['黃鈺雯']:['金佩樺','黃苡綸','洪逸惠'];
+    var flexNames=isBambino?[]:['郭于綺','徐郁婷'];
+    if(cookNames.indexOf(name)>=0){
+      GO('leave-cook');
+      if(typeof LEAVE_COOK!=='undefined')LEAVE_COOK.openPerson(name);
+      return;
+    }
+    var t=(typeof _lookupTeacherCert==='function')?_lookupTeacherCert(name):null;
+    var role=t?t.role:null;
+    if(role==='boss'||bossNames.indexOf(name)>=0){
+      GO('leave-boss');
+      if(typeof LEAVE_BOSS!=='undefined')LEAVE_BOSS.openPerson(name);
+      return;
+    }
+    if(role==='flex'||flexNames.indexOf(name)>=0){
+      GO('leave-flex');
+      if(typeof LEAVE_FLEX!=='undefined')LEAVE_FLEX.openPerson(name);
+      return;
+    }
+    if(t&&t.id){
+      GO('leave');
+      if(typeof LEAVE!=='undefined')LEAVE.openTeacher(t.id);
+      return;
+    }
+    alert('找不到 '+name+' 的請假交接單資料，請確認後台是否已經建立她的老師資料');
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -19965,7 +20005,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016084444</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016100420</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
