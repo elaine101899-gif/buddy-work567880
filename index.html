@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016100420';
+  var BUILD='20261016101026';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3426,7 +3426,8 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">每日回報</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
+    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openCompletion()">&#x1F4CA; 完成度總表</button>
+    <button class="bbtn" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
   </div>
   <div style="padding:14px 16px 40px;" id="tl-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -3455,6 +3456,22 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="TEACHERLEAVE.closeReport()">關閉</button>
       <button class="asr-mok" id="tlCopyBtn" onclick="TEACHERLEAVE.copyReport()">&#x1F4CB; 複製</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="tlCompletionOv">
+  <div class="asr-mbox" style="max-width:640px;">
+    <h3>&#x1F4CA; 請假假單／交接單完成度總表</h3>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <input type="date" class="df-inp" style="width:auto;" id="tlCompStart" onchange="TEACHERLEAVE.renderCompletion()">
+      <span style="color:#888;">～</span>
+      <input type="date" class="df-inp" style="width:auto;" id="tlCompEnd" onchange="TEACHERLEAVE.renderCompletion()">
+    </div>
+    <div style="font-size:.76rem;color:#c0784a;margin-bottom:8px;">🔴 底色標記的是假單或交接單還沒完成的紀錄</div>
+    <div id="tlCompBody" style="max-height:52vh;overflow-y:auto;"></div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="TEACHERLEAVE.closeCompletion()">關閉</button>
+      <button class="asr-mok" onclick="TEACHERLEAVE.printCompletion()">&#x1F5A8;&#xFE0F; 列印總表</button>
     </div>
   </div>
 </div>
@@ -19928,7 +19945,82 @@ var TEACHERLEAVE=(function(){
     alert('找不到 '+name+' 的請假交接單資料，請確認後台是否已經建立她的老師資料');
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm};
+  /* ─── 完成度總表：跨日期範圍一次看，老師填寫了假單不算數，
+     要「假單」「交接單」兩個都打勾才算真的完成，還沒完成的用紅色底標出來，
+     也能直接列印成一張紙交接/留存。 ─── */
+  function _compRows(startIso,endIso){
+    var rows=[];
+    if(!startIso||!endIso)return rows;
+    var d=new Date(startIso+'T00:00:00');
+    var end=new Date(endIso+'T00:00:00');
+    if(isNaN(d)||isNaN(end))return rows;
+    while(d<=end){
+      var iso=d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
+      var dk=dateInputValToKey(iso);
+      var rec=db.today[dk]||{};
+      Object.keys(rec).forEach(function(name){
+        var t=rec[name];
+        if(t&&t.onLeave){
+          rows.push({iso:iso,name:name,leaveType:t.leaveType||'',note:t.note||'',formWritten:!!t.formWritten,printed:!!t.printed});
+        }
+      });
+      d.setDate(d.getDate()+1);
+    }
+    rows.sort(function(a,b){return a.iso===b.iso?(a.name<b.name?-1:1):(a.iso<b.iso?-1:1);});
+    return rows;
+  }
+  function _compTableHtml(rows){
+    if(!rows.length)return '<div style="color:#aaa;text-align:center;padding:30px 0;">這段期間沒有老師請假紀錄</div>';
+    var h='<table style="width:100%;border-collapse:collapse;font-size:.82rem;">';
+    h+='<tr style="background:#f5f5f5;"><th style="padding:6px;text-align:left;">日期</th><th style="padding:6px;text-align:left;">老師</th><th style="padding:6px;text-align:left;">假別</th><th style="padding:6px;">假單</th><th style="padding:6px;">交接單</th></tr>';
+    rows.forEach(function(r){
+      var incomplete=!r.formWritten||!r.printed;
+      h+='<tr style="border-bottom:1px solid #eee;'+(incomplete?'background:#fdeeea;':'')+'">';
+      h+='<td style="padding:6px;white-space:nowrap;">'+r.iso+'</td>';
+      h+='<td style="padding:6px;font-weight:700;white-space:nowrap;">'+r.name+'</td>';
+      h+='<td style="padding:6px;white-space:nowrap;">'+r.leaveType+(r.note?'（'+r.note+'）':'')+'</td>';
+      h+='<td style="padding:6px;text-align:center;">'+(r.formWritten?'✅':'❌')+'</td>';
+      h+='<td style="padding:6px;text-align:center;">'+(r.printed?'✅':'❌')+'</td>';
+      h+='</tr>';
+    });
+    h+='</table>';
+    return h;
+  }
+  function openCompletion(){
+    var endD=new Date();
+    var startD=new Date(); startD.setDate(startD.getDate()-6);
+    document.getElementById('tlCompStart').value=startD.getFullYear()+'-'+pad2(startD.getMonth()+1)+'-'+pad2(startD.getDate());
+    document.getElementById('tlCompEnd').value=endD.getFullYear()+'-'+pad2(endD.getMonth()+1)+'-'+pad2(endD.getDate());
+    renderCompletion();
+    document.getElementById('tlCompletionOv').classList.add('on');
+  }
+  function closeCompletion(){
+    document.getElementById('tlCompletionOv').classList.remove('on');
+  }
+  function renderCompletion(){
+    var startIso=document.getElementById('tlCompStart').value;
+    var endIso=document.getElementById('tlCompEnd').value;
+    document.getElementById('tlCompBody').innerHTML=_compTableHtml(_compRows(startIso,endIso));
+  }
+  function printCompletion(){
+    var startIso=document.getElementById('tlCompStart').value;
+    var endIso=document.getElementById('tlCompEnd').value;
+    var rows=_compRows(startIso,endIso);
+    var incompleteCount=rows.filter(function(r){return !r.formWritten||!r.printed;}).length;
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>請假完成度總表</title><style>'+
+      '*{box-sizing:border-box;}body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;padding:16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+      'h1{font-size:14pt;margin-bottom:4px;}table{width:100%;border-collapse:collapse;font-size:10pt;margin-top:10px;}'+
+      'th,td{border:1px solid #ccc;padding:5px 8px;}th{background:#eee;}'+
+      '@media print{@page{margin:10mm;size:A4 portrait;}}</style></head><body>';
+    p+='<h1>'+_companyFullName()+'　請假假單／交接單完成度總表</h1>';
+    p+='<div style="font-size:10pt;color:#666;">期間：'+startIso+' ～ '+endIso+'　｜　共 '+rows.length+' 筆，尚未完成 '+incompleteCount+' 筆</div>';
+    p+=_compTableHtml(rows);
+    p+='</body></html>';
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(p);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},500);}
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20005,7 +20097,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016100420</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016101026</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
