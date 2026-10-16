@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016102520';
+  var BUILD='20261016102919';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18787,7 +18787,27 @@ var CHILDLEAVE=(function(){
      病假連續性判斷時要跟週末一樣可以「跳過」不算中斷，但這天本身一樣不算
      請假、不退費（本來就沒有上課，沒有退費的問題）。之後要新增別的國定假日
      直接加在這個物件裡就好。 */
-  var HOLIDAYS={'2026-10-09':true};
+  var HOLIDAYS={
+    /* 115年（2026年）行政院人事行政總處公布之政府行政機關辦公日曆表，
+       只列不是六日本身的國定假日/補假（六日本身 _isOffDay 已經會抓到，
+       不用重複列），這樣列表比較乾淨，也比較容易核對。 */
+    '2026-01-01':true, /* 元旦 */
+    '2026-02-16':true, /* 春節除夕 */
+    '2026-02-17':true, /* 春節初一 */
+    '2026-02-18':true, /* 春節初二 */
+    '2026-02-19':true, /* 春節初三 */
+    '2026-02-20':true, /* 春節補假 */
+    '2026-02-27':true, /* 228和平紀念日補假 */
+    '2026-04-03':true, /* 兒童節補假 */
+    '2026-04-06':true, /* 清明節補假 */
+    '2026-05-01':true, /* 勞動節 */
+    '2026-06-19':true, /* 端午節 */
+    '2026-09-25':true, /* 中秋節 */
+    '2026-09-28':true, /* 教師節補假 */
+    '2026-10-09':true, /* 國慶日補假 */
+    '2026-10-26':true, /* 臺灣光復節補假 */
+    '2026-12-25':true  /* 行憲紀念日 */
+  };
   function _isoOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
   function _isOffDay(d){var wd=d.getDay();return wd===0||wd===6||!!HOLIDAYS[_isoOf(d)];}
   /* d1、d2 之間（不含頭尾）如果全部都是週末或國定假日，回傳 true──
@@ -20104,7 +20124,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016102520</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016102919</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
