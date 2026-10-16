@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016104551';
+  var BUILD='20261016105702';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -15747,10 +15747,34 @@ function _pickGridHTML(items,onclickPrefix){
 }
 /* ── 清潔表單：共用「六日／國定假日／颱風假／豪雨假」判斷與按鈕 ── */
 var OFF_TYPE_BTNS=[{type:'國定假日',lbl:'設國定假日'},{type:'颱風假',lbl:'設颱風假'},{type:'豪雨假',lbl:'設豪雨假'}];
+/* 國定假日（西元日期 YYYY-MM-DD）全站共用同一份清單：病假退費計算（CHILDLEAVE）、
+   清潔表單、體溫管理、班級寢具的自動帶入都讀這一份，之後要新增國定假日
+   只要改這裡一個地方就好，不用每個模組分別改。115年（2026年）依照行政院
+   人事行政總處公布之政府行政機關辦公日曆表填入（不含本來就是六日的部分）。 */
+var HOLIDAYS={
+  '2026-01-01':true, /* 元旦 */
+  '2026-02-16':true, /* 春節除夕 */
+  '2026-02-17':true, /* 春節初一 */
+  '2026-02-18':true, /* 春節初二 */
+  '2026-02-19':true, /* 春節初三 */
+  '2026-02-20':true, /* 春節補假 */
+  '2026-02-27':true, /* 228和平紀念日補假 */
+  '2026-04-03':true, /* 兒童節補假 */
+  '2026-04-06':true, /* 清明節補假 */
+  '2026-05-01':true, /* 勞動節 */
+  '2026-06-19':true, /* 端午節 */
+  '2026-09-25':true, /* 中秋節 */
+  '2026-09-28':true, /* 教師節補假 */
+  '2026-10-09':true, /* 國慶日補假 */
+  '2026-10-26':true, /* 臺灣光復節補假 */
+  '2026-12-25':true  /* 行憲紀念日 */
+};
 function _isWeekend(y,m,d){
   var wd=new Date(y+1911,m-1,d).getDay();
   return wd===0||wd===6;
 }
+function _isoYMD(y,m,d){var mm=(m<10?'0':'')+m,dd=(d<10?'0':'')+d;return (y+1911)+'-'+mm+'-'+dd;}
+function _isHoliday(y,m,d){return !!HOLIDAYS[_isoYMD(y,m,d)];}
 function _weekdayLabel(y,m,d){
   var names=['日','一','二','三','四','五','六'];
   return names[new Date(y+1911,m-1,d).getDay()];
@@ -15806,12 +15830,21 @@ var CLEAN=(function(){
       var dt=new Date(now.getTime()-back*86400000);
       var ty=dt.getFullYear()-1911, tm=dt.getMonth()+1, td=dt.getDate();
       if(_isWeekend(ty,tm,td))continue;
+      var holiday=_isHoliday(ty,tm,td);
       CLEAN_FORMS.forEach(function(fm){
         var k=fm.id+'_'+ty+'_'+tm;
         if(!db.records[k])db.records[k]={days:{}};
         var rec=db.records[k];
         var dayRec=rec.days[td]||{};
         if(dayRec.offType)return;
+        /* 國定假日直接自動標成「國定假日」公休，不用老師自己記得手動按，
+           也不會把清潔項目誤標成已完成（公休當天根本沒人在） */
+        if(holiday){
+          dayRec.offType='國定假日';
+          rec.days[td]=dayRec;
+          if(fb)fb.ref('xiaobuddyClean/clean/records/'+k+'/days/'+td+'/offType').set('國定假日');
+          return;
+        }
         var changed=false;
         fm.items.forEach(function(it,i){
           if(!dayRec['i'+i]){dayRec['i'+i]=true;changed=true;}
@@ -16158,7 +16191,18 @@ var BEDDING=(function(){
     var ty=now.getFullYear()-1911, tm=now.getMonth()+1, td=now.getDate();
     var fridays=[];
     for(var d=1;d<=td;d++){
-      if(new Date(now.getFullYear(),now.getMonth(),d).getDay()===5)fridays.push(tm+'/'+d);
+      if(new Date(now.getFullYear(),now.getMonth(),d).getDay()===5){
+        var useDay=d;
+        /* 禮拜五剛好是國定假日（公休）的話，那天不會有人在，寢具清潔的
+           日期自動帶入改成前一天禮拜四，不要帶一個根本沒上班的日期進去。
+           如果禮拜四不小心跨到上個月（禮拜五剛好是1號這種極少見情況），
+           保險起見維持原本禮拜五，不要讓日期錯亂到別的月份。 */
+        if(_isHoliday(ty,tm,d)){
+          var thu=new Date(now.getFullYear(),now.getMonth(),d-1);
+          if(thu.getMonth()===now.getMonth())useDay=thu.getDate();
+        }
+        fridays.push(tm+'/'+useDay);
+      }
     }
     if(!fridays.length)return;
     var fb=_fbInit();
@@ -17002,6 +17046,7 @@ var BODYTEMP=(function(){
     var now=new Date();
     var ty=now.getFullYear()-1911, tm=now.getMonth()+1, td=now.getDate();
     if(isWeekend(ty,tm,td))return;
+    var holiday=_isHoliday(ty,tm,td);
     var hr=now.getHours()+now.getMinutes()/60;
     var fb=_fbInit();
     SIGNERS.forEach(function(name){
@@ -17010,6 +17055,14 @@ var BODYTEMP=(function(){
       var rec=db.records[k];
       var dayRec=rec.days[td]||{};
       if(dayRec.leave||dayRec.offType)return;
+      /* 國定假日直接自動標成「國定假日」公休，不用老師自己記得手動按，
+         也不會自動亂填一筆根本沒量到的假體溫 */
+      if(holiday){
+        dayRec.offType='國定假日';
+        rec.days[td]=dayRec;
+        if(fb)fb.ref('xiaobuddyClean/bodytemp/records/'+k+'/days/'+td+'/offType').set('國定假日');
+        return;
+      }
       var changed=false;
       var toPush=[];
       /* 清除還沒到時間的欄位（修正舊資料或跨日殘留） */
@@ -18820,31 +18873,11 @@ var CHILDLEAVE=(function(){
     out.sort(function(a,b){return a.date-b.date;});
     return out;
   }
-  /* 國定假日（西元日期 YYYY-MM-DD）：中心公休、本來就不用到托的日子，
-     病假連續性判斷時要跟週末一樣可以「跳過」不算中斷，但這天本身一樣不算
-     請假、不退費（本來就沒有上課，沒有退費的問題）。之後要新增別的國定假日
-     直接加在這個物件裡就好。 */
-  var HOLIDAYS={
-    /* 115年（2026年）行政院人事行政總處公布之政府行政機關辦公日曆表，
-       只列不是六日本身的國定假日/補假（六日本身 _isOffDay 已經會抓到，
-       不用重複列），這樣列表比較乾淨，也比較容易核對。 */
-    '2026-01-01':true, /* 元旦 */
-    '2026-02-16':true, /* 春節除夕 */
-    '2026-02-17':true, /* 春節初一 */
-    '2026-02-18':true, /* 春節初二 */
-    '2026-02-19':true, /* 春節初三 */
-    '2026-02-20':true, /* 春節補假 */
-    '2026-02-27':true, /* 228和平紀念日補假 */
-    '2026-04-03':true, /* 兒童節補假 */
-    '2026-04-06':true, /* 清明節補假 */
-    '2026-05-01':true, /* 勞動節 */
-    '2026-06-19':true, /* 端午節 */
-    '2026-09-25':true, /* 中秋節 */
-    '2026-09-28':true, /* 教師節補假 */
-    '2026-10-09':true, /* 國慶日補假 */
-    '2026-10-26':true, /* 臺灣光復節補假 */
-    '2026-12-25':true  /* 行憲紀念日 */
-  };
+  /* 國定假日判斷：中心公休、本來就不用到托的日子，病假連續性判斷時要跟
+     週末一樣可以「跳過」不算中斷，但這天本身一樣不算請假、不退費（本來
+     就沒有上課，沒有退費的問題）。改用全站共用的 HOLIDAYS 清單（跟清潔
+     表單、體溫管理、班級寢具同一份），之後要新增國定假日只要改那一份
+     清單一個地方，這裡跟其他模組會一起生效。 */
   function _isoOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
   function _isOffDay(d){var wd=d.getDay();return wd===0||wd===6||!!HOLIDAYS[_isoOf(d)];}
   /* d1、d2 之間（不含頭尾）如果全部都是週末或國定假日，回傳 true──
@@ -20161,7 +20194,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016104551</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016105702</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
