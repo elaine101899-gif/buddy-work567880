@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016114107';
+  var BUILD='20261016115242';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -13732,7 +13732,7 @@ function _buildFacilityCheckModule(cfg){
   function downloadFid(fid){
     var d=db[fid];if(!d)return;
     var photos={};for(var n=1;n<=N;n++)photos[n]=d[P+'Photo'+n];
-    _doPrint(_buildHTML(d,photos));
+    _buildHTMLWithStamps(d,photos,function(html){_doPrint(html);});
     if(!d.read){d.read=true;saveAll();pushFb(fid,d);if(curStep==='list')_wrap().innerHTML=renderList();}
   }
 
@@ -13760,7 +13760,7 @@ function _buildFacilityCheckModule(cfg){
   function download(){
     saveForm();var d=db[curFid]||{};
     var photos={};for(var n=1;n<=N;n++)photos[n]=_photos[n]||d[P+'Photo'+n];
-    _doPrint(_buildHTML(d,photos));
+    _buildHTMLWithStamps(d,photos,function(html){_doPrint(html);});
   }
   function _fitToOnePage(doc){
     try{
@@ -13830,12 +13830,65 @@ function _buildFacilityCheckModule(cfg){
     p+='<div class="card"><div class="card-hd">📷 現場照片</div><div class="card-body"><div class="photo-grid">';
     for(var n=1;n<=N;n++){
       var ph=photos[n];
-      var dstamp=fmtDate(d[P+'Date'+n]||_photoFallbackDate(d));
-      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+(ph&&dstamp?'<span class="dstamp">'+esc2(dstamp)+'</span>':'')+'</div><div class="cap">'+esc2(d[P+'Note'+n]!=null?d[P+'Note'+n]:cfg.photos[n-1])+'</div></div>';
+      /* 日期現在是用 canvas 直接合成進照片像素裡（見 _stampDate），
+         不再用 CSS 疊字——疊字是疊在「照片框」右下角，但框跟照片比例
+         常常對不上（object-fit:contain 會留白邊），日期疊字疊到留白處
+         而不是照片上。合成進像素後日期永遠跟著照片走，不會跑位。 */
+      p+='<div class="photo-box"><div class="pic">'+(ph?'<img src="'+ph+'">':'')+'</div><div class="cap">'+esc2(d[P+'Note'+n]!=null?d[P+'Note'+n]:cfg.photos[n-1])+'</div></div>';
     }
     p+='</div></div></div>';
     p+='</div></body></html>';
     return p;
+  }
+  /* 把日期字樣直接畫進照片本身的像素裡（canvas 合成），印出來才會確實
+     疊在照片上，不受照片比例、CSS object-fit留白影響。非同步，全部
+     照片都合成完才繼續組出完整的列印 HTML。 */
+  function _stampDate(photoUrl,dateStr,cb){
+    if(!photoUrl||!dateStr){cb(photoUrl);return;}
+    var img=new Image();
+    img.onload=function(){
+      var w=img.naturalWidth,h=img.naturalHeight;
+      if(!w||!h){cb(photoUrl);return;}
+      try{
+        var cvs=document.createElement('canvas');
+        cvs.width=w;cvs.height=h;
+        var ctx=cvs.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        var txt=fmtDate(dateStr);
+        var fontSize=Math.max(18,Math.round(w*0.04));
+        ctx.font='bold '+fontSize+'px "Courier New",monospace';
+        var padX=fontSize*0.55,padY=fontSize*0.35;
+        var textW=ctx.measureText(txt).width;
+        var boxW=textW+padX*2,boxH=fontSize+padY*2;
+        var margin=fontSize*0.4;
+        var bx=w-boxW-margin,by=h-boxH-margin;
+        ctx.fillStyle='rgba(0,0,0,.55)';
+        if(ctx.roundRect){ctx.beginPath();ctx.roundRect(bx,by,boxW,boxH,6);ctx.fill();}
+        else{ctx.fillRect(bx,by,boxW,boxH);}
+        ctx.fillStyle='#ffd24d';
+        ctx.textBaseline='middle';
+        ctx.fillText(txt,bx+padX,by+boxH/2);
+        cb(cvs.toDataURL('image/jpeg',0.85));
+      }catch(e){cb(photoUrl);}
+    };
+    img.onerror=function(){cb(photoUrl);};
+    img.src=photoUrl;
+  }
+  function _buildHTMLWithStamps(d,photos,cb){
+    var ids=[];for(var n=1;n<=N;n++)if(photos[n])ids.push(n);
+    if(!ids.length){cb(_buildHTML(d,photos));return;}
+    var stamped={},remaining=ids.length;
+    ids.forEach(function(n){
+      var dateStr=d[P+'Date'+n]||_photoFallbackDate(d);
+      _stampDate(photos[n],dateStr,function(url){
+        stamped[n]=url;
+        remaining--;
+        if(remaining===0){
+          var finalPhotos={};for(var k=1;k<=N;k++)finalPhotos[k]=stamped[k]||photos[k];
+          cb(_buildHTML(d,finalPhotos));
+        }
+      });
+    });
   }
   return{init:init,backToList:backToList,newForm:newForm,editForm:editForm,saveForm:saveForm,toggleRead:toggleRead,deleteForm:deleteForm,downloadFid:downloadFid,uploadPhoto:uploadPhoto,onPhotoDateChange:onPhotoDateChange,download:download};
 }
@@ -20205,7 +20258,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016114107</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016115242</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
