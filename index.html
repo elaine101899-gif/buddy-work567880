@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016101404';
+  var BUILD='20261016102520';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18783,14 +18783,21 @@ var CHILDLEAVE=(function(){
     out.sort(function(a,b){return a.date-b.date;});
     return out;
   }
-  /* d1、d2 之間（不含頭尾）如果全部都是六或日，回傳 true──代表這兩天中間只隔了一個週末，算連續 */
+  /* 國定假日（西元日期 YYYY-MM-DD）：中心公休、本來就不用到托的日子，
+     病假連續性判斷時要跟週末一樣可以「跳過」不算中斷，但這天本身一樣不算
+     請假、不退費（本來就沒有上課，沒有退費的問題）。之後要新增別的國定假日
+     直接加在這個物件裡就好。 */
+  var HOLIDAYS={'2026-10-09':true};
+  function _isoOf(d){return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+  function _isOffDay(d){var wd=d.getDay();return wd===0||wd===6||!!HOLIDAYS[_isoOf(d)];}
+  /* d1、d2 之間（不含頭尾）如果全部都是週末或國定假日，回傳 true──
+     代表這兩天中間只隔了公休日，算連續 */
   function _onlyWeekendBetween(d1,d2){
     var t=new Date(d1.getTime());
     for(;;){
       t.setDate(t.getDate()+1);
       if(t>=d2)break;
-      var wd=t.getDay();
-      if(wd!==0&&wd!==6)return false;
+      if(!_isOffDay(t))return false;
     }
     return true;
   }
@@ -20097,7 +20104,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016101404</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016102520</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
