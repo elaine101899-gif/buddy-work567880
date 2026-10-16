@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261015092414';
+  var BUILD='20261016084444';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2130,6 +2130,21 @@ var ROSTER=(function(){
       window['_asrPreload'+yr]=cur;
     }
   }
+  /* 單純調整幼兒的年齡區間（0-8M/9-15M/13-36M），不動班級。
+     只改 children/{teacherId}/{childId}/age 這個葉節點，不用整筆覆蓋。 */
+  function updateChildAge(yr,teacherId,childId,age,cb){
+    var fb=_fbInit();
+    if(fb)fb.ref(_rosterFbBase()+'/'+yr+'/children/'+teacherId+'/'+childId+'/age').set(age,function(err){ if(cb)cb(!err); });
+    else if(cb)cb(false);
+    var cur=window['_asrPreload'+yr];
+    if(cur&&cur.children[teacherId]){
+      cur.children[teacherId]=cur.children[teacherId].map(function(c){return c.id===childId?Object.assign({},c,{age:age}):c;});
+      window['_asrPreload'+yr]=cur;
+      if(typeof refreshSigners==='function')refreshSigners();
+      if(typeof ASR!=='undefined'&&ASR.refreshRoster)ASR.refreshRoster();
+      if(typeof DIARY!=='undefined'&&DIARY.refreshIfOpen)DIARY.refreshIfOpen();
+    }
+  }
   function removeTeacher(yr,teacherId,cb){
     var fb=_fbInit();
     if(fb){
@@ -2211,7 +2226,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -4979,11 +4994,33 @@ function printSummaryB(cls) {
     <h3>&#x2B06;&#xFE0F; <span id="promoteChildName"></span> 升班</h3>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">選擇要升去的班級</div>
     <select class="asr-msel" id="promoteTeacherSel"></select>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">同時順便調整年齡（選填，不改就維持原本的）</div>
+    <select class="asr-msel" id="promoteAgeSel">
+      <option value="">－ 維持原本年齡 －</option>
+      <option value="0-9M">0-9M</option>
+      <option value="9-15M">9-15M</option>
+      <option value="13-36M">13-36M</option>
+    </select>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">生效日期（在這天之前，寢具/日誌/電訪表等畫面都還是顯示原班級）</div>
     <input type="date" class="asr-mi" id="promoteEffDate">
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="ASR.closePromote()">取消</button>
       <button class="asr-mok" onclick="ASR.confirmPromote()">確認升班</button>
+    </div>
+  </div>
+</div>
+
+<div class="asr-modal" id="asrAgeOv">
+  <div class="asr-mbox">
+    <h3>&#x1F3E0; <span id="ageChildName"></span> 調整年齡</h3>
+    <select class="asr-msel" id="ageSel">
+      <option value="0-9M">0-9M</option>
+      <option value="9-15M">9-15M</option>
+      <option value="13-36M">13-36M</option>
+    </select>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="ASR.closeAge()">取消</button>
+      <button class="asr-mok" onclick="ASR.confirmAge()">確認</button>
     </div>
   </div>
 </div>
@@ -5872,6 +5909,7 @@ var ASR = (function() {
       }
       h+='<button class="asr-del-btn" data-del-cid="'+c.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delC(this.getAttribute(\'data-del-cid\'))">&#x2715; 刪除</button>';
       h+='<button class="asr-promote-btn" data-pro-cid="'+c.id+'" style="display:none;margin-top:5px;background:#4a90c0;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openPromote(this.getAttribute(\'data-pro-cid\'))">&#x2B06;&#xFE0F; 升班</button>';
+      h+='<button class="asr-promote-btn" data-age-cid="'+c.id+'" style="display:none;margin-top:5px;background:#8a6fc0;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openAge(this.getAttribute(\'data-age-cid\'))">&#x1F3E0; 年齡</button>';
       h+='<button class="asr-promote-btn" data-lc-cid="'+c.id+'" style="display:none;margin-top:5px;background:#36b27e;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openLifecycle(this.getAttribute(\'data-lc-cid\'),\'enroll\')">&#x1F6AA; 入園</button>';
       h+='<button class="asr-promote-btn" data-lc-cid="'+c.id+'" style="display:none;margin-top:5px;background:#c0784a;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.openLifecycle(this.getAttribute(\'data-lc-cid\'),\'leave\')">&#x1F6AA; 離園</button>';
       h+='</div>';
@@ -5910,6 +5948,8 @@ var ASR = (function() {
       opts+='<option value="'+t.id+'">'+(CLS[t.cls]||t.cls)+' － '+t.name+'</option>';
     });
     sel.innerHTML=opts||'<option value="">（沒有其他班級）</option>';
+    var ageSel=document.getElementById('promoteAgeSel');
+    if(ageSel)ageSel.value=''; /* 預設不改年齡，老師要調的話自己選 */
     var dateInp=document.getElementById('promoteEffDate');
     if(dateInp)dateInp.value=_todayISO();
     document.getElementById('asrPromoteOv').classList.add('on');
@@ -5921,11 +5961,16 @@ var ASR = (function() {
   function confirmPromote(){
     var newTid=document.getElementById('promoteTeacherSel').value;
     var effDate=(document.getElementById('promoteEffDate').value)||_todayISO();
+    var newAge=(document.getElementById('promoteAgeSel')||{}).value||'';
     if(!_promoteChildId||!newTid){closePromote();return;}
     var oldTid=selT;
     var isFuture=effDate>_todayISO();
     var child=(asrDB.children[oldTid]||[]).find(function(c){return c.id===_promoteChildId;});
     if(!child){closePromote();return;}
+    /* 升班常常忘記順便改年齡（0-8M/9-15M/13-36M），這裡讓老師可以選填一起調，
+       不選就維持原本的，用新物件而不是直接改 child 本身，避免影響到還沒處理完的
+       原班級資料。moveChild 會把整個 child 物件寫進新老師底下，年齡自然一起帶過去。 */
+    if(newAge)child=Object.assign({},child,{age:newAge});
     var newTeacherObj=asrDB.teachers.find(function(t){return t.id===newTid;});
     if(!isFuture){
       /* 生效日期是今天（含）以前：立刻在畫面上換班 */
@@ -5950,6 +5995,37 @@ var ASR = (function() {
       },effDate);
     }
     closePromote();
+  }
+  /* ─── 單純調整年齡（不換班） ─── */
+  var _ageChildId=null;
+  function openAge(cid){
+    var cs=asrDB.children[selT]||[]; var child=null,i;
+    for(i=0;i<cs.length;i++){if(cs[i].id===cid){child=cs[i];break;}}
+    if(!child)return;
+    _ageChildId=cid;
+    document.getElementById('ageChildName').textContent=child.name;
+    document.getElementById('ageSel').value=child.age||'13-36M';
+    document.getElementById('asrAgeOv').classList.add('on');
+  }
+  function closeAge(){
+    document.getElementById('asrAgeOv').classList.remove('on');
+    _ageChildId=null;
+  }
+  function confirmAge(){
+    var newAge=document.getElementById('ageSel').value;
+    if(!_ageChildId||!newAge){closeAge();return;}
+    var tid=selT;
+    var child=(asrDB.children[tid]||[]).find(function(c){return c.id===_ageChildId;});
+    if(!child){closeAge();return;}
+    child.age=newAge;
+    asrSave();rdrC();
+    toast('已更新 '+child.name+' 的年齡為 '+newAge);
+    if(typeof ROSTER!=='undefined'&&ROSTER.updateChildAge){
+      ROSTER.updateChildAge(selYear,tid,_ageChildId,newAge,function(ok){
+        if(!ok)toast('⚠️ 雲端同步失敗，請點「立即同步」重試');
+      });
+    }
+    closeAge();
   }
   var _lifecycleChildId=null,_lifecycleMode=null;
   function openLifecycle(cid,mode){
@@ -7285,7 +7361,7 @@ var ASR = (function() {
     if(selC)rdrW();
     toast('✅ 已清空 '+kids.length+' 位小孩第'+wno+'週的照片');
   }
-  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,rdrW:rdrW,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids,openEditTeacher:openEditTeacher,onCertTypeChange:onCertTypeChange};
+  return {delT:delT,delC:delC,cm:cm,okT:okT,okC:okC,cf:cf,pf:pf,dp:dp,cpPhoto:cpPhoto,share:share,crpOpen:crpOpen,setYrTh:setYrTh,syncDropdowns:syncDropdowns,rdrT:rdrT,rdrW:rdrW,_restoreDraft:_restoreDraft,_clearPendingDraft:_clearPendingDraft,updDom:updDom,refreshRoster:refreshRoster,resetForCompany:resetForCompany,resetWeekPhotos:resetWeekPhotos,openPromote:openPromote,closePromote:closePromote,confirmPromote:confirmPromote,openAge:openAge,closeAge:closeAge,confirmAge:confirmAge,openLifecycle:openLifecycle,closeLifecycle:closeLifecycle,confirmLifecycle:confirmLifecycle,toggleShowLeftKids:toggleShowLeftKids,openEditTeacher:openEditTeacher,onCertTypeChange:onCertTypeChange};
 })();
 
 </script>
@@ -19889,7 +19965,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261015092414</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016084444</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
