@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016102919';
+  var BUILD='20261016104551';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18663,6 +18663,12 @@ var CHILDLEAVE=(function(){
     h+='</div>';
     var hint=isToday?'今天可以直接點小孩登記請假。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+hint+'</div>';
+    if(canEdit){
+      h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">';
+      h+='<button class="cln-sig-btn" style="background:#eaf1fb;color:#2b6ca3;border-color:#b8d0ea;" onclick="CHILDLEAVE.bulkMark(\'颱風假\')">&#x1F300; 全園標記颱風假</button>';
+      h+='<button class="cln-sig-btn" style="background:#eaf1fb;color:#2b6ca3;border-color:#b8d0ea;" onclick="CHILDLEAVE.bulkMark(\'豪雨假\')">&#x1F327;&#xFE0F; 全園標記豪雨假</button>';
+      h+='</div>';
+    }
 
     var any=false;
     CLSORDER.forEach(function(cls){
@@ -18754,6 +18760,37 @@ var CHILDLEAVE=(function(){
     render();
   }
   function init(){curViewKey=todayKey();load();render();}
+
+  /* 颱風假／豪雨假通常是全園一起公休，不用一個一個小孩點進去選，
+     一鍵把「目前查詢日期」全部在園幼兒標記成同一個假別。已經有登記
+     其他假別（例如本來就請病假）的小孩不會被蓋掉，跳過不動，
+     避免誤蓋掉更具體的原因，結束後會告訴妳實際標記了幾位、跳過了幾位。 */
+  function bulkMark(type){
+    if(curViewKey!==todayKey()&&!document.body.classList.contains('adm')){
+      alert('過去的日期要新增或修改，請先點右下角鑰匙解鎖後台。');
+      return;
+    }
+    var groups=getKidsByCls();
+    var allKids=[];
+    CLSORDER.forEach(function(cls){allKids=allKids.concat(groups[cls]||[]);});
+    if(!allKids.length){alert('目前沒有在園幼兒名單');return;}
+    if(!confirm('確定要把 '+keyToDateInputVal(curViewKey)+' 全園 '+allKids.length+' 位幼兒都標記成「'+type+'」嗎？\n已經登記其他假別的小孩會跳過、不會被覆蓋。'))return;
+    var dk=curViewKey;
+    var marked=0,skipped=0;
+    allKids.forEach(function(k){
+      var existing=(db.records[dk]||{})[k.id];
+      if(existing&&existing.type){skipped++;return;}
+      var rec=getRec(k.id,dk);
+      rec.name=k.name;
+      rec.type=type;
+      rec.note=rec.note||'';
+      pushRec(k.id,dk);
+      marked++;
+    });
+    save();
+    render();
+    alert('已標記 '+marked+' 位為「'+type+'」'+(skipped?'，跳過 '+skipped+' 位（已有其他假別紀錄）':''));
+  }
 
   /* ════ 請假總表：跟延托費一樣，收費期間每月27號～次月26號 ════ */
   var _sumEndY=0,_sumEndM=0;
@@ -18965,7 +19002,7 @@ var CHILDLEAVE=(function(){
     });
     return byType;
   }
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,bulkMark:bulkMark,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
 })();
 
 /* ════ CHILDFEE：月費單（每位幼兒的繳費紀錄）════
@@ -20124,7 +20161,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016102919</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016104551</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
