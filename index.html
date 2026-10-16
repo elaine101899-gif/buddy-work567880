@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016101026';
+  var BUILD='20261016101404';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3426,8 +3426,7 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="bbar">
     <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
     <span class="btitle">每日回報</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openCompletion()">&#x1F4CA; 完成度總表</button>
-    <button class="bbtn" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
+    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
   </div>
   <div style="padding:14px 16px 40px;" id="tl-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -19667,6 +19666,7 @@ var TEACHERLEAVE=(function(){
     h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
     h+='<input type="date" class="df-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.backToday()">回到今天</button>';
+    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="TEACHERLEAVE.openCompletion()">📊 完成度總表</button>';
     h+='</div>';
     var hint=isToday?'今天可以直接勾選請假老師（不會自動從體溫管理帶入）。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin:10px 0;">'+hint+' 已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
@@ -20097,7 +20097,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016101026</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016101404</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
