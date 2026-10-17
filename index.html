@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261016115242';
+  var BUILD='20261017173359';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1730,6 +1730,22 @@ document.addEventListener('DOMContentLoaded',function(){
 </head>
 <body>
 
+<!-- ── 登入關卡：整個網站要先登入才看得到，蓋在最上面擋住所有內容。
+     authGateOv 預設就是顯示的，JS 確認過登入狀態之後才會把它藏起來。 ── -->
+<div id="authGateOv" style="position:fixed;inset:0;z-index:1000000;background:#f7f4ee;display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="width:100%;max-width:340px;background:#fff;border-radius:16px;padding:28px 24px;box-shadow:0 6px 24px rgba(0,0,0,.12);text-align:center;">
+    <div style="font-size:1.8rem;margin-bottom:6px;">🔐</div>
+    <div style="font-weight:800;font-size:1.05rem;color:#2d3057;margin-bottom:18px;">邦迪小宇宙　登入</div>
+    <div id="agStatus"></div>
+    <div id="agForm">
+      <input type="email" id="agEmail" class="asr-mi" placeholder="帳號（電子郵件）" style="margin-bottom:10px;" autocomplete="username">
+      <input type="password" id="agPass" class="asr-mi" placeholder="密碼" style="margin-bottom:14px;" autocomplete="current-password" onkeydown="if(event.key==='Enter')_authGateLogin();">
+      <button class="cln-sig-btn" style="width:100%;padding:12px;font-size:.95rem;" onclick="_authGateLogin()">登入</button>
+      <div id="agErr" style="color:#c0392b;font-size:.78rem;margin-top:10px;min-height:1em;"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ── 清潔表單雲端同步（Firebase Realtime Database） ── -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -1900,8 +1916,7 @@ function _fbInit(){
     ref:function(path){return raw.ref(_fbCompanyPrefix(path));}
   };
 }
-/* 登入功能試用中：只給 LOGINTEST 這個隱藏測試頁用，不影響其他任何功能，
-   也還沒有任何頁面真的要求登入才能用。
+/* 全站都要先登入才看得到任何頁面（authGateOv 這層關卡）。
    persistence 明確設成 LOCAL：登入一次之後瀏覽器會記住，下次打開 App（包括
    關掉瀏覽器、重開手機）都不用再登入一次，除非使用者自己按登出。這本來就是
    Firebase 的預設行為，這裡用明寫的方式確保不會被其他設定意外改掉。 */
@@ -1918,6 +1933,57 @@ function _fbAuth(){
     return auth;
   }catch(e){return null;}
 }
+
+/* ── 登入關卡：authGateOv 蓋住全站，確認登入狀態之前／沒登入的時候
+   一直擋著，登入成功才會藏起來、讓底下原本的公司選擇/首頁正常運作。
+   這一層完全獨立於原本「右下角鑰匙解鎖後台」的機制，兩者互不影響——
+   登入只是「能不能看到網站」，鑰匙解鎖是「看得到之後能不能做後台操作」。 */
+function _authGateLogin(){
+  var auth=_fbAuth();
+  var errEl=document.getElementById('agErr');
+  if(!auth){if(errEl)errEl.textContent='系統尚未準備好，請確認網路連線後再試一次。';return;}
+  var email=(document.getElementById('agEmail')||{}).value||'';
+  var pass=(document.getElementById('agPass')||{}).value||'';
+  if(!email||!pass){if(errEl)errEl.textContent='請輸入帳號和密碼';return;}
+  if(errEl)errEl.textContent='';
+  auth.signInWithEmailAndPassword(email.trim(),pass).catch(function(err){
+    if(errEl)errEl.textContent='登入失敗：'+((err&&err.code==='auth/invalid-credential')?'帳號或密碼錯誤':(err&&err.message)||'請確認帳號密碼是否正確');
+  });
+}
+function _authGateLogout(){
+  var auth=_fbAuth();
+  if(auth)auth.signOut();
+}
+(function(){
+  var _attached=false;
+  function tryInit(){
+    var auth=_fbAuth();
+    var ov=document.getElementById('authGateOv');
+    if(!auth){
+      /* Firebase 腳本可能還沒載入完成，稍後重試，不要直接放行 */
+      setTimeout(tryInit,300);
+      return;
+    }
+    if(!_attached){
+      _attached=true;
+      auth.onAuthStateChanged(function(user){
+        if(!ov)return;
+        if(user){
+          ov.style.display='none';
+        }else{
+          ov.style.display='flex';
+          var statusEl=document.getElementById('agStatus'),formEl=document.getElementById('agForm');
+          if(statusEl)statusEl.innerHTML='';
+          if(formEl)formEl.style.display='';
+        }
+      });
+    }
+  }
+  var statusEl0=document.getElementById('agStatus'),formEl0=document.getElementById('agForm');
+  if(statusEl0)statusEl0.innerHTML='<div style="color:#aaa;font-size:.85rem;padding:10px 0;">確認登入狀態中…</div>';
+  if(formEl0)formEl0.style.display='none';
+  tryInit();
+})();
 
 /* ── ROSTER：老師/幼兒名單雲端同步（讓「＋新增老師/幼兒」跨裝置生效） ──
    內建名單（_asrPreload114 / _asrPreload115）維持原樣當底稿，
@@ -2465,7 +2531,7 @@ function _rosterKidsAsOf(cls,dateStr){
       </div>
     </div>
   </div>
-  <div class="site-foot">&#xa9; <span id="siteFootName">小布迪音樂藝術托嬰中心</span> &#xB7; 115年 &#xB7; <a href="javascript:void(0)" onclick="GO('company')" style="color:inherit;text-decoration:underline;">&#x1F3E2; 切換公司</a></div>
+  <div class="site-foot">&#xa9; <span id="siteFootName">小布迪音樂藝術托嬰中心</span> &#xB7; 115年 &#xB7; <a href="javascript:void(0)" onclick="GO('company')" style="color:inherit;text-decoration:underline;">&#x1F3E2; 切換公司</a> &#xB7; <a href="javascript:void(0)" onclick="_authGateLogout()" style="color:inherit;text-decoration:underline;">&#x1F512; 登出</a></div>
 </div>
 
 <!-- ═══ 評鑑 ═══ -->
@@ -20258,7 +20324,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261016115242</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261017173359</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
