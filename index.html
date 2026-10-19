@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261017173359';
+  var BUILD='20261019100044';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3862,7 +3862,9 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="asr-modal" id="clEditOv">
   <div class="asr-mbox">
     <h3>&#x1F915; <span id="clEditName"></span> 請假登記</h3>
-    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">日期：<span id="clEditDate"></span></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">開始日期：<span id="clEditDate"></span></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">結束日期（選填，已經知道要請好幾天可以一次設定，不用每天來點一次）</div>
+    <input type="date" class="asr-mi" id="clEditEndDate" style="margin-bottom:10px;">
     <div style="font-size:.78rem;color:#888;margin-bottom:8px;">假別</div>
     <div id="clTypeBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">備註（選填）</div>
@@ -18912,6 +18914,8 @@ var CHILDLEAVE=(function(){
     document.getElementById('clEditName').textContent=name;
     document.getElementById('clEditDate').textContent=keyToDateInputVal(curViewKey);
     document.getElementById('clEditNote').value=rec.note||'';
+    var endInp=document.getElementById('clEditEndDate');
+    if(endInp){endInp.value='';endInp.min=keyToDateInputVal(curViewKey);}
     _renderTypeBtns();
     document.getElementById('clEditOv').classList.add('on');
   }
@@ -18923,13 +18927,46 @@ var CHILDLEAVE=(function(){
   function saveEdit(){
     if(!_curEditChild)return;
     if(!_curEditType){alert('請先選擇假別');return;}
-    var rec=getRec(_curEditChild.id,_curEditKey);
-    rec.name=_curEditChild.name;
-    rec.type=_curEditType;
-    rec.note=document.getElementById('clEditNote').value||'';
-    save();pushRec(_curEditChild.id,_curEditKey);
+    var note=document.getElementById('clEditNote').value||'';
+    var endIso=(document.getElementById('clEditEndDate')||{}).value||'';
+    var startIso=keyToDateInputVal(_curEditKey);
+    if(!endIso||endIso<=startIso){
+      /* 沒填結束日期，或填的比開始日期還早：維持原本單日行為 */
+      var rec=getRec(_curEditChild.id,_curEditKey);
+      rec.name=_curEditChild.name;
+      rec.type=_curEditType;
+      rec.note=note;
+      save();pushRec(_curEditChild.id,_curEditKey);
+      closeEdit();
+      render();
+      return;
+    }
+    /* 已經知道要連續請好幾天，一次把整個區間都寫好，不用每天各別點一次。
+       過去的日期（今天以前）沒解鎖後台的話照樣要擋下來，跟單日編輯
+       的權限規則一致，只是這裡是逐天檢查、擋到的那幾天跳過不寫。 */
+    var isAdm=document.body.classList.contains('adm');
+    var tk=todayKey();
+    var d=new Date(startIso+'T00:00:00');
+    var end=new Date(endIso+'T00:00:00');
+    var written=0,skipped=0;
+    var childName=_curEditChild.name,childId=_curEditChild.id;
+    while(d<=end){
+      var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
+      if(k!==tk&&!isAdm){skipped++;}
+      else{
+        var r=getRec(childId,k);
+        r.name=childName;
+        r.type=_curEditType;
+        r.note=note;
+        pushRec(childId,k);
+        written++;
+      }
+      d.setDate(d.getDate()+1);
+    }
+    save();
     closeEdit();
     render();
+    alert('已設定 '+childName+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過，請解鎖後重新設定）':''));
   }
   function deleteEdit(){
     if(!_curEditChild)return;
@@ -20324,7 +20361,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261017173359</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019100044</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
