@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019161025';
+  var BUILD='20261019162756';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -17351,22 +17351,23 @@ var HYGIENESTAT_ITEMS=['垃圾袋(特大/大/中)','垃圾袋(小/便)','漂白�
 
 function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
   var nCol=items.length;
-  var fs=nCol>=13?7.5:8.5;
+  var fs=nCol>=13?10:11;
   var totalsHead='<tr><th>品項</th>';
   items.forEach(function(it){totalsHead+='<th>'+it+'</th>';});
   totalsHead+='</tr>';
   var totalsBody='<tr><td style="font-weight:700;">數量</td>';
   items.forEach(function(it,idx){totalsBody+='<td>'+(totals[idx]||'')+'</td>';});
   totalsBody+='</tr>';
-  var rowsHead='<tr><th style="width:62px;">日期</th>';
+  var rowsHead='<tr><th style="width:48px;">類型</th><th style="width:66px;">日期</th>';
   items.forEach(function(it){rowsHead+='<th>'+it+'</th>';});
-  rowsHead+='<th style="width:76px;">拿取者／簽名</th></tr>';
+  rowsHead+='<th style="width:84px;">拿取者／簽名</th></tr>';
   var rowsBody='';
   if(!rowsArr.length){
-    rowsBody='<tr><td colspan="'+(nCol+2)+'" style="color:#999;">（本月尚無拿取紀錄）</td></tr>';
+    rowsBody='<tr><td colspan="'+(nCol+3)+'" style="color:#999;">（本月尚無紀錄）</td></tr>';
   } else {
     rowsArr.forEach(function(r){
-      rowsBody+='<tr><td>'+(r.date||'')+'</td>';
+      var isAdd=r.type==='add';
+      rowsBody+='<tr><td style="font-weight:700;color:'+(isAdd?'#1f7a54':'#c0392b')+';">'+(isAdd?'＋新增':'－拿取')+'</td><td>'+(r.date||'')+'</td>';
       items.forEach(function(it,idx){rowsBody+='<td>'+((r.vals&&r.vals[idx])||'')+'</td>';});
       rowsBody+='<td>'+(r.takerSig?'<img class="sig" src="'+r.takerSig+'">':(r.taker||''))+'</td></tr>';
     });
@@ -17375,22 +17376,22 @@ function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
     '<style>html,body{margin:0;padding:0;}'+
     'body{font-family:"Noto Sans TC",sans-serif;padding:8px 10px;color:#1a2b4a;}'+
     '@page{size:A4 landscape;margin:7mm;}'+
-    'h3{margin:10px 0 4px;font-size:11.5px;color:#1a2b4a;background:#eef2fb;padding:3px 8px;border-radius:4px;}'+
-    'table{width:100%;border-collapse:collapse;font-size:'+fs+'px;table-layout:fixed;margin-bottom:4px;}'+
-    'th,td{border:1px solid #555;padding:3px 3px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.25;}'+
-    'th{background:#eef2fb;}img.sig{max-width:48px;max-height:18px;object-fit:contain;display:block;margin:0 auto;}'+
-    '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;}'+
-    '.hdr-row img{height:40px;width:auto;}'+
+    'h3{margin:12px 0 5px;font-size:14px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:'+fs+'px;table-layout:fixed;margin-bottom:5px;}'+
+    'th,td{border:1px solid #555;padding:6px 4px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
+    'th{background:#eef2fb;}img.sig{max-width:60px;max-height:24px;object-fit:contain;display:block;margin:0 auto;}'+
+    '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
+    '.hdr-row img{height:44px;width:auto;}'+
     '.hdr-txt{text-align:center;}'+
-    '.hdr-txt .t1{font-size:13px;font-weight:900;}'+
-    '.hdr-txt .t2{font-size:11.5px;font-weight:700;margin-top:2px;}'+
-    '.meta-row{display:flex;justify-content:center;gap:28px;font-size:10.5px;color:#444;margin-bottom:6px;}'+
+    '.hdr-txt .t1{font-size:15px;font-weight:900;}'+
+    '.hdr-txt .t2{font-size:13px;font-weight:700;margin-top:2px;}'+
+    '.meta-row{display:flex;justify-content:center;gap:28px;font-size:12.5px;color:#444;margin-bottom:7px;}'+
     '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
     '</style></head><body><div class="wrap-ss">'+
     '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">'+title+'</div></div></div>'+
     '<div class="meta-row"><span>'+y+' 年　'+m+' 月</span><span>盤點人員：'+(person||'＿＿＿＿＿')+'</span></div>'+
     '<h3>一、每月總數量</h3><table><thead>'+totalsHead+'</thead><tbody>'+totalsBody+'</tbody></table>'+
-    '<h3>二、當月用品拿取紀錄</h3><table><thead>'+rowsHead+'</thead><tbody>'+rowsBody+'</tbody></table>'+
+    '<h3>二、當月用品新增／拿取紀錄</h3><table><thead>'+rowsHead+'</thead><tbody>'+rowsBody+'</tbody></table>'+
     '</div><script>window.onload=function(){'+
     'try{var wrap=document.querySelector(".wrap-ss");var capPx=(210-14)*96/25.4;var natural=wrap.scrollHeight;'+
     'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
@@ -17462,15 +17463,18 @@ function _buildStatSheetModule(cfg){
     });
     h+='</tr></tbody></table></div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">二、當月用品拿取紀錄<button class="cln-sig-btn" style="float:right;" onclick="'+cfg.modVar+'.addRow()">&#xFF0B; 新增一列</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>日期</th>';
+    h+='<div class="df-lbl">二、當月新增／拿取紀錄<button class="cln-sig-btn" style="float:right;" onclick="'+cfg.modVar+'.addRow()">&#xFF0B; 新增一列</button><button class="cln-sig-btn" style="float:right;margin-right:8px;background:#8a7ae0;" onclick="'+cfg.modVar+'.carryForward()">&#x1F4E6; 結算並帶入下月總數量</button></div>';
+    h+='<div style="font-size:.7rem;color:#888;margin:-4px 0 8px;">點每列最左邊的「拿取／新增」可以切換；「結算並帶入下月總數量」會用目前的每月總數量加上本月全部新增、減掉全部拿取，自動填入下個月的「一、每月總數量」</div>';
+    h+='<table class="cln-table"><thead><tr><th>類型</th><th>日期</th>';
     items.forEach(function(it){h+='<th>'+it+'</th>';});
     h+='<th>拿取者／簽名</th><th></th></tr></thead><tbody>';
     if(!rows.length){
-      h+='<tr><td colspan="'+(items.length+3)+'" style="color:#aaa;">尚無拿取紀錄，請按上方「新增一列」</td></tr>';
+      h+='<tr><td colspan="'+(items.length+4)+'" style="color:#aaa;">尚無紀錄，請按上方「新增一列」</td></tr>';
     } else {
       rows.forEach(function(r){
-        h+='<tr><td><input type="text" class="cln-num" style="width:58px;" placeholder="MM/DD" value="'+((r.date||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
+        var isAdd=r.type==='add';
+        h+='<tr><td><button class="cln-sig-btn" style="padding:4px 6px;font-size:.66rem;white-space:nowrap;background:'+(isAdd?'#3d8a5a':'#c08a3a')+';" onclick="'+cfg.modVar+'.toggleRowType(\''+r.id+'\')" title="點擊切換拿取／新增">'+(isAdd?'＋新增':'－拿取')+'</button></td>';
+        h+='<td><input type="text" class="cln-num" style="width:58px;" placeholder="MM/DD" value="'+((r.date||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
         items.forEach(function(it,idx){
           var v=(r.vals&&r.vals[idx]!=null)?r.vals[idx]:'';
           h+='<td><input type="text" class="cln-num" style="width:46px;" value="'+(v+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowVal(\''+r.id+'\','+idx+',this.value)"></td>';
@@ -17513,11 +17517,54 @@ function _buildStatSheetModule(cfg){
   function addRow(){
     var rec=getRec();
     var id='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-    rec.rows[id]={date:'',vals:{},taker:'',ts:Date.now()};
+    rec.rows[id]={date:'',vals:{},taker:'',type:'take',ts:Date.now()};
     save();
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id).set(rec.rows[id]);
     render();
+  }
+  function toggleRowType(id){
+    var rec=getRec();
+    if(!rec.rows[id])return;
+    var next=(rec.rows[id].type==='add')?'take':'add';
+    rec.rows[id].type=next;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/type').set(next);
+    render();
+  }
+  /* 結算：用「目前這個月的每月總數量」加上這個月全部「新增」列、減掉全部「拿取」列，
+     算出結餘後直接寫入下個月那筆記錄的「每月總數量」，老師就不用自己心算、手動謄寫到下個月。
+     會先彈出確認視窗列出算出來的各品項結果，並且明確告知會覆蓋下個月目前的總數量，避免誤觸覆蓋掉
+     下個月已經填好的資料。 */
+  function carryForward(){
+    var rec=getRec();
+    var rows=sortedRows(rec);
+    var next={};
+    items.forEach(function(it,idx){
+      var base=parseFloat(rec.totals[idx])||0;
+      var delta=0;
+      rows.forEach(function(r){
+        var v=parseFloat(r.vals&&r.vals[idx]);
+        if(!v)return;
+        delta+=(r.type==='add')?v:-v;
+      });
+      next[idx]=String(base+delta);
+    });
+    var nm=curM+1,ny=curY;
+    if(nm>12){nm=1;ny++;}
+    var preview=items.map(function(it,idx){return it+'：'+next[idx];}).join('\n');
+    if(!confirm('確定要把結算後的數量帶入「'+ny+'年'+nm+'月」的每月總數量嗎？\n（會覆蓋該月目前已填寫的每月總數量）\n\n'+preview))return;
+    var nextKey=ny+'_'+nm;
+    if(!db[nextKey])db[nextKey]={person:'',totals:{},rows:{}};
+    if(!db[nextKey].rows)db[nextKey].rows={};
+    db[nextKey].totals=next;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+nextKey+'/totals').set(next);
+    curY=ny;curM=nm;
+    render();
+    alert('已結算完成，並切換到「'+ny+'年'+nm+'月」查看');
   }
   function delRow(id){
     if(!confirm('確定要刪除這一列嗎？'))return;
@@ -17573,7 +17620,8 @@ function _buildStatSheetModule(cfg){
   function init(){load();render();}
 
   return{init:init,changeYM:changeYM,setPerson:setPerson,setTotal:setTotal,addRow:addRow,delRow:delRow,
-    setRowField:setRowField,setRowVal:setRowVal,openRowSig:openRowSig,print:doPrint};
+    setRowField:setRowField,setRowVal:setRowVal,openRowSig:openRowSig,toggleRowType:toggleRowType,
+    carryForward:carryForward,print:doPrint};
 }
 
 var ITEMSTAT=_buildStatSheetModule({items:ITEMSTAT_ITEMS,fbKey:'items',title:'學校備品清單',wrapId:'itemstatWrap',modVar:'ITEMSTAT'});
