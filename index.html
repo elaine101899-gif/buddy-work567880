@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019104020';
+  var BUILD='20261019105137';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -16765,9 +16765,17 @@ var TEMP=(function(){
       if(!db.records[key2])db.records[key2]={vals:{},sig1:'',sig2:'',offType:{}};
       var rec=db.records[key2];
       if(!rec.vals)rec.vals={};
+      if(!rec.offType)rec.offType={};
       for(var d=1;d<=td;d++){
         if(_isWeekend(ty,tm,d))continue;
-        if((rec.offType||{})[d])continue;
+        if(rec.offType[d])continue;
+        /* 國定假日直接自動標成「國定假日」公休，不用老師自己記得手動按，
+           也不會自動亂填一筆根本沒量到的溫濕度數值。 */
+        if(_isHoliday(ty,tm,d)){
+          rec.offType[d]='國定假日';
+          if(fb)fb.ref('xiaobuddyClean/temp/records/'+key2+'/offType/'+d).set('國定假日');
+          continue;
+        }
         if(!rec.vals[d])rec.vals[d]={};
         var dayChanged=false;
         k.rows.forEach(function(rowLbl,ri){
@@ -20458,7 +20466,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019104020</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019105137</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
