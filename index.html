@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019100044';
+  var BUILD='20261019100941';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3792,6 +3792,15 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="cf-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="cfUnpaidOv">
+  <div class="asr-mbox" style="max-width:420px;">
+    <h3>&#x1F50D; 未繳費名單</h3>
+    <div id="cfUnpaidBody" style="max-height:60vh;overflow-y:auto;"></div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="CHILDFEE.closeUnpaid()">關閉</button>
+    </div>
   </div>
 </div>
 <div class="pg" id="pg-childfee-income">
@@ -19170,6 +19179,15 @@ var CHILDLEAVE=(function(){
     return out;
   }
 
+  /* 給月費單用：某個收費期間、某一個小孩的退費明細（哪幾天、什麼假別、
+     退不退、退多少），讓月費單那邊可以顯示明細給組長核對，不是只看
+     一個總金額數字。直接重用 _sumCollect 已經算好的 entries，不用
+     再重算一次跨六日連續性那些邏輯。 */
+  function refundEntriesForChild(endRoc,endMo,childId){
+    var col=_sumCollect(endRoc,endMo);
+    var row=col.rows.filter(function(r){return r.id===childId;})[0];
+    return row?row.entries:[];
+  }
   /* 給每日回報用：某一天每個假別各有哪些小孩（姓名）*/
   function tallyForDate(dateKey){
     var dayRec=db.records[dateKey]||{};
@@ -19202,7 +19220,7 @@ var CHILDLEAVE=(function(){
     });
     return byType;
   }
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,bulkMark:bulkMark,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,bulkMark:bulkMark,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,refundEntriesForChild:refundEntriesForChild,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
 })();
 
 /* ════ CHILDFEE：月費單（每位幼兒的繳費紀錄）════
@@ -19375,6 +19393,37 @@ var CHILDFEE=(function(){
   var _selCls='baby',_selChild=null;
   function setCls(cls){_selCls=cls;_selChild=null;render();}
   function setChild(cid){_selChild=cid||null;render();}
+  /* 未繳費名單：這一期（目前選的收費期間）全園還沒繳費的小孩，
+     按班級分組列出，點名字直接跳到那個小孩的帳單方便處理。 */
+  function openUnpaid(){
+    var pk=periodKey(_endY,_endM);
+    var groups=getKidsByCls();
+    var h='';
+    var total=0;
+    CLSORDER.forEach(function(cls){
+      var kids=(groups[cls]||[]).filter(function(k){return !_isBilled(_peekRec(pk,k.id));});
+      if(!kids.length)return;
+      total+=kids.length;
+      h+='<div class="df-lbl" style="margin-top:10px;">'+CLSLABEL[cls]+'　<span style="color:#aaa;font-weight:400;font-size:.76rem;">'+kids.length+' 人</span></div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      kids.forEach(function(k){
+        h+='<button type="button" class="asr-mok" style="flex:none;padding:6px 12px;background:#fdecea;color:#c0392b;" onclick="CHILDFEE.jumpToChild(\''+cls+'\',\''+k.id+'\')">'+k.name+'</button>';
+      });
+      h+='</div>';
+    });
+    if(!total)h='<div style="color:#aaa;text-align:center;padding:20px 0;">這一期全部都已繳費🎉</div>';
+    document.getElementById('cfUnpaidBody').innerHTML=h;
+    document.getElementById('cfUnpaidOv').classList.add('on');
+  }
+  function closeUnpaid(){
+    document.getElementById('cfUnpaidOv').classList.remove('on');
+  }
+  function jumpToChild(cls,cid){
+    closeUnpaid();
+    _selCls=cls;_selChild=cid;
+    document.getElementById('cfClsSel')&&(document.getElementById('cfClsSel').value=cls);
+    render();
+  }
   function _childCard(k,pk,extendTotals,refundTotals){
     var stored=_peekRec(pk,k.id);
     var rec=stored?Object.assign({},stored):{};
@@ -19403,6 +19452,22 @@ var CHILDFEE=(function(){
     h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">收據編號</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.receiptNo||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'receiptNo\',this.value)"></div>';
     h+='<div style="grid-column:span 2;"><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">備註</div><input type="text" class="df-inp" style="width:100%;" value="'+(rec.note||'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\'note\',this.value)"></div>';
     h+='</div></div>';
+    /* 退費明細：讓組長核對「退費」那個欄位的數字到底是怎麼算出來的
+       （哪幾天、什麼假別、退不退、退多少），不用只看一個總金額數字。 */
+    var refundEntries=[];
+    try{if(typeof CHILDLEAVE!=='undefined')refundEntries=CHILDLEAVE.refundEntriesForChild(_endY,_endM,k.id)||[];}catch(e){}
+    h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">';
+    h+='<div style="font-size:.78rem;font-weight:700;color:#9a6a1a;margin-bottom:6px;">🧾 退費明細（這一期請假紀錄，供核對）</div>';
+    if(!refundEntries.length){
+      h+='<div style="color:#bbb;font-size:.78rem;">這一期沒有請假紀錄</div>';
+    } else {
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;">';
+      refundEntries.forEach(function(e){
+        h+='<span><b style="color:#2C2820;">'+e.date+'</b> <span style="font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+(e.refund?'<span style="color:#9a6a1a;font-weight:700;"> 退'+e.refund+'元</span>':'<span style="color:#ccc;"> 不退</span>')+'</span>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
     return h;
   }
   function render(){
@@ -19429,7 +19494,10 @@ var CHILDFEE=(function(){
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_endY,_endM)+'）</span>';
     h+='</div>';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費／退費(請假) 兩欄第一次看這一期時會自動帶入系統算好的金額，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
-    h+='<button class="bbtn" style="margin-bottom:14px;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒（新生入托）</button>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">';
+    h+='<button class="bbtn" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒（新生入托）</button>';
+    h+='<button class="bbtn" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 查看未繳費名單</button>';
+    h+='</div>';
 
     var kids=groups[_selCls]||[];
     h+='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
@@ -19848,7 +19916,7 @@ var CHILDFEE=(function(){
     alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+proratedMonthFee+'元（'+days+'天比例）\n餐費 '+proratedMealFee+'元\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -20361,7 +20429,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019100044</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019100941</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
