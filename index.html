@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019155618';
+  var BUILD='20261019161025';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -17368,7 +17368,7 @@ function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
     rowsArr.forEach(function(r){
       rowsBody+='<tr><td>'+(r.date||'')+'</td>';
       items.forEach(function(it,idx){rowsBody+='<td>'+((r.vals&&r.vals[idx])||'')+'</td>';});
-      rowsBody+='<td>'+(r.taker||'')+'</td></tr>';
+      rowsBody+='<td>'+(r.takerSig?'<img class="sig" src="'+r.takerSig+'">':(r.taker||''))+'</td></tr>';
     });
   }
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+title+'</title>'+
@@ -17378,7 +17378,7 @@ function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
     'h3{margin:10px 0 4px;font-size:11.5px;color:#1a2b4a;background:#eef2fb;padding:3px 8px;border-radius:4px;}'+
     'table{width:100%;border-collapse:collapse;font-size:'+fs+'px;table-layout:fixed;margin-bottom:4px;}'+
     'th,td{border:1px solid #555;padding:3px 3px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.25;}'+
-    'th{background:#eef2fb;}'+
+    'th{background:#eef2fb;}img.sig{max-width:48px;max-height:18px;object-fit:contain;display:block;margin:0 auto;}'+
     '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;}'+
     '.hdr-row img{height:40px;width:auto;}'+
     '.hdr-txt{text-align:center;}'+
@@ -17458,7 +17458,7 @@ function _buildStatSheetModule(cfg){
     items.forEach(function(it){h+='<th>'+it+'</th>';});
     h+='</tr></thead><tbody><tr>';
     items.forEach(function(it,idx){
-      h+='<td><input type="text" class="cln-num" style="width:56px;" value="'+((rec.totals[idx]!==undefined?rec.totals[idx]:'')+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setTotal('+idx+',this.value)"></td>';
+      h+='<td><input type="text" class="cln-num" style="width:56px;" value="'+((rec.totals[idx]!=null?rec.totals[idx]:'')+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setTotal('+idx+',this.value)"></td>';
     });
     h+='</tr></tbody></table></div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
@@ -17472,10 +17472,17 @@ function _buildStatSheetModule(cfg){
       rows.forEach(function(r){
         h+='<tr><td><input type="text" class="cln-num" style="width:58px;" placeholder="MM/DD" value="'+((r.date||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
         items.forEach(function(it,idx){
-          var v=(r.vals&&r.vals[idx]!==undefined)?r.vals[idx]:'';
+          var v=(r.vals&&r.vals[idx]!=null)?r.vals[idx]:'';
           h+='<td><input type="text" class="cln-num" style="width:46px;" value="'+(v+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowVal(\''+r.id+'\','+idx+',this.value)"></td>';
         });
-        h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.taker||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'taker\',this.value)"></td>';
+        h+='<td>';
+        if(r.takerSig){
+          h+='<img src="'+r.takerSig+'" class="cln-sig-img" onclick="'+cfg.modVar+'.openRowSig(\''+r.id+'\')" title="點擊重新簽名">';
+          if(r.taker)h+='<div style="font-size:.6rem;color:#888;margin-top:1px;">'+r.taker+'</div>';
+        } else {
+          h+='<button class="cln-sig-btn" style="padding:4px 7px;font-size:.68rem;" onclick="'+cfg.modVar+'.openRowSig(\''+r.id+'\')">&#x270D;&#xFE0F; 簽名</button>';
+        }
+        h+='</td>';
         h+='<td><button onclick="'+cfg.modVar+'.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
       });
     }
@@ -17538,6 +17545,22 @@ function _buildStatSheetModule(cfg){
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/vals/'+idx).set(v);
   }
+  function openRowSig(id){
+    var rec=getRec();
+    var r=rec.rows[id];
+    if(!r)return;
+    _sigPad.open('拿取者簽名',r.takerSig||'',function(dataURL,name){
+      r.takerSig=dataURL;
+      if(name)r.taker=name;
+      save();
+      var fb=_fbInit();
+      if(fb){
+        fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/takerSig').set(dataURL);
+        if(name)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/taker').set(name);
+      }
+      render();
+    });
+  }
   function doPrint(){
     var rec=getRec();
     var rows=sortedRows(rec);
@@ -17550,7 +17573,7 @@ function _buildStatSheetModule(cfg){
   function init(){load();render();}
 
   return{init:init,changeYM:changeYM,setPerson:setPerson,setTotal:setTotal,addRow:addRow,delRow:delRow,
-    setRowField:setRowField,setRowVal:setRowVal,print:doPrint};
+    setRowField:setRowField,setRowVal:setRowVal,openRowSig:openRowSig,print:doPrint};
 }
 
 var ITEMSTAT=_buildStatSheetModule({items:ITEMSTAT_ITEMS,fbKey:'items',title:'學校備品清單',wrapId:'itemstatWrap',modVar:'ITEMSTAT'});
