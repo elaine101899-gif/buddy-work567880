@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019110002';
+  var BUILD='20261019114921';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3542,6 +3542,17 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="TEACHERLEAVE.closeCompletion()">關閉</button>
       <button class="asr-mok" onclick="TEACHERLEAVE.printCompletion()">&#x1F5A8;&#xFE0F; 列印總表</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="tlSubReportOv">
+  <div class="asr-mbox" style="max-width:520px;">
+    <h3>&#x1F504; 交接人回報文字</h3>
+    <div style="font-size:.74rem;color:#888;margin-bottom:8px;">跟上面「今日回報文字」是分開的兩份內容，各自貼到不同 LINE 群組，不會混在一起。</div>
+    <textarea id="tlSubReportText" readonly style="width:100%;min-height:280px;font-size:.82rem;line-height:1.6;border:1.5px solid #ddd;border-radius:10px;padding:10px;box-sizing:border-box;"></textarea>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="TEACHERLEAVE.closeSubReport()">關閉</button>
+      <button class="asr-mok" id="tlSubCopyBtn" onclick="TEACHERLEAVE.copySubReport()">&#x1F4CB; 複製</button>
     </div>
   </div>
 </div>
@@ -8759,6 +8770,23 @@ var LEAVE=(function(){
     }catch(e){return {};}
   }
   function getTeacherForms(tid){return getAll()[tid]||_lFbCache[tid]||{};}
+  /* 給每日回報用：這個老師在某一天的請假交接單裡，填的代理人是誰。
+     優先比對「請假日期（起～迄）」區間涵蓋這一天的單；沒有填起訖區間
+     的舊單，退回比對「交接日期」本身是不是剛好同一天。同一天如果
+     不只一張單（理論上少見），用最後建立的那張為準。 */
+  function getSubForDate(tid,isoDate){
+    var forms=getTeacherForms(tid);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[a].createdAt||0)-(forms[b].createdAt||0);});
+    var found=null;
+    fids.forEach(function(fid){
+      var hdr=forms[fid].header||{};
+      var from=(hdr.from||'').split(/[T ]/)[0];
+      var to=(hdr.to||'').split(/[T ]/)[0]||from;
+      if(from&&isoDate>=from&&isoDate<=to)found=hdr.sub||null;
+      else if(!from&&hdr.date===isoDate)found=hdr.sub||null;
+    });
+    return found;
+  }
   function saveLocal(tid,fid,data){
     try{
       var all=getAll();
@@ -9494,7 +9522,7 @@ var LEAVE=(function(){
     showList();
   }
 
-  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,onDateChange:onDateChange,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig};
+  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,onDateChange:onDateChange,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
 })();
 
 /* ════ 主管／機動／廚工 假單 Firebase 同步共用工具 ════
@@ -9594,6 +9622,21 @@ var LEAVE_BOSS=(function(){
     if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));
   }
   function getForms(name){return getAll()[name]||{};}
+  /* 給每日回報用：這位老師/機動人員/廚工在某一天的請假交接單裡，
+     填的代理人是誰，邏輯跟托育人員那邊一致。 */
+  function getSubForDate(name,isoDate){
+    var forms=getForms(name);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[a].createdAt||0)-(forms[b].createdAt||0);});
+    var found=null;
+    fids.forEach(function(fid){
+      var hdr=forms[fid].header||{};
+      var from=(hdr.from||'').split(/[T ]/)[0];
+      var to=(hdr.to||'').split(/[T ]/)[0]||from;
+      if(from&&isoDate>=from&&isoDate<=to)found=hdr.sub||null;
+      else if(!from&&hdr.date===isoDate)found=hdr.sub||null;
+    });
+    return found;
+  }
   function saveFid(name,fid,data){
     var all=getAll();if(!all[name])all[name]={};
     all[name][fid]=data;setAll(all);
@@ -9949,7 +9992,7 @@ var LEAVE_BOSS=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
 })();
 
 /* ════ 機動人員請假交接單 ════ */
@@ -9971,6 +10014,21 @@ var LEAVE_FLEX=(function(){
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
+  /* 給每日回報用：這位老師/機動人員/廚工在某一天的請假交接單裡，
+     填的代理人是誰，邏輯跟托育人員那邊一致。 */
+  function getSubForDate(name,isoDate){
+    var forms=getForms(name);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[a].createdAt||0)-(forms[b].createdAt||0);});
+    var found=null;
+    fids.forEach(function(fid){
+      var hdr=forms[fid].header||{};
+      var from=(hdr.from||'').split(/[T ]/)[0];
+      var to=(hdr.to||'').split(/[T ]/)[0]||from;
+      if(from&&isoDate>=from&&isoDate<=to)found=hdr.sub||null;
+      else if(!from&&hdr.date===isoDate)found=hdr.sub||null;
+    });
+    return found;
+  }
   function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
   function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
@@ -10180,7 +10238,7 @@ var LEAVE_FLEX=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
 })();
 
 var LEAVE_COOK=(function(){
@@ -10196,6 +10254,21 @@ var LEAVE_COOK=(function(){
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
   function getForms(name){return getAll()[name]||{};}
+  /* 給每日回報用：這位老師/機動人員/廚工在某一天的請假交接單裡，
+     填的代理人是誰，邏輯跟托育人員那邊一致。 */
+  function getSubForDate(name,isoDate){
+    var forms=getForms(name);
+    var fids=Object.keys(forms).sort(function(a,b){return (forms[a].createdAt||0)-(forms[b].createdAt||0);});
+    var found=null;
+    fids.forEach(function(fid){
+      var hdr=forms[fid].header||{};
+      var from=(hdr.from||'').split(/[T ]/)[0];
+      var to=(hdr.to||'').split(/[T ]/)[0]||from;
+      if(from&&isoDate>=from&&isoDate<=to)found=hdr.sub||null;
+      else if(!from&&hdr.date===isoDate)found=hdr.sub||null;
+    });
+    return found;
+  }
   function saveFid(name,fid,data){var all=getAll();if(!all[name])all[name]={};all[name][fid]=data;setAll(all);_LSFB.push(FB_PATH,name,fid,data);}
   function v(id){var el=document.getElementById(id);return el?(el.value||''):'';}
   function vcb(id){var el=document.getElementById(id);return !!(el&&el.checked);}
@@ -10406,7 +10479,7 @@ var LEAVE_COOK=(function(){
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -20053,7 +20126,8 @@ var TEACHERLEAVE=(function(){
     h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
     h+='<input type="date" class="df-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.backToday()">回到今天</button>';
-    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="TEACHERLEAVE.openCompletion()">📊 完成度總表</button>';
+    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="TEACHERLEAVE.openSubReport()">🔄 產生交接人回報文字</button>';
+    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openCompletion()">📊 完成度總表</button>';
     h+='</div>';
     var hint=isToday?'今天可以直接勾選請假老師（不會自動從體溫管理帶入）。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin:10px 0;">'+hint+' 已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
@@ -20080,6 +20154,20 @@ var TEACHERLEAVE=(function(){
              這個按鈕直接跳去那位老師自己的請假交接單列表查閱，
              確認真的寫好了再回來勾選，不用自己記得去哪裡找。 */
           h+='<button type="button" class="cln-sig-btn" style="font-size:.68rem;padding:3px 9px;flex:0 0 auto;" onclick="event.stopPropagation();TEACHERLEAVE.reviewForm(\''+name+'\')">🔍 查看</button>';
+        }
+        if(t.onLeave){
+          /* 交接人：優先讀她自己請假交接單裡填的代理人，自動帶出來，
+             不用再打一次；單還沒寫就先空著、可以手動打字頂著用，
+             之後單補上了會自動蓋過去（只要沒手動改過這一格）。 */
+          var resolvedSub=_resolveSub(name,iso);
+          var overrideVal=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:'';
+          var subDisplay=overrideVal||resolvedSub||'';
+          var disSub=canEdit?'':' disabled';
+          h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:.76rem;color:#666;flex-wrap:wrap;">';
+          h+='<span style="flex:0 0 auto;">🔄 交接人：</span>';
+          h+='<input type="text" class="df-inp" style="flex:1;min-width:100px;max-width:160px;" '+disSub+' placeholder="尚未填寫（可先手動輸入）" value="'+subDisplay.replace(/"/g,'&quot;')+'" onchange="TEACHERLEAVE.setSubOverride(\''+name+'\',this.value)">';
+          if(resolvedSub&&!overrideVal)h+='<span style="color:#1a7a4f;font-size:.7rem;">（自動帶入交接單）</span>';
+          h+='</div>';
         }
         h+='</div></div>';
       });
@@ -20332,6 +20420,40 @@ var TEACHERLEAVE=(function(){
     alert('找不到 '+name+' 的請假交接單資料，請確認後台是否已經建立她的老師資料');
   }
 
+  /* 交接人：從這位老師自己的請假交接單裡，抓她當天填的「代理人」是誰，
+     跟 reviewForm() 用同一套身分判斷邏輯，只是這裡是直接讀資料、不是跳頁。
+     讀不到（可能單還沒寫）回傳 null，畫面上會顯示「尚未填寫」。 */
+  function _resolveSub(name,isoDate){
+    var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
+    var cookNames=isBambino?['林素珍']:['黃郁婷','林素珍'];
+    var bossNames=isBambino?['黃鈺雯']:['金佩樺','黃苡綸','洪逸惠'];
+    var flexNames=isBambino?[]:['郭于綺','徐郁婷'];
+    try{
+      if(cookNames.indexOf(name)>=0){
+        return (typeof LEAVE_COOK!=='undefined'&&LEAVE_COOK.getSubForDate)?LEAVE_COOK.getSubForDate(name,isoDate):null;
+      }
+      var t=(typeof _lookupTeacherCert==='function')?_lookupTeacherCert(name):null;
+      var role=t?t.role:null;
+      if(role==='boss'||bossNames.indexOf(name)>=0){
+        return (typeof LEAVE_BOSS!=='undefined'&&LEAVE_BOSS.getSubForDate)?LEAVE_BOSS.getSubForDate(name,isoDate):null;
+      }
+      if(role==='flex'||flexNames.indexOf(name)>=0){
+        return (typeof LEAVE_FLEX!=='undefined'&&LEAVE_FLEX.getSubForDate)?LEAVE_FLEX.getSubForDate(name,isoDate):null;
+      }
+      if(t&&t.id){
+        return (typeof LEAVE!=='undefined'&&LEAVE.getSubForDate)?LEAVE.getSubForDate(t.id,isoDate):null;
+      }
+    }catch(e){}
+    return null;
+  }
+  function setSubOverride(name,val){
+    var dk=curViewKey;
+    if(!db.today[dk])db.today[dk]={};
+    if(!db.today[dk][name])db.today[dk][name]={};
+    db.today[dk][name].subOverride=val||'';
+    save();pushToday(dk,name);
+  }
+
   /* ─── 完成度總表：跨日期範圍一次看，老師填寫了假單不算數，
      要「假單」「交接單」兩個都打勾才算真的完成，還沒完成的用紅色底標出來，
      也能直接列印成一張紙交接/留存。 ─── */
@@ -20407,7 +20529,57 @@ var TEACHERLEAVE=(function(){
     if(w){w.document.write(p);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},500);}
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion};
+  /* 交接人回報文字：刻意跟上面「今日回報文字」分開、各自獨立產生，
+     因為要貼的是不同的 LINE 群組，不能把兩份內容混在一起。 */
+  function buildSubReportText(){
+    var dk=curViewKey,iso=keyToDateInputVal(dk);
+    var dateStr=iso.replace(/-/g,'/');
+    var todayRec=db.today[dk]||{};
+    var parentalSet=_activeParentalSet(iso);
+    var allTeachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
+    var onLeave=allTeachers.filter(function(n){return todayRec[n]&&todayRec[n].onLeave;});
+    var L=[];
+    L.push(dateStr+' 請假代理交接名單');
+    L.push('');
+    if(!onLeave.length){
+      L.push('今天沒有老師請假');
+    } else {
+      onLeave.forEach(function(name){
+        var t=todayRec[name]||{};
+        var resolvedSub=_resolveSub(name,iso);
+        var sub=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:(resolvedSub||'尚未填寫');
+        var lt=t.leaveType||'請假';
+        L.push(name+'（'+lt+'）代理人：'+sub);
+      });
+    }
+    return L.join('\n');
+  }
+  function openSubReport(){
+    document.getElementById('tlSubReportText').value=buildSubReportText();
+    document.getElementById('tlSubReportOv').classList.add('on');
+  }
+  function closeSubReport(){
+    var ov=document.getElementById('tlSubReportOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function _flashSubCopied(ok){
+    var btn=document.getElementById('tlSubCopyBtn');
+    if(ok&&btn){var old=btn.textContent;btn.textContent='✓ 已複製';setTimeout(function(){btn.textContent=old;},1500);}
+    else if(!ok)alert('複製失敗，請手動選取文字複製');
+  }
+  function copySubReport(){
+    var ta=document.getElementById('tlSubReportText');
+    ta.focus();ta.select();
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(ta.value).then(function(){_flashSubCopied(true);}).catch(function(){
+        var ok=false;try{ok=document.execCommand('copy');}catch(e2){}_flashSubCopied(ok);
+      });
+      return;
+    }
+    var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,setSubOverride:setSubOverride,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20484,7 +20656,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019110002</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019114921</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
