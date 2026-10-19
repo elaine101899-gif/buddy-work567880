@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019154758';
+  var BUILD='20261019155618';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20947,15 +20947,18 @@ var TEACHERLEAVE=(function(){
     if(!rows.length){
       L.push('這段期間沒有老師請假');
     } else {
-      var curIso='';
+      var curIso='',curLbl='',curParts=[];
       rows.forEach(function(r){
-        if(r.iso!==curIso){curIso=r.iso;L.push(r.iso.replace(/-/g,'/'));}
+        if(r.iso!==curIso){
+          if(curParts.length)L.push(curLbl+curParts.join('、'));
+          curIso=r.iso;curLbl=r.iso.slice(5).replace('-','/');curParts=[];
+        }
         var t=(db.today[dateInputValToKey(r.iso)]||{})[r.name]||{};
         var resolvedSub=_resolveSub(r.name,r.iso);
         var sub=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:(resolvedSub||'尚未填寫');
-        var lt=r.leaveType||'請假';
-        L.push(r.name+'（'+lt+(r.note?'：'+r.note:'')+'）代理人：'+sub);
+        curParts.push(r.name+'（'+sub+'）');
       });
+      if(curParts.length)L.push(curLbl+curParts.join('、'));
     }
     return L.join('\n');
   }
