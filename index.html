@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019123626';
+  var BUILD='20261019123946';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3519,7 +3519,8 @@ function _rosterKidsAsOf(cls,dateStr){
       <button type="button" class="cln-sig-btn" onclick="TEACHERLEAVE.reviewFormCur()">&#x1F50D; 查看</button>
     </div>
     <div style="font-size:.78rem;color:#888;margin-bottom:6px;">&#x1F504; 交接人</div>
-    <input type="text" class="asr-mi" id="tlEditSub" placeholder="尚未填寫（可先手動輸入）">
+    <select class="asr-msel" id="tlEditSub"></select>
+    <div style="font-size:.7rem;color:#aaa;margin-top:2px;">選單只會列出這一天還能代理的人（已經請假或已經代理別人的人不會出現）</div>
     <div id="tlEditSubHint" style="font-size:.72rem;color:#1a7a4f;margin-top:2px;margin-bottom:6px;"></div>
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="TEACHERLEAVE.closeEdit()">取消</button>
@@ -20227,6 +20228,28 @@ var TEACHERLEAVE=(function(){
     wrap.innerHTML=h;
   }
   function pickEditType(t){_tlEditType=t;_renderTlTypeBtns();}
+  /* 交接人其實是人力調度：同一天不能把同一個人同時排成兩個老師的代理人
+     （人沒辦法分身），這個人自己也不能一邊請假一邊當別人的代理人。
+     回傳這一天「還可以選」的候選人名單，排除：這位老師自己、今天已經
+     請假的人、今天已經被排去代理「別人」的人（自己原本選的不算排除，
+     不然重新打開這個視窗會看不到自己原本選的那個人）。 */
+  function _availableSubs(dk,excludeName){
+    var todayRec=db.today[dk]||{};
+    var all=(typeof SIGNERS!=='undefined')?SIGNERS:[];
+    var iso=keyToDateInputVal(dk);
+    var onLeaveSet={};
+    Object.keys(todayRec).forEach(function(n){if(todayRec[n]&&todayRec[n].onLeave)onLeaveSet[n]=true;});
+    var takenSet={};
+    Object.keys(todayRec).forEach(function(n){
+      if(n===excludeName)return;
+      var t=todayRec[n];
+      if(t&&t.onLeave){
+        var sub=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:_resolveSub(n,iso);
+        if(sub)takenSet[sub]=true;
+      }
+    });
+    return all.filter(function(n){return n!==excludeName&&!onLeaveSet[n]&&!takenSet[n];});
+  }
   function openEdit(name){
     if(!_canEditNow()){
       alert('過去的日期要新增或修改，請先點右下角鑰匙解鎖後台。');
@@ -20245,7 +20268,16 @@ var TEACHERLEAVE=(function(){
     document.getElementById('tlEditPrinted').checked=!!rec.printed;
     var resolvedSub=_resolveSub(name,iso);
     var overrideVal=(rec.subOverride!==undefined&&rec.subOverride!=='')?rec.subOverride:'';
-    document.getElementById('tlEditSub').value=overrideVal||resolvedSub||'';
+    var curSub=overrideVal||resolvedSub||'';
+    var avail=_availableSubs(dk,name);
+    var subSel=document.getElementById('tlEditSub');
+    var opts='<option value="">－ 尚未指定 －</option>';
+    avail.forEach(function(n){opts+='<option value="'+n+'"'+(n===curSub?' selected':'')+'>'+n+'</option>';});
+    /* 原本選的人如果因為後來的異動已經不在候選名單裡了（例如她後來自己也
+       請假了），還是要讓選單裡看得到、選得到，不然會突然憑空消失，
+       加個警示字樣提醒要重新確認。 */
+    if(curSub&&avail.indexOf(curSub)<0){opts+='<option value="'+curSub+'" selected>⚠️ '+curSub+'（這個人今天狀態已改變，建議重新確認）</option>';}
+    subSel.innerHTML=opts;
     document.getElementById('tlEditSubHint').textContent=(resolvedSub&&!overrideVal)?'（自動帶入交接單，可直接覆蓋改掉）':'';
     document.getElementById('tlEditClearBtn').style.display=rec.onLeave?'':'none';
     _renderTlTypeBtns();
@@ -20748,7 +20780,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019123626</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019123946</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
