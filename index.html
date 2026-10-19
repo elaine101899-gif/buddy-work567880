@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019100941';
+  var BUILD='20261019101745';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2100,6 +2100,11 @@ var ROSTER=(function(){
        雲端資料一到，這裡主動幫忙重新渲染一次目前開著的表單，名單就會自動
        變成正確版本，不用使用者自己發現不對再重整頁面。 */
     if(typeof DIARY!=='undefined'&&DIARY.refreshIfOpen)DIARY.refreshIfOpen();
+    /* 幼兒請假記錄、延托幼兒的名單一樣是用 getKidsByCls() 現抓
+       window._asrPreload，有同樣的「自己的紀錄比名單同步還快到」的
+       問題，一起補上自動刷新。 */
+    if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refreshIfOpen)CHILDLEAVE.refreshIfOpen();
+    if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refreshIfOpen)EXTENDCARE.refreshIfOpen();
   }
   /* 查詢「某一天」的名單快照（例如寢具/日誌/電訪表查 9 月資料時，要用 9 月
      那天的名單，不是今天的名單）。dateStr 格式 'YYYY-MM-DD'（西元年）。
@@ -18514,6 +18519,10 @@ var EXTENDCARE=(function(){
   }
 
   function init(){curViewKey=todayKey();load();render();}
+  /* 跟幼兒請假記錄、日誌同樣的問題：名單是現抓 window._asrPreload，
+     如果自己的延托紀錄監聽器比 ROSTER 名單同步還早到，畫面會先用
+     還沒同步好的名單畫一次。ROSTER 真正同步完成時會呼叫這裡補畫一次。 */
+  function refreshIfOpen(){ if(document.getElementById('ec-root'))render(); }
 
   /* ════ 延托費總表：收費期間每月27號～次月26號 ════ */
   var _feeEndY=0,_feeEndM=0;
@@ -18746,7 +18755,7 @@ var EXTENDCARE=(function(){
     return out;
   }
 
-  return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips,ensureLoaded:load,feeTotalsForPeriod:feeTotalsForPeriod};
+  return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips,ensureLoaded:load,feeTotalsForPeriod:feeTotalsForPeriod,refreshIfOpen:refreshIfOpen};
 })();
 
 /* ════ CHILDLEAVE：幼兒請假記錄 ════
@@ -18989,6 +18998,14 @@ var CHILDLEAVE=(function(){
     render();
   }
   function init(){curViewKey=todayKey();load();render();}
+  /* 畫面上的幼兒名單是用 getKidsByCls() 現抓 window._asrPreload，依賴
+     ROSTER 雲端名單同步完成。如果頁面剛載入時，這邊自己的請假紀錄
+     監聽器比 ROSTER 的名單同步還早收到資料，render() 就會先用「還沒
+     同步好的名單」畫一次，變成請假紀錄明明都存在，畫面上卻看不到
+     幼兒名字（名單是空的）。等 ROSTER 真正同步完成會呼叫這裡，
+     只要這個頁面目前是開著的就重新畫一次，就會自動補正，不用使用者
+     自己發現不對再重整頁面，跟日誌原本就有的自動補更新機制一致。 */
+  function refreshIfOpen(){ if(document.getElementById('cl-root'))render(); }
 
   /* 颱風假／豪雨假通常是全園一起公休，不用一個一個小孩點進去選，
      一鍵把「目前查詢日期」全部在園幼兒標記成同一個假別。已經有登記
@@ -19220,7 +19237,7 @@ var CHILDLEAVE=(function(){
     });
     return byType;
   }
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,bulkMark:bulkMark,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,refundEntriesForChild:refundEntriesForChild,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickType:pickType,saveEdit:saveEdit,deleteEdit:deleteEdit,bulkMark:bulkMark,sumInit:sumInit,sumChangeYM:sumChangeYM,ensureLoaded:load,refundTotalsForPeriod:refundTotalsForPeriod,refundEntriesForChild:refundEntriesForChild,tallyForDate:tallyForDate,totalEnrolled:totalEnrolled,refundBreakdownForPeriod:refundBreakdownForPeriod,refreshIfOpen:refreshIfOpen};
 })();
 
 /* ════ CHILDFEE：月費單（每位幼兒的繳費紀錄）════
@@ -20429,7 +20446,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019100941</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019101745</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
