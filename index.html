@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019114921';
+  var BUILD='20261019115611';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20155,6 +20155,16 @@ var TEACHERLEAVE=(function(){
              確認真的寫好了再回來勾選，不用自己記得去哪裡找。 */
           h+='<button type="button" class="cln-sig-btn" style="font-size:.68rem;padding:3px 9px;flex:0 0 auto;" onclick="event.stopPropagation();TEACHERLEAVE.reviewForm(\''+name+'\')">🔍 查看</button>';
         }
+        if(t.onLeave&&canEdit){
+          /* 已經知道要請長假的話，填結束日期一次把整段都設定好，
+             不用每天回來勾一次，跟幼兒請假記錄那邊同一套邏輯。
+             只套用「假別」「備註」，不動假單/交接單的完成狀態，
+             每天的假單還是要分開確認有沒有真的寫。 */
+          h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:.76rem;color:#666;flex-wrap:wrap;">';
+          h+='<span style="flex:0 0 auto;">📅 請假到（選填，一次設定整段）：</span>';
+          h+='<input type="date" class="df-inp" style="width:auto;flex:0 0 auto;" min="'+iso+'" onchange="TEACHERLEAVE.setLeaveRange(\''+name+'\',this.value);this.value=\'\';">';
+          h+='</div>';
+        }
         if(t.onLeave){
           /* 交接人：優先讀她自己請假交接單裡填的代理人，自動帶出來，
              不用再打一次；單還沒寫就先空著、可以手動打字頂著用，
@@ -20224,6 +20234,40 @@ var TEACHERLEAVE=(function(){
     var t=_getToday(dk,name);
     t.note=val;
     save();pushToday(dk,name);
+  }
+  /* 已經知道要請長假，一次把「今天查詢的這一天」到「填的結束日期」整段
+     都標記成請假，不用每天回來勾一次，跟幼兒請假記錄的做法一致。
+     只套用假別/備註，假單/交接單完成狀態不套用（每天還是要分開確認
+     真的有寫），過去的日期一樣要解鎖後台才能動，沒解鎖的天數跳過。 */
+  function setLeaveRange(name,endIso){
+    if(!endIso)return;
+    var dk=curViewKey;
+    var startIso=keyToDateInputVal(dk);
+    if(endIso<=startIso)return;
+    var isAdm=document.body.classList.contains('adm');
+    var tk=todayKey();
+    var t0=_getToday(dk,name);
+    var leaveType=t0.leaveType||'';
+    var note=t0.note||'';
+    var d=new Date(startIso+'T00:00:00');
+    var end=new Date(endIso+'T00:00:00');
+    var written=0,skipped=0;
+    while(d<=end){
+      var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
+      if(k!==tk&&!isAdm){skipped++;}
+      else{
+        var rec=_getToday(k,name);
+        rec.onLeave=true;
+        rec.leaveType=leaveType;
+        rec.note=note;
+        pushToday(k,name);
+        written++;
+      }
+      d.setDate(d.getDate()+1);
+    }
+    save();
+    render();
+    alert('已設定 '+name+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過）':''));
   }
   function toggleFlag(name,field,checked){
     if(!_canEditNow()){render();return;}
@@ -20579,7 +20623,7 @@ var TEACHERLEAVE=(function(){
     var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,setSubOverride:setSubOverride,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,setLeaveRange:setLeaveRange,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,setSubOverride:setSubOverride,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20656,7 +20700,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019114921</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019115611</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
