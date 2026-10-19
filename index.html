@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019151231';
+  var BUILD='20261019152657';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20616,14 +20616,16 @@ var TEACHERLEAVE=(function(){
       h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:8px;">'+g.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+g.entries.length+' 筆</span>'+(incompleteCount?'　<span style="font-weight:700;font-size:.76rem;color:#c0392b;">還有 '+incompleteCount+' 筆未完成</span>':'　<span style="font-weight:700;font-size:.76rem;color:#1f7a54;">全部完成</span>')+'</div>';
       g.entries.forEach(function(e){
         var incomplete=!e.formWritten||!e.printed;
-        /* 備註太長（例如括弧寫了很多字）本來會把假單/交接單這兩個按鈕
-           擠到下一行去，改成這一整行不換行，真的放不下就讓這一小行
-           自己橫向捲動，兩個按鈕永遠跟日期假別維持在同一行。 */
-        h+='<div style="display:flex;align-items:center;flex-wrap:nowrap;gap:6px;padding:6px 4px;'+(incomplete?'background:#fdeeea;':'')+'border-radius:8px;overflow-x:auto;">';
-        h+='<span style="font-size:.78rem;color:#333;flex:0 0 auto;white-space:nowrap;"><b>'+e.iso.slice(5)+'</b> '+e.leaveType+(e.note?'（'+e.note+'）':'')+'</span>';
-        h+='<button type="button" onclick="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'formWritten\')" style="flex:0 0 auto;white-space:nowrap;font-size:.7rem;padding:4px 8px;border-radius:999px;border:1.5px solid '+(e.formWritten?'#1f7a54':'#ccc')+';background:'+(e.formWritten?'#e8f7f0':'#fff')+';color:'+(e.formWritten?'#1f7a54':'#888')+';cursor:pointer;">'+(e.formWritten?'✅':'⬜')+' 假單</button>';
-        h+='<button type="button" onclick="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'printed\')" style="flex:0 0 auto;white-space:nowrap;font-size:.7rem;padding:4px 8px;border-radius:999px;border:1.5px solid '+(e.printed?'#1f7a54':'#ccc')+';background:'+(e.printed?'#e8f7f0':'#fff')+';color:'+(e.printed?'#1f7a54':'#888')+';cursor:pointer;">'+(e.printed?'✅':'⬜')+' 交接單</button>';
-        h+='</div>';
+        /* 之前用大按鈕橫排，備註一長就會被擠到旁邊要滑才看得到。改成
+           日期假別自己一行（短，一定塞得下），下面換成小小的勾選框
+           （不是大按鈕），兩個勾選框本身很窄，不管備註多長都不會把
+           畫面擠出去，完全不用橫向捲動，手機上一眼就看得到全部。 */
+        h+='<div style="padding:6px 4px;'+(incomplete?'background:#fdeeea;':'')+'border-radius:8px;">';
+        h+='<div style="font-size:.8rem;color:#333;"><b>'+e.iso.slice(5)+'</b> '+e.leaveType+(e.note?'（'+e.note+'）':'')+'</div>';
+        h+='<div style="display:flex;gap:18px;margin-top:4px;">';
+        h+='<label style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:#555;cursor:pointer;"><input type="checkbox" '+(e.formWritten?'checked':'')+' onchange="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'formWritten\')" style="width:17px;height:17px;">假單</label>';
+        h+='<label style="display:flex;align-items:center;gap:5px;font-size:.78rem;color:#555;cursor:pointer;"><input type="checkbox" '+(e.printed?'checked':'')+' onchange="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'printed\')" style="width:17px;height:17px;">交接單</label>';
+        h+='</div></div>';
       });
       h+='</div>';
     });
@@ -20808,7 +20810,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019151231</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--APP_VERSION--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
