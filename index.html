@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019122231';
+  var BUILD='20261019123626';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3574,6 +3574,11 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="asr-mbox" style="max-width:520px;">
     <h3>&#x1F504; 交接人回報文字</h3>
     <div style="font-size:.74rem;color:#888;margin-bottom:8px;">跟上面「今日回報文字」是分開的兩份內容，各自貼到不同 LINE 群組，不會混在一起。</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <input type="date" class="df-inp" style="width:auto;" id="tlSubStart" onchange="TEACHERLEAVE.renderSubReport()">
+      <span style="color:#888;">～</span>
+      <input type="date" class="df-inp" style="width:auto;" id="tlSubEnd" onchange="TEACHERLEAVE.renderSubReport()">
+    </div>
     <textarea id="tlSubReportText" readonly style="width:100%;min-height:280px;font-size:.82rem;line-height:1.6;border:1.5px solid #ddd;border-radius:10px;padding:10px;box-sizing:border-box;"></textarea>
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="TEACHERLEAVE.closeSubReport()">關閉</button>
@@ -20608,32 +20613,41 @@ var TEACHERLEAVE=(function(){
   }
 
   /* 交接人回報文字：刻意跟上面「今日回報文字」分開、各自獨立產生，
-     因為要貼的是不同的 LINE 群組，不能把兩份內容混在一起。 */
-  function buildSubReportText(){
-    var dk=curViewKey,iso=keyToDateInputVal(dk);
-    var dateStr=iso.replace(/-/g,'/');
-    var todayRec=db.today[dk]||{};
-    var parentalSet=_activeParentalSet(iso);
-    var allTeachers=((typeof SIGNERS!=='undefined')?SIGNERS:[]).filter(function(n){return !parentalSet[n];});
-    var onLeave=allTeachers.filter(function(n){return todayRec[n]&&todayRec[n].onLeave;});
+     因為要貼的是不同的 LINE 群組，不能把兩份內容混在一起。
+     改成跟「完成度總表」一樣可以選日期範圍（預設這個月1號到今天），
+     不是只看今天這一天，直接重用 _compRows() 算出整段期間的請假紀錄。 */
+  function buildSubReportText(startIso,endIso){
+    var rows=_compRows(startIso,endIso);
     var L=[];
-    L.push(dateStr+' 請假代理交接名單');
+    L.push(startIso.replace(/-/g,'/')+'～'+endIso.replace(/-/g,'/')+' 請假代理交接名單');
     L.push('');
-    if(!onLeave.length){
-      L.push('今天沒有老師請假');
+    if(!rows.length){
+      L.push('這段期間沒有老師請假');
     } else {
-      onLeave.forEach(function(name){
-        var t=todayRec[name]||{};
-        var resolvedSub=_resolveSub(name,iso);
+      var curIso='';
+      rows.forEach(function(r){
+        if(r.iso!==curIso){curIso=r.iso;L.push(r.iso.replace(/-/g,'/'));}
+        var t=(db.today[dateInputValToKey(r.iso)]||{})[r.name]||{};
+        var resolvedSub=_resolveSub(r.name,r.iso);
         var sub=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:(resolvedSub||'尚未填寫');
-        var lt=t.leaveType||'請假';
-        L.push(name+'（'+lt+'）代理人：'+sub);
+        var lt=r.leaveType||'請假';
+        L.push(r.name+'（'+lt+(r.note?'：'+r.note:'')+'）代理人：'+sub);
       });
     }
     return L.join('\n');
   }
+  function renderSubReport(){
+    var startIso=document.getElementById('tlSubStart').value;
+    var endIso=document.getElementById('tlSubEnd').value;
+    if(!startIso||!endIso)return;
+    document.getElementById('tlSubReportText').value=buildSubReportText(startIso,endIso);
+  }
   function openSubReport(){
-    document.getElementById('tlSubReportText').value=buildSubReportText();
+    var now=new Date();
+    var startD=new Date(now.getFullYear(),now.getMonth(),1);
+    document.getElementById('tlSubStart').value=startD.getFullYear()+'-'+pad2(startD.getMonth()+1)+'-'+pad2(startD.getDate());
+    document.getElementById('tlSubEnd').value=now.getFullYear()+'-'+pad2(now.getMonth()+1)+'-'+pad2(now.getDate());
+    renderSubReport();
     document.getElementById('tlSubReportOv').classList.add('on');
   }
   function closeSubReport(){
@@ -20657,7 +20671,7 @@ var TEACHERLEAVE=(function(){
     var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20734,7 +20748,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019122231</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019123626</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
