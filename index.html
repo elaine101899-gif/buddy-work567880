@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019162756';
+  var BUILD='20261020075351';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -19434,17 +19434,18 @@ var CHILDLEAVE=(function(){
       return;
     }
     /* 已經知道要連續請好幾天，一次把整個區間都寫好，不用每天各別點一次。
-       過去的日期（今天以前）沒解鎖後台的話照樣要擋下來，跟單日編輯
-       的權限規則一致，只是這裡是逐天檢查、擋到的那幾天跳過不寫。 */
+       只有「已經過去」的日期沒解鎖後台才要擋下來——今天跟還沒到的未來日期
+       都可以直接設定，不用等到當天才能一天一天點，跟單日編輯的權限規則一致，
+       這裡是逐天檢查、擋到的那幾天跳過不寫。 */
     var isAdm=document.body.classList.contains('adm');
-    var tk=todayKey();
+    var today0=new Date();today0.setHours(0,0,0,0);
     var d=new Date(startIso+'T00:00:00');
     var end=new Date(endIso+'T00:00:00');
     var written=0,skipped=0;
     var childName=_curEditChild.name,childId=_curEditChild.id;
     while(d<=end){
       var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
-      if(k!==tk&&!isAdm){skipped++;}
+      if(d<today0&&!isAdm){skipped++;}
       else{
         var r=getRec(childId,k);
         r.name=childName;
@@ -20651,14 +20652,14 @@ var TEACHERLEAVE=(function(){
     var startIso=keyToDateInputVal(dk);
     if(endIso&&endIso>startIso){
       var isAdm=document.body.classList.contains('adm');
-      var tk=todayKey();
+      var today0=new Date();today0.setHours(0,0,0,0);
       var d=new Date(startIso+'T00:00:00');
       var end=new Date(endIso+'T00:00:00');
       var written=0,skipped=0;
       var name=_tlEditName,type=_tlEditType;
       while(d<=end){
         var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
-        if(k!==tk&&!isAdm){skipped++;}
+        if(d<today0&&!isAdm){skipped++;}
         else{
           var rec=_getToday(k,name);
           rec.onLeave=true;
