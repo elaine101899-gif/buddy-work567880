@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019123946';
+  var BUILD='20261019131344';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20593,22 +20593,47 @@ var TEACHERLEAVE=(function(){
     rows.sort(function(a,b){return a.iso===b.iso?(a.name<b.name?-1:1):(a.iso<b.iso?-1:1);});
     return rows;
   }
-  function _compTableHtml(rows){
-    if(!rows.length)return '<div style="color:#aaa;text-align:center;padding:30px 0;">這段期間沒有老師請假紀錄</div>';
-    var h='<table style="width:100%;border-collapse:collapse;font-size:.82rem;">';
-    h+='<tr style="background:#f5f5f5;"><th style="padding:6px;text-align:left;">日期</th><th style="padding:6px;text-align:left;">老師</th><th style="padding:6px;text-align:left;">假別</th><th style="padding:6px;">假單</th><th style="padding:6px;">交接單</th></tr>';
+  /* 原本是一張橫向表格，手機上要左右滑才看得到假單/交接單那兩欄。
+     改成跟「請假總表」一樣，以老師個人為單位分組，每個人底下列出她
+     這段期間的每一筆請假，假單/交接單直接做成可以點的小按鈕，點一下
+     就當場打勾/取消，不用再跳回主畫面一筆一筆找人點開視窗確認。 */
+  function _compGroupByPerson(rows){
+    var byName={},order=[];
     rows.forEach(function(r){
-      var incomplete=!r.formWritten||!r.printed;
-      h+='<tr style="border-bottom:1px solid #eee;'+(incomplete?'background:#fdeeea;':'')+'">';
-      h+='<td style="padding:6px;white-space:nowrap;">'+r.iso+'</td>';
-      h+='<td style="padding:6px;font-weight:700;white-space:nowrap;">'+r.name+'</td>';
-      h+='<td style="padding:6px;white-space:nowrap;">'+r.leaveType+(r.note?'（'+r.note+'）':'')+'</td>';
-      h+='<td style="padding:6px;text-align:center;">'+(r.formWritten?'✅':'❌')+'</td>';
-      h+='<td style="padding:6px;text-align:center;">'+(r.printed?'✅':'❌')+'</td>';
-      h+='</tr>';
+      if(!byName[r.name]){byName[r.name]=[];order.push(r.name);}
+      byName[r.name].push(r);
     });
-    h+='</table>';
+    order.sort(function(a,b){return a<b?-1:1;});
+    return order.map(function(name){return {name:name,entries:byName[name]};});
+  }
+  function _compCardsHtml(rows){
+    if(!rows.length)return '<div style="color:#aaa;text-align:center;padding:30px 0;">這段期間沒有老師請假紀錄</div>';
+    var groups=_compGroupByPerson(rows);
+    var h='';
+    groups.forEach(function(g){
+      var incompleteCount=g.entries.filter(function(e){return !e.formWritten||!e.printed;}).length;
+      h+='<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+      h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:8px;">'+g.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+g.entries.length+' 筆</span>'+(incompleteCount?'　<span style="font-weight:700;font-size:.76rem;color:#c0392b;">還有 '+incompleteCount+' 筆未完成</span>':'　<span style="font-weight:700;font-size:.76rem;color:#1f7a54;">全部完成</span>')+'</div>';
+      g.entries.forEach(function(e){
+        var incomplete=!e.formWritten||!e.printed;
+        h+='<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 0;'+(incomplete?'background:#fdeeea;':'')+'border-radius:8px;">';
+        h+='<span style="font-size:.8rem;color:#333;flex:0 0 auto;"><b>'+e.iso.slice(5)+'</b> '+e.leaveType+(e.note?'（'+e.note+'）':'')+'</span>';
+        h+='<button type="button" onclick="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'formWritten\')" style="font-size:.72rem;padding:4px 10px;border-radius:999px;border:1.5px solid '+(e.formWritten?'#1f7a54':'#ccc')+';background:'+(e.formWritten?'#e8f7f0':'#fff')+';color:'+(e.formWritten?'#1f7a54':'#888')+';cursor:pointer;">'+(e.formWritten?'✅':'⬜')+' 假單</button>';
+        h+='<button type="button" onclick="TEACHERLEAVE.toggleCompFlag(\''+e.iso+'\',\''+g.name.replace(/'/g,"\\'")+'\',\'printed\')" style="font-size:.72rem;padding:4px 10px;border-radius:999px;border:1.5px solid '+(e.printed?'#1f7a54':'#ccc')+';background:'+(e.printed?'#e8f7f0':'#fff')+';color:'+(e.printed?'#1f7a54':'#888')+';cursor:pointer;">'+(e.printed?'✅':'⬜')+' 交接單</button>';
+        h+='</div>';
+      });
+      h+='</div>';
+    });
     return h;
+  }
+  /* 完成度總表點了假單/交接單按鈕直接打勾/取消，更新完就地重畫這個區塊，
+     不用跳回主畫面、找到那位老師、開視窗才能改。 */
+  function toggleCompFlag(iso,name,field){
+    var dk=dateInputValToKey(iso);
+    var rec=_getToday(dk,name);
+    rec[field]=!rec[field];
+    save();pushToday(dk,name);
+    renderCompletion();
   }
   function openCompletion(){
     var endD=new Date();
@@ -20624,7 +20649,7 @@ var TEACHERLEAVE=(function(){
   function renderCompletion(){
     var startIso=document.getElementById('tlCompStart').value;
     var endIso=document.getElementById('tlCompEnd').value;
-    document.getElementById('tlCompBody').innerHTML=_compTableHtml(_compRows(startIso,endIso));
+    document.getElementById('tlCompBody').innerHTML=_compCardsHtml(_compRows(startIso,endIso));
   }
   function printCompletion(){
     var startIso=document.getElementById('tlCompStart').value;
@@ -20703,7 +20728,7 @@ var TEACHERLEAVE=(function(){
     var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20780,7 +20805,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019123946</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019131344</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
