@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019101745';
+  var BUILD='20261019102911';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9231,11 +9231,18 @@ var LEAVE=(function(){
   /* 「交接日期」或「請假日期（起）」改掉時，幼兒名單要跟著換成那一天的名單，
      不用等使用者手動存檔再重新打開才看得到。做法是先用目前畫面上（改日期前）
      的名單把已輸入的內容存起來，再用新日期重新整理畫面——這樣才不會因為
-     換日期後名單順序不同，把答案接到錯的小孩身上。 */
+     換日期後名單順序不同，把答案接到錯的小孩身上。
+     iOS 的日期滾輪選擇器在捲動過程中可能會連續觸發好幾次 onchange（不是只
+     有選定放開那一下才算），如果每次都立刻整個表單 renderBody()（會把正在
+     互動中的日期欄位整個砍掉重建），使用者感覺就是「點了日期就跳掉，
+     選不進去」。改成 debounce：存檔還是立刻做，但重畫表單延後一下，
+     等使用者停止捲動、選擇器真的定案之後才重建畫面。 */
+  var _lDateChangeTimer=null;
   function onDateChange(){
     if(!lTid||!lFid)return;
     saveForm();
-    renderBody();
+    if(_lDateChangeTimer)clearTimeout(_lDateChangeTimer);
+    _lDateChangeTimer=setTimeout(function(){_lDateChangeTimer=null;renderBody();},400);
   }
 
   function fmtDate(s){
@@ -20446,7 +20453,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019101745</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019102911</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
