@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019102911';
+  var BUILD='20261019103430';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -19508,7 +19508,7 @@ var CHILDFEE=(function(){
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();refundTotals=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 收費期間（到第幾個月的26號）</div>';
+    h+='<div class="df-lbl" style="margin:0;">📅 收費期間</div>';
     h+='<select class="df-inp" style="width:auto;" id="cfEndRoc" onchange="CHILDFEE.changeYM()">';
     [114,115,116].forEach(function(y){h+='<option value="'+y+'"'+(y===_endY?' selected':'')+'>'+y+' 年</option>';});
     h+='</select>';
@@ -19613,7 +19613,7 @@ var CHILDFEE=(function(){
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_incEndY,_incEndM)||{};}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 收費期間（到第幾個月的26號）</div>';
+    h+='<div class="df-lbl" style="margin:0;">📅 收費期間</div>';
     h+='<select class="df-inp" style="width:auto;" id="cfincEndRoc" onchange="CHILDFEE.incChangeYM()">';
     [114,115,116].forEach(function(y){h+='<option value="'+y+'"'+(y===_incEndY?' selected':'')+'>'+y+' 年</option>';});
     h+='</select>';
@@ -20453,7 +20453,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019102911</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019103430</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
