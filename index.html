@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019105137';
+  var BUILD='20261019110002';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -8986,6 +8986,19 @@ var LEAVE=(function(){
     showList();
   }
 
+  /* 幼兒區塊單獨抽成一個函式，讓 onDateChange 可以只重畫這一小塊，
+     不用動到上面交接日期/請假日期那些欄位本身。 */
+  function _kidsBlockHTML(kids,childData,cls){
+    var h='';
+    kids.forEach(function(kid,idx){
+      /* 優先用幼兒 id 比對已存資料，順序萬一跟存檔當時不同也能對到正確的孩子；
+         真的對不到（很舊的單、沒存 id）才退回用原本的索引位置。 */
+      var cd=childData.find(function(c){return c&&c.id===kid.id;})||childData[idx]||{};
+      h+=renderChild(kid,idx,cd,cls);
+    });
+    return h;
+  }
+
   /* ── 渲染假單表單 ── */
   function renderBody(){
     var wrap=document.getElementById('leaveTeacherWrap');
@@ -9060,13 +9073,12 @@ var LEAVE=(function(){
     h+='<li>以下幼兒交接事項說明請每一欄清楚填寫</li>';
     h+='</ol></div>';
 
-    /* ── 幼兒區塊 ── */
-    kids.forEach(function(kid,idx){
-      /* 優先用幼兒 id 比對已存資料，順序萬一跟存檔當時不同也能對到正確的孩子；
-         真的對不到（很舊的單、沒存 id）才退回用原本的索引位置。 */
-      var cd=childData.find(function(c){return c&&c.id===kid.id;})||childData[idx]||{};
-      h+=renderChild(kid,idx,cd,cls);
-    });
+    /* ── 幼兒區塊 ──
+       包一層有固定 id 的容器：改交接日期/請假日期時只要重畫這個容器，
+       不用整個表單 renderBody()，才不會把使用者正在操作中的日期/時間
+       欄位整個砍掉重建（iOS 的日期滾輪選擇器互動期間一長就容易被打斷，
+       見 onDateChange 下面的說明）。 */
+    h+='<div id="lKidsBlock">'+_kidsBlockHTML(kids,childData,cls)+'</div>';
 
     /* ── 代理人代班事後交接 ── */
     h+='<div class="df-sec"><div class="df-lbl">📝 代理人代班事後交接</div>';
@@ -9228,20 +9240,26 @@ var LEAVE=(function(){
   }
 
   /* 「交接日期」或「請假日期（起）」改掉時，幼兒名單要跟著換成那一天的名單，
-     不用等使用者手動存檔再重新打開才看得到。做法是先用目前畫面上（改日期前）
-     的名單把已輸入的內容存起來，再用新日期重新整理畫面——這樣才不會因為
-     換日期後名單順序不同，把答案接到錯的小孩身上。
-     iOS 的日期滾輪選擇器在捲動過程中可能會連續觸發好幾次 onchange（不是只
-     有選定放開那一下才算），如果每次都立刻整個表單 renderBody()（會把正在
-     互動中的日期欄位整個砍掉重建），使用者感覺就是「點了日期就跳掉，
-     選不進去」。改成 debounce：存檔還是立刻做，但重畫表單延後一下，
-     等使用者停止捲動、選擇器真的定案之後才重建畫面。 */
-  var _lDateChangeTimer=null;
+     不用等使用者手動存檔再重新打開才看得到。
+     一開始的做法是整個表單 renderBody()，後來改成 debounce 延後重畫，
+     但 iOS 的日期滾輪選擇器互動時間常常超過 debounce 的等待時間，
+     還是會在使用者操作中途把日期/時間欄位整個砍掉重建，導致選了日期
+     卻顯示不出來、或是先設定好的時間也一起不見。
+     真正的解法：只重畫下面「幼兒名單」這一小塊（包在 #lKidsBlock 裡），
+     完全不碰交接日期/請假日期/時間這些欄位本身的 DOM，不管使用者怎麼
+     操作選擇器、改幾次，都不會打斷正在互動中的欄位。 */
   function onDateChange(){
     if(!lTid||!lFid)return;
     saveForm();
-    if(_lDateChangeTimer)clearTimeout(_lDateChangeTimer);
-    _lDateChangeTimer=setTimeout(function(){_lDateChangeTimer=null;renderBody();},400);
+    var teacher=_leaveTeachers().find(function(t){return t.id===lTid;});
+    if(!teacher)return;
+    var saved=getTeacherForms(lTid)[lFid]||{};
+    var childData=saved.children||[];
+    var asOfDate=v('lHdrFromDate')||v('lHdrDate')||_isoFromTs(saved.createdAt);
+    _lRenderAsOf=asOfDate;
+    var kids=getKids(lTid,asOfDate);
+    var el=document.getElementById('lKidsBlock');
+    if(el)el.innerHTML=_kidsBlockHTML(kids,childData,teacher.cls);
   }
 
   function fmtDate(s){
@@ -20466,7 +20484,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019105137</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019110002</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
