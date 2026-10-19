@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019115611';
+  var BUILD='20261019122231';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3501,6 +3501,31 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="tl-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="tlEditOv">
+  <div class="asr-mbox">
+    <h3>&#x1F64B; <span id="tlEditName"></span> 請假登記</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">開始日期：<span id="tlEditDate"></span></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">結束日期（選填，已經知道要請好幾天可以一次設定，不用每天來點一次）</div>
+    <input type="date" class="asr-mi" id="tlEditEndDate" style="margin-bottom:10px;">
+    <div style="font-size:.78rem;color:#888;margin-bottom:8px;">假別</div>
+    <div id="tlEditTypeBtns" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">備註（選填）</div>
+    <input type="text" class="asr-mi" id="tlEditNote" placeholder="例如：半天" style="margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px;">
+      <label style="font-size:.84rem;"><input type="checkbox" id="tlEditFormWritten"> 假單</label>
+      <label style="font-size:.84rem;"><input type="checkbox" id="tlEditPrinted"> 交接單</label>
+      <button type="button" class="cln-sig-btn" onclick="TEACHERLEAVE.reviewFormCur()">&#x1F50D; 查看</button>
+    </div>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">&#x1F504; 交接人</div>
+    <input type="text" class="asr-mi" id="tlEditSub" placeholder="尚未填寫（可先手動輸入）">
+    <div id="tlEditSubHint" style="font-size:.72rem;color:#1a7a4f;margin-top:2px;margin-bottom:6px;"></div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="TEACHERLEAVE.closeEdit()">取消</button>
+      <button class="asr-mok" id="tlEditClearBtn" style="background:#e85a5a;" onclick="TEACHERLEAVE.clearLeave()">標記為未請假</button>
+      <button class="asr-mok" onclick="TEACHERLEAVE.saveEdit()">&#x2713; 儲存</button>
+    </div>
   </div>
 </div>
 <div class="asr-modal" id="tlParentalOv">
@@ -20126,60 +20151,33 @@ var TEACHERLEAVE=(function(){
     h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
     h+='<input type="date" class="df-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.backToday()">回到今天</button>';
-    h+='<button class="cln-sig-btn" style="margin-left:auto;" onclick="TEACHERLEAVE.openSubReport()">🔄 產生交接人回報文字</button>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openSubReport()">🔄 產生交接人回報文字</button>';
     h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openCompletion()">📊 完成度總表</button>';
     h+='</div>';
-    var hint=isToday?'今天可以直接勾選請假老師（不會自動從體溫管理帶入）。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
+    var hint=isToday?'點老師名字可以登記請假（不會自動從體溫管理帶入）。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin:10px 0;">'+hint+' 已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
     h+='<div class="df-lbl">老師出缺勤</div>';
     if(!teachers.length){
       h+='<div style="color:#aaa;text-align:center;padding:20px 0;">'+(canEdit?'目前沒有在職老師名單':'這一天沒有老師請假')+'</div>';
     } else {
-      h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
-      teachers.forEach(function(name,i){
+      /* 原本每位老師一整排擠了打勾/假別/備註/假單/交接單/查看/交接人/結束日期
+         好幾個欄位，手機上要橫向捲動才看得到後面的，太長了。改成跟幼兒請假
+         記錄一樣：老師只是個可以點的小卡片，點下去才跳出視窗填詳細內容，
+         請假中的卡片會直接顯示假別，一眼就看得到誰請假、請什麼假。 */
+      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">';
+      teachers.forEach(function(name){
         var t=todayRec[name]||{};
-        h+='<div style="padding:10px 0;overflow-x:auto;'+(i<teachers.length-1?'border-bottom:1px solid #eee;':'')+'">';
-        h+='<div style="display:flex;align-items:center;gap:8px;white-space:nowrap;">';
-        h+='<label style="display:flex;align-items:center;gap:6px;font-weight:700;color:#2d3057;flex:0 0 auto;"><input type="checkbox" '+(t.onLeave?'checked':'')+(canEdit?'':' disabled')+' onchange="TEACHERLEAVE.toggleLeave(\''+name+'\',this.checked)">'+name+'</label>';
-        if(t.onLeave){
-          var dis=canEdit?'':' disabled';
-          h+='<select class="df-inp" style="width:84px;flex:0 0 auto;" '+dis+' onchange="TEACHERLEAVE.setLeaveType(\''+name+'\',this.value)">';
-          h+='<option value="">假別</option>';
-          LEAVE_TYPE_OPTS.forEach(function(opt){h+='<option value="'+opt+'"'+(t.leaveType===opt?' selected':'')+'>'+opt+'</option>';});
-          h+='</select>';
-          h+='<input type="text" class="df-inp" style="width:70px;flex:0 0 auto;" '+dis+' placeholder="例如半天" value="'+(t.note||'').replace(/"/g,'&quot;')+'" onchange="TEACHERLEAVE.setNote(\''+name+'\',this.value)">';
-          h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.formWritten?'checked':'')+dis+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'formWritten\',this.checked)">假單</label>';
-          h+='<label style="display:flex;align-items:center;gap:3px;font-size:.76rem;color:#666;flex:0 0 auto;"><input type="checkbox" '+(t.printed?'checked':'')+dis+' onchange="TEACHERLEAVE.toggleFlag(\''+name+'\',\'printed\',this.checked)">交接單</label>';
-          /* 晚補單常見：假單/交接單當下還沒寫好，不確定要不要先勾，
-             這個按鈕直接跳去那位老師自己的請假交接單列表查閱，
-             確認真的寫好了再回來勾選，不用自己記得去哪裡找。 */
-          h+='<button type="button" class="cln-sig-btn" style="font-size:.68rem;padding:3px 9px;flex:0 0 auto;" onclick="event.stopPropagation();TEACHERLEAVE.reviewForm(\''+name+'\')">🔍 查看</button>';
-        }
-        if(t.onLeave&&canEdit){
-          /* 已經知道要請長假的話，填結束日期一次把整段都設定好，
-             不用每天回來勾一次，跟幼兒請假記錄那邊同一套邏輯。
-             只套用「假別」「備註」，不動假單/交接單的完成狀態，
-             每天的假單還是要分開確認有沒有真的寫。 */
-          h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:.76rem;color:#666;flex-wrap:wrap;">';
-          h+='<span style="flex:0 0 auto;">📅 請假到（選填，一次設定整段）：</span>';
-          h+='<input type="date" class="df-inp" style="width:auto;flex:0 0 auto;" min="'+iso+'" onchange="TEACHERLEAVE.setLeaveRange(\''+name+'\',this.value);this.value=\'\';">';
-          h+='</div>';
-        }
-        if(t.onLeave){
-          /* 交接人：優先讀她自己請假交接單裡填的代理人，自動帶出來，
-             不用再打一次；單還沒寫就先空著、可以手動打字頂著用，
-             之後單補上了會自動蓋過去（只要沒手動改過這一格）。 */
-          var resolvedSub=_resolveSub(name,iso);
-          var overrideVal=(t.subOverride!==undefined&&t.subOverride!=='')?t.subOverride:'';
-          var subDisplay=overrideVal||resolvedSub||'';
-          var disSub=canEdit?'':' disabled';
-          h+='<div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:.76rem;color:#666;flex-wrap:wrap;">';
-          h+='<span style="flex:0 0 auto;">🔄 交接人：</span>';
-          h+='<input type="text" class="df-inp" style="flex:1;min-width:100px;max-width:160px;" '+disSub+' placeholder="尚未填寫（可先手動輸入）" value="'+subDisplay.replace(/"/g,'&quot;')+'" onchange="TEACHERLEAVE.setSubOverride(\''+name+'\',this.value)">';
-          if(resolvedSub&&!overrideVal)h+='<span style="color:#1a7a4f;font-size:.7rem;">（自動帶入交接單）</span>';
-          h+='</div>';
-        }
-        h+='</div></div>';
+        var onLeave=!!t.onLeave;
+        var bg=onLeave?'#fdf6ec':'#f7f7fa',border=onLeave?'#e0a05a':'#ddd',txt=onLeave?'#a5680a':'#888';
+        var tag=onLeave?((t.leaveType||'請假')+(t.note?'：'+t.note:'')):'未請假';
+        var nameEsc=name.replace(/'/g,"\\'");
+        var clickAttr=canEdit?' onclick="TEACHERLEAVE.openEdit(\''+nameEsc+'\')" style="cursor:pointer;':' style="cursor:default;';
+        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+name+'</div>';
+        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='</div>';
       });
       h+='</div>';
     }
@@ -20209,72 +20207,115 @@ var TEACHERLEAVE=(function(){
     return db.today[dk][name];
   }
   function _canEditNow(){return curViewKey===todayKey()||document.body.classList.contains('adm');}
-  function toggleLeave(name,checked){
+
+  /* ─── 登記請假：改成點老師卡片跳出視窗，一次把假別/備註/結束日期/
+     假單/交接單/交接人都填好再儲存，不用像以前那樣一排欄位一項一項點。 ─── */
+  var _tlEditName=null,_tlEditType=null;
+  function _renderTlTypeBtns(){
+    var wrap=document.getElementById('tlEditTypeBtns');
+    if(!wrap)return;
+    var h='';
+    LEAVE_TYPE_OPTS.forEach(function(t){
+      var on=(_tlEditType===t);
+      h+='<button type="button" class="asr-mok" onclick="TEACHERLEAVE.pickEditType(\''+t+'\')" style="flex:1 1 28%;background:'+(on?'#a5680a':'#eee')+';color:'+(on?'#fff':'#666')+';">'+t+'</button>';
+    });
+    wrap.innerHTML=h;
+  }
+  function pickEditType(t){_tlEditType=t;_renderTlTypeBtns();}
+  function openEdit(name){
     if(!_canEditNow()){
       alert('過去的日期要新增或修改，請先點右下角鑰匙解鎖後台。');
-      render();
       return;
     }
+    _tlEditName=name;
+    var dk=curViewKey,iso=keyToDateInputVal(dk);
+    var rec=_getToday(dk,name);
+    _tlEditType=rec.leaveType||null;
+    document.getElementById('tlEditName').textContent=name;
+    document.getElementById('tlEditDate').textContent=iso;
+    document.getElementById('tlEditNote').value=rec.note||'';
+    var endInp=document.getElementById('tlEditEndDate');
+    if(endInp){endInp.value='';endInp.min=iso;}
+    document.getElementById('tlEditFormWritten').checked=!!rec.formWritten;
+    document.getElementById('tlEditPrinted').checked=!!rec.printed;
+    var resolvedSub=_resolveSub(name,iso);
+    var overrideVal=(rec.subOverride!==undefined&&rec.subOverride!=='')?rec.subOverride:'';
+    document.getElementById('tlEditSub').value=overrideVal||resolvedSub||'';
+    document.getElementById('tlEditSubHint').textContent=(resolvedSub&&!overrideVal)?'（自動帶入交接單，可直接覆蓋改掉）':'';
+    document.getElementById('tlEditClearBtn').style.display=rec.onLeave?'':'none';
+    _renderTlTypeBtns();
+    document.getElementById('tlEditOv').classList.add('on');
+  }
+  function closeEdit(){
+    var ov=document.getElementById('tlEditOv');
+    if(ov)ov.classList.remove('on');
+    _tlEditName=null;
+  }
+  function reviewFormCur(){
+    if(_tlEditName)reviewForm(_tlEditName);
+  }
+  /* 把一筆資料標記為未請假（不是刪掉這一天的紀錄，只是把 onLeave 關掉，
+     假單/交接單/交接人這些既有資料留著，之後點開還看得到） */
+  function clearLeave(){
+    if(!_tlEditName)return;
+    if(!confirm('確定要把 '+_tlEditName+' 這天標記為「未請假」嗎？'))return;
     var dk=curViewKey;
-    var t=_getToday(dk,name);
-    t.onLeave=checked;
-    save();pushToday(dk,name);
+    var rec=_getToday(dk,_tlEditName);
+    rec.onLeave=false;
+    save();pushToday(dk,_tlEditName);
+    closeEdit();
     render();
   }
-  function setLeaveType(name,val){
-    if(!_canEditNow()){render();return;}
+  /* 儲存：沒填結束日期就只存這一天；有填結束日期（已經知道要請長假）
+     就從查詢中的這一天到結束日期整段都標記請假（套用同一個假別/備註），
+     不用每天回來點一次——假單/交接單/交接人這些「單日才需要確認」的
+     細節只套用在真正點開來編輯的這一天，其他天數維持各自分開確認。 */
+  function saveEdit(){
+    if(!_tlEditName)return;
+    if(!_tlEditType){alert('請先選擇假別');return;}
     var dk=curViewKey;
-    var t=_getToday(dk,name);
-    t.leaveType=val;
-    save();pushToday(dk,name);
-  }
-  function setNote(name,val){
-    if(!_canEditNow()){render();return;}
-    var dk=curViewKey;
-    var t=_getToday(dk,name);
-    t.note=val;
-    save();pushToday(dk,name);
-  }
-  /* 已經知道要請長假，一次把「今天查詢的這一天」到「填的結束日期」整段
-     都標記成請假，不用每天回來勾一次，跟幼兒請假記錄的做法一致。
-     只套用假別/備註，假單/交接單完成狀態不套用（每天還是要分開確認
-     真的有寫），過去的日期一樣要解鎖後台才能動，沒解鎖的天數跳過。 */
-  function setLeaveRange(name,endIso){
-    if(!endIso)return;
-    var dk=curViewKey;
+    var note=document.getElementById('tlEditNote').value||'';
+    var formWritten=document.getElementById('tlEditFormWritten').checked;
+    var printed=document.getElementById('tlEditPrinted').checked;
+    var subVal=document.getElementById('tlEditSub').value||'';
+    var endIso=(document.getElementById('tlEditEndDate')||{}).value||'';
     var startIso=keyToDateInputVal(dk);
-    if(endIso<=startIso)return;
-    var isAdm=document.body.classList.contains('adm');
-    var tk=todayKey();
-    var t0=_getToday(dk,name);
-    var leaveType=t0.leaveType||'';
-    var note=t0.note||'';
-    var d=new Date(startIso+'T00:00:00');
-    var end=new Date(endIso+'T00:00:00');
-    var written=0,skipped=0;
-    while(d<=end){
-      var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
-      if(k!==tk&&!isAdm){skipped++;}
-      else{
-        var rec=_getToday(k,name);
-        rec.onLeave=true;
-        rec.leaveType=leaveType;
-        rec.note=note;
-        pushToday(k,name);
-        written++;
+    if(endIso&&endIso>startIso){
+      var isAdm=document.body.classList.contains('adm');
+      var tk=todayKey();
+      var d=new Date(startIso+'T00:00:00');
+      var end=new Date(endIso+'T00:00:00');
+      var written=0,skipped=0;
+      var name=_tlEditName,type=_tlEditType;
+      while(d<=end){
+        var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
+        if(k!==tk&&!isAdm){skipped++;}
+        else{
+          var rec=_getToday(k,name);
+          rec.onLeave=true;
+          rec.leaveType=type;
+          rec.note=note;
+          if(k===dk){rec.formWritten=formWritten;rec.printed=printed;rec.subOverride=subVal;}
+          pushToday(k,name);
+          written++;
+        }
+        d.setDate(d.getDate()+1);
       }
-      d.setDate(d.getDate()+1);
+      save();
+      closeEdit();
+      render();
+      alert('已設定 '+name+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過）':''));
+      return;
     }
-    save();
-    render();
-    alert('已設定 '+name+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過）':''));
-  }
-  function toggleFlag(name,field,checked){
-    if(!_canEditNow()){render();return;}
-    var dk=curViewKey;
-    var t=_getToday(dk,name);
-    t[field]=checked;
-    save();pushToday(dk,name);
+    var rec2=_getToday(dk,_tlEditName);
+    rec2.onLeave=true;
+    rec2.leaveType=_tlEditType;
+    rec2.note=note;
+    rec2.formWritten=formWritten;
+    rec2.printed=printed;
+    rec2.subOverride=subVal;
+    save();pushToday(dk,_tlEditName);
+    closeEdit();
     render();
   }
 
@@ -20490,13 +20531,6 @@ var TEACHERLEAVE=(function(){
     }catch(e){}
     return null;
   }
-  function setSubOverride(name,val){
-    var dk=curViewKey;
-    if(!db.today[dk])db.today[dk]={};
-    if(!db.today[dk][name])db.today[dk][name]={};
-    db.today[dk][name].subOverride=val||'';
-    save();pushToday(dk,name);
-  }
 
   /* ─── 完成度總表：跨日期範圍一次看，老師填寫了假單不算數，
      要「假單」「交接單」兩個都打勾才算真的完成，還沒完成的用紅色底標出來，
@@ -20623,7 +20657,7 @@ var TEACHERLEAVE=(function(){
     var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,toggleLeave:toggleLeave,setLeaveType:setLeaveType,setNote:setNote,toggleFlag:toggleFlag,setLeaveRange:setLeaveRange,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,setSubOverride:setSubOverride,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -20700,7 +20734,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019115611</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019122231</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
