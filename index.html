@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261019103430';
+  var BUILD='20261019104020';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3643,7 +3643,7 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ CLEANING FORM ═══ -->
 <div class="pg" id="pg-clean">
-  <div class="bbar">
+  <div class="bbar" id="cleanTopBbar">
     <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
     <span class="btitle">清潔表單</span>
   </div>
@@ -3687,7 +3687,6 @@ function _rosterKidsAsOf(cls,dateStr){
     <div id="cleanWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecBedding" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">班級寢具</span></div>
     <div id="beddingWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecTemp" style="display:none;">
@@ -16225,6 +16224,11 @@ var CLEAN=(function(){
     if(secEnv)secEnv.style.display=(sec==='env')?'':'none';
     if(secBed)secBed.style.display=(sec==='bedding')?'':'none';
     if(secTmp)secTmp.style.display=(sec==='temp')?'':'none';
+    /* 班級寢具自己裡面（選擇班級／某班明細）已經各有一個返回按鈕，
+       最上面這層「← 各式表單　清潔表單」再疊一次會變成同時出現三層，
+       進到班級寢具的時候先把這層藏起來，只留班級寢具自己那一個。 */
+    var topBar=document.getElementById('cleanTopBbar');
+    if(topBar)topBar.style.display=(sec==='bedding')?'none':'';
     if(sec==='env'){curStep='hub';load();render();}
     if(sec==='bedding'&&typeof BEDDING!=='undefined')BEDDING.init();
     if(sec==='temp'&&typeof TEMP!=='undefined')TEMP.init();
@@ -16420,6 +16424,7 @@ var BEDDING=(function(){
 
   function renderClsHub(wrap){
     var h='';
+    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="CLEAN.show(\'hub\')">&#x2190; 清潔表單</button><span class="btitle">班級寢具</span></div>';
     h+='<div class="df-sec"><div class="df-lbl">🛏️ 選擇班級</div>';
     if(BEDDING_CLASSES.length){
       h+=_pickGridHTML(BEDDING_CLASSES.map(function(c){return{value:c.id,label:c.label};}),'BEDDING.selectCls');
@@ -20453,7 +20458,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019103430</div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;">20261019104020</div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
