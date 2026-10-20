@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020164636';
+  var BUILD='20261020165908';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18123,13 +18123,15 @@ var LEDGER=(function(){
     return rows;
   }
   function totals(rows){
-    var totalIncome=0,totalExpense=0,byCat={};
+    var totalIncome=0,totalExpense=0,manualIncome=0,manualExpense=0,byCat={};
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
       totalIncome+=inc;totalExpense+=exp;
+      if(r.source==='manual'){manualIncome+=inc;manualExpense+=exp;}
       if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=exp;}
     });
-    return{totalIncome:totalIncome,totalExpense:totalExpense,byCat:byCat};
+    return{totalIncome:totalIncome,totalExpense:totalExpense,
+      manualIncome:manualIncome,manualExpense:manualExpense,byCat:byCat};
   }
 
   function render(){
@@ -18159,7 +18161,10 @@ var LEDGER=(function(){
       var running=open;
       rows.forEach(function(r){
         var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
-        running+=inc-exp;
+        /* 灰字（零用金自動帶入）是公司的零用金，不是自己身上實際保管的現金，
+           不能扣自己的餘額——只有自己在這裡新增的調整項目，才是真的從
+           自己身上的錢進出，餘額才要跟著變動。 */
+        if(r.source==='manual')running+=inc-exp;
         if(r.source==='pettycash'){
           h+='<tr style="color:#999;">';
           h+='<td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
@@ -18252,7 +18257,9 @@ function _ledgerSummaryTablesHtml(t,open){
   LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td>'+v.toLocaleString()+'</td></tr>';});
   h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumB.toLocaleString()+'</td></tr>';
   if(open!=null){
-    var closing=open+t.totalIncome-t.totalExpense;
+    /* 餘額只跟著自己新增的調整項目（manual）變動，零用金自動帶入的
+       灰字明細只是參考、不是自己身上的現金進出，不能拿來扣餘額。 */
+    var closing=open+(t.manualIncome||0)-(t.manualExpense||0);
     h+='<tr style="font-weight:800;background:#fff6e0;"><td>目前餘額</td><td style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
   }
   h+='</tbody></table>';
