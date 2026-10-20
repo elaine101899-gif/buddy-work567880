@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020231227';
+  var BUILD='20261020232610';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3723,7 +3723,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ LEAVE TEACHER（老師假單歷史） ═══ -->
 <div class="pg" id="pg-leave-teacher">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('leave')">&#x2190; 返回</button>
+    <button class="bbtn" onclick="LEAVE.exitTop()">&#x2190; 返回</button>
     <span class="btitle" id="leaveTeacherTitle">假單記錄</span>
   </div>
   <div id="leaveTeacherWrap" style="padding-bottom:40px;"></div>
@@ -3732,7 +3732,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ LEAVE BOSS（主管人員） ═══ -->
 <div class="pg" id="pg-leave-boss">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
+    <button class="bbtn" onclick="LEAVE_BOSS.exitTop()">&#x2190; 返回</button>
     <span class="btitle">主管人員請假交接單</span>
   </div>
   <div id="leaveBossWrap" style="padding-bottom:40px;"></div>
@@ -3741,7 +3741,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ LEAVE FLEX（機動人員） ═══ -->
 <div class="pg" id="pg-leave-flex">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
+    <button class="bbtn" onclick="LEAVE_FLEX.exitTop()">&#x2190; 返回</button>
     <span class="btitle">機動人員請假交接單</span>
   </div>
   <div id="leaveFlexWrap" style="padding-bottom:40px;"></div>
@@ -3750,7 +3750,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ LEAVE COOK（廚工） ═══ -->
 <div class="pg" id="pg-leave-cook">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
+    <button class="bbtn" onclick="LEAVE_COOK.exitTop()">&#x2190; 返回</button>
     <span class="btitle">廚工請假交接單</span>
   </div>
   <div id="leaveCookWrap" style="padding-bottom:40px;"></div>
@@ -9917,7 +9917,14 @@ var LEAVE=(function(){
     showList();
   }
 
-  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,onDateChange:onDateChange,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
+  /* 最上面那顆大的「← 返回」（跳出整個老師假單歷史頁，回到交接單選老師
+     的畫面）跟下面小的「← 返回列表」是兩個獨立按鈕，各自接線——只修
+     showList() 救不到從最上面這顆直接離開的狀況，這裡也要補一次存檔。 */
+  function exitTop(){
+    if(lTid&&lFid)saveForm();
+    GO('leave');
+  }
+  return{init:init,openTeacher:openTeacher,showList:showList,newForm:newForm,editForm:editForm,deleteForm:deleteForm,printForm:printForm,saveForm:saveForm,onDateChange:onDateChange,download:download,downloadFile:downloadFile,exportData:exportData,importData:importData,toggleRead:toggleRead,_openSubSig:_openSubSig,getSubForDate:getSubForDate,exitTop:exitTop};
 })();
 
 /* ════ 主管／機動／廚工 假單 Firebase 同步共用工具 ════
@@ -10388,8 +10395,15 @@ var LEAVE_BOSS=(function(){
   }
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
+     backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
+     情況，這裡也要補一次存檔。 */
+  function exitTop(){
+    if(curStep==='form'&&curFid)saveForm();
+    GO('leave-menu');
+  }
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate,exitTop:exitTop};
 })();
 
 /* ════ 機動人員請假交接單 ════ */
@@ -10634,8 +10648,15 @@ var LEAVE_FLEX=(function(){
   function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
+     backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
+     情況，這裡也要補一次存檔。 */
+  function exitTop(){
+    if(curStep==='form'&&curFid)saveForm();
+    GO('leave-menu');
+  }
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate,exitTop:exitTop};
 })();
 
 var LEAVE_COOK=(function(){
@@ -10875,8 +10896,15 @@ var LEAVE_COOK=(function(){
   function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
   function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
   function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
+     backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
+     情況，這裡也要補一次存檔。 */
+  function exitTop(){
+    if(curStep==='form'&&curFid)saveForm();
+    GO('leave-menu');
+  }
 
-  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate};
+  return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate,exitTop:exitTop};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -22520,15 +22548,23 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020231227--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020232610--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
   if(el){
-    /* iOS Safari 的電話號碼自動偵測有時候會搶先把這串純數字包成 <a href="tel:..">，
-       所以不能信任 innerHTML 一定還是乾淨的註解文字，要先把任何 HTML 標籤拔掉再處理，
-       不然會把 <a href=..> 這些標籤符號當成文字整個顯示出來。 */
-    var raw=el.innerHTML.replace(/<[^>]*>/g,'');
+    /* 直接找註解節點本身的 .data 讀出內容，不要用 regex 去拔 innerHTML 的標籤——
+       /<[^>]*>/g 這個寫法會把整個 <!--20261020231227--> 都當成「一個標籤」
+       吃掉（從開頭的 < 配到結尾唯一的那個 >），連裡面的數字一起被清空，
+       導致版本號永遠顯示不出來。
+       iOS Safari 的電話號碼自動偵測有時候會搶先把純數字包成 <a href="tel:..">，
+       但那隻會發生在真的被當成文字渲染出來的情況，不會發生在註解節點裡；
+       真的找不到註解節點（萬一真的被動過手腳）才退回舊的字串清理方式當備案。 */
+    var raw='';
+    for(var i=0;i<el.childNodes.length;i++){
+      if(el.childNodes[i].nodeType===8){raw=el.childNodes[i].data;break;}
+    }
+    if(!raw)raw=el.innerHTML.replace(/<[^>]*>/g,'');
     var t=raw.replace('<!--','').replace('-->','').trim();
     /* BUILD_TS 格式是 YYYYMMDDHHMMSS，壓成跟以前一樣短的 MM/DD HH:MM 顯示 */
     if(/^\d{14}$/.test(t))t=t.slice(4,6)+'/'+t.slice(6,8)+' '+t.slice(8,10)+':'+t.slice(10,12);
