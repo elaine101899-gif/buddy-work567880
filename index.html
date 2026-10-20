@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020210011';
+  var BUILD='20261020212719';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3957,7 +3957,7 @@ function _rosterKidsAsOf(cls,dateStr){
       </div>
       <div onclick="LEDGER.openCheckout()" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
         <span style="font-size:1.8rem;">&#x1F4CA;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">結帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每月總結算（開發中）</div></div>
+        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">結帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每月總結算：收入/零用金自動帶入，薪資房租等手動輸入</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
     </div>
@@ -3983,11 +3983,28 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <div class="pg" id="pg-ledger-checkout">
   <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <button class="bbtn" onclick="CHECKOUT.backToHub();LEDGER.backToTop();">&#x2190; 總帳</button>
     <span class="btitle">結帳</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerCheckoutWrap">
-    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">這個功能還在設計中，細節確認後會補上。</div>
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="ckNewOv">
+  <div class="asr-mbox" style="max-width:420px;">
+    <h3>&#x2795; 新增結帳期別</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">期別名稱</div>
+    <input type="text" class="asr-mi" id="ckNewLabel" placeholder="例如：115年9/08~10/07">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">開始日期</div>
+    <input type="date" class="asr-mi" id="ckNewStart">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">結束日期</div>
+    <input type="date" class="asr-mi" id="ckNewEnd">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">上期總結（自動帶入，可手動改）</div>
+    <input type="number" class="asr-mi" id="ckNewPrev" placeholder="0">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="CHECKOUT.closeNew()">取消</button>
+      <button class="asr-mok" onclick="CHECKOUT.saveNew()">建立</button>
+    </div>
   </div>
 </div>
 <div class="asr-modal" id="ledgerNewOv">
@@ -18518,17 +18535,31 @@ var LEDGER=(function(){
      零用金那一頁才會呼叫 renderHub() 畫期別清單。 */
   function init(){attach();}
   function openCash(){GO('ledger-cash');renderHub();}
-  function openCheckout(){GO('ledger-checkout');}
+  function openCheckout(){GO('ledger-checkout');if(typeof CHECKOUT!=='undefined')CHECKOUT.open();}
   function backToTop(){curPid=null;GO('ledger');}
   function back(){
     history.replaceState(null,'',window.location.pathname+window.location.search);
     GO('home');
   }
 
+  /* ── 給「結帳」模組用的唯讀存取：結帳的 C帳／零用金支出，要抓零用金
+     某一期的「總支出」跟「目前餘額」，不用自己重算一份。 */
+  function listPeriodsForCheckout(){
+    return sortedPeriods().map(function(p){
+      return{id:p.id,label:p.label,startDate:p.startDate,endDate:p.endDate};
+    });
+  }
+  function getPeriodSummary(id){
+    var p=periods[id];
+    if(!p)return null;
+    var t=totals(combinedRows(p));
+    return{totalExpense:t.totalExpense,totalIncome:t.totalIncome,closing:periodClosing(p)};
+  }
   return{init:init,back:back,openCash:openCash,openCheckout:openCheckout,backToTop:backToTop,
     backToCashHub:backToCashHub,openNew:openNew,closeNew:closeNew,saveNew:saveNew,
     deletePeriod:deletePeriod,openDetail:openDetail,setMeta:setMeta,addRow:addRow,delRow:delRow,
-    setRowField:setRowField,switchCompany:switchCompany,print:doPrint};
+    setRowField:setRowField,switchCompany:switchCompany,print:doPrint,
+    listPeriodsForCheckout:listPeriodsForCheckout,getPeriodSummary:getPeriodSummary};
 })();
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
@@ -18592,6 +18623,258 @@ function _ledgerPrintHTML(rows,t,p){
     'window.print();'+
     '}<\/script></body></html>';
 }
+
+/* ── 結帳（總帳裡的第二個入口）：每月把月費單收入、零用金支出/餘額自動
+   帶進來，薪資/三保/房租…這些銀行帳務自己手動輸入，最後算出本期損益
+   跟 A/B/C 帳資產結餘，「總結」自動承接上一期的總結當起始值。
+   跟零用金一樣是「期別制」，兩間公司各自獨立一份期別清單。 */
+var CHECKOUT_EXPENSE_CATS=['薪資','員工福利','三保','房租','電信','水電','電費','設備','其他'];
+var CHECKOUT=(function(){
+  var periods={};
+  var curPid=null;
+  var _attachedCompany=null,_ckRef=null;
+  function _cacheKey(){return _ckey('checkoutPeriodsCacheDB');}
+  function _loadCache(){
+    try{var raw=localStorage.getItem(_cacheKey());if(raw)periods=JSON.parse(raw)||{};}catch(e){}
+  }
+  function attach(){
+    if(_attachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    if(_ckRef){try{_ckRef.off('value');}catch(e){}}
+    _attachedCompany=CURRENT_COMPANY;
+    periods={};
+    _loadCache();
+    render();
+    _ckRef=fb.ref('xiaobuddyClean/checkout/periods');
+    _ckRef.on('value',function(snap){
+      periods=snap.val()||{};
+      try{localStorage.setItem(_cacheKey(),JSON.stringify(periods));}catch(e){}
+      render();
+    });
+  }
+  function sortedPeriods(){
+    return Object.keys(periods).map(function(id){return Object.assign({id:id},periods[id]);})
+      .sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  }
+  function calc(p){
+    var cf=(p.childfeePk&&typeof CHILDFEE!=='undefined')?CHILDFEE.incomeSumsForPeriod(p.childfeePk):{};
+    var regFee=parseFloat(cf.regFee)||0,monthFee=parseFloat(cf.monthFee)||0,
+      agencyFee=parseFloat(cf.agencyFee)||0,extendFee=parseFloat(cf.extendFee)||0,
+      insurance=parseFloat(cf.insurance)||0,refund=parseFloat(cf.refund)||0;
+    var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
+    var subsidyAmt=parseFloat(p.subsidyAmt)||0,interestAmt=parseFloat(p.interestAmt)||0;
+    var totalIncome=incomeAuto+subsidyAmt+interestAmt;
+    var ledgerSum=(p.ledgerPid&&typeof LEDGER!=='undefined')?LEDGER.getPeriodSummary(p.ledgerPid):null;
+    var pettycashExpense=ledgerSum?ledgerSum.totalExpense:0;
+    var cAccount=ledgerSum?ledgerSum.closing:0;
+    var byCat={};
+    var entries=p.entries||{};
+    var manualExpense=0;
+    Object.keys(entries).forEach(function(id){
+      var r=entries[id]||{};
+      var amt=parseFloat(r.amount)||0;
+      manualExpense+=amt;
+      if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=amt;}
+    });
+    var totalExpense=manualExpense+pettycashExpense;
+    var netThis=totalIncome-totalExpense;
+    var aAccount=parseFloat(p.aAccount)||0,bAccount=parseFloat(p.bAccount)||0;
+    var assetTotal=aAccount+bAccount+cAccount;
+    var prevTotal=parseFloat(p.prevTotal)||0;
+    var grandTotal=prevTotal+netThis;
+    return{regFee:regFee,monthFee:monthFee,agencyFee:agencyFee,extendFee:extendFee,insurance:insurance,refund:refund,
+      incomeAuto:incomeAuto,subsidyAmt:subsidyAmt,interestAmt:interestAmt,totalIncome:totalIncome,
+      pettycashExpense:pettycashExpense,byCat:byCat,manualExpense:manualExpense,totalExpense:totalExpense,
+      netThis:netThis,aAccount:aAccount,bAccount:bAccount,cAccount:cAccount,assetTotal:assetTotal,
+      prevTotal:prevTotal,grandTotal:grandTotal};
+  }
+  function _pad2(n){return (n<10?'0':'')+n;}
+  function open(){
+    if(typeof CHILDFEE!=='undefined'&&CHILDFEE.ensureAttached)CHILDFEE.ensureAttached();
+    attach();
+    render();
+  }
+  function openNew(){
+    var list=sortedPeriods();
+    var latest=list[0];
+    var labelEl=document.getElementById('ckNewLabel'),startEl=document.getElementById('ckNewStart'),
+      endEl=document.getElementById('ckNewEnd'),prevEl=document.getElementById('ckNewPrev');
+    labelEl.value='';startEl.value='';endEl.value='';prevEl.value='';
+    if(latest){
+      prevEl.value=calc(latest).grandTotal;
+      if(latest.endDate){
+        var nd=new Date(latest.endDate+'T00:00:00');
+        nd.setDate(nd.getDate()+1);
+        startEl.value=nd.getFullYear()+'-'+_pad2(nd.getMonth()+1)+'-'+_pad2(nd.getDate());
+      }
+    }
+    document.getElementById('ckNewOv').classList.add('on');
+  }
+  function closeNew(){
+    var ov=document.getElementById('ckNewOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function saveNew(){
+    var label=(document.getElementById('ckNewLabel').value||'').trim();
+    var startDate=document.getElementById('ckNewStart').value||'';
+    var endDate=document.getElementById('ckNewEnd').value||'';
+    var prevTotal=document.getElementById('ckNewPrev').value||'0';
+    if(!label){alert('請輸入期別名稱');return;}
+    var id='ck'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var p={label:label,startDate:startDate,endDate:endDate,prevTotal:prevTotal,
+      childfeePk:'',ledgerPid:'',subsidyAmt:'',subsidyNote:'',interestAmt:'',interestNote:'',
+      aAccount:'',bAccount:'',entries:{},ts:Date.now()};
+    periods[id]=p;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+id).set(p);
+    closeNew();
+    openDetail(id);
+  }
+  function deletePeriod(id){
+    var p=periods[id];
+    if(!p)return;
+    if(!confirm('確定要刪除「'+(p.label||'這個期別')+'」嗎？無法復原。'))return;
+    delete periods[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+id).remove();
+    curPid=null;
+    render();
+  }
+  function openDetail(id){curPid=id;render();}
+  function backToHub(){curPid=null;render();}
+  function setMeta(field,v){
+    var p=periods[curPid];
+    if(!p)return;
+    p[field]=v;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/'+field).set(v);
+    render();
+  }
+  function addRow(){
+    var p=periods[curPid];
+    if(!p)return;
+    if(!p.entries)p.entries={};
+    var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var rec={cat:'',note:'',amount:'',ts:Date.now()};
+    p.entries[id]=rec;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/entries/'+id).set(rec);
+    render();
+  }
+  function delRow(id){
+    if(!confirm('確定要刪除這筆支出嗎？'))return;
+    var p=periods[curPid];
+    if(!p||!p.entries)return;
+    delete p.entries[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/entries/'+id).remove();
+    render();
+  }
+  function setRowField(id,field,v){
+    var p=periods[curPid];
+    if(!p||!p.entries||!p.entries[id])return;
+    p.entries[id][field]=v;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/entries/'+id+'/'+field).set(v);
+    render();
+  }
+  function render(){
+    var wrap=document.getElementById('ledgerCheckoutWrap');
+    if(!wrap)return;
+    if(!curPid){renderHub(wrap);}else{renderDetail(wrap);}
+  }
+  function renderHub(wrap){
+    var list=sortedPeriods();
+    var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
+    var h='';
+    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="CHECKOUT.openNew()">&#xFF0B; 新增結帳期別</button>';
+    if(!list.length){
+      h+='<div style="color:#aaa;text-align:center;padding:30px 0;">'+companyLabel+' 尚未建立任何結帳期別，請按上方「新增結帳期別」</div>';
+    } else {
+      list.forEach(function(p){
+        var c=calc(p);
+        h+='<div onclick="CHECKOUT.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #c08a3a;">';
+        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#8a5a1a;">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
+        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">總結</div><div style="font-weight:800;font-size:1.05rem;color:#1565c0;">'+c.grandTotal.toLocaleString()+'</div></div>';
+        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+        h+='</div>';
+      });
+    }
+    wrap.innerHTML=h;
+  }
+  function renderDetail(wrap){
+    var p=periods[curPid];
+    if(!p){curPid=null;render();return;}
+    var c=calc(p);
+    var cfPeriods=(typeof CHILDFEE!=='undefined'&&CHILDFEE.listPeriodsForCheckout)?CHILDFEE.listPeriodsForCheckout():[];
+    var ledgerPeriods=(typeof LEDGER!=='undefined'&&LEDGER.listPeriodsForCheckout)?LEDGER.listPeriodsForCheckout():[];
+    var h='';
+    h+='<button class="cln-sig-btn" style="margin-bottom:12px;" onclick="CHECKOUT.backToHub()">&#x2039; 結帳期別列表</button>';
+    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
+    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setMeta(\'label\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="CHECKOUT.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="CHECKOUT.setMeta(\'endDate\',this.value)"></div>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='</div>';
+    h+='<div class="df-sec" style="display:flex;gap:10px;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:200px;"><div class="df-lbl">對應月費單期別（收入自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'childfeePk\',this.value)"><option value="">– 請選擇 –</option>';
+    cfPeriods.forEach(function(o){h+='<option value="'+o.pk+'"'+(p.childfeePk===o.pk?' selected':'')+'>'+o.label+'</option>';});
+    h+='</select></div>';
+    h+='<div style="flex:1;min-width:200px;"><div class="df-lbl">對應零用金期別（C帳／零用金支出自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'ledgerPid\',this.value)"><option value="">– 請選擇 –</option>';
+    ledgerPeriods.forEach(function(o){h+='<option value="'+o.id+'"'+(p.ledgerPid===o.id?' selected':'')+'>'+o.label+'</option>';});
+    h+='</select></div>';
+    h+='</div>';
+    /* 收入 */
+    h+='<div class="df-sec"><div class="df-lbl">收入</div><table class="cln-table"><thead><tr><th>項目</th><th>金額</th><th>備註</th></tr></thead><tbody>';
+    h+='<tr><td>註冊費</td><td>'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>月費</td><td>'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>代辦費</td><td>'+c.agencyFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>延托費</td><td>'+c.extendFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>保險費</td><td>'+c.insurance.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>退費</td><td>-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+    h+='<tr><td>優化補助</td><td><input type="text" class="cln-num" style="width:80px;" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"></td><td><input type="text" class="cln-num" style="width:140px;" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></td></tr>';
+    h+='<tr><td>利息</td><td><input type="text" class="cln-num" style="width:80px;" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"></td><td><input type="text" class="cln-num" style="width:140px;" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></td></tr>';
+    h+='<tr style="font-weight:800;background:#f7f7fa;"><td>收入總計</td><td colspan="2" style="color:#1565c0;">'+c.totalIncome.toLocaleString()+'</td></tr>';
+    h+='</tbody></table></div>';
+    /* 支出 */
+    h+='<div class="df-sec"><div class="df-lbl">支出<button class="cln-sig-btn" style="float:right;" onclick="CHECKOUT.addRow()">&#xFF0B; 新增支出項目</button></div>';
+    h+='<table class="cln-table"><thead><tr><th>類別</th><th>備註</th><th>金額</th><th></th></tr></thead><tbody>';
+    Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
+      var r=p.entries[id]||{};
+      h+='<tr><td><select class="cln-num" style="width:90px;" onchange="CHECKOUT.setRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
+      CHECKOUT_EXPENSE_CATS.forEach(function(cat){h+='<option value="'+cat+'"'+(r.cat===cat?' selected':'')+'>'+cat+'</option>';});
+      h+='</select></td>';
+      h+='<td><input type="text" class="cln-num" style="width:140px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'note\',this.value)"></td>';
+      h+='<td><input type="text" class="cln-num" style="width:80px;" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'amount\',this.value)"></td>';
+      h+='<td><button onclick="CHECKOUT.delRow(\''+id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+    });
+    h+='<tr style="color:#999;"><td>零用金</td><td>零用金期別自動帶入</td><td>'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
+    h+='<tr style="font-weight:800;background:#f7f7fa;"><td>支出總計</td><td colspan="2" style="color:#c0392b;">'+c.totalExpense.toLocaleString()+'</td><td></td></tr>';
+    h+='</tbody></table></div>';
+    /* 本期結算 + A/B/C 帳 */
+    h+='<div class="df-sec"><div class="df-lbl">本期結算</div><table class="cln-table"><tbody>';
+    h+='<tr><td>收入總計</td><td>'+c.totalIncome.toLocaleString()+'</td></tr>';
+    h+='<tr><td>支出總計</td><td>'+c.totalExpense.toLocaleString()+'</td></tr>';
+    h+='<tr style="font-weight:800;"><td>本期（損益）</td><td style="color:'+(c.netThis<0?'#c0392b':'#1565c0')+';">'+c.netThis.toLocaleString()+'</td></tr>';
+    h+='</tbody></table></div>';
+    h+='<div class="df-sec"><div class="df-lbl">A/B/C 帳資產</div><table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+    h+='<tr><td>A帳</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.aAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'aAccount\',this.value)"></td></tr>';
+    h+='<tr><td>B帳</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.bAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'bAccount\',this.value)"></td></tr>';
+    h+='<tr><td>C帳（零用金目前餘額）</td><td style="color:#999;">'+c.cAccount.toLocaleString()+'</td></tr>';
+    h+='<tr style="font-weight:800;"><td>資產結餘</td><td>'+c.assetTotal.toLocaleString()+'</td></tr>';
+    h+='</tbody></table></div>';
+    h+='<div class="df-sec"><table class="cln-table"><tbody>';
+    h+='<tr><td>上期總結</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
+    h+='<tr><td>本期（損益）</td><td>'+c.netThis.toLocaleString()+'</td></tr>';
+    h+='<tr style="font-weight:800;background:#fff6e0;"><td>總結</td><td style="color:#1565c0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
+    h+='</tbody></table></div>';
+    wrap.innerHTML=h;
+  }
+  return{open:open,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
+    openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,setRowField:setRowField};
+})();
 
 /* ── 體溫管理 ── */
 var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','公假','公傷假','福利假','產檢假','其他'];
@@ -21376,7 +21659,28 @@ var CHILDFEE=(function(){
     alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+proratedMonthFee+'元（'+days+'天比例）\n餐費 '+proratedMealFee+'元\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild};
+  /* ── 給「結帳」模組用的唯讀存取：結帳要把月費單某一期的收入總額自動帶入，
+     不用自己重新存一份。只算「真的有登記」(_isBilled，有選付款方式)的
+     帳單，單純畫面預覽帶入的預設值不算收入。 */
+  function listPeriodsForCheckout(){
+    return Object.keys(db.records).sort().reverse().map(function(pk){
+      var parts=pk.split('_');
+      var endRoc=parseInt(parts[0],10),endMo=parseInt(parts[1],10);
+      return{pk:pk,label:periodLabel(endRoc,endMo),endRoc:endRoc,endMo:endMo};
+    });
+  }
+  function incomeSumsForPeriod(pk){
+    var sums={};
+    FIELDS.forEach(function(f){sums[f.k]=0;});
+    var recs=db.records[pk]||{};
+    Object.keys(recs).forEach(function(cid){
+      var r=recs[cid];
+      if(!_isBilled(r))return;
+      FIELDS.forEach(function(f){sums[f.k]+=parseFloat(r[f.k])||0;});
+    });
+    return sums;
+  }
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
