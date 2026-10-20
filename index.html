@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020203847';
+  var BUILD='20261020205301';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18198,6 +18198,21 @@ var LEDGER=(function(){
   var curPid=null;
   var _attachedCompany=null,_pcRef=null,_ledRef=null;
 
+  /* 之前打開總帳都要先跟 Firebase 來回一趟才會看到數字，中間畫面是空的，
+     感覺很慢——其實其他模組（清潔表單、溫濕度…）都有先讀 localStorage
+     的上次同步結果、馬上顯示舊資料，Firebase 回來再悄悄更新，總帳漏掉
+     了這一層快取。補上同樣的做法：一進來就先用上次存在這台裝置的資料
+     立刻畫面，不用整頁空等。
+     pcPeriods（零用金）跟 periods（總帳自己）是兩條各自獨立、非同步
+     觸發的監聽器，各自存各自的 key——不能共用一把 key 存成同一包
+     JSON，不然兩邊各自的 on('value') 誰先回來就會把另一邊還沒更新的
+     舊內容一起存進去，變成互相覆蓋掉對方。 */
+  function _pcCacheKey(){return _ckey('ledgerPcCacheDB');}
+  function _ledCacheKey(){return _ckey('ledgerPeriodsCacheDB');}
+  function _loadCache(){
+    try{var raw=localStorage.getItem(_pcCacheKey());if(raw)pcPeriods=JSON.parse(raw)||{};}catch(e){}
+    try{var raw2=localStorage.getItem(_ledCacheKey());if(raw2)periods=JSON.parse(raw2)||{};}catch(e){}
+  }
   function attach(){
     if(_attachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
@@ -18206,14 +18221,18 @@ var LEDGER=(function(){
     if(_ledRef){try{_ledRef.off('value');}catch(e){}}
     _attachedCompany=CURRENT_COMPANY;
     pcPeriods={};periods={};
+    _loadCache();
+    renderHub();if(curPid)render();
     _pcRef=fb.ref('xiaobuddyClean/pettycash/periods');
     _pcRef.on('value',function(snap){
       pcPeriods=snap.val()||{};
+      try{localStorage.setItem(_pcCacheKey(),JSON.stringify(pcPeriods));}catch(e){}
       renderHub();if(curPid)render();
     });
     _ledRef=fb.ref('xiaobuddyClean/ledger/periods');
     _ledRef.on('value',function(snap){
       periods=snap.val()||{};
+      try{localStorage.setItem(_ledCacheKey(),JSON.stringify(periods));}catch(e){}
       renderHub();if(curPid)render();
     });
   }
