@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020165908';
+  var BUILD='20261020171354';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18079,7 +18079,7 @@ function _pettyCashPrintHTML(p,t){
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
 var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租'];
 var LEDGER=(function(){
-  var pcPeriods={},manual={},openBalance='0';
+  var pcPeriods={},manual={},openBalance='0',rangeStart='',rangeEnd='';
   var _attachedCompany=null,_pcRef=null,_ledRef=null;
 
   function attach(){
@@ -18089,7 +18089,7 @@ var LEDGER=(function(){
     if(_pcRef){try{_pcRef.off('value');}catch(e){}}
     if(_ledRef){try{_ledRef.off('value');}catch(e){}}
     _attachedCompany=CURRENT_COMPANY;
-    pcPeriods={};manual={};openBalance='0';
+    pcPeriods={};manual={};openBalance='0';rangeStart='';rangeEnd='';
     _pcRef=fb.ref('xiaobuddyClean/pettycash/periods');
     _pcRef.on('value',function(snap){
       pcPeriods=snap.val()||{};
@@ -18100,8 +18100,17 @@ var LEDGER=(function(){
       var v=snap.val()||{};
       manual=v.entries||{};
       openBalance=(v.openBalance!=null)?v.openBalance:'0';
+      rangeStart=v.rangeStart||'';rangeEnd=v.rangeEnd||'';
       render();
     });
+  }
+  /* 日期範圍沒設就不過濾（維持全部顯示）；有設的話，只有「本來就有填日期」
+     的明細才會被擋掉，還沒填日期的自己新增項目照樣看得到、照樣能編輯。 */
+  function _inRange(d){
+    if(!d)return true;
+    if(rangeStart&&d<rangeStart)return false;
+    if(rangeEnd&&d>rangeEnd)return false;
+    return true;
   }
   function combinedRows(){
     var rows=[];
@@ -18109,6 +18118,7 @@ var LEDGER=(function(){
       var p=pcPeriods[pid]||{};
       Object.keys(p.rows||{}).forEach(function(rid){
         var r=p.rows[rid]||{};
+        if(!_inRange(r.date))return;
         rows.push({id:'pc_'+pid+'_'+rid,date:r.date||'',cat:r.cat||'',
           note:(r.note||'')+'〔零用金：'+(p.label||'')+'〕',
           income:r.income,expense:r.expense,ts:r.ts||0,source:'pettycash'});
@@ -18116,6 +18126,7 @@ var LEDGER=(function(){
     });
     Object.keys(manual).forEach(function(id){
       var r=manual[id]||{};
+      if(!_inRange(r.date))return;
       rows.push({id:id,date:r.date||'',cat:r.cat||'',note:r.note||'',
         income:r.income,expense:r.expense,ts:r.ts||0,source:'manual'});
     });
@@ -18148,6 +18159,10 @@ var LEDGER=(function(){
     });
     h+='<button class="cln-sig-btn" style="margin-left:auto;background:#1565c0;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
     h+='</div>';
+    h+='<div class="df-sec" style="display:flex;gap:10px;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:140px;"><div class="df-lbl">總帳期間（開始）</div><input type="date" class="df-inp" value="'+(rangeStart||'')+'" onchange="LEDGER.setRange(\'rangeStart\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div class="df-lbl">總帳期間（結束）</div><input type="date" class="df-inp" value="'+(rangeEnd||'')+'" onchange="LEDGER.setRange(\'rangeEnd\',this.value)"></div>';
+    h+='</div>';
     h+='<div class="df-sec"><div class="df-lbl">起始餘額（你自己身上這份零用金的起點，只有畫面上看得到，列印不會印）</div>';
     h+='<input type="number" class="df-inp" value="'+(openBalance||0)+'" onchange="LEDGER.setOpenBalance(this.value)"></div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
@@ -18167,7 +18182,7 @@ var LEDGER=(function(){
         if(r.source==='manual')running+=inc-exp;
         if(r.source==='pettycash'){
           h+='<tr style="color:#999;">';
-          h+='<td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
+          h+='<td></td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
           h+='<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td>';
           h+='<td>'+running.toLocaleString()+'</td><td></td></tr>';
         } else {
@@ -18193,6 +18208,12 @@ var LEDGER=(function(){
     openBalance=v;
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/ledger/openBalance').set(v);
+    render();
+  }
+  function setRange(field,v){
+    if(field==='rangeStart')rangeStart=v;else rangeEnd=v;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/ledger/'+field).set(v);
     render();
   }
   function addRow(){
@@ -18226,7 +18247,7 @@ var LEDGER=(function(){
   function doPrint(){
     var rows=combinedRows();
     var t=totals(rows);
-    var html=_ledgerPrintHTML(rows,t);
+    var html=_ledgerPrintHTML(rows,t,rangeStart,rangeEnd);
     var w=window.open('','_blank');
     if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
     w.document.write(html);
@@ -18238,7 +18259,7 @@ var LEDGER=(function(){
     GO('home');
   }
 
-  return{init:init,back:back,addRow:addRow,delRow:delRow,setRowField:setRowField,setOpenBalance:setOpenBalance,switchCompany:switchCompany,print:doPrint};
+  return{init:init,back:back,addRow:addRow,delRow:delRow,setRowField:setRowField,setOpenBalance:setOpenBalance,setRange:setRange,switchCompany:switchCompany,print:doPrint};
 })();
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
@@ -18266,7 +18287,7 @@ function _ledgerSummaryTablesHtml(t,open){
   h+='</div>';
   return h;
 }
-function _ledgerPrintHTML(rows,t){
+function _ledgerPrintHTML(rows,t,rangeStart,rangeEnd){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
   var rowsHtml='';
   if(!rows.length){
@@ -18274,10 +18295,12 @@ function _ledgerPrintHTML(rows,t){
   } else {
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
-      rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
+      var dateCell=r.source==='pettycash'?'':(r.date||'');
+      rowsHtml+='<tr><td>'+dateCell+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
         '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td></tr>';
     });
   }
+  var periodLabel=(rangeStart||rangeEnd)?((rangeStart||'?')+' ～ '+(rangeEnd||'?')):'';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>總帳</title>'+
     '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
     '@page{size:A4 portrait;margin:10mm;}'+
@@ -18288,9 +18311,11 @@ function _ledgerPrintHTML(rows,t){
     '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
     '.hdr-row img{height:42px;width:auto;}.hdr-txt{text-align:center;}'+
     '.hdr-txt .t1{font-size:14px;font-weight:900;}.hdr-txt .t2{font-size:12px;font-weight:700;margin-top:2px;}'+
+    '.meta-row{display:flex;justify-content:center;gap:28px;font-size:11px;color:#444;margin-bottom:7px;}'+
     '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
     '</style></head><body><div class="wrap-ss">'+
     '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+companyLabel+'</div><div class="t2">總帳</div></div></div>'+
+    (periodLabel?'<div class="meta-row"><span>'+periodLabel+'</span></div>':'')+
     '<table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
     _ledgerSummaryTablesHtml(t)+
     '</div><script>window.onload=function(){'+
