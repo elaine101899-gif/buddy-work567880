@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020212719';
+  var BUILD='20261020225347';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18561,29 +18561,53 @@ var LEDGER=(function(){
     setRowField:setRowField,switchCompany:switchCompany,print:doPrint,
     listPeriodsForCheckout:listPeriodsForCheckout,getPeriodSummary:getPeriodSummary};
 })();
+/* 月費單／零用金／結帳 三個列印共用同一套「月費單」的感覺：PingFang 字體、
+   置中標題(hd1/hd2)、底線分段標題(sec)、金色表頭，每張表外面包一層
+   .tbl-wrap 做圓角卡片。.tbl-wrap 這個 class 只在列印頁自己的 <style>
+   裡有定義，所以同一段 HTML 被畫面（cln-table 樣式）重複使用時完全不受
+   影響，畫面長相不會跟著變。 */
+function _moneyReportCss(){
+  return '@page{size:A4 portrait;margin:12mm 12mm;}'+
+    '*{box-sizing:border-box;}'+
+    'html,body{margin:0;padding:0;}'+
+    'body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:10pt;color:#2C2820;background:#fff;padding:0 2mm;}'+
+    '.hd1{font-size:15pt;font-weight:700;text-align:center;margin-bottom:2mm;}'+
+    '.hd2{font-size:10pt;color:#555;text-align:center;margin-bottom:6mm;}'+
+    '.sec{font-weight:800;font-size:10.5pt;margin:5mm 0 2mm;border-bottom:1.5px solid #333;padding-bottom:1mm;}'+
+    '.tbl-wrap{border-radius:10px;overflow:hidden;border:1px solid #D8D0C4;margin-bottom:3mm;}'+
+    '.tbl-wrap table{margin-bottom:0;}'+
+    'table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:2mm;}'+
+    'td,th{border-bottom:1px solid #D8D0C4;padding:4px 8px;text-align:center;}'+
+    'tr:last-child td{border-bottom:none;}'+
+    'th{background:#f0c97a;color:#4a3300;}'+
+    '.num{text-align:right;font-variant-numeric:tabular-nums;}'+
+    '.tot-row td{font-weight:800;background:#fdf6ec;}'+
+    '.grand{text-align:right;font-weight:800;font-size:13pt;color:#a5680a;margin-top:4mm;background:#fdf6ec;border-radius:10px;padding:8px 16px;}'+
+    '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}';
+}
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
 function _ledgerSummaryTablesHtml(t,open){
   var h='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
-  h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
-  LEDGER_CATS_A.forEach(function(c){h+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
+  h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+  LEDGER_CATS_A.forEach(function(c){h+='<tr><td>'+c+'</td><td class="num">'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
   var sumA=LEDGER_CATS_A.reduce(function(s,c){return s+(t.byCat[c]||0);},0);
-  h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
-  h+='</tbody></table>';
-  h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
-  h+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
-  if(open!=null)h+='<tr><td>上期結餘</td><td>'+open.toLocaleString()+'</td></tr>';
-  h+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
+  h+='<tr class="tot-row"><td>總結算</td><td class="num" style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
+  h+='</tbody></table></div>';
+  h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+  h+='<tr><td>總收入</td><td class="num">'+t.totalIncome.toLocaleString()+'</td></tr>';
+  if(open!=null)h+='<tr><td>上期結餘</td><td class="num">'+open.toLocaleString()+'</td></tr>';
+  h+='<tr><td>總支出</td><td class="num">'+t.totalExpense.toLocaleString()+'</td></tr>';
   var sumB=0;
-  LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td>'+v.toLocaleString()+'</td></tr>';});
-  h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumB.toLocaleString()+'</td></tr>';
+  LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td class="num">'+v.toLocaleString()+'</td></tr>';});
+  h+='<tr class="tot-row"><td>總結算</td><td class="num" style="color:#c0392b;">'+sumB.toLocaleString()+'</td></tr>';
   if(open!=null){
     /* 餘額只跟著自己新增的調整項目（manual）變動，零用金自動帶入的
        灰字明細只是參考、不是自己身上的現金進出，不能拿來扣餘額。 */
     var closing=open+(t.manualIncome||0)-(t.manualExpense||0);
-    h+='<tr style="font-weight:800;background:#fff6e0;"><td>目前餘額</td><td style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
+    h+='<tr class="tot-row" style="background:#fff6e0;"><td>目前餘額</td><td class="num" style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
   }
-  h+='</tbody></table>';
+  h+='</tbody></table></div>';
   h+='</div>';
   return h;
 }
@@ -18591,37 +18615,25 @@ function _ledgerPrintHTML(rows,t,p){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
   var rowsHtml='';
   if(!rows.length){
-    rowsHtml='<tr><td colspan="5" style="color:#999;">（目前沒有任何明細）</td></tr>';
+    rowsHtml='<tr><td colspan="5" style="text-align:center;color:#888;">（目前沒有任何明細）</td></tr>';
   } else {
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
       rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
-        '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td></tr>';
+        '<td class="num">'+(inc?inc.toLocaleString():'')+'</td><td class="num">'+(exp?exp.toLocaleString():'')+'</td></tr>';
     });
   }
   var periodLabel=(p&&(p.label||p.startDate||p.endDate))?((p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?')):'';
-  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>總帳</title>'+
-    '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
-    '@page{size:A4 portrait;margin:10mm;}'+
-    'h3{margin:12px 0 5px;font-size:12px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
-    'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;margin-bottom:5px;}'+
-    'th,td{border:1px solid #555;padding:4px 5px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
-    'th{background:#eef2fb;}.sumtbl{width:55%;}'+
-    '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
-    '.hdr-row img{height:42px;width:auto;}.hdr-txt{text-align:center;}'+
-    '.hdr-txt .t1{font-size:14px;font-weight:900;}.hdr-txt .t2{font-size:12px;font-weight:700;margin-top:2px;}'+
-    '.meta-row{display:flex;justify-content:center;gap:28px;font-size:11px;color:#444;margin-bottom:7px;}'+
-    '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
-    '</style></head><body><div class="wrap-ss">'+
-    '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+companyLabel+'</div><div class="t2">總帳</div></div></div>'+
-    (periodLabel?'<div class="meta-row"><span>'+periodLabel+'</span></div>':'')+
-    '<table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
-    _ledgerSummaryTablesHtml(t)+
-    '</div><script>window.onload=function(){'+
-    'try{var wrap=document.querySelector(".wrap-ss");var capPx=(297-20)*96/25.4;var natural=wrap.scrollHeight;'+
-    'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
-    'window.print();'+
-    '}<\/script></body></html>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>零用金明細</title><style>'+_moneyReportCss()+'</style></head><body>';
+  html+='<div class="hd1">'+companyLabel+' &middot; 零用金明細</div>';
+  html+='<div class="hd2">'+(periodLabel||'')+'</div>';
+  html+='<div class="sec">明細（共 '+rows.length+' 筆）</div>';
+  html+='<div class="tbl-wrap"><table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th class="num">收入</th><th class="num">支出</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>';
+  html+='<div class="sec">科目分類統計</div>';
+  html+=_ledgerSummaryTablesHtml(t);
+  html+='<script>window.onload=function(){setTimeout(function(){window.print();},150);}<\/script>';
+  html+='</body></html>';
+  return html;
 }
 
 /* ── 結帳（總帳裡的第二個入口）：每月把月費單收入、零用金支出/餘額自動
@@ -18816,6 +18828,7 @@ var CHECKOUT=(function(){
     h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setMeta(\'label\',this.value)"></div>';
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="CHECKOUT.setMeta(\'startDate\',this.value)"></div>';
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="CHECKOUT.setMeta(\'endDate\',this.value)"></div>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#1565c0;" onclick="CHECKOUT.print()">&#x1F5A8;&#xFE0F; 列印</button>';
     h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
     h+='</div>';
     h+='<div class="df-sec" style="display:flex;gap:10px;flex-wrap:wrap;">';
@@ -18872,9 +18885,72 @@ var CHECKOUT=(function(){
     h+='</tbody></table></div>';
     wrap.innerHTML=h;
   }
+  function doPrint(){
+    var p=periods[curPid];
+    if(!p)return;
+    var html=_checkoutPrintHTML(p,calc(p));
+    var w=window.open('','_blank');
+    if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
+    w.document.write(html);
+    w.document.close();
+  }
   return{open:open,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
-    openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,setRowField:setRowField};
+    openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,setRowField:setRowField,
+    print:doPrint};
 })();
+/* 結帳列印：跟月費單列印同一套感覺（PingFang字體、置中標題、金色表頭、
+   圓角卡片），把畫面上的收入／支出／本期結算／A-B-C帳資產／總結都印出來。 */
+function _checkoutPrintHTML(p,c){
+  var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
+  var periodLabel=(p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?');
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>結帳</title><style>'+_moneyReportCss()+'</style></head><body>';
+  html+='<div class="hd1">'+companyLabel+' &middot; 結帳</div>';
+  html+='<div class="hd2">'+periodLabel+'</div>';
+
+  html+='<div class="sec">收入</div><div class="tbl-wrap"><table><thead><tr><th>項目</th><th class="num">金額</th><th>備註</th></tr></thead><tbody>';
+  html+='<tr><td>註冊費</td><td class="num">'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>月費</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>代辦費</td><td class="num">'+c.agencyFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>延托費</td><td class="num">'+c.extendFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>保險費</td><td class="num">'+c.insurance.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>退費</td><td class="num">-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
+  html+='<tr><td>優化補助</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td>'+((p.subsidyNote||''))+'</td></tr>';
+  html+='<tr><td>利息</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td>'+((p.interestNote||''))+'</td></tr>';
+  html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td><td></td></tr>';
+  html+='</tbody></table></div>';
+
+  html+='<div class="sec">支出</div><div class="tbl-wrap"><table><thead><tr><th>類別</th><th>備註</th><th class="num">金額</th></tr></thead><tbody>';
+  Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
+    var r=p.entries[id]||{};
+    html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td></tr>';
+  });
+  html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td></tr>';
+  html+='<tr class="tot-row"><td>支出總計</td><td></td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
+  html+='</tbody></table></div>';
+
+  html+='<div class="sec">本期結算</div><div class="tbl-wrap"><table><tbody>';
+  html+='<tr><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td></tr>';
+  html+='<tr><td>支出總計</td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
+  html+='<tr class="tot-row"><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
+  html+='</tbody></table></div>';
+
+  html+='<div class="sec">A/B/C 帳資產</div><div class="tbl-wrap"><table><thead><tr><th>項目</th><th class="num">金額</th></tr></thead><tbody>';
+  html+='<tr><td>A帳</td><td class="num">'+c.aAccount.toLocaleString()+'</td></tr>';
+  html+='<tr><td>B帳</td><td class="num">'+c.bAccount.toLocaleString()+'</td></tr>';
+  html+='<tr><td>C帳（零用金目前餘額）</td><td class="num">'+c.cAccount.toLocaleString()+'</td></tr>';
+  html+='<tr class="tot-row"><td>資產結餘</td><td class="num">'+c.assetTotal.toLocaleString()+'</td></tr>';
+  html+='</tbody></table></div>';
+
+  html+='<div class="tbl-wrap"><table><tbody>';
+  html+='<tr><td>上期總結</td><td class="num">'+c.prevTotal.toLocaleString()+'</td></tr>';
+  html+='<tr><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
+  html+='</tbody></table></div>';
+  html+='<div class="grand">總結：'+c.grandTotal.toLocaleString()+' 元</div>';
+
+  html+='<script>window.onload=function(){setTimeout(function(){window.print();},150);}<\/script>';
+  html+='</body></html>';
+  return html;
+}
 
 /* ── 體溫管理 ── */
 var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','公假','公傷假','福利假','產檢假','其他'];
@@ -21504,23 +21580,12 @@ var CHILDFEE=(function(){
     var leaveRefundTotal=0;
     Object.keys(leaveRefundByType).forEach(function(t){leaveRefundTotal+=leaveRefundByType[t].amount;});
 
-    var css='@page{size:A4 portrait;margin:12mm 12mm;}';
-    css+='*{box-sizing:border-box;}';
-    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:10pt;color:#2C2820;margin:0;background:#fff;}';
-    css+='.hd1{font-size:15pt;font-weight:700;text-align:center;margin-bottom:2mm;}';
-    css+='.hd2{font-size:10pt;color:#555;text-align:center;margin-bottom:6mm;}';
-    css+='.sec{font-weight:800;font-size:10.5pt;margin:5mm 0 2mm;border-bottom:1.5px solid #333;padding-bottom:1mm;}';
-    css+='table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:2mm;}';
-    css+='td,th{border:1px solid #D8D0C4;padding:4px 8px;}';
-    css+='th{background:#f0c97a;color:#4a3300;}';
-    css+='.num{text-align:right;font-variant-numeric:tabular-nums;}';
-    css+='.tot-row td{font-weight:800;background:#fdf6ec;}';
-    css+='.grand{text-align:right;font-weight:800;font-size:13pt;color:#a5680a;margin-top:6mm;}';
-    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+css+'</style></head><body>';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+_moneyReportCss()+'</style></head><body>';
     html+='<div class="hd1">'+_companyName()+' &middot; 月費單收支總表</div>';
     html+='<div class="hd2">收費期間：'+periodLabel(_incEndY,_incEndM)+'</div>';
 
     html+='<div class="sec">繳費明細（依繳費日期排序，共 '+billedList.length+' 筆）</div>';
+    html+='<div class="tbl-wrap">';
     if(!billedList.length){
       html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期還沒有人繳費</td></tr></tbody></table>';
     } else {
@@ -21532,18 +21597,20 @@ var CHILDFEE=(function(){
       });
       html+='</tbody></table>';
     }
+    html+='</div>';
 
     html+='<div class="sec">收入細項（共 '+childCount+' 位已繳費幼兒）</div>';
-    html+='<table><thead><tr><th>科目</th><th class="num">金額</th></tr></thead><tbody>';
+    html+='<div class="tbl-wrap"><table><thead><tr><th>科目</th><th class="num">金額</th></tr></thead><tbody>';
     FIELDS.forEach(function(f){
       if(f.k==='refund')return;
       html+='<tr><td>'+f.label+'</td><td class="num">'+fieldTotals[f.k]+'</td></tr>';
     });
     html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+income+'</td></tr>';
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
 
     html+='<div class="sec">請假退費細項（依假別）</div>';
     var leaveKeys=Object.keys(leaveRefundByType);
+    html+='<div class="tbl-wrap">';
     if(!leaveKeys.length){
       html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期沒有請假退費</td></tr></tbody></table>';
     } else {
@@ -21555,8 +21622,10 @@ var CHILDFEE=(function(){
       html+='<tr class="tot-row"><td>請假退費總計</td><td></td><td class="num">'+leaveRefundTotal+'</td></tr>';
       html+='</tbody></table>';
     }
+    html+='</div>';
 
     html+='<div class="sec">退托退費明細（共 '+wds.length+' 筆）</div>';
+    html+='<div class="tbl-wrap">';
     if(!wds.length){
       html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期沒有退托退費紀錄</td></tr></tbody></table>';
     } else {
@@ -21567,6 +21636,7 @@ var CHILDFEE=(function(){
       html+='<tr class="tot-row"><td colspan="3">退托退費總計</td><td class="num">'+wdTotal+'</td></tr>';
       html+='</tbody></table>';
     }
+    html+='</div>';
 
     html+='<div class="grand">淨收入：'+(income-wdTotal)+' 元</div>';
     html+='</body></html>';
