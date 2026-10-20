@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020205301';
+  var BUILD='20261020210011';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1998,6 +1998,9 @@ function _applyRoleUI(){
    還是會依角色擋下來，不是只靠「卡片沒顯示」這一層。總帳另外在 GO() 裡
    單獨限定只有 owner 能進（見下面 GO 函式）。 */
 var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary'];
+/* 總帳底下所有子頁面（零用金清單/明細、結帳）都要 owner 才能進，
+   跟 _ADMIN_UP_PAGES 分開列是因為總帳還多一層密碼（見 GO() 裡的 PWGATE）。 */
+var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout'];
 
 /* ── 登入關卡：authGateOv 蓋住全站，確認登入狀態之前／沒登入的時候
    一直擋著，登入成功才會藏起來、讓底下原本的公司選擇/首頁正常運作。
@@ -3944,17 +3947,47 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="LEDGER.back()">&#x2190; 返回</button>
     <span class="btitle">總帳</span>
   </div>
+  <div style="padding:20px 16px;">
+    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div onclick="LEDGER.openCash()" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #5a4aa8;">
+        <span style="font-size:1.8rem;">&#x1F4B0;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#3a2a78;">零用金</div><div style="font-size:.78rem;color:#888;margin-top:2px;">自己身上這份零用金，結合公司零用金明細</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="LEDGER.openCheckout()" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
+        <span style="font-size:1.8rem;">&#x1F4CA;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">結帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每月總結算（開發中）</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="pg" id="pg-ledger-cash">
+  <div class="bbar">
+    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <span class="btitle">零用金</span>
+  </div>
   <div style="padding:14px 16px 40px;" id="ledgerHubWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
-<div class="pg" id="pg-ledger-detail">
+<div class="pg" id="pg-ledger-cash-detail">
   <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.backToHub()">&#x2190; 總帳</button>
+    <button class="bbtn" onclick="LEDGER.backToCashHub()">&#x2190; 零用金</button>
     <span class="btitle" id="ledgerDetailTitle">總帳明細</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="pg" id="pg-ledger-checkout">
+  <div class="bbar">
+    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <span class="btitle">結帳</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="ledgerCheckoutWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">這個功能還在設計中，細節確認後會補上。</div>
   </div>
 </div>
 <div class="asr-modal" id="ledgerNewOv">
@@ -4532,7 +4565,7 @@ function GO(id) {
     alert('這個功能你的帳號沒有權限使用。');
     return;
   }
-  if ((id === 'ledger' || id === 'ledger-detail') && CURRENT_ROLE !== 'owner') {
+  if (_LEDGER_PAGES.indexOf(id) >= 0 && CURRENT_ROLE !== 'owner') {
     alert('這個功能你的帳號沒有權限使用。');
     return;
   }
@@ -18356,24 +18389,24 @@ var LEDGER=(function(){
     delete periods[id];
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+id).remove();
-    backToHub();
+    backToCashHub();
   }
 
   function openDetail(id){
     curPid=id;
-    GO('ledger-detail');
+    GO('ledger-cash-detail');
     render();
   }
-  function backToHub(){
+  function backToCashHub(){
     curPid=null;
-    GO('ledger');
+    GO('ledger-cash');
   }
 
   function render(){
     var wrap=document.getElementById('ledgerWrap');
     if(!wrap||!curPid)return;
     var p=periods[curPid];
-    if(!p){backToHub();return;}
+    if(!p){backToCashHub();return;}
     document.getElementById('ledgerDetailTitle').textContent=p.label||'總帳明細';
     var rows=combinedRows(p);
     var t=totals(rows);
@@ -18480,13 +18513,20 @@ var LEDGER=(function(){
     w.document.write(html);
     w.document.close();
   }
-  function init(){attach();renderHub();}
+  /* 總帳現在是「先選零用金還是結帳」的入口頁，本身是靜態卡片，不用畫
+     任何表格；提早 attach() 只是為了先把零用金資料接上/暖機，真正點進
+     零用金那一頁才會呼叫 renderHub() 畫期別清單。 */
+  function init(){attach();}
+  function openCash(){GO('ledger-cash');renderHub();}
+  function openCheckout(){GO('ledger-checkout');}
+  function backToTop(){curPid=null;GO('ledger');}
   function back(){
     history.replaceState(null,'',window.location.pathname+window.location.search);
     GO('home');
   }
 
-  return{init:init,back:back,backToHub:backToHub,openNew:openNew,closeNew:closeNew,saveNew:saveNew,
+  return{init:init,back:back,openCash:openCash,openCheckout:openCheckout,backToTop:backToTop,
+    backToCashHub:backToCashHub,openNew:openNew,closeNew:closeNew,saveNew:saveNew,
     deletePeriod:deletePeriod,openDetail:openDetail,setMeta:setMeta,addRow:addRow,delRow:delRow,
     setRowField:setRowField,switchCompany:switchCompany,print:doPrint};
 })();
