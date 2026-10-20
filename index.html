@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020171354';
+  var BUILD='20261020172409';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18120,7 +18120,7 @@ var LEDGER=(function(){
         var r=p.rows[rid]||{};
         if(!_inRange(r.date))return;
         rows.push({id:'pc_'+pid+'_'+rid,date:r.date||'',cat:r.cat||'',
-          note:(r.note||'')+'〔零用金：'+(p.label||'')+'〕',
+          note:r.note||'',
           income:r.income,expense:r.expense,ts:r.ts||0,source:'pettycash'});
       });
     });
@@ -18182,7 +18182,7 @@ var LEDGER=(function(){
         if(r.source==='manual')running+=inc-exp;
         if(r.source==='pettycash'){
           h+='<tr style="color:#999;">';
-          h+='<td></td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
+          h+='<td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
           h+='<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td>';
           h+='<td>'+running.toLocaleString()+'</td><td></td></tr>';
         } else {
@@ -18295,8 +18295,7 @@ function _ledgerPrintHTML(rows,t,rangeStart,rangeEnd){
   } else {
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
-      var dateCell=r.source==='pettycash'?'':(r.date||'');
-      rowsHtml+='<tr><td>'+dateCell+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
+      rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
         '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td></tr>';
     });
   }
