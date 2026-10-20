@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020225347';
+  var BUILD='20261020230249';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1597,6 +1597,13 @@ body.adm .sync-setup{display:block;}
 .cln-del-btn{background:none;border:none;font-size:1rem;cursor:pointer;padding:2px 4px;opacity:.6;}
 .cln-del-btn:hover{opacity:1;}
 .cln-num{width:42px;border:1px solid var(--border);border-radius:6px;padding:4px 2px;font-size:.76rem;text-align:center;box-sizing:border-box;}
+/* 結帳頁面自己用的表格：跟 .cln-table 長得一樣，但沒有 min-width:560px
+   那個限制——結帳的表格欄位少（3~4欄），手機版不用撐到一定要橫向
+   捲動，直接整張貼合白色卡片寬度看起來才會一致。 */
+.ck-table{width:100%;border-collapse:collapse;font-size:.78rem;}
+.ck-table th,.ck-table td{border:1px solid var(--border);padding:7px 5px;text-align:center;}
+.ck-table thead th{background:#f4f6fb;color:var(--navy);font-weight:700;}
+.ck-table input,.ck-table select{width:100%;border:1px solid var(--border);border-radius:6px;padding:5px 4px;font-size:.78rem;text-align:center;box-sizing:border-box;font-family:'Noto Sans TC',sans-serif;}
 .pick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .pick-card{display:flex;flex-direction:column;align-items:center;gap:8px;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:16px 6px;cursor:pointer;text-align:center;}
 .pick-card:active{background:#f4f6fb;}
@@ -18824,62 +18831,68 @@ var CHECKOUT=(function(){
     var ledgerPeriods=(typeof LEDGER!=='undefined'&&LEDGER.listPeriodsForCheckout)?LEDGER.listPeriodsForCheckout():[];
     var h='';
     h+='<button class="cln-sig-btn" style="margin-bottom:12px;" onclick="CHECKOUT.backToHub()">&#x2039; 結帳期別列表</button>';
-    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
-    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setMeta(\'label\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="CHECKOUT.setMeta(\'startDate\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="CHECKOUT.setMeta(\'endDate\',this.value)"></div>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#1565c0;" onclick="CHECKOUT.print()">&#x1F5A8;&#xFE0F; 列印</button>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    /* 期別名稱單獨一整排、開始/結束日期並排一排、按鈕再自己一排——
+       三種東西性質不一樣，混在一起用 flex-wrap 擠，手機版會亂折行。 */
+    h+='<div class="df-sec">';
+    h+='<div style="margin-bottom:12px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setMeta(\'label\',this.value)"></div>';
+    h+='<div style="display:flex;gap:10px;margin-bottom:12px;">';
+    h+='<div style="flex:1;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="CHECKOUT.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div style="flex:1;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="CHECKOUT.setMeta(\'endDate\',this.value)"></div>';
     h+='</div>';
-    h+='<div class="df-sec" style="display:flex;gap:10px;flex-wrap:wrap;">';
-    h+='<div style="flex:1;min-width:200px;"><div class="df-lbl">對應月費單期別（收入自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'childfeePk\',this.value)"><option value="">– 請選擇 –</option>';
+    h+='<div style="display:flex;gap:10px;">';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:9px 0;background:#1565c0;" onclick="CHECKOUT.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:9px 0;background:#c0392b;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='</div>';
+    h+='</div>';
+    h+='<div class="df-sec">';
+    h+='<div style="margin-bottom:12px;"><div class="df-lbl">對應月費單期別（收入自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'childfeePk\',this.value)"><option value="">– 請選擇 –</option>';
     cfPeriods.forEach(function(o){h+='<option value="'+o.pk+'"'+(p.childfeePk===o.pk?' selected':'')+'>'+o.label+'</option>';});
     h+='</select></div>';
-    h+='<div style="flex:1;min-width:200px;"><div class="df-lbl">對應零用金期別（C帳／零用金支出自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'ledgerPid\',this.value)"><option value="">– 請選擇 –</option>';
+    h+='<div><div class="df-lbl">對應零用金期別（C帳／零用金支出自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'ledgerPid\',this.value)"><option value="">– 請選擇 –</option>';
     ledgerPeriods.forEach(function(o){h+='<option value="'+o.id+'"'+(p.ledgerPid===o.id?' selected':'')+'>'+o.label+'</option>';});
     h+='</select></div>';
     h+='</div>';
     /* 收入 */
-    h+='<div class="df-sec"><div class="df-lbl">收入</div><table class="cln-table"><thead><tr><th>項目</th><th>金額</th><th>備註</th></tr></thead><tbody>';
-    h+='<tr><td>註冊費</td><td>'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>月費</td><td>'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>代辦費</td><td>'+c.agencyFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>延托費</td><td>'+c.extendFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>保險費</td><td>'+c.insurance.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>退費</td><td>-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
-    h+='<tr><td>優化補助</td><td><input type="text" class="cln-num" style="width:80px;" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"></td><td><input type="text" class="cln-num" style="width:140px;" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></td></tr>';
-    h+='<tr><td>利息</td><td><input type="text" class="cln-num" style="width:80px;" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"></td><td><input type="text" class="cln-num" style="width:140px;" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></td></tr>';
+    h+='<div class="df-sec"><div class="df-lbl">收入</div><table class="ck-table"><thead><tr><th>項目</th><th>金額</th><th>備註</th></tr></thead><tbody>';
+    h+='<tr><td>註冊費</td><td>'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>月費</td><td>'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>代辦費</td><td>'+c.agencyFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>延托費</td><td>'+c.extendFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>保險費</td><td>'+c.insurance.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>退費</td><td>-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
+    h+='<tr><td>優化補助</td><td><input type="text" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"></td><td><input type="text" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></td></tr>';
+    h+='<tr><td>利息</td><td><input type="text" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"></td><td><input type="text" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></td></tr>';
     h+='<tr style="font-weight:800;background:#f7f7fa;"><td>收入總計</td><td colspan="2" style="color:#1565c0;">'+c.totalIncome.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
     /* 支出 */
     h+='<div class="df-sec"><div class="df-lbl">支出<button class="cln-sig-btn" style="float:right;" onclick="CHECKOUT.addRow()">&#xFF0B; 新增支出項目</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>類別</th><th>備註</th><th>金額</th><th></th></tr></thead><tbody>';
+    h+='<table class="ck-table"><thead><tr><th>類別</th><th>備註</th><th>金額</th><th></th></tr></thead><tbody>';
     Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
       var r=p.entries[id]||{};
-      h+='<tr><td><select class="cln-num" style="width:90px;" onchange="CHECKOUT.setRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
+      h+='<tr><td><select onchange="CHECKOUT.setRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
       CHECKOUT_EXPENSE_CATS.forEach(function(cat){h+='<option value="'+cat+'"'+(r.cat===cat?' selected':'')+'>'+cat+'</option>';});
       h+='</select></td>';
-      h+='<td><input type="text" class="cln-num" style="width:140px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'note\',this.value)"></td>';
-      h+='<td><input type="text" class="cln-num" style="width:80px;" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'amount\',this.value)"></td>';
+      h+='<td><input type="text" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'note\',this.value)"></td>';
+      h+='<td><input type="text" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'amount\',this.value)"></td>';
       h+='<td><button onclick="CHECKOUT.delRow(\''+id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
     });
-    h+='<tr style="color:#999;"><td>零用金</td><td>零用金期別自動帶入</td><td>'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
+    h+='<tr style="color:#999;"><td>零用金</td><td style="font-size:.7rem;">零用金期別自動帶入</td><td>'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
     h+='<tr style="font-weight:800;background:#f7f7fa;"><td>支出總計</td><td colspan="2" style="color:#c0392b;">'+c.totalExpense.toLocaleString()+'</td><td></td></tr>';
     h+='</tbody></table></div>';
     /* 本期結算 + A/B/C 帳 */
-    h+='<div class="df-sec"><div class="df-lbl">本期結算</div><table class="cln-table"><tbody>';
+    h+='<div class="df-sec"><div class="df-lbl">本期結算</div><table class="ck-table"><tbody>';
     h+='<tr><td>收入總計</td><td>'+c.totalIncome.toLocaleString()+'</td></tr>';
     h+='<tr><td>支出總計</td><td>'+c.totalExpense.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;"><td>本期（損益）</td><td style="color:'+(c.netThis<0?'#c0392b':'#1565c0')+';">'+c.netThis.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
-    h+='<div class="df-sec"><div class="df-lbl">A/B/C 帳資產</div><table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
-    h+='<tr><td>A帳</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.aAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'aAccount\',this.value)"></td></tr>';
-    h+='<tr><td>B帳</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.bAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'bAccount\',this.value)"></td></tr>';
+    h+='<div class="df-sec"><div class="df-lbl">A/B/C 帳資產</div><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+    h+='<tr><td>A帳</td><td><input type="text" value="'+((p.aAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'aAccount\',this.value)"></td></tr>';
+    h+='<tr><td>B帳</td><td><input type="text" value="'+((p.bAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'bAccount\',this.value)"></td></tr>';
     h+='<tr><td>C帳（零用金目前餘額）</td><td style="color:#999;">'+c.cAccount.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;"><td>資產結餘</td><td>'+c.assetTotal.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
-    h+='<div class="df-sec"><table class="cln-table"><tbody>';
-    h+='<tr><td>上期總結</td><td><input type="text" class="cln-num" style="width:90px;" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
+    h+='<div class="df-sec"><table class="ck-table"><tbody>';
+    h+='<tr><td>上期總結</td><td><input type="text" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
     h+='<tr><td>本期（損益）</td><td>'+c.netThis.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;background:#fff6e0;"><td>總結</td><td style="color:#1565c0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
@@ -21731,13 +21744,26 @@ var CHILDFEE=(function(){
 
   /* ── 給「結帳」模組用的唯讀存取：結帳要把月費單某一期的收入總額自動帶入，
      不用自己重新存一份。只算「真的有登記」(_isBilled，有選付款方式)的
-     帳單，單純畫面預覽帶入的預設值不算收入。 */
+     帳單，單純畫面預覽帶入的預設值不算收入。
+     期別清單不能只列「月費單裡已經有資料」的那幾期——沒人先去月費單
+     那邊點開過某一期，結帳這邊選單就會是空的，使用者會覺得「沒得選」。
+     改成用今天的日期往前推 12 期、往後推 2 期，直接算出期別清單，不管
+     月費單那邊有沒有資料都一定選得到。 */
   function listPeriodsForCheckout(){
-    return Object.keys(db.records).sort().reverse().map(function(pk){
-      var parts=pk.split('_');
-      var endRoc=parseInt(parts[0],10),endMo=parseInt(parts[1],10);
-      return{pk:pk,label:periodLabel(endRoc,endMo),endRoc:endRoc,endMo:endMo};
-    });
+    var d=_defaultEnd();
+    var out=[];
+    var roc=d.roc,mo=d.mo;
+    for(var i=0;i<2;i++){
+      out.push({pk:periodKey(roc,mo),label:periodLabel(roc,mo),endRoc:roc,endMo:mo});
+      mo++;if(mo>12){mo=1;roc++;}
+    }
+    roc=d.roc;mo=d.mo;
+    for(var j=0;j<12;j++){
+      mo--;if(mo<1){mo=12;roc--;}
+      out.push({pk:periodKey(roc,mo),label:periodLabel(roc,mo),endRoc:roc,endMo:mo});
+    }
+    out.sort(function(a,b){return (b.endRoc*100+b.endMo)-(a.endRoc*100+a.endMo);});
+    return out;
   }
   function incomeSumsForPeriod(pk){
     var sums={};
