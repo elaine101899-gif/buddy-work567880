@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020230249';
+  var BUILD='20261020231227';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9330,6 +9330,10 @@ var LEAVE=(function(){
   function showList(){
     var wrap=document.getElementById('leaveTeacherWrap');
     if(!wrap)return;
+    /* 按「返回列表」之前先存一次：不然沒改過日期（沒觸發過 onDateChange）的
+       欄位，像代理人姓名、代班交接事項文字、幼兒名單那些，使用者打完字
+       直接按返回列表會整個不見，不會真的存到。 */
+    if(lTid&&lFid)saveForm();
     lFid='';
     var teacher=_leaveTeachers().find(function(t){return t.id===lTid;});
     var forms=getTeacherForms(lTid);
@@ -10206,8 +10210,10 @@ var LEAVE_BOSS=(function(){
     curName=name;curFid='';curStep='list';
     _wrap().innerHTML=renderList();
   }
-  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
-  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  /* 按「返回列表」之前先存一次：不然沒改過日期(沒觸發過 onchange)的欄位，
+     像代理人姓名、交接事項文字，使用者打完字直接按返回會整個不見。 */
+  function backToHub(){if(curStep==='form'&&curFid)saveForm();curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){if(curStep==='form'&&curFid)saveForm();curStep='list';_wrap().innerHTML=renderList();}
   function newForm(){
     curFid='f'+Date.now();
     var today=new Date();
@@ -10545,8 +10551,8 @@ var LEAVE_FLEX=(function(){
   }
   function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();_LSFB.attach(FB_PATH,KEY,_onFbUpdate);}
   function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
-  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
-  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function backToHub(){if(curStep==='form'&&curFid)saveForm();curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){if(curStep==='form'&&curFid)saveForm();curStep='list';_wrap().innerHTML=renderList();}
   function newForm(){
     curFid='f'+Date.now();
     var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
@@ -10782,8 +10788,8 @@ var LEAVE_COOK=(function(){
   }
   function init(){curStep='hub';curName='';curFid='';_wrap().innerHTML=renderHub();_LSFB.attach(FB_PATH,KEY,_onFbUpdate);}
   function openPerson(name){curName=name;curFid='';curStep='list';_wrap().innerHTML=renderList();}
-  function backToHub(){curStep='hub';_wrap().innerHTML=renderHub();}
-  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function backToHub(){if(curStep==='form'&&curFid)saveForm();curStep='hub';_wrap().innerHTML=renderHub();}
+  function backToList(){if(curStep==='form'&&curFid)saveForm();curStep='list';_wrap().innerHTML=renderList();}
   function newForm(){
     curFid='c'+Date.now();
     var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
@@ -22514,7 +22520,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--APP_VERSION--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020231227--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
