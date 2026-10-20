@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020172409';
+  var BUILD='20261020195817';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1639,6 +1639,13 @@ function _rosterFbBase(){return 'xiaobuddyClean/roster';}
 function applyCompany(companyId){
   CURRENT_COMPANY=companyId;
   try{localStorage.setItem('xbdCompany',companyId);}catch(e){}
+  /* admin 身分是綁公司的（小布迪的行政人員不等於邦比諾的行政人員），
+     換公司要重新算一次角色，不能沿用切換前那間公司算出來的結果。
+     owner 不受影響（owner 本來就不分公司）。 */
+  if(typeof CURRENT_USER_EMAIL!=='undefined'&&CURRENT_USER_EMAIL&&typeof _computeRole==='function'){
+    CURRENT_ROLE=_computeRole(CURRENT_USER_EMAIL);
+    if(typeof _applyRoleUI==='function')_applyRoleUI();
+  }
   /* 課程內容（allThemes）兩間公司共用同一份，不隨公司切換——邦比諾的課程
      直接沿用小布迪，以後課程異動兩邊會一起變。只有老師/幼兒名單各自獨立。 */
   if(companyId==='bambino'){
@@ -1934,6 +1941,64 @@ function _fbAuth(){
   }catch(e){return null;}
 }
 
+/* ── 身分權限：依照登入帳號的 email 決定角色，取代原本月費單/零用金/會計
+   那組要手動打密碼的關卡（密碼容易嫌麻煩、索性不點，乾脆依身分直接把
+   入口卡片藏起來，一般老師整個看不到這些功能，不是看得到但要密碼）。
+   三層角色：
+   - owner（只有園長本人）：全部都看得到，包括完全沒有任何入口的總帳，
+     兩間公司都算 owner，不綁公司。
+   - admin（行政/組長）：看得到會計（月費單/零用金）、每日回報、幼兒請假，
+     但看不到總帳——這份名單存在雲端 xiaobuddyClean/userRoles，owner 自己
+     另外手動在 Firebase 後台維護，這個 App 裡沒有編輯介面。admin 是「綁
+     公司」的：小布迪的行政人員只在小布迪算 admin，切去邦比諾就變回
+     teacher，因為兩間公司的行政是不同人、各自只負責自己公司的帳。
+   - teacher（預設，沒被列在上面兩份名單、或 admin 綁的是別間公司）：
+     以上都看不到。
+   角色判斷在登入成功後才讀雲端名單決定，讀完之前預設當作 teacher
+   （寧可暫時少顯示，也不要讓還沒判斷好身分的人先看到不該看的東西）；
+   因為 admin 綁公司，切換公司（applyCompany）時也要重新算一次角色。 */
+var ROLE_LIST={owner:[],admin:[]}; // admin: [{email,company}]
+var CURRENT_ROLE='teacher';
+var CURRENT_USER_EMAIL=null;
+function _loadRoles(cb){
+  var fb=_fbInit();
+  if(!fb){if(cb)cb();return;}
+  fb.ref('xiaobuddyClean/userRoles').once('value',function(snap){
+    var v=snap.val()||{};
+    ROLE_LIST.owner=(v.owner||[]).map(function(e){return (e||'').toLowerCase().trim();});
+    ROLE_LIST.admin=(v.admin||[]).map(function(a){
+      return{email:((a&&a.email)||'').toLowerCase().trim(),company:(a&&a.company)||''};
+    });
+    if(cb)cb();
+  },function(){if(cb)cb();});
+}
+function _computeRole(email){
+  var e=(email||'').toLowerCase().trim();
+  if(ROLE_LIST.owner.indexOf(e)>=0)return 'owner';
+  var company=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY)?CURRENT_COMPANY:'xbd';
+  var isAdminHere=ROLE_LIST.admin.some(function(a){return a.email===e&&a.company===company;});
+  if(isAdminHere)return 'admin';
+  return 'teacher';
+}
+/* 行政首頁的「會計」「每日回報」「幼兒請假記錄」三張卡片，teacher 看不到；
+   會計 hub 裡的「總帳」卡片只有 owner 看得到。每次判斷出角色、或每次進
+   行政/會計頁面時都呼叫一次，確保卡片顯示狀態跟目前角色一致。 */
+function _applyRoleUI(){
+  /* 這幾張卡片本來就是用 display:flex 排版（icon+文字+箭頭一列），
+     重新顯示時要明確設回 'flex'，不能單純清空 style.display 讓它
+     掉回 div 預設的 block，不然 icon/文字會變成直的、版面會跑掉。 */
+  ['billingCardAccounting','billingCardTeacherLeave','billingCardChildLeave'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.style.display=(CURRENT_ROLE==='teacher')?'none':'flex';
+  });
+  var ledgerCard=document.getElementById('accountingCardLedger');
+  if(ledgerCard)ledgerCard.style.display=(CURRENT_ROLE==='owner')?'flex':'none';
+}
+/* 防呆：就算有人用舊書籤、瀏覽器上一頁等方式繞過卡片直接想跳頁，GO() 這裡
+   還是會依角色擋下來，不是只靠「卡片沒顯示」這一層。總帳另外在 GO() 裡
+   單獨限定只有 owner 能進（見下面 GO 函式）。 */
+var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary'];
+
 /* ── 登入關卡：authGateOv 蓋住全站，確認登入狀態之前／沒登入的時候
    一直擋著，登入成功才會藏起來、讓底下原本的公司選擇/首頁正常運作。
    這一層完全獨立於原本「右下角鑰匙解鎖後台」的機制，兩者互不影響——
@@ -1970,6 +2035,12 @@ function _authGateLogout(){
         if(!ov)return;
         if(user){
           ov.style.display='none';
+          CURRENT_ROLE='teacher';
+          CURRENT_USER_EMAIL=user.email;
+          _loadRoles(function(){
+            CURRENT_ROLE=_computeRole(CURRENT_USER_EMAIL);
+            _applyRoleUI();
+          });
         }else{
           ov.style.display='flex';
           var statusEl=document.getElementById('agStatus'),formEl=document.getElementById('agForm');
@@ -3781,12 +3852,12 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">延托幼兒</div><div style="font-size:.78rem;color:#888;margin-top:2px;">延托起訖時段記錄，全機同步</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
-      <div onclick="GO('childleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
+      <div id="billingCardChildLeave" onclick="GO('childleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
         <span style="font-size:1.8rem;">&#x1F915;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">幼兒請假記錄</div><div style="font-size:.78rem;color:#888;margin-top:2px;">記錄請假天數與假別，供退費試算</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
-      <div onclick="GO('teacherleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
+      <div id="billingCardTeacherLeave" onclick="GO('teacherleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
         <span style="font-size:1.8rem;">&#x1F4CB;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">每日回報</div><div style="font-size:.78rem;color:#888;margin-top:2px;">老師請假追蹤、育嬰留停名單，一鍵產生LINE回報文字</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
@@ -3796,9 +3867,9 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#5a4aa8;">統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">物品統計表、衛生統計表，每月總數量與拿取紀錄</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
-      <div onclick="GO('accounting')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #cf6b6b;">
+      <div id="billingCardAccounting" onclick="GO('accounting')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #cf6b6b;">
         <span style="font-size:1.8rem;">&#x1F512;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">會計</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月費單、零用金，需輸入密碼</div></div>
+        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">會計</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月費單、零用金</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
     </div>
@@ -3821,6 +3892,11 @@ function _rosterKidsAsOf(cls,dateStr){
       <div onclick="GO('pettycash')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9822c;">
         <span style="font-size:1.8rem;">&#x1F4B0;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#a5590a;">零用金</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每期收支明細、科目分類統計，自動結轉下期餘額</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div id="accountingCardLedger" onclick="GO('ledger')" style="display:none;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #5a4aa8;">
+        <span style="font-size:1.8rem;">&#x1F4D1;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#3a2a78;">總帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">結合零用金明細的內部總帳</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
     </div>
@@ -4426,12 +4502,12 @@ function GO(id) {
     alert('這個功能還沒有支援邦比諾，目前僅開放教學課程和適齡適性記錄。如需使用，請聯繫系統管理員。');
     return;
   }
-  if (id === 'accounting' && PWGATE.need('accounting')) {
-    PWGATE.prompt('accounting','會計','101899', function(){ GO('accounting'); });
+  if (_ADMIN_UP_PAGES.indexOf(id) >= 0 && CURRENT_ROLE === 'teacher') {
+    alert('這個功能你的帳號沒有權限使用。');
     return;
   }
-  if ((id === 'childfee' || id === 'childfee-income' || id === 'pettycash' || id === 'pettycash-detail') && PWGATE.need('accounting-inner')) {
-    PWGATE.prompt('accounting-inner',(id==='pettycash'||id==='pettycash-detail')?'零用金':'月費單','080611', function(){ GO(id); });
+  if (id === 'ledger' && CURRENT_ROLE !== 'owner') {
+    alert('這個功能你的帳號沒有權限使用。');
     return;
   }
   var pgs = document.getElementsByClassName('pg');
@@ -4522,6 +4598,7 @@ function GO(id) {
   if (id === 'hygienestat') { if (typeof HYGIENESTAT !== 'undefined') HYGIENESTAT.init(); }
   if (id === 'pettycash') { if (typeof PETTYCASH !== 'undefined') PETTYCASH.init(); }
   if (id === 'ledger') { if (typeof LEDGER !== 'undefined') LEDGER.init(); }
+  if (id === 'billing' || id === 'accounting') { _applyRoleUI(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
   if (id === 'childleave') { if (typeof CHILDLEAVE !== 'undefined') CHILDLEAVE.init(); }
@@ -4546,6 +4623,9 @@ function GO(id) {
 function _checkHiddenHash(){
   var hash=window.location.hash;
   if (hash==='#ledger-xbd'||hash==='#ledger-bambino') {
+    /* 先擋權限再切公司：不然沒權限的人用猜的網址，雖然進不去總帳，
+       卻會把目前公司切過去，造成莫名其妙的畫面（看到另一間公司的品牌）。 */
+    if (typeof CURRENT_ROLE!=='undefined' && CURRENT_ROLE!=='owner') { GO('ledger'); return; }
     if (typeof applyCompany==='function') applyCompany(hash==='#ledger-bambino'?'bambino':'xbd');
     GO('ledger');
   } else if (hash==='#ledger') {
