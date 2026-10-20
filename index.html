@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020234024';
+  var BUILD='20261020235040';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22562,7 +22562,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020234024--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020235040--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -22584,6 +22584,47 @@ document.addEventListener('DOMContentLoaded',function(){
     if(/^\d{14}$/.test(t))t=t.slice(4,6)+'/'+t.slice(6,8)+' '+t.slice(8,10)+':'+t.slice(10,12);
     if(t)el.textContent=t;
   }
+})();
+</script>
+
+<!-- 有些人會整天把這個網頁分頁開著不關，手機背景閒置太久 iOS Safari
+     常常會把分頁的程式悄悄終止掉（畫面看起來還在，其實整個 JS 已經停了，
+     localStorage 跟雲端資料也不會再同步），要真的整個關掉分頁重開才會
+     抓到最新版本。與其要每個人自己記得定期重開，這裡改成每隔幾分鐘
+     自動問一次伺服器現在的版本是不是比畫面上這份新，新的話跳一條提醒
+     橫幅，點了才整頁重新整理（不要沒問過使用者就自己硬重整，那樣如果
+     剛好在填表單一半，反而會把使用者正在輸入但還沒來得及觸發存檔的
+     內容整個弄丟）。 */
+<script>
+(function(){
+  var _checking=false,_shown=false;
+  /* 最上面那段 var BUILD=... 包在它自己的 IIFE 裡，不是全域變數，這裡拿
+     不到，所以自己從目前這份文件的 <head> 原始碼裡重新抓一次當作「我
+     現在跑的是哪個版本」，而不是依賴那個拿不到的變數。 */
+  var _curBuild=(function(){
+    var m=document.head.innerHTML.match(/var BUILD='([^']+)'/);
+    return (m&&m[1]&&m[1].indexOf('BUILD_TS')===-1)?m[1]:'';
+  })();
+  function checkVersion(){
+    if(_checking||_shown||!_curBuild)return;
+    _checking=true;
+    fetch(location.pathname,{cache:'no-store'}).then(function(r){return r.text();}).then(function(txt){
+      _checking=false;
+      var m=txt.match(/var BUILD='([^']+)'/);
+      if(!m||!m[1]||m[1].indexOf('BUILD_TS')>-1)return;
+      if(m[1]!==_curBuild)showBanner();
+    }).catch(function(){_checking=false;});
+  }
+  function showBanner(){
+    if(_shown)return;
+    _shown=true;
+    var banner=document.createElement('div');
+    banner.textContent='🔄 有新版本可以用，點這裡重新整理';
+    banner.style.cssText='position:fixed;top:0;left:0;right:0;background:#1565c0;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700;z-index:999999;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);';
+    banner.onclick=function(){location.reload();};
+    document.body.appendChild(banner);
+  }
+  setInterval(checkVersion,5*60*1000);
 })();
 </script>
 
