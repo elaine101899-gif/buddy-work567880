@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020075351';
+  var BUILD='20261020083150';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3791,6 +3791,47 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#5a4aa8;">統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">物品統計表、衛生統計表，每月總數量與拿取紀錄</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('pettycash')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9822c;">
+        <span style="font-size:1.8rem;">&#x1F4B0;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#a5590a;">零用金</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每期收支明細、科目分類統計，自動結轉下期餘額</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ═══ 零用金 ═══ -->
+<div class="pg" id="pg-pettycash">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
+    <span class="btitle">零用金</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="pcHubWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="pg" id="pg-pettycash-detail">
+  <div class="bbar">
+    <button class="bbtn" onclick="PETTYCASH.backToHub()">&#x2190; 零用金</button>
+    <span class="btitle" id="pcDetailTitle">零用金明細</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="pcDetailWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="pcNewOv">
+  <div class="asr-mbox" style="max-width:420px;">
+    <h3>&#x2795; 新增零用金期別</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">期別名稱</div>
+    <input type="text" class="asr-mi" id="pcNewLabel" placeholder="例如：115年11/08~12/07零用金">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">開始日期</div>
+    <input type="date" class="asr-mi" id="pcNewStart">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">結束日期</div>
+    <input type="date" class="asr-mi" id="pcNewEnd">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">上期結餘</div>
+    <input type="number" class="asr-mi" id="pcNewOpen" placeholder="0">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="PETTYCASH.closeNew()">取消</button>
+      <button class="asr-mok" onclick="PETTYCASH.saveNew()">建立</button>
     </div>
   </div>
 </div>
@@ -4398,6 +4439,7 @@ function GO(id) {
   if (id === 'teacherleave') { if (typeof TEACHERLEAVE !== 'undefined') TEACHERLEAVE.init(); }
   if (id === 'itemstat') { if (typeof ITEMSTAT !== 'undefined') ITEMSTAT.init(); }
   if (id === 'hygienestat') { if (typeof HYGIENESTAT !== 'undefined') HYGIENESTAT.init(); }
+  if (id === 'pettycash') { if (typeof PETTYCASH !== 'undefined') PETTYCASH.init(); }
   if (id === 'extendcare') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.init(); }
   if (id === 'extendcare-fee') { if (typeof EXTENDCARE !== 'undefined') EXTENDCARE.feeInit(); }
   if (id === 'childleave') { if (typeof CHILDLEAVE !== 'undefined') CHILDLEAVE.init(); }
@@ -17626,6 +17668,299 @@ function _buildStatSheetModule(cfg){
 
 var ITEMSTAT=_buildStatSheetModule({items:ITEMSTAT_ITEMS,fbKey:'items',title:'學校備品清單',wrapId:'itemstatWrap',modVar:'ITEMSTAT'});
 var HYGIENESTAT=_buildStatSheetModule({items:HYGIENESTAT_ITEMS,fbKey:'hygiene',title:'清潔用品清單',wrapId:'hygienestatWrap',modVar:'HYGIENESTAT'});
+
+/* ── 零用金：每期（期間不固定，手動設定起訖日）一本收支明細，
+   科目分類沿用原本紙本/Numbers表格的分類，結餘逐筆累加計算，
+   新增期別時預設把上一期的結存金額帶過來當這一期的上期結餘，
+   不用自己心算、手動謄寫到下一期。 */
+var PETTYCASH_CATS=['行政','清潔','教具材料','設備','廚房用品','餐費','雜項','水電','薪資支出','員工福利','退費','房租','請款'];
+var PETTYCASH=(function(){
+  var db={};
+  var _fbAttachedCompany=null,_fbRef=null;
+  var curId=null;
+  function pad2(n){return (n<10?'0':'')+n;}
+
+  function sortedPeriods(){
+    return Object.keys(db).map(function(id){return Object.assign({id:id},db[id]);})
+      .sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  }
+  function periodRows(p){
+    var rows=p.rows||{};
+    return Object.keys(rows).map(function(id){return Object.assign({id:id},rows[id]);})
+      .sort(function(a,b){return (a.date||'').localeCompare(b.date||'')||((a.ts||0)-(b.ts||0));});
+  }
+  function periodTotals(p){
+    var rows=periodRows(p);
+    var open=parseFloat(p.openBalance)||0;
+    var totalIncome=0,totalExpense=0;
+    var byCat={};
+    rows.forEach(function(r){
+      var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
+      totalIncome+=inc;totalExpense+=exp;
+      if(r.cat){ if(!byCat[r.cat])byCat[r.cat]=0; byCat[r.cat]+=exp; }
+    });
+    return {open:open,totalIncome:totalIncome,totalExpense:totalExpense,
+      closing:open+totalIncome-totalExpense,byCat:byCat,rows:rows};
+  }
+
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    _fbRef=fb.ref('xiaobuddyClean/pettycash/periods');
+    _fbRef.on('value',function(snap){
+      db=snap.val()||{};
+      try{localStorage.setItem(_ckey('pettycashDB'),JSON.stringify(db));}catch(e){}
+      renderHub();
+      if(curId)renderDetail();
+    });
+  }
+  function load(){
+    try{var r=localStorage.getItem(_ckey('pettycashDB'));if(r){var d=JSON.parse(r);if(d)db=d;}}catch(e){}
+    attachFb();
+  }
+  function save(){
+    try{localStorage.setItem(_ckey('pettycashDB'),JSON.stringify(db));}catch(e){}
+  }
+
+  function renderHub(){
+    var wrap=document.getElementById('pcHubWrap');
+    if(!wrap)return;
+    var periods=sortedPeriods();
+    var h='';
+    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="PETTYCASH.openNew()">&#xFF0B; 新增期別</button>';
+    if(!periods.length){
+      h+='<div style="color:#aaa;text-align:center;padding:30px 0;">尚未建立任何期別，請按上方「新增期別」</div>';
+    } else {
+      periods.forEach(function(p){
+        var t=periodTotals(p);
+        h+='<div onclick="PETTYCASH.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #d9822c;">';
+        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#a5590a;">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
+        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">目前結餘</div><div style="font-weight:800;font-size:1.05rem;color:#2a6a3f;">'+t.closing.toLocaleString()+'</div></div>';
+        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+        h+='</div>';
+      });
+    }
+    wrap.innerHTML=h;
+  }
+
+  function openNew(){
+    var periods=sortedPeriods();
+    var latest=periods[0];
+    var labelEl=document.getElementById('pcNewLabel'),startEl=document.getElementById('pcNewStart'),
+      endEl=document.getElementById('pcNewEnd'),openEl=document.getElementById('pcNewOpen');
+    labelEl.value='';startEl.value='';endEl.value='';openEl.value='';
+    if(latest){
+      var t=periodTotals(latest);
+      openEl.value=t.closing;
+      if(latest.endDate){
+        var nd=new Date(latest.endDate+'T00:00:00');
+        nd.setDate(nd.getDate()+1);
+        startEl.value=nd.getFullYear()+'-'+pad2(nd.getMonth()+1)+'-'+pad2(nd.getDate());
+      }
+    }
+    document.getElementById('pcNewOv').classList.add('on');
+  }
+  function closeNew(){
+    var ov=document.getElementById('pcNewOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function saveNew(){
+    var label=(document.getElementById('pcNewLabel').value||'').trim();
+    var startDate=document.getElementById('pcNewStart').value||'';
+    var endDate=document.getElementById('pcNewEnd').value||'';
+    var openBalance=document.getElementById('pcNewOpen').value||'0';
+    if(!label){alert('請輸入期別名稱');return;}
+    var id='pc'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var p={label:label,startDate:startDate,endDate:endDate,openBalance:openBalance,rows:{},ts:Date.now()};
+    db[id]=p;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+id).set(p);
+    closeNew();
+    renderHub();
+    openDetail(id);
+  }
+  function deletePeriod(id){
+    var p=db[id];
+    if(!p)return;
+    if(!confirm('確定要刪除「'+(p.label||'這個期別')+'」嗎？裡面所有收支紀錄都會一起刪除，無法復原。'))return;
+    delete db[id];
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+id).remove();
+    backToHub();
+  }
+
+  function openDetail(id){
+    curId=id;
+    GO('pettycash-detail');
+    renderDetail();
+  }
+  function backToHub(){
+    curId=null;
+    GO('pettycash');
+  }
+
+  function renderDetail(){
+    var wrap=document.getElementById('pcDetailWrap');
+    if(!wrap||!curId)return;
+    var p=db[curId];
+    if(!p){backToHub();return;}
+    document.getElementById('pcDetailTitle').textContent=p.label||'零用金明細';
+    var t=periodTotals(p);
+    var h='';
+    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
+    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setMeta(\'label\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="PETTYCASH.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="PETTYCASH.setMeta(\'endDate\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">上期結餘</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="PETTYCASH.setMeta(\'openBalance\',this.value)"></div>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;" onclick="PETTYCASH.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="PETTYCASH.deletePeriod(\''+curId+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='</div>';
+    h+='<div class="df-sec" style="overflow-x:auto;">';
+    h+='<div class="df-lbl">收支明細<button class="cln-sig-btn" style="float:right;" onclick="PETTYCASH.addRow()">&#xFF0B; 新增一列</button></div>';
+    h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>金額</th><th></th></tr></thead><tbody>';
+    h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">上期結餘</td><td style="font-weight:700;">'+t.open.toLocaleString()+'</td><td></td></tr>';
+    if(!t.rows.length){
+      h+='<tr><td colspan="7" style="color:#aaa;">尚無紀錄，請按上方「新增一列」</td></tr>';
+    } else {
+      var running=t.open;
+      t.rows.forEach(function(r){
+        var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
+        running+=inc-exp;
+        h+='<tr><td><input type="date" class="cln-num" style="width:118px;" value="'+(r.date||'')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
+        h+='<td><select class="cln-num" style="width:76px;" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'cat\',this.value)">';
+        h+='<option value="">–</option>';
+        PETTYCASH_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
+        h+='</select></td>';
+        h+='<td><input type="text" class="cln-num" style="width:120px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)"></td>';
+        h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'income\',this.value)"></td>';
+        h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'expense\',this.value)"></td>';
+        h+='<td>'+running.toLocaleString()+'</td>';
+        h+='<td><button onclick="PETTYCASH.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+      });
+    }
+    h+='</tbody></table></div>';
+    h+='<div class="df-sec" style="overflow-x:auto;">';
+    h+='<div class="df-lbl">科目分類統計</div>';
+    h+='<table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+    h+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
+    h+='<tr><td>上期結餘</td><td>'+t.open.toLocaleString()+'</td></tr>';
+    h+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
+    PETTYCASH_CATS.forEach(function(c){
+      if(c==='請款')return;
+      h+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';
+    });
+    h+='<tr style="font-weight:800;background:#f7f7fa;"><td>目前結餘</td><td>'+t.closing.toLocaleString()+'</td></tr>';
+    h+='</tbody></table></div>';
+    wrap.innerHTML=h;
+  }
+
+  function setMeta(field,v){
+    var p=db[curId];
+    if(!p)return;
+    p[field]=v;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/'+field).set(v);
+    if(field==='label')renderHub();
+  }
+  function addRow(){
+    var p=db[curId];
+    if(!p)return;
+    if(!p.rows)p.rows={};
+    var id='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    p.rows[id]={date:'',cat:'',note:'',income:'',expense:'',ts:Date.now()};
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id).set(p.rows[id]);
+    renderDetail();
+  }
+  function delRow(id){
+    if(!confirm('確定要刪除這一筆紀錄嗎？'))return;
+    var p=db[curId];
+    if(!p||!p.rows)return;
+    delete p.rows[id];
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id).remove();
+    renderDetail();
+  }
+  function setRowField(id,field,v){
+    var p=db[curId];
+    if(!p||!p.rows||!p.rows[id])return;
+    p.rows[id][field]=v;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id+'/'+field).set(v);
+    renderDetail();
+  }
+  function doPrint(){
+    var p=db[curId];
+    if(!p)return;
+    var t=periodTotals(p);
+    var html=_pettyCashPrintHTML(p,t);
+    var w=window.open('','_blank');
+    if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
+    w.document.write(html);
+    w.document.close();
+  }
+  function init(){load();renderHub();}
+
+  return{init:init,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
+    openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,
+    setRowField:setRowField,print:doPrint};
+})();
+
+function _pettyCashPrintHTML(p,t){
+  var rowsHtml='';
+  rowsHtml+='<tr style="background:#f4f6fb;"><td colspan="5" style="text-align:right;font-weight:700;">上期結餘</td><td style="font-weight:700;">'+t.open.toLocaleString()+'</td></tr>';
+  var running=t.open;
+  t.rows.forEach(function(r){
+    var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
+    running+=inc-exp;
+    rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
+      '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td><td>'+running.toLocaleString()+'</td></tr>';
+  });
+  var sumHtml='';
+  sumHtml+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
+  sumHtml+='<tr><td>上期結餘</td><td>'+t.open.toLocaleString()+'</td></tr>';
+  sumHtml+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
+  PETTYCASH_CATS.forEach(function(c){
+    if(c==='請款')return;
+    sumHtml+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';
+  });
+  sumHtml+='<tr style="font-weight:800;"><td>目前結餘</td><td>'+t.closing.toLocaleString()+'</td></tr>';
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+(p.label||'零用金明細')+'</title>'+
+    '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
+    '@page{size:A4 portrait;margin:10mm;}'+
+    'h3{margin:12px 0 5px;font-size:12px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;margin-bottom:5px;}'+
+    'th,td{border:1px solid #555;padding:4px 5px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
+    'th{background:#eef2fb;}'+
+    '.sumtbl{width:55%;}'+
+    '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
+    '.hdr-row img{height:42px;width:auto;}'+
+    '.hdr-txt{text-align:center;}'+
+    '.hdr-txt .t1{font-size:14px;font-weight:900;}'+
+    '.hdr-txt .t2{font-size:12px;font-weight:700;margin-top:2px;}'+
+    '.meta-row{display:flex;justify-content:center;gap:28px;font-size:11px;color:#444;margin-bottom:7px;}'+
+    '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
+    '</style></head><body><div class="wrap-ss">'+
+    '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">'+(p.label||'零用金明細')+'</div></div></div>'+
+    '<div class="meta-row"><span>'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</span></div>'+
+    '<table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>金額</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+    '<h3>科目分類統計</h3><table class="sumtbl"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>'+sumHtml+'</tbody></table>'+
+    '</div><script>window.onload=function(){'+
+    'try{var wrap=document.querySelector(".wrap-ss");var capPx=(297-20)*96/25.4;var natural=wrap.scrollHeight;'+
+    'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
+    'window.print();'+
+    '}<\/script></body></html>';
+}
 
 /* ── 體溫管理 ── */
 var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','公假','公傷假','福利假','產檢假','其他'];
