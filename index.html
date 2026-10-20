@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020195817';
+  var BUILD='20261020203847';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3944,8 +3944,34 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="LEDGER.back()">&#x2190; 返回</button>
     <span class="btitle">總帳</span>
   </div>
+  <div style="padding:14px 16px 40px;" id="ledgerHubWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="pg" id="pg-ledger-detail">
+  <div class="bbar">
+    <button class="bbtn" onclick="LEDGER.backToHub()">&#x2190; 總帳</button>
+    <span class="btitle" id="ledgerDetailTitle">總帳明細</span>
+  </div>
   <div style="padding:14px 16px 40px;" id="ledgerWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="ledgerNewOv">
+  <div class="asr-mbox" style="max-width:420px;">
+    <h3>&#x2795; 新增總帳期別</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">期別名稱</div>
+    <input type="text" class="asr-mi" id="ledgerNewLabel" placeholder="例如：115年11/08~12/07">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">開始日期</div>
+    <input type="date" class="asr-mi" id="ledgerNewStart">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">結束日期</div>
+    <input type="date" class="asr-mi" id="ledgerNewEnd">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">起始餘額</div>
+    <input type="number" class="asr-mi" id="ledgerNewOpen" placeholder="0">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="LEDGER.closeNew()">取消</button>
+      <button class="asr-mok" onclick="LEDGER.saveNew()">建立</button>
+    </div>
   </div>
 </div>
 <!-- ═══ 統計表 ═══ -->
@@ -4506,8 +4532,15 @@ function GO(id) {
     alert('這個功能你的帳號沒有權限使用。');
     return;
   }
-  if (id === 'ledger' && CURRENT_ROLE !== 'owner') {
+  if ((id === 'ledger' || id === 'ledger-detail') && CURRENT_ROLE !== 'owner') {
     alert('這個功能你的帳號沒有權限使用。');
+    return;
+  }
+  /* 總帳多一層密碼：就算帳號身分已經是 owner、也通過了上面那關，
+     點進去還是要再輸入一次密碼才真的放行——owner 自己要求的雙重保險，
+     跟其他頁面「身分對了就直接進去」不一樣。 */
+  if (id === 'ledger' && PWGATE.need('ledger')) {
+    PWGATE.prompt('ledger','總帳','92800', function(){ GO('ledger'); });
     return;
   }
   var pgs = document.getElementsByClassName('pg');
@@ -18148,18 +18181,21 @@ function _pettyCashPrintHTML(p,t){
     '}<\/script></body></html>';
 }
 
-/* ── 總帳（內部用，不公開在任何選單）：自動把零用金所有期別的明細整本串成
-   一條連續的總帳（唯讀，來源是零用金，不能在這裡改，要改回零用金那邊改），
-   自己可以在上面再加/刪自己的調整項目。使用者身上自己也保管一份零用金，
-   所以畫面上會算「起始餘額」跟逐筆累加的餘額，方便核對身上的錢對不對；
-   但列印出來的版本不印餘額，只印明細＋科目分類統計（兩邊都是公司零用金
-   跟自己調整項目合併後的結果）。兩間公司（小布迪／邦比諾）各自獨立一份，
-   用網址 #ledger-xbd／#ledger-bambino 切換，由 _checkHiddenHash 在切換時
+/* ── 總帳（內部用，不公開在任何選單）：跟零用金一樣是「期別制」——
+   自己先新增一個期別（例如跟零用金同一個月），下個月再新增下一個期別，
+   不用一直改同一個範圍、刪東刪西。每個期別自動把零用金所有期別裡落在
+   這個期別日期範圍內的明細（唯讀，來源是零用金，不能在這裡改，要改
+   回零用金那邊改）抓進來，自己可以在上面再加/刪自己的調整項目。
+   使用者身上自己也保管一份零用金，所以畫面上會算「起始餘額」跟逐筆
+   累加的餘額；但列印出來的版本不印餘額，只印明細＋科目分類統計。
+   兩間公司（小布迪／邦比諾）各自獨立一份期別清單，用網址
+   #ledger-xbd／#ledger-bambino 切換，由 _checkHiddenHash 在切換時
    呼叫 applyCompany() 決定要看哪一間。 */
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
 var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租'];
 var LEDGER=(function(){
-  var pcPeriods={},manual={},openBalance='0',rangeStart='',rangeEnd='';
+  var pcPeriods={},periods={};
+  var curPid=null;
   var _attachedCompany=null,_pcRef=null,_ledRef=null;
 
   function attach(){
@@ -18169,44 +18205,43 @@ var LEDGER=(function(){
     if(_pcRef){try{_pcRef.off('value');}catch(e){}}
     if(_ledRef){try{_ledRef.off('value');}catch(e){}}
     _attachedCompany=CURRENT_COMPANY;
-    pcPeriods={};manual={};openBalance='0';rangeStart='';rangeEnd='';
+    pcPeriods={};periods={};
     _pcRef=fb.ref('xiaobuddyClean/pettycash/periods');
     _pcRef.on('value',function(snap){
       pcPeriods=snap.val()||{};
-      render();
+      renderHub();if(curPid)render();
     });
-    _ledRef=fb.ref('xiaobuddyClean/ledger');
+    _ledRef=fb.ref('xiaobuddyClean/ledger/periods');
     _ledRef.on('value',function(snap){
-      var v=snap.val()||{};
-      manual=v.entries||{};
-      openBalance=(v.openBalance!=null)?v.openBalance:'0';
-      rangeStart=v.rangeStart||'';rangeEnd=v.rangeEnd||'';
-      render();
+      periods=snap.val()||{};
+      renderHub();if(curPid)render();
     });
   }
-  /* 日期範圍沒設就不過濾（維持全部顯示）；有設的話，只有「本來就有填日期」
-     的明細才會被擋掉，還沒填日期的自己新增項目照樣看得到、照樣能編輯。 */
-  function _inRange(d){
+  function sortedPeriods(){
+    return Object.keys(periods).map(function(id){return Object.assign({id:id},periods[id]);})
+      .sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+  }
+  function _inRange(d,startDate,endDate){
     if(!d)return true;
-    if(rangeStart&&d<rangeStart)return false;
-    if(rangeEnd&&d>rangeEnd)return false;
+    if(startDate&&d<startDate)return false;
+    if(endDate&&d>endDate)return false;
     return true;
   }
-  function combinedRows(){
+  function combinedRows(p){
     var rows=[];
     Object.keys(pcPeriods).forEach(function(pid){
-      var p=pcPeriods[pid]||{};
-      Object.keys(p.rows||{}).forEach(function(rid){
-        var r=p.rows[rid]||{};
-        if(!_inRange(r.date))return;
+      var pp=pcPeriods[pid]||{};
+      Object.keys(pp.rows||{}).forEach(function(rid){
+        var r=pp.rows[rid]||{};
+        if(!_inRange(r.date,p.startDate,p.endDate))return;
         rows.push({id:'pc_'+pid+'_'+rid,date:r.date||'',cat:r.cat||'',
           note:r.note||'',
           income:r.income,expense:r.expense,ts:r.ts||0,source:'pettycash'});
       });
     });
+    var manual=p.entries||{};
     Object.keys(manual).forEach(function(id){
       var r=manual[id]||{};
-      if(!_inRange(r.date))return;
       rows.push({id:id,date:r.date||'',cat:r.cat||'',note:r.note||'',
         income:r.income,expense:r.expense,ts:r.ts||0,source:'manual'});
     });
@@ -18224,12 +18259,17 @@ var LEDGER=(function(){
     return{totalIncome:totalIncome,totalExpense:totalExpense,
       manualIncome:manualIncome,manualExpense:manualExpense,byCat:byCat};
   }
-
-  function render(){
-    var wrap=document.getElementById('ledgerWrap');
-    if(!wrap)return;
-    var rows=combinedRows();
+  function periodClosing(p){
+    var rows=combinedRows(p);
     var t=totals(rows);
+    var open=parseFloat(p.openBalance)||0;
+    return open+t.manualIncome-t.manualExpense;
+  }
+
+  function renderHub(){
+    var wrap=document.getElementById('ledgerHubWrap');
+    if(!wrap)return;
+    var list=sortedPeriods();
     var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
     h+='<div class="df-sec" style="display:flex;gap:8px;flex-wrap:wrap;">';
@@ -18237,18 +18277,100 @@ var LEDGER=(function(){
       var on=CURRENT_COMPANY===cid||(!CURRENT_COMPANY&&cid==='xbd');
       h+='<button class="cln-sig-btn" style="'+(on?'':'opacity:.45;')+'" onclick="LEDGER.switchCompany(\''+cid+'\')">'+COMPANIES[cid].short+(on?'（目前）':'')+'</button>';
     });
-    h+='<button class="cln-sig-btn" style="margin-left:auto;background:#1565c0;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
     h+='</div>';
-    h+='<div class="df-sec" style="display:flex;gap:10px;flex-wrap:wrap;">';
-    h+='<div style="flex:1;min-width:140px;"><div class="df-lbl">總帳期間（開始）</div><input type="date" class="df-inp" value="'+(rangeStart||'')+'" onchange="LEDGER.setRange(\'rangeStart\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:140px;"><div class="df-lbl">總帳期間（結束）</div><input type="date" class="df-inp" value="'+(rangeEnd||'')+'" onchange="LEDGER.setRange(\'rangeEnd\',this.value)"></div>';
+    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="LEDGER.openNew()">&#xFF0B; 新增期別</button>';
+    if(!list.length){
+      h+='<div style="color:#aaa;text-align:center;padding:30px 0;">'+companyLabel+' 尚未建立任何期別，請按上方「新增期別」</div>';
+    } else {
+      list.forEach(function(p){
+        h+='<div onclick="LEDGER.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #5a4aa8;">';
+        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#3a2a78;">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
+        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">目前餘額</div><div style="font-weight:800;font-size:1.05rem;color:#1565c0;">'+periodClosing(p).toLocaleString()+'</div></div>';
+        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+        h+='</div>';
+      });
+    }
+    wrap.innerHTML=h;
+  }
+
+  function openNew(){
+    var list=sortedPeriods();
+    var latest=list[0];
+    var labelEl=document.getElementById('ledgerNewLabel'),startEl=document.getElementById('ledgerNewStart'),
+      endEl=document.getElementById('ledgerNewEnd'),openEl=document.getElementById('ledgerNewOpen');
+    labelEl.value='';startEl.value='';endEl.value='';openEl.value='';
+    if(latest){
+      openEl.value=periodClosing(latest);
+      if(latest.endDate){
+        var nd=new Date(latest.endDate+'T00:00:00');
+        nd.setDate(nd.getDate()+1);
+        startEl.value=nd.getFullYear()+'-'+_pad2(nd.getMonth()+1)+'-'+_pad2(nd.getDate());
+      }
+    }
+    document.getElementById('ledgerNewOv').classList.add('on');
+  }
+  function _pad2(n){return (n<10?'0':'')+n;}
+  function closeNew(){
+    var ov=document.getElementById('ledgerNewOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function saveNew(){
+    var label=(document.getElementById('ledgerNewLabel').value||'').trim();
+    var startDate=document.getElementById('ledgerNewStart').value||'';
+    var endDate=document.getElementById('ledgerNewEnd').value||'';
+    var openBalance=document.getElementById('ledgerNewOpen').value||'0';
+    if(!label){alert('請輸入期別名稱');return;}
+    var id='lg'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var p={label:label,startDate:startDate,endDate:endDate,openBalance:openBalance,entries:{},ts:Date.now()};
+    periods[id]=p;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+id).set(p);
+    closeNew();
+    renderHub();
+    openDetail(id);
+  }
+  function deletePeriod(id){
+    var p=periods[id];
+    if(!p)return;
+    if(!confirm('確定要刪除「'+(p.label||'這個期別')+'」嗎？裡面所有自己新增的調整項目都會一起刪除，無法復原。'))return;
+    delete periods[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+id).remove();
+    backToHub();
+  }
+
+  function openDetail(id){
+    curPid=id;
+    GO('ledger-detail');
+    render();
+  }
+  function backToHub(){
+    curPid=null;
+    GO('ledger');
+  }
+
+  function render(){
+    var wrap=document.getElementById('ledgerWrap');
+    if(!wrap||!curPid)return;
+    var p=periods[curPid];
+    if(!p){backToHub();return;}
+    document.getElementById('ledgerDetailTitle').textContent=p.label||'總帳明細';
+    var rows=combinedRows(p);
+    var t=totals(rows);
+    var open=parseFloat(p.openBalance)||0;
+    var h='';
+    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
+    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setMeta(\'label\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="LEDGER.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="LEDGER.setMeta(\'endDate\',this.value)"></div>';
+    h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">起始餘額</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="LEDGER.setMeta(\'openBalance\',this.value)"></div>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#1565c0;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="LEDGER.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
     h+='</div>';
-    h+='<div class="df-sec"><div class="df-lbl">起始餘額（你自己身上這份零用金的起點，只有畫面上看得到，列印不會印）</div>';
-    h+='<input type="number" class="df-inp" value="'+(openBalance||0)+'" onchange="LEDGER.setOpenBalance(this.value)"></div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">'+companyLabel+' 總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="cln-sig-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
+    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="cln-sig-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
     h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>餘額</th><th></th></tr></thead><tbody>';
-    var open=parseFloat(openBalance)||0;
     h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">起始餘額</td><td style="font-weight:700;">'+open.toLocaleString()+'</td><td></td></tr>';
     if(!rows.length){
       h+='<tr><td colspan="7" style="color:#aaa;">目前沒有任何明細</td></tr>';
@@ -18284,62 +18406,70 @@ var LEDGER=(function(){
     wrap.innerHTML=h;
   }
 
-  function setOpenBalance(v){
-    openBalance=v;
+  function setMeta(field,v){
+    var p=periods[curPid];
+    if(!p)return;
+    p[field]=v;
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/openBalance').set(v);
-    render();
-  }
-  function setRange(field,v){
-    if(field==='rangeStart')rangeStart=v;else rangeEnd=v;
-    var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/'+field).set(v);
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/'+field).set(v);
+    if(field==='label')renderHub();
     render();
   }
   function addRow(){
+    var p=periods[curPid];
+    if(!p)return;
+    if(!p.entries)p.entries={};
     var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     var rec={date:'',cat:'',note:'',income:'',expense:'',ts:Date.now()};
-    manual[id]=rec;
+    p.entries[id]=rec;
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/entries/'+id).set(rec);
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id).set(rec);
     render();
   }
   function delRow(id){
     if(!confirm('確定要刪除這筆調整項目嗎？'))return;
-    delete manual[id];
+    var p=periods[curPid];
+    if(!p||!p.entries)return;
+    delete p.entries[id];
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/entries/'+id).remove();
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id).remove();
     render();
   }
   function setRowField(id,field,v){
-    if(!manual[id])return;
-    manual[id][field]=v;
+    var p=periods[curPid];
+    if(!p||!p.entries||!p.entries[id])return;
+    p.entries[id][field]=v;
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/entries/'+id+'/'+field).set(v);
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id+'/'+field).set(v);
     render();
   }
   function switchCompany(cid){
     if(typeof applyCompany==='function')applyCompany(cid);
     history.replaceState(null,'',window.location.pathname+window.location.search+'#ledger-'+cid);
+    curPid=null;
     attach();
-    render();
+    renderHub();
   }
   function doPrint(){
-    var rows=combinedRows();
+    var p=periods[curPid];
+    if(!p)return;
+    var rows=combinedRows(p);
     var t=totals(rows);
-    var html=_ledgerPrintHTML(rows,t,rangeStart,rangeEnd);
+    var html=_ledgerPrintHTML(rows,t,p);
     var w=window.open('','_blank');
     if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
     w.document.write(html);
     w.document.close();
   }
-  function init(){attach();render();}
+  function init(){attach();renderHub();}
   function back(){
     history.replaceState(null,'',window.location.pathname+window.location.search);
     GO('home');
   }
 
-  return{init:init,back:back,addRow:addRow,delRow:delRow,setRowField:setRowField,setOpenBalance:setOpenBalance,setRange:setRange,switchCompany:switchCompany,print:doPrint};
+  return{init:init,back:back,backToHub:backToHub,openNew:openNew,closeNew:closeNew,saveNew:saveNew,
+    deletePeriod:deletePeriod,openDetail:openDetail,setMeta:setMeta,addRow:addRow,delRow:delRow,
+    setRowField:setRowField,switchCompany:switchCompany,print:doPrint};
 })();
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
@@ -18367,7 +18497,7 @@ function _ledgerSummaryTablesHtml(t,open){
   h+='</div>';
   return h;
 }
-function _ledgerPrintHTML(rows,t,rangeStart,rangeEnd){
+function _ledgerPrintHTML(rows,t,p){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
   var rowsHtml='';
   if(!rows.length){
@@ -18379,7 +18509,7 @@ function _ledgerPrintHTML(rows,t,rangeStart,rangeEnd){
         '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td></tr>';
     });
   }
-  var periodLabel=(rangeStart||rangeEnd)?((rangeStart||'?')+' ～ '+(rangeEnd||'?')):'';
+  var periodLabel=(p&&(p.label||p.startDate||p.endDate))?((p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?')):'';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>總帳</title>'+
     '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
     '@page{size:A4 portrait;margin:10mm;}'+
@@ -20500,10 +20630,12 @@ var CHILDLEAVE=(function(){
    整頁僅限解鎖後台（組長自己）才能看跟編輯，一般老師不會用到這個功能。 */
 var CHILDFEE=(function(){
   var db={records:{},withdrawals:{}};
-  /* 月費單單獨用一組密碼鎖（只有園長跟主任知道），跟其他頁面共用的組長後台密碼分開，
-     解鎖狀態只存在這次瀏覽的 session，重新整理頁面要重新輸入 */
+  /* 月費單原本這裡還有獨立一層密碼鎖，跟外層「會計」身分關卡重複了——
+     現在已經改成依登入帳號身分（owner/admin）決定看不看得到整個會計，
+     能走到這個模組代表身分已經過關，這裡不用再問一次密碼。_unlocked
+     固定設成 true，底下的檢查都留著當保險，但不會再真的擋人。 */
   var PW='080611';
-  var _unlocked=false;
+  var _unlocked=true;
   function checkPw(){
     var val=document.getElementById('cfPinI').value;
     if(val===PW){
