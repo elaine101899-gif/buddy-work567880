@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020124359';
+  var BUILD='20261020163843';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4544,7 +4544,13 @@ function GO(id) {
    手動加上 #ledger 才打得開。沒有另外設密碼，單純靠「沒人知道這個網址」
    當保護，跟使用者確認過這樣就夠了。 */
 function _checkHiddenHash(){
-  if (window.location.hash === '#ledger') GO('ledger');
+  var hash=window.location.hash;
+  if (hash==='#ledger-xbd'||hash==='#ledger-bambino') {
+    if (typeof applyCompany==='function') applyCompany(hash==='#ledger-bambino'?'bambino':'xbd');
+    GO('ledger');
+  } else if (hash==='#ledger') {
+    GO('ledger');
+  }
 }
 window.addEventListener('hashchange', _checkHiddenHash);
 /* 用 load 事件而不是直接呼叫：LEDGER 模組的程式碼在這個檔案更後面才會執行，
@@ -18064,33 +18070,35 @@ function _pettyCashPrintHTML(p,t){
 
 /* ── 總帳（內部用，不公開在任何選單）：自動把零用金所有期別的明細整本串成
    一條連續的總帳（唯讀，來源是零用金，不能在這裡改，要改回零用金那邊改），
-   自己可以在上面再加/刪自己的調整項目。最下面兩張科目分類統計表，
-   分類跟排版都照著原本紙本/Numbers表格一模一樣。 */
+   自己可以在上面再加/刪自己的調整項目。這裡不算、不顯示任何餘額——
+   使用者自己另外用零用金那邊的餘額對帳，這裡只負責「明細、收入、支出」。
+   兩間公司（小布迪／邦比諾）各自獨立一份，用網址 #ledger-xbd／#ledger-bambino
+   切換，由 _checkHiddenHash 在切換時呼叫 applyCompany() 決定要看哪一間。 */
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
 var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租'];
 var LEDGER=(function(){
-  var pcPeriods={},manual={},openBalance='0';
-  var _pcAttached=false,_ledAttached=false;
+  var pcPeriods={},manual={};
+  var _attachedCompany=null,_pcRef=null,_ledRef=null;
 
   function attach(){
+    if(_attachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
-    if(!_pcAttached){
-      _pcAttached=true;
-      fb.ref('xiaobuddyClean/pettycash/periods').on('value',function(snap){
-        pcPeriods=snap.val()||{};
-        render();
-      });
-    }
-    if(!_ledAttached){
-      _ledAttached=true;
-      fb.ref('xiaobuddyClean/ledger').on('value',function(snap){
-        var v=snap.val()||{};
-        manual=v.entries||{};
-        openBalance=(v.openBalance!=null)?v.openBalance:'0';
-        render();
-      });
-    }
+    if(_pcRef){try{_pcRef.off('value');}catch(e){}}
+    if(_ledRef){try{_ledRef.off('value');}catch(e){}}
+    _attachedCompany=CURRENT_COMPANY;
+    pcPeriods={};manual={};
+    _pcRef=fb.ref('xiaobuddyClean/pettycash/periods');
+    _pcRef.on('value',function(snap){
+      pcPeriods=snap.val()||{};
+      render();
+    });
+    _ledRef=fb.ref('xiaobuddyClean/ledger');
+    _ledRef.on('value',function(snap){
+      var v=snap.val()||{};
+      manual=v.entries||{};
+      render();
+    });
   }
   function combinedRows(){
     var rows=[];
@@ -18112,15 +18120,13 @@ var LEDGER=(function(){
     return rows;
   }
   function totals(rows){
-    var open=parseFloat(openBalance)||0;
     var totalIncome=0,totalExpense=0,byCat={};
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
       totalIncome+=inc;totalExpense+=exp;
       if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=exp;}
     });
-    return{open:open,totalIncome:totalIncome,totalExpense:totalExpense,
-      closing:open+totalIncome-totalExpense,byCat:byCat};
+    return{totalIncome:totalIncome,totalExpense:totalExpense,byCat:byCat};
   }
 
   function render(){
@@ -18128,25 +18134,27 @@ var LEDGER=(function(){
     if(!wrap)return;
     var rows=combinedRows();
     var t=totals(rows);
+    var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
-    h+='<div class="df-sec"><div class="df-lbl">總帳起始餘額（跟零用金各期別自己的上期結餘無關，這是你自己總帳的起點）</div>';
-    h+='<input type="number" class="df-inp" value="'+(openBalance||0)+'" onchange="LEDGER.setOpenBalance(this.value)"></div>';
+    h+='<div class="df-sec" style="display:flex;gap:8px;flex-wrap:wrap;">';
+    ['xbd','bambino'].forEach(function(cid){
+      var on=CURRENT_COMPANY===cid||(!CURRENT_COMPANY&&cid==='xbd');
+      h+='<button class="cln-sig-btn" style="'+(on?'':'opacity:.45;')+'" onclick="LEDGER.switchCompany(\''+cid+'\')">'+COMPANIES[cid].short+(on?'（目前）':'')+'</button>';
+    });
+    h+='<button class="cln-sig-btn" style="margin-left:auto;background:#1565c0;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='</div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="cln-sig-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>金額</th><th></th></tr></thead><tbody>';
-    h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">起始餘額</td><td style="font-weight:700;">'+t.open.toLocaleString()+'</td><td></td></tr>';
+    h+='<div class="df-lbl">'+companyLabel+' 總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="cln-sig-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
+    h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th></th></tr></thead><tbody>';
     if(!rows.length){
-      h+='<tr><td colspan="7" style="color:#aaa;">目前沒有任何明細</td></tr>';
+      h+='<tr><td colspan="6" style="color:#aaa;">目前沒有任何明細</td></tr>';
     } else {
-      var running=t.open;
       rows.forEach(function(r){
         var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
-        running+=inc-exp;
         if(r.source==='pettycash'){
           h+='<tr style="color:#999;">';
           h+='<td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
-          h+='<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td>';
-          h+='<td>'+running.toLocaleString()+'</td><td></td></tr>';
+          h+='<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td><td></td></tr>';
         } else {
           h+='<tr><td><input type="date" class="cln-num" style="width:118px;" value="'+(r.date||'')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
           h+='<td><select class="cln-num" style="width:76px;" onchange="LEDGER.setRowField(\''+r.id+'\',\'cat\',this.value)">';
@@ -18156,34 +18164,15 @@ var LEDGER=(function(){
           h+='<td><input type="text" class="cln-num" style="width:120px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'note\',this.value)"></td>';
           h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'income\',this.value)"></td>';
           h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'expense\',this.value)"></td>';
-          h+='<td>'+running.toLocaleString()+'</td>';
           h+='<td><button onclick="LEDGER.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
         }
       });
     }
     h+='</tbody></table></div>';
-    h+='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
-    h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
-    LEDGER_CATS_A.forEach(function(c){h+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
-    var sumA=LEDGER_CATS_A.reduce(function(s,c){return s+(t.byCat[c]||0);},0);
-    h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
-    h+='</tbody></table>';
-    h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
-    h+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
-    h+='<tr><td>上期結餘</td><td>'+t.open.toLocaleString()+'</td></tr>';
-    h+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
-    LEDGER_CATS_B.forEach(function(c){h+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
-    h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+t.closing.toLocaleString()+'</td></tr>';
-    h+='</tbody></table>';
-    h+='</div>';
+    h+=_ledgerSummaryTablesHtml(t);
     wrap.innerHTML=h;
   }
 
-  function setOpenBalance(v){
-    openBalance=v;
-    var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/ledger/openBalance').set(v);
-  }
   function addRow(){
     var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
     var rec={date:'',cat:'',note:'',income:'',expense:'',ts:Date.now()};
@@ -18206,14 +18195,79 @@ var LEDGER=(function(){
     if(fb)fb.ref('xiaobuddyClean/ledger/entries/'+id+'/'+field).set(v);
     render();
   }
+  function switchCompany(cid){
+    if(typeof applyCompany==='function')applyCompany(cid);
+    history.replaceState(null,'',window.location.pathname+window.location.search+'#ledger-'+cid);
+    attach();
+    render();
+  }
+  function doPrint(){
+    var rows=combinedRows();
+    var t=totals(rows);
+    var html=_ledgerPrintHTML(rows,t);
+    var w=window.open('','_blank');
+    if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
+    w.document.write(html);
+    w.document.close();
+  }
   function init(){attach();render();}
   function back(){
     history.replaceState(null,'',window.location.pathname+window.location.search);
     GO('home');
   }
 
-  return{init:init,back:back,setOpenBalance:setOpenBalance,addRow:addRow,delRow:delRow,setRowField:setRowField};
+  return{init:init,back:back,addRow:addRow,delRow:delRow,setRowField:setRowField,switchCompany:switchCompany,print:doPrint};
 })();
+function _ledgerSummaryTablesHtml(t){
+  var h='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
+  h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+  LEDGER_CATS_A.forEach(function(c){h+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
+  var sumA=LEDGER_CATS_A.reduce(function(s,c){return s+(t.byCat[c]||0);},0);
+  h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
+  h+='</tbody></table>';
+  h+='<table class="cln-table" style="flex:1;min-width:220px;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+  h+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
+  h+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
+  var sumB=0;
+  LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td>'+v.toLocaleString()+'</td></tr>';});
+  h+='<tr style="font-weight:800;"><td>總結算</td><td style="color:#c0392b;">'+sumB.toLocaleString()+'</td></tr>';
+  h+='</tbody></table>';
+  h+='</div>';
+  return h;
+}
+function _ledgerPrintHTML(rows,t){
+  var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
+  var rowsHtml='';
+  if(!rows.length){
+    rowsHtml='<tr><td colspan="5" style="color:#999;">（目前沒有任何明細）</td></tr>';
+  } else {
+    rows.forEach(function(r){
+      var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
+      rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
+        '<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td></tr>';
+    });
+  }
+  return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>總帳</title>'+
+    '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
+    '@page{size:A4 portrait;margin:10mm;}'+
+    'h3{margin:12px 0 5px;font-size:12px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
+    'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;margin-bottom:5px;}'+
+    'th,td{border:1px solid #555;padding:4px 5px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
+    'th{background:#eef2fb;}.sumtbl{width:55%;}'+
+    '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
+    '.hdr-row img{height:42px;width:auto;}.hdr-txt{text-align:center;}'+
+    '.hdr-txt .t1{font-size:14px;font-weight:900;}.hdr-txt .t2{font-size:12px;font-weight:700;margin-top:2px;}'+
+    '@media print{button{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}'+
+    '</style></head><body><div class="wrap-ss">'+
+    '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+companyLabel+'</div><div class="t2">總帳</div></div></div>'+
+    '<table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th></tr></thead><tbody>'+rowsHtml+'</tbody></table>'+
+    _ledgerSummaryTablesHtml(t)+
+    '</div><script>window.onload=function(){'+
+    'try{var wrap=document.querySelector(".wrap-ss");var capPx=(297-20)*96/25.4;var natural=wrap.scrollHeight;'+
+    'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
+    'window.print();'+
+    '}<\/script></body></html>';
+}
 
 /* ── 體溫管理 ── */
 var BODYTEMP_LEAVE_TYPES=['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','公假','公傷假','福利假','產檢假','其他'];
