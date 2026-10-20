@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020083150';
+  var BUILD='20261020084437';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2358,6 +2358,16 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="pin-cl" onclick="ADM.hp()">取消</button>
   </div>
 </div>
+<div class="pin-ov" id="pwGateOv" style="display:none">
+  <div class="pin-box">
+    <h3>&#x1F512; <span id="pwGateTitle">需要密碼</span></h3>
+    <p>請輸入密碼</p>
+    <input type="password" class="pin-inp" id="pwGateI" maxlength="10" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" onkeydown="if(event.key==='Enter')PWGATE.confirm();">
+    <div class="pin-err" id="pwGateE" style="display:none;">密碼錯誤</div>
+    <button class="pin-ok" onclick="PWGATE.confirm()">確認進入</button>
+    <button class="pin-cl" onclick="PWGATE.cancel()">取消</button>
+  </div>
+</div>
 <div class="adm-bar" id="aBar">
   <span>&#x270F; 組長編輯模式 <span class="atag" id="aCnt">已修改 0 處</span></span>
   <span class="atag" style="display:inline-flex;align-items:center;gap:4px;">
@@ -3776,11 +3786,6 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">幼兒請假記錄</div><div style="font-size:.78rem;color:#888;margin-top:2px;">記錄請假天數與假別，供退費試算</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
-      <div onclick="GO('childfee')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #3d8a5a;">
-        <span style="font-size:1.8rem;">&#x1F4D2;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#2a6a3f;">月費單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每位幼兒繳費紀錄，含收入與退托退費總表</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-      </div>
       <div onclick="GO('teacherleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
         <span style="font-size:1.8rem;">&#x1F4CB;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">每日回報</div><div style="font-size:.78rem;color:#888;margin-top:2px;">老師請假追蹤、育嬰留停名單，一鍵產生LINE回報文字</div></div>
@@ -3789,6 +3794,28 @@ function _rosterKidsAsOf(cls,dateStr){
       <div onclick="GO('statsheet')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #8a7ae0;">
         <span style="font-size:1.8rem;">&#x1F4CA;</span>
         <div><div style="font-weight:800;font-size:1rem;color:#5a4aa8;">統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">物品統計表、衛生統計表，每月總數量與拿取紀錄</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+      <div onclick="GO('accounting')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #cf6b6b;">
+        <span style="font-size:1.8rem;">&#x1F512;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">會計</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月費單、零用金，需輸入密碼</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ═══ 會計 ═══ -->
+<div class="pg" id="pg-accounting">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
+    <span class="btitle">會計</span>
+  </div>
+  <div style="padding:20px 16px;">
+    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div onclick="GO('childfee')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #3d8a5a;">
+        <span style="font-size:1.8rem;">&#x1F4D2;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#2a6a3f;">月費單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每位幼兒繳費紀錄，含收入與退托退費總表</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
       <div onclick="GO('pettycash')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9822c;">
@@ -3802,7 +3829,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 零用金 ═══ -->
 <div class="pg" id="pg-pettycash">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
+    <button class="bbtn" onclick="GO('accounting')">&#x2190; 會計</button>
     <span class="btitle">零用金</span>
   </div>
   <div style="padding:14px 16px 40px;" id="pcHubWrap">
@@ -3918,7 +3945,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 月費單 ═══ -->
 <div class="pg" id="pg-childfee">
   <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
+    <button class="bbtn" onclick="GO('accounting')">&#x2190; 會計</button>
     <span class="btitle">月費單</span>
     <button class="bbtn" style="margin-left:auto;" onclick="GO('childfee-income')">&#x1F4CA; 收入及退費總表</button>
   </div>
@@ -4347,10 +4374,54 @@ SW(1);
 
 
 
+/* ── 會計密碼關卡：會計本身一道密碼（101899），裡面的月費單／零用金
+   再另外一道密碼（080611）。每道密碼同一次瀏覽只要輸對一次，之後在這個分頁
+   內再進都不用重打，但重新整理網頁或重新打開就要再輸入一次——不是改用
+   Firebase帳號登入那種跨裝置永久記住的等級，單純擋一下不小心點進去。 */
+var PWGATE=(function(){
+  var _unlocked={};
+  var _pending=null;
+  function need(key){return !_unlocked[key];}
+  function prompt(key,title,pin,onOk){
+    _pending={key:key,pin:pin,onOk:onOk};
+    document.getElementById('pwGateTitle').textContent=title;
+    document.getElementById('pwGateI').value='';
+    document.getElementById('pwGateE').style.display='none';
+    document.getElementById('pwGateOv').style.display='flex';
+    setTimeout(function(){document.getElementById('pwGateI').focus();},100);
+  }
+  function confirm(){
+    if(!_pending)return;
+    var v=document.getElementById('pwGateI').value;
+    if(v===_pending.pin){
+      _unlocked[_pending.key]=true;
+      document.getElementById('pwGateOv').style.display='none';
+      var ok=_pending.onOk;_pending=null;
+      if(ok)ok();
+    } else {
+      document.getElementById('pwGateE').style.display='block';
+      document.getElementById('pwGateI').value='';
+    }
+  }
+  function cancel(){
+    _pending=null;
+    document.getElementById('pwGateOv').style.display='none';
+  }
+  return{need:need,prompt:prompt,confirm:confirm,cancel:cancel};
+})();
+
 /* ── Navigation ── */
 function GO(id) {
   if (typeof CURRENT_COMPANY !== 'undefined' && CURRENT_COMPANY === 'bambino' && typeof _XBD_ONLY_PAGES !== 'undefined' && _XBD_ONLY_PAGES.indexOf(id) >= 0) {
     alert('這個功能還沒有支援邦比諾，目前僅開放教學課程和適齡適性記錄。如需使用，請聯繫系統管理員。');
+    return;
+  }
+  if (id === 'accounting' && PWGATE.need('accounting')) {
+    PWGATE.prompt('accounting','會計','101899', function(){ GO('accounting'); });
+    return;
+  }
+  if ((id === 'childfee' || id === 'childfee-income' || id === 'pettycash' || id === 'pettycash-detail') && PWGATE.need('accounting-inner')) {
+    PWGATE.prompt('accounting-inner',(id==='pettycash'||id==='pettycash-detail')?'零用金':'月費單','080611', function(){ GO(id); });
     return;
   }
   var pgs = document.getElementsByClassName('pg');
