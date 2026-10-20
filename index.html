@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020232610';
+  var BUILD='20261020234024';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9534,6 +9534,11 @@ var LEAVE=(function(){
 
     h+='</div>';
     wrap.innerHTML=h;
+    /* 保險絲：不管有沒有特別接 onchange，整個表單任何欄位只要觸發過
+       change（包含文字框打完字離開焦點），就順手存一次，不用靠使用者
+       記得按儲存或剛好改過日期。addEventListener 同一個函式參照重複
+       加也不會變成加兩次，不用自己手動先 remove 再 add。 */
+    wrap.addEventListener('change',saveForm);
     /* 這張單原本就存好的代理人姓名，打開來看的時候要自動補一次資格，
        不然只有「使用者自己重新打一次名字」才會觸發 onchange，之前已經存檔
        的單子（代理人欄位是程式填進去的，不是使用者打的）永遠不會自動帶出來 */
@@ -10230,12 +10235,17 @@ var LEAVE_BOSS=(function(){
     if(dSig)initData.sigDir=dSig;
     saveFid(curName,curFid,initData);
     curStep='form';_wrap().innerHTML=renderForm(initData);
+    /* 保險絲：不管有沒有特別接 onchange，整個表單任何欄位只要觸發過
+       change（包含文字框打完字離開焦點），就順手存一次，不用靠使用者
+       記得按儲存或剛好改過日期。 */
+    _wrap().addEventListener('change',saveForm);
   }
   function editForm(fid){
     curFid=fid;
     var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(dSig)d.sigDir=dSig;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    _wrap().addEventListener('change',saveForm);
     /* 之前存檔時代理人欄位是程式帶進去的，不是使用者重新打一次，onchange 不會觸發，
        要在打開舊單的時候自己補一次資格自動帶入 */
     var _hd=d.header||{};
@@ -10573,11 +10583,13 @@ var LEAVE_FLEX=(function(){
     var d={header:{name:curName,date:yy},createdAt:Date.now()};
     var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
     saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
+    _wrap().addEventListener('change',saveForm);
   }
   function editForm(fid){
     curFid=fid;var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    _wrap().addEventListener('change',saveForm);
     var _hd=d.header||{};
     if(_hd.sub&&!_hd.certEdu&&!_hd.certBaby){
       try{_applyTeacherCertAutofill(_hd.sub,'fCertEdu','fCertBaby','fCertNo');}catch(e){}
@@ -10817,11 +10829,13 @@ var LEAVE_COOK=(function(){
     var d={header:{name:curName,date:yy},mealNote:DEFAULT_MEAL,createdAt:Date.now()};
     var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
     saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
+    _wrap().addEventListener('change',saveForm);
   }
   function editForm(fid){
     curFid=fid;var d=getForms(curName)[fid]||{};
     if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
+    _wrap().addEventListener('change',saveForm);
     var _hd=d.header||{};
     if(_hd.sub&&!_hd.certEdu&&!_hd.certBaby){
       try{_applyTeacherCertAutofill(_hd.sub,'cCertEdu','cCertBaby','cCertNo');}catch(e){}
@@ -22548,7 +22562,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020232610--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020234024--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
