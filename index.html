@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020092523';
+  var BUILD='20261020124359';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -15026,9 +15026,14 @@ var TRAINMEETING=(function(){
     p+='table.dt{width:100%;border-collapse:collapse;font-size:10pt;}';
     p+='table.dt td{border:1px solid #ddd;padding:4px 7px;vertical-align:top;}';
     p+='.th{background:'+AL+';color:'+AC+';font-weight:700;white-space:nowrap;}';
-    p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;page-break-inside:avoid;break-inside:avoid;}';
+    /* 原本整個 cls-item（單一班級的標題+感想全文）都設 avoid，單一班級感想
+       比較長、頁面剩餘空間不夠完整放下時，會連同標題整塊被推到下一頁，
+       留下上一頁一大塊空白。改成只留標題跟感想的「第一行」不分頁
+       （page-break-after:avoid 在標題上），內文其餘部分可以正常跨頁接著印，
+       把每一頁盡量印滿，不要有大片空白。 */
+    p+='.cls-item{border-bottom:1px dashed #ddd;padding:6px 0;}';
     p+='.cls-item:last-child{border-bottom:none;}';
-    p+='.cls-name{font-weight:800;color:'+AC+';margin-bottom:2px;}';
+    p+='.cls-name{font-weight:800;color:'+AC+';margin-bottom:2px;page-break-after:avoid;break-after:avoid;}';
     p+='.photo-row{display:flex;gap:12px;}';
     p+='.photo-box{flex:1;text-align:center;}';
     p+='.photo-box .pic{position:relative;border:1px solid #ddd;border-radius:8px;overflow:hidden;height:200px;display:flex;align-items:center;justify-content:center;background:#fafafa;}';
@@ -15045,7 +15050,7 @@ var TRAINMEETING=(function(){
     p+='<tr><td class="th">地點</td><td>'+esc2(d.trPlace||'')+'</td></tr>';
     p+='<tr><td class="th">主席 / 記錄</td><td>'+esc2(d.trChair||'')+' / '+esc2(d.trRecorder||'')+'</td></tr>';
     p+='</table></div></div>';
-    p+='<div class="card"><div class="card-hd">📚 訓練事項</div><div class="card-body">'+nl2br(d.trTopic||'')+'</div></div>';
+    p+='<div class="card card-flow"><div class="card-hd">📚 訓練事項</div><div class="card-body">'+nl2br(d.trTopic||'')+'</div></div>';
     var classes=d.trClasses||[];
     if(classes.length){
       p+='<div class="card card-flow"><div class="card-hd">🏫 各班級感想</div><div class="card-body">';
