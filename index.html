@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021131639';
+  var BUILD='20261021133320';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3972,7 +3972,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-ledger">
   <div class="bbar">
     <button class="bbtn" onclick="LEDGER.back()">&#x2190; 返回</button>
-    <span class="btitle">總帳</span>
+    <span class="btitle" id="ledgerTopTitle">總帳</span>
   </div>
   <div style="padding:20px 16px;">
     <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
@@ -3993,7 +3993,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-ledger-cash">
   <div class="bbar">
     <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
-    <span class="btitle">零用金</span>
+    <span class="btitle" id="ledgerCashTitle">零用金</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerHubWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4011,7 +4011,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-ledger-checkout">
   <div class="bbar">
     <button class="bbtn" onclick="CHECKOUT.backToHub();LEDGER.backToTop();">&#x2190; 總帳</button>
-    <span class="btitle">結帳</span>
+    <span class="btitle" id="ledgerCheckoutTitle">結帳</span>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerCheckoutWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -18327,6 +18327,18 @@ function _pettyCashPrintHTML(p,t){
    兩間公司（小布迪／邦比諾）各自獨立一份期別清單，用網址
    #ledger-xbd／#ledger-bambino 切換，由 _checkHiddenHash 在切換時
    呼叫 applyCompany() 決定要看哪一間。 */
+/* 總帳/零用金/結帳這幾個頁面的標題後面加上目前公司名稱——使用者反映
+   切換公司時不容易一眼確認「現在看的到底是哪一間」，標題上明講最直接。
+   公司切換（LEDGER.switchCompany／CHECKOUT.open／attach 真正接上監聽器
+   那一刻）都要呼叫這個函式重新標一次。 */
+function _updateLedgerTitles(){
+  var label=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
+  var map={ledgerTopTitle:'總帳',ledgerCashTitle:'零用金',ledgerCheckoutTitle:'結帳'};
+  Object.keys(map).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.textContent=map[id]+'（'+label+'）';
+  });
+}
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
 var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租'];
 var LEDGER=(function(){
@@ -18350,6 +18362,7 @@ var LEDGER=(function(){
     try{var raw2=localStorage.getItem(_ledCacheKey());if(raw2)periods=JSON.parse(raw2)||{};}catch(e){}
   }
   function attach(){
+    _updateLedgerTitles();
     if(_attachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
@@ -18510,7 +18523,7 @@ var LEDGER=(function(){
     if(!wrap||!curPid)return;
     var p=periods[curPid];
     if(!p){backToCashHub();return;}
-    document.getElementById('ledgerDetailTitle').textContent=p.label||'總帳明細';
+    document.getElementById('ledgerDetailTitle').textContent=(p.label||'總帳明細')+'（'+(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short+'）';
     var rows=combinedRows(p);
     var t=totals(rows);
     var open=parseFloat(p.openBalance)||0;
@@ -18790,6 +18803,7 @@ var CHECKOUT=(function(){
   function _pad2(n){return (n<10?'0':'')+n;}
   function open(){
     if(typeof CHILDFEE!=='undefined'&&CHILDFEE.ensureAttached)CHILDFEE.ensureAttached();
+    if(typeof _updateLedgerTitles==='function')_updateLedgerTitles();
     attach();
     render();
   }
@@ -18908,6 +18922,7 @@ var CHECKOUT=(function(){
     var c=calc(p);
     var cfPeriods=(typeof CHILDFEE!=='undefined'&&CHILDFEE.listPeriodsForCheckout)?CHILDFEE.listPeriodsForCheckout():[];
     var ledgerPeriods=(typeof LEDGER!=='undefined'&&LEDGER.listPeriodsForCheckout)?LEDGER.listPeriodsForCheckout():[];
+    var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
     h+='<button class="cln-sig-btn" style="margin-bottom:12px;" onclick="CHECKOUT.backToHub()">&#x2039; 結帳期別列表</button>';
     /* 期別名稱單獨一整排、開始/結束日期並排一排、按鈕再自己一排——
@@ -18924,10 +18939,10 @@ var CHECKOUT=(function(){
     h+='</div>';
     h+='</div>';
     h+='<div class="df-sec">';
-    h+='<div style="margin-bottom:12px;"><div class="df-lbl">對應月費單期別（收入自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'childfeePk\',this.value)"><option value="">– 請選擇 –</option>';
+    h+='<div style="margin-bottom:12px;"><div class="df-lbl">對應月費單期別（'+companyLabel+'，收入自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'childfeePk\',this.value)"><option value="">– 請選擇 –</option>';
     cfPeriods.forEach(function(o){h+='<option value="'+o.pk+'"'+(p.childfeePk===o.pk?' selected':'')+'>'+o.label+'</option>';});
     h+='</select></div>';
-    h+='<div><div class="df-lbl">對應零用金期別（C帳／零用金支出自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'ledgerPid\',this.value)"><option value="">– 請選擇 –</option>';
+    h+='<div><div class="df-lbl">對應零用金期別（'+companyLabel+'，C帳／零用金支出自動帶入）</div><select class="df-inp" onchange="CHECKOUT.setMeta(\'ledgerPid\',this.value)"><option value="">– 請選擇 –</option>';
     ledgerPeriods.forEach(function(o){h+='<option value="'+o.id+'"'+(p.ledgerPid===o.id?' selected':'')+'>'+o.label+'</option>';});
     h+='</select></div>';
     h+='</div>';
@@ -22593,7 +22608,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021131639--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021133320--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
