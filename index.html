@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021134345';
+  var BUILD='20261021135711';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21420,9 +21420,10 @@ var CHILDFEE=(function(){
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_endY,_endM)+'）</span>';
     h+='</div>';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費／退費(請假) 兩欄第一次看這一期時會自動帶入系統算好的金額，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">';
-    h+='<button class="bbtn" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒（新生入托）</button>';
-    h+='<button class="bbtn" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 查看未繳費名單</button>';
+    h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#d9822c;" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 未繳名單</button>';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#5a4aa8;" onclick="CHILDFEE.printSlips()">&#x1F4C4; 列印明細</button>';
     h+='</div>';
 
     var kids=groups[_selCls]||[];
@@ -21757,6 +21758,65 @@ var CHILDFEE=(function(){
     else{w.onload=doPrint;setTimeout(doPrint,900);}
   }
 
+  /* 給家長的月費單明細：跟延托費的「列印家長明細」同一套做法——每個小孩
+     一份緊湊清單（不用表格框線），目標尺寸接近薪資袋，一張A4直向可以
+     排下3份，中間用虛線當裁剪線，剪開後塞信封剛好。用的是目前「收費
+     期間」選到的那一期（_endY/_endM，跟上面新增幼兒/未繳名單同一個
+     期間），只印真的有登記繳費的小孩（_isBilled）。 */
+  function printSlips(){
+    var pk=periodKey(_endY,_endM);
+    var groups=getKidsByCls();
+    var billed=[];
+    CLSORDER.forEach(function(cls){
+      groups[cls].forEach(function(k){
+        var rec=(db.records[pk]||{})[k.id];
+        if(_isBilled(rec))billed.push({name:k.name,cls:cls,rec:rec,total:_total(rec)});
+      });
+    });
+    if(!billed.length){alert('這一期還沒有人繳費，沒有資料可以列印');return;}
+    billed.sort(function(a,b){
+      if(a.cls!==b.cls)return CLSORDER.indexOf(a.cls)-CLSORDER.indexOf(b.cls);
+      return a.name<b.name?-1:(a.name>b.name?1:0);
+    });
+    var periodStr=periodLabel(_endY,_endM);
+    var pages='';
+    billed.forEach(function(b){
+      var itemsHTML='';
+      FIELDS.forEach(function(f){
+        var v=parseFloat(b.rec[f.k])||0;
+        if(!v)return;
+        itemsHTML+='<div class="erow"><span>'+f.label+(f.k==='refund'?'（扣）':'')+'</span><span>'+v.toLocaleString()+' 元</span></div>';
+      });
+      pages+='<div class="slip">';
+      pages+='<div class="hd">'+_companyName()+'　月費單明細　'+periodStr+'</div>';
+      pages+='<div class="meta"><b>'+b.name+'</b><span>'+(CLSLABEL[b.cls]||'')+'</span></div>';
+      pages+='<div class="elist">'+itemsHTML+'</div>';
+      pages+='<div class="tot">合計 '+b.total.toLocaleString()+' 元</div>';
+      pages+='</div>';
+    });
+    var css='@page{size:A4 portrait;margin:8mm;}';
+    css+='*{box-sizing:border-box;}';
+    css+='body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;color:#2C2820;margin:0;background:#fff;}';
+    css+='.slip{page-break-inside:avoid;border-bottom:1.5px dashed #c8bca0;padding:3mm 1mm;}';
+    css+='.slip:last-child{border-bottom:none;}';
+    css+='.hd{font-size:8pt;color:#888;margin-bottom:2mm;}';
+    css+='.meta{display:flex;align-items:baseline;gap:4mm;font-size:14pt;font-weight:800;margin-bottom:2mm;border-bottom:1px solid #D8D0C4;padding-bottom:1.5mm;}';
+    css+='.meta span{font-size:10pt;font-weight:400;color:#777;}';
+    css+='.elist{display:flex;flex-wrap:wrap;gap:1mm 6mm;font-size:9.5pt;color:#4A4540;margin-bottom:2mm;}';
+    css+='.erow{display:flex;gap:3mm;white-space:nowrap;}';
+    css+='.erow span:first-child{color:#2C2820;}';
+    css+='.erow span:last-child{color:#a5680a;font-weight:700;}';
+    css+='.tot{text-align:right;font-weight:800;font-size:12pt;color:#a5680a;}';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單明細</title><style>'+css+'</style></head><body>'+pages+'</body></html>';
+    var w=window.open('','_blank','width=1000,height=860');
+    if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
+    w.document.write(html);w.document.close();
+    var printed=false;
+    var doPrint=function(){if(printed)return;printed=true;setTimeout(function(){try{w.print();}catch(e){}},250);};
+    if(w.document.readyState==='complete')setTimeout(doPrint,80);
+    else{w.onload=doPrint;setTimeout(doPrint,900);}
+  }
+
   /* ════ 新生入托：取代原本適性那邊的「新增幼兒」，新增完直接算好這一期的比例月費/餐費
      跟這學期剩餘月份的註冊費，並帶去那位小孩的月費單頁面 ════
      月費/餐費：用入托日期到這一期(27~26號)結束為止的「實際日數」(含六日)比例計算。
@@ -21870,7 +21930,7 @@ var CHILDFEE=(function(){
     });
     return sums;
   }
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -22608,7 +22668,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021134345--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021135711--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
