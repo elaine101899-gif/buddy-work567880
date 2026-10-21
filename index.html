@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261020235040';
+  var BUILD='20261021121555';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9516,7 +9516,7 @@ var LEAVE=(function(){
     else{h+='<button id="lSubSigBtn" onclick="LEAVE._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="lSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
-    var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';
+    var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';
     if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;">';}
     else{h+='<div style="color:#bbb;font-size:.78rem;">（SIGLIB 尚未有主任簽名）</div>';}
     h+='</div>';
@@ -9658,7 +9658,7 @@ var LEAVE=(function(){
       header:collectHdr(),children:collectChildren(),
       postHandover:v('lPostHandover'),
       sigSub:existing.sigSub||'',
-      sigDir:((typeof SIGLIB!=='undefined')&&SIGLIB.get('金佩樺'))||existing.sigDir||'',
+      sigDir:((typeof SIGLIB!=='undefined')&&SIGLIB.get(_directorName()))||existing.sigDir||'',
       createdAt:existing.createdAt||Date.now()
     };
     saveLocal(lTid,lFid,data);
@@ -9822,7 +9822,7 @@ var LEAVE=(function(){
     else{p+='<div class="sig-line">'+(data.sigSub||'')+'</div>';}
     p+='</div>';
     p+='<div class="sig-item">主&nbsp;&nbsp;&nbsp;&nbsp;任：';
-    var _pDirSig=data.sigDir||(typeof SIGLIB!=='undefined'?SIGLIB.get('金佩樺'):'');
+    var _pDirSig=data.sigDir||(typeof SIGLIB!=='undefined'?SIGLIB.get(_directorName()):'');
     if(_pDirSig&&_pDirSig.startsWith('data:')){p+='<img src="'+_pDirSig+'" style="height:32px;width:auto;vertical-align:middle;">';}
     else{p+='<div class="sig-line"></div>';}
     p+='</div>';
@@ -10156,7 +10156,7 @@ var LEAVE_BOSS=(function(){
     else{h+='<button id="bMgrSigBtn" onclick="LEAVE_BOSS._openMgrSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="bMgrSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
-    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'');
     if(_dSig){h+='<img id="bDirSigImg" src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;">';}
     else{h+='<div style="color:#bbb;font-size:.78rem;">（SIGLIB 尚未有主任簽名）</div>';}
     h+='</div></div>';
@@ -10231,7 +10231,7 @@ var LEAVE_BOSS=(function(){
     var today=new Date();
     var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     var initData={header:{name:curName,date:yy},createdAt:Date.now()};
-    var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';
+    var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';
     if(dSig)initData.sigDir=dSig;
     saveFid(curName,curFid,initData);
     curStep='form';_wrap().innerHTML=renderForm(initData);
@@ -10243,7 +10243,7 @@ var LEAVE_BOSS=(function(){
   function editForm(fid){
     curFid=fid;
     var d=getForms(curName)[fid]||{};
-    if(!d.sigDir){var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(dSig)d.sigDir=dSig;}
+    if(!d.sigDir){var dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';if(dSig)d.sigDir=dSig;}
     curStep='form';_wrap().innerHTML=renderForm(d);
     _wrap().addEventListener('change',saveForm);
     /* 之前存檔時代理人欄位是程式帶進去的，不是使用者重新打一次，onchange 不會觸發，
@@ -10539,7 +10539,7 @@ var LEAVE_FLEX=(function(){
     else{h+='<button id="fMgrSigBtn" onclick="LEAVE_FLEX._openMgrSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="fMgrSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
-    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'');
     if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;">';}
     else{h+='<div style="color:#bbb;font-size:.78rem;">（尚未有主任簽名）</div>';}
     h+='</div></div></div>';
@@ -10581,13 +10581,13 @@ var LEAVE_FLEX=(function(){
     curFid='f'+Date.now();
     var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     var d={header:{name:curName,date:yy},createdAt:Date.now()};
-    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
+    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';if(ds)d.sigDir=ds;
     saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
     _wrap().addEventListener('change',saveForm);
   }
   function editForm(fid){
     curFid=fid;var d=getForms(curName)[fid]||{};
-    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
+    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
     _wrap().addEventListener('change',saveForm);
     var _hd=d.header||{};
@@ -10788,7 +10788,7 @@ var LEAVE_COOK=(function(){
     else{h+='<button id="cMgrSigBtn" onclick="LEAVE_COOK._openMgrSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="cMgrSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
-    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'');
+    var _dSig=data.sigDir||((typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'');
     if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;">';}
     else{h+='<div style="color:#bbb;font-size:.78rem;">（尚未有主任簽名）</div>';}
     h+='</div></div></div>';
@@ -10827,13 +10827,13 @@ var LEAVE_COOK=(function(){
     curFid='c'+Date.now();
     var today=new Date(),yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     var d={header:{name:curName,date:yy},mealNote:DEFAULT_MEAL,createdAt:Date.now()};
-    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;
+    var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';if(ds)d.sigDir=ds;
     saveFid(curName,curFid,d);curStep='form';_wrap().innerHTML=renderForm(d);
     _wrap().addEventListener('change',saveForm);
   }
   function editForm(fid){
     curFid=fid;var d=getForms(curName)[fid]||{};
-    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get('金佩樺'):'';if(ds)d.sigDir=ds;}
+    if(!d.sigDir){var ds=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';if(ds)d.sigDir=ds;}
     curStep='form';_wrap().innerHTML=renderForm(d);
     _wrap().addEventListener('change',saveForm);
     var _hd=d.header||{};
@@ -22562,7 +22562,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261020235040--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021121555--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
