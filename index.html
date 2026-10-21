@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021124613';
+  var BUILD='20261021130438';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1974,17 +1974,24 @@ function _fbAuth(){
 var ROLE_LIST={owner:[],admin:[]}; // admin: [{email,company}]
 var CURRENT_ROLE='teacher';
 var CURRENT_USER_EMAIL=null;
+/* 角色清單還沒讀回來之前，CURRENT_ROLE 先暫定 teacher（見上面的說明），
+   但如果這時候使用者剛好手刀點了會計/總帳這些受限頁面，GO() 原本會
+   直接照「目前角色是 teacher」判定沒權限、跳出擋下的提示——連 owner
+   自己登入後手腳快一點都會中獎。用這個旗標讓 GO() 分得出「角色清單
+   還沒讀完」跟「讀完了、確定就是 teacher」這兩種情況，不是同一件事。 */
+var _rolesLoaded=false;
 function _loadRoles(cb){
   var fb=_fbInit();
-  if(!fb){if(cb)cb();return;}
+  if(!fb){_rolesLoaded=true;if(cb)cb();return;}
   fb.ref('xiaobuddyClean/userRoles').once('value',function(snap){
     var v=snap.val()||{};
     ROLE_LIST.owner=(v.owner||[]).map(function(e){return (e||'').toLowerCase().trim();});
     ROLE_LIST.admin=(v.admin||[]).map(function(a){
       return{email:((a&&a.email)||'').toLowerCase().trim(),company:(a&&a.company)||''};
     });
+    _rolesLoaded=true;
     if(cb)cb();
-  },function(){if(cb)cb();});
+  },function(){_rolesLoaded=true;if(cb)cb();});
 }
 function _computeRole(email){
   var e=(email||'').toLowerCase().trim();
@@ -2053,6 +2060,7 @@ function _authGateLogout(){
         if(user){
           ov.style.display='none';
           CURRENT_ROLE='teacher';
+          _rolesLoaded=false;
           CURRENT_USER_EMAIL=user.email;
           _loadRoles(function(){
             CURRENT_ROLE=_computeRole(CURRENT_USER_EMAIL);
@@ -4587,9 +4595,20 @@ var PWGATE=(function(){
 })();
 
 /* ── Navigation ── */
-function GO(id) {
+function GO(id, _roleRetry) {
   if (typeof CURRENT_COMPANY !== 'undefined' && CURRENT_COMPANY === 'bambino' && typeof _XBD_ONLY_PAGES !== 'undefined' && _XBD_ONLY_PAGES.indexOf(id) >= 0) {
     alert('這個功能還沒有支援邦比諾，目前僅開放教學課程和適齡適性記錄。如需使用，請聯繫系統管理員。');
+    return;
+  }
+  /* 角色清單剛登入時還在讀（_rolesLoaded 還是 false），這時候 CURRENT_ROLE
+     只是暫定的 teacher，不是確定的身分——如果使用者這時候剛好點了受限
+     頁面，不能直接當真的 teacher 擋掉（owner/admin 自己登入後手腳快一點
+     就會中招）。先稍等一下角色讀完再重新判斷一次，最多等 3 秒，真的讀
+     不到才照原本邏輯判斷（那時候 CURRENT_ROLE 已經是 _loadRoles 失敗時
+     的保底值，不會再變了）。 */
+  var _needsRole=(_ADMIN_UP_PAGES.indexOf(id)>=0)||(_LEDGER_PAGES.indexOf(id)>=0);
+  if (_needsRole && typeof _rolesLoaded!=='undefined' && !_rolesLoaded && (_roleRetry||0)<20) {
+    setTimeout(function(){GO(id,(_roleRetry||0)+1);},150);
     return;
   }
   if (_ADMIN_UP_PAGES.indexOf(id) >= 0 && CURRENT_ROLE === 'teacher') {
@@ -22569,7 +22588,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021124613--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021130438--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
