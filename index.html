@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021130438';
+  var BUILD='20261021131639';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1920,7 +1920,12 @@ function _restyleAllWeekHeaders(root){
    不應該連動影響邦比諾，已經改成各自獨立——換公司時改寫不同路徑，兩邊從此
    各自維護自己的教學課程覆蓋內容，互不影響。（換成獨立前已經把小布迪當時的
    內容複製一份給邦比諾當起始值，邦比諾不會因為這次改動掉資料。） */
-var _FB_SHARED_PATHS=['xiaobuddyClean/diaryResourceSync'];
+/* userRoles（誰是 owner/admin）是跨公司共用的同一份名單，不該因為
+   CURRENT_COMPANY 當時剛好是 bambino 就被加上 xiaobuddyBambino/ 前綴去
+   讀一個根本不存在的路徑——之前漏列在這裡，造成如果登入當下公司剛好
+   停在邦比諾，_loadRoles() 就會抓到空資料，角色永遠判定不出來、卡在
+   保底的 teacher，owner 自己都會被擋。 */
+var _FB_SHARED_PATHS=['xiaobuddyClean/diaryResourceSync','xiaobuddyClean/userRoles'];
 function _fbCompanyPrefix(path){
   if(typeof CURRENT_COMPANY==='undefined'||CURRENT_COMPANY!=='bambino')return path;
   for(var i=0;i<_FB_SHARED_PATHS.length;i++){
@@ -22588,7 +22593,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021130438--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021131639--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
