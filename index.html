@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021121555';
+  var BUILD='20261021124613';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1709,8 +1709,15 @@ function applyCompany(companyId){
      不管使用者接下來要去哪一頁，都會先在背景把今天（含漏掉的工作日）補上。
      兩邊 render() 本來就有「找不到自己的 wrap 就跳過」的防呆，所以在其他
      頁面呼叫完全安全，不會動到畫面。 */
-  if(typeof BODYTEMP!=='undefined'&&BODYTEMP.init)BODYTEMP.init();
-  if(typeof TEMP!=='undefined'&&TEMP.init)TEMP.init();
+  /* 這兩個本來就是「使用者不用管、背景默默補today」的動作，不急著在
+     剛打開App/剛登入那一瞬間就搶主執行緒——那個當下同時還有 SPACES/
+     ROSTER/DIARY/SIGLIB 好幾個雲端同步也在搶，擠在一起會讓使用者這時候
+     點哪裡都感覺卡頓。延後個1.5秒再做，讓剛登入那幾下點擊可以先被
+     處理，體感會順很多，背景補today的時間差使用者也感覺不到。 */
+  setTimeout(function(){
+    if(typeof BODYTEMP!=='undefined'&&BODYTEMP.init)BODYTEMP.init();
+    if(typeof TEMP!=='undefined'&&TEMP.init)TEMP.init();
+  },1500);
 }
 function pickCompany(companyId){
   var cur=document.getElementById('pg-company');
@@ -22562,7 +22569,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021121555--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021124613--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
