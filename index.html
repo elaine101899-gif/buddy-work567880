@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021140903';
+  var BUILD='20261021141819';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21799,14 +21799,26 @@ var CHILDFEE=(function(){
   function printSlips(){
     var pk=periodKey(_endY,_endM);
     var groups=getKidsByCls();
+    /* 這份是要印出來「先給家長看這期要繳多少錢」的帳單，不是收完錢
+       之後的收據，所以不能只挑 _isBilled（已經記錄繳費方式）的小孩，
+       不然還沒繳費的人反而列印不出帳單、本末倒置。改成跟畫面上每張
+       幼兒卡片同一套算法（_peekRec+延托/退費自動帶入+_applyFeeDefaults），
+       不管繳了沒有、全班每個人都算得出這期應繳金額。 */
+    var extendTotals=null,refundTotals=null;
+    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendTotals=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);}}catch(e){}
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();refundTotals=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);}}catch(e){}
     var billed=[];
     CLSORDER.forEach(function(cls){
       groups[cls].forEach(function(k){
-        var rec=(db.records[pk]||{})[k.id];
-        if(_isBilled(rec))billed.push({id:k.id,name:k.name,cls:cls,rec:rec,total:_total(rec)});
+        var stored=_peekRec(pk,k.id);
+        var rec=stored?Object.assign({},stored):{};
+        if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
+        if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
+        _applyFeeDefaults(rec,k.name,_endM);
+        billed.push({id:k.id,name:k.name,cls:cls,rec:rec,total:_total(rec)});
       });
     });
-    if(!billed.length){alert('這一期還沒有人繳費，沒有資料可以列印');return;}
+    if(!billed.length){alert('這一期沒有幼兒資料可以列印');return;}
     billed.sort(function(a,b){
       if(a.cls!==b.cls)return CLSORDER.indexOf(a.cls)-CLSORDER.indexOf(b.cls);
       return a.name<b.name?-1:(a.name>b.name?1:0);
@@ -22722,7 +22734,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021140903--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021141819--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
