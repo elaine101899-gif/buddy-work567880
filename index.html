@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021135711';
+  var BUILD='20261021140903';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20661,7 +20661,16 @@ var EXTENDCARE=(function(){
     return out;
   }
 
-  return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips,ensureLoaded:load,feeTotalsForPeriod:feeTotalsForPeriod,refreshIfOpen:refreshIfOpen};
+  /* 給月費單「列印明細」用：某個收費期間、每個小孩各自的延托明細
+     （哪幾天、幾點接、費用），不是只看總金額。直接重用 _feeCollect
+     已經算好的 entries。 */
+  function entriesForPeriod(endRoc,endMo){
+    var col=_feeCollect(endRoc,endMo);
+    var out={};
+    col.rows.forEach(function(row){out[row.id]=row.entries;});
+    return out;
+  }
+  return{init:init,refresh:render,toggle:toggle,openDepart:openDepart,closeDepart:closeDepart,sign:sign,confirmDepart:confirmDepart,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,saveEdit:saveEdit,deleteEdit:deleteEdit,feeInit:feeInit,feeChangeYM:feeChangeYM,feeSetEntryFee:feeSetEntryFee,feePrint:feePrint,feePrintSlips:feePrintSlips,ensureLoaded:load,feeTotalsForPeriod:feeTotalsForPeriod,entriesForPeriod:entriesForPeriod,refreshIfOpen:refreshIfOpen};
 })();
 
 /* ════ CHILDLEAVE：幼兒請假記錄 ════
@@ -21035,7 +21044,10 @@ var CHILDLEAVE=(function(){
           if(!sickEligCache[cid])sickEligCache[cid]=_eligibleSickDateKeys(cid);
           if(sickEligCache[cid][k])refund=_refundRate(rec.name,rec.type);
         }
-        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||'',refund:refund});
+        /* ts 給月費單那邊判斷「連續天」用：同一個假別、日期剛好差一天
+           （86400000ms）才算連續，可以合併顯示成「幾月幾號～幾月幾號」，
+           不用一天一行。 */
+        byChild[cid].entries.push({date:(d.getMonth()+1)+'/'+d.getDate(),type:rec.type,note:rec.note||'',refund:refund,ts:d.getTime()});
         byChild[cid].refundTotal+=refund;
       });
       d.setDate(d.getDate()+1);
@@ -21763,6 +21775,27 @@ var CHILDFEE=(function(){
      排下3份，中間用虛線當裁剪線，剪開後塞信封剛好。用的是目前「收費
      期間」選到的那一期（_endY/_endM，跟上面新增幼兒/未繳名單同一個
      期間），只印真的有登記繳費的小孩（_isBilled）。 */
+  /* 退費明細「連續天」合併：同一個假別、日期剛好差一天（ts 差
+     86400000ms）就合併成一個區間顯示「幾月幾號～幾月幾號」，不是連續
+     的（隔了幾天、或假別不同）才分開各自一行、單日照原樣顯示。
+     entries 本來就是照日期由小到大的順序（_sumCollect 逐日往前跑），
+     所以只要比對「前一筆」就能知道是不是接著昨天。 */
+  function _groupConsecutiveRefunds(entries){
+    var groups=[];
+    entries.forEach(function(e){
+      if(!e.refund)return;
+      var last=groups[groups.length-1];
+      if(last&&last.type===e.type&&e.ts-last.endTs===86400000){
+        last.endDate=e.date;last.endTs=e.ts;last.amount+=e.refund;
+      } else {
+        groups.push({startDate:e.date,endDate:e.date,endTs:e.ts,type:e.type,amount:e.refund});
+      }
+    });
+    return groups.map(function(g){
+      var dateStr=(g.startDate===g.endDate)?g.startDate:(g.startDate+'～'+g.endDate);
+      return{text:dateStr+'（'+g.type+'）',amount:g.amount};
+    });
+  }
   function printSlips(){
     var pk=periodKey(_endY,_endM);
     var groups=getKidsByCls();
@@ -21770,7 +21803,7 @@ var CHILDFEE=(function(){
     CLSORDER.forEach(function(cls){
       groups[cls].forEach(function(k){
         var rec=(db.records[pk]||{})[k.id];
-        if(_isBilled(rec))billed.push({name:k.name,cls:cls,rec:rec,total:_total(rec)});
+        if(_isBilled(rec))billed.push({id:k.id,name:k.name,cls:cls,rec:rec,total:_total(rec)});
       });
     });
     if(!billed.length){alert('這一期還沒有人繳費，沒有資料可以列印');return;}
@@ -21779,6 +21812,11 @@ var CHILDFEE=(function(){
       return a.name<b.name?-1:(a.name>b.name?1:0);
     });
     var periodStr=periodLabel(_endY,_endM);
+    /* 延托／退費明細都是用請假/延托登記的獨立模組算出來的（跟月費單本身
+       是分開存的資料），這裡抓這一期、每個小孩各自的明細一次備用，
+       不用每個小孩都重算一次整期全班的資料。 */
+    var extendByChild={};
+    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendByChild=EXTENDCARE.entriesForPeriod(_endY,_endM)||{};}}catch(e){}
     var pages='';
     billed.forEach(function(b){
       var itemsHTML='';
@@ -21787,10 +21825,24 @@ var CHILDFEE=(function(){
         if(!v)return;
         itemsHTML+='<div class="erow"><span>'+f.label+(f.k==='refund'?'（扣）':'')+'</span><span>'+v.toLocaleString()+' 元</span></div>';
       });
+      var subHTML='';
+      var extEntries=extendByChild[b.id]||[];
+      if(extEntries.length){
+        var extStr=extEntries.map(function(e){return e.date+'（'+e.fee.toLocaleString()+'元）';}).join('、');
+        subHTML+='<div class="subdet"><b>延托明細：</b>'+extStr+'</div>';
+      }
+      var refundEntries=[];
+      try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();refundEntries=CHILDLEAVE.refundEntriesForChild(_endY,_endM,b.id)||[];}}catch(e){}
+      var refundGroups=_groupConsecutiveRefunds(refundEntries);
+      if(refundGroups.length){
+        var refStr=refundGroups.map(function(g){return g.text+'　'+g.amount.toLocaleString()+'元';}).join('、');
+        subHTML+='<div class="subdet"><b>退費明細：</b>'+refStr+'</div>';
+      }
       pages+='<div class="slip">';
       pages+='<div class="hd">'+_companyName()+'　月費單明細　'+periodStr+'</div>';
       pages+='<div class="meta"><b>'+b.name+'</b><span>'+(CLSLABEL[b.cls]||'')+'</span></div>';
       pages+='<div class="elist">'+itemsHTML+'</div>';
+      pages+=subHTML;
       pages+='<div class="tot">合計 '+b.total.toLocaleString()+' 元</div>';
       pages+='</div>';
     });
@@ -21806,6 +21858,8 @@ var CHILDFEE=(function(){
     css+='.erow{display:flex;gap:3mm;white-space:nowrap;}';
     css+='.erow span:first-child{color:#2C2820;}';
     css+='.erow span:last-child{color:#a5680a;font-weight:700;}';
+    css+='.subdet{font-size:8.3pt;color:#777;margin-bottom:1.3mm;line-height:1.5;}';
+    css+='.subdet b{color:#555;font-weight:700;}';
     css+='.tot{text-align:right;font-weight:800;font-size:12pt;color:#a5680a;}';
     var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單明細</title><style>'+css+'</style></head><body>'+pages+'</body></html>';
     var w=window.open('','_blank','width=1000,height=860');
@@ -22668,7 +22722,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021135711--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021140903--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
