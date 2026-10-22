@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022121046';
+  var BUILD='20261022153100';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1683,14 +1683,9 @@ function applyCompany(companyId){
      讓其他裝置新增/刪除空間時能即時同步過來；forceSync() 換公司當下再強制重抓一次，
      道理跟下面 ROSTER.forceSync 一樣：常駐監聽器對已經掛過的公司不會重新觸發，
      不強制重抓會暫時看到另一家公司的清單。 */
-  if(typeof SPACES!=='undefined'){
-    if(SPACES.init)SPACES.init();
-    if(SPACES.forceSync)SPACES.forceSync();
-  }
-  /* 教保日誌、簽名庫是頁面第一次載入時才會掛一次雲端監聽器，不會像清潔表單那樣
+  /* 教保日誌是頁面第一次載入時才會掛一次雲端監聽器，不會像清潔表單那樣
      每次進頁面就重掛，所以要在這裡主動呼叫，換公司才會重新綁到正確的公司路徑。 */
   if(typeof DIARY!=='undefined'&&DIARY.reattach)DIARY.reattach();
-  if(typeof SIGLIB!=='undefined'&&SIGLIB.reattach)SIGLIB.reattach();
   /* 用 forceSync 而不是 init：init 裡的 _attach 只有第一次會真的接上監聽器，
      換公司時要強制重新拍一次 base 快照＋重新合併雲端資料，不然會暫時看到
      另一家公司剛換過去的母本原始內容（含已經被刪除的人）。 */
@@ -1714,7 +1709,16 @@ function applyCompany(companyId){
      ROSTER/DIARY/SIGLIB 好幾個雲端同步也在搶，擠在一起會讓使用者這時候
      點哪裡都感覺卡頓。延後個1.5秒再做，讓剛登入那幾下點擊可以先被
      處理，體感會順很多，背景補today的時間差使用者也感覺不到。 */
+  /* SPACES（清潔表單空間清單）、簽名庫一樣不是首頁馬上要看到的東西——
+     空間清單只有真的點進清潔/溫溼度表單才用得到，簽名庫只有真的要簽名
+     才用得到，都跟 BODYTEMP/TEMP 一樣可以晚一點點再做，把剛登入那瞬間
+     主執行緒讓出來給使用者的點擊。 */
   setTimeout(function(){
+    if(typeof SPACES!=='undefined'){
+      if(SPACES.init)SPACES.init();
+      if(SPACES.forceSync)SPACES.forceSync();
+    }
+    if(typeof SIGLIB!=='undefined'&&SIGLIB.reattach)SIGLIB.reattach();
     if(typeof BODYTEMP!=='undefined'&&BODYTEMP.init)BODYTEMP.init();
     if(typeof TEMP!=='undefined'&&TEMP.init)TEMP.init();
   },1500);
@@ -22877,7 +22881,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022121046--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022153107--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
