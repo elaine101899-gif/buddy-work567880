@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022120340';
+  var BUILD='20261022121046';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18460,7 +18460,14 @@ function _updateLedgerTitles(){
   });
 }
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
-var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租'];
+var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資'];
+/* 總帳→零用金自己新增調整項目的科目下拉選單，要比會計→零用金
+   （PETTYCASH_CATS，公司零用金的正式科目清單）多兩個選項：薪資、
+   月費收入。只加在這裡、不直接改 PETTYCASH_CATS，才不會連帶影響到
+   會計那邊公司零用金本來的科目清單。「薪資」比照「薪資支出」歸進
+   LEDGER_CATS_B（不計入總支出）；「月費收入」是收入類標籤，總支出
+   本來就只看支出欄位，不受影響。 */
+var LEDGER_MANUAL_CATS=PETTYCASH_CATS.concat(['薪資','月費收入']);
 var LEDGER=(function(){
   var pcPeriods={},periods={};
   var curPid=null;
@@ -18687,7 +18694,7 @@ var LEDGER=(function(){
           h+='<tr><td><input type="date" class="cln-num" style="width:118px;" value="'+(r.date||'')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
           h+='<td><select class="cln-num" style="width:76px;" onchange="LEDGER.setRowField(\''+r.id+'\',\'cat\',this.value)">';
           h+='<option value="">–</option>';
-          PETTYCASH_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
+          LEDGER_MANUAL_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
           h+='</select></td>';
           h+='<td><input type="text" class="cln-num" style="width:120px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'note\',this.value)"></td>';
           h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'income\',this.value)"></td>';
@@ -22870,7 +22877,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022120340--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022121046--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
