@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261021141819';
+  var BUILD='20261022092732';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14712,10 +14712,16 @@ var CLEANERSTORE=_buildFacilityCheckModule({
 var YELLOWCARD=(function(){
   var KEY='xiaoBudiYellowCardV1',FB_PATH='xiaobuddyYellowCard';
   var db={cards:{},flu:{}};
+  /* 流感疫苗紀錄原本跟黃卡一樣是照片卡片，改成文字清單（姓名/施打日期/
+     施打診所/疫苗品牌，一人一行）之後資料形狀完全不一樣，不再適合跟
+     黃卡共用同一套 renderSection/print，所以只留黃卡在 SECTIONS 裡，
+     流感疫苗紀錄另外寫一套專屬的 render/存取/列印函式（renderFluSection
+     等，見下面）。db.flu 這個 key 名稱維持不變，只是裡面存的資料形狀
+     換了，不用特別遷移舊資料——目前雲端這裡本來就還是空的。 */
   var SECTIONS=[
-    {key:'cards',title:'托育人員黃卡紀錄',emoji:'🟡'},
-    {key:'flu',title:'托育人員施打流感疫苗紀錄',emoji:'💉'}
+    {key:'cards',title:'托育人員黃卡紀錄',emoji:'🟡'}
   ];
+  var _fluYear=new Date().getFullYear();
 
   function loadLocal(){
     try{var v=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');db={cards:v.cards||{},flu:v.flu||{}};}
@@ -14797,12 +14803,73 @@ var YELLOWCARD=(function(){
     return h;
   }
 
+  /* ─── 流感疫苗紀錄：文字清單，不是照片，所以不能用上面 renderSection
+     那一套（那是給照片卡片用的）。姓名/施打日期/施打診所/疫苗品牌
+     一人一行，上面可以選年份（每年都要重新施打，分開年份比較不會
+     跟舊的資料混在一起）。 */
+  function fluYearOptions(){
+    var cur=new Date().getFullYear();
+    var ys=[];
+    for(var y=cur-2;y<=cur+1;y++)ys.push(y);
+    return ys;
+  }
+  function renderFluSection(){
+    var items=db.flu;
+    var ids=Object.keys(items).filter(function(id){return (items[id].year||_fluYear)===_fluYear;})
+      .sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
+    var h='<div class="df-sec">';
+    h+='<div class="df-lbl" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">💉 托育人員施打流感疫苗紀錄';
+    h+='<select class="df-inp" style="width:auto;margin-left:auto;" onchange="YELLOWCARD.fluSetYear(this.value)">';
+    fluYearOptions().forEach(function(y){h+='<option value="'+y+'"'+(y===_fluYear?' selected':'')+'>'+y+' 年</option>';});
+    h+='</select></div>';
+    h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">';
+    if(!ids.length){h+='<div style="color:#aaa;font-size:.82rem;padding:10px 2px;">'+_fluYear+' 年還沒有資料</div>';}
+    ids.forEach(function(id){
+      var it=items[id];
+      h+='<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff;border-radius:10px;padding:8px 10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+      h+='<input type="text" placeholder="姓名" value="'+esc(it.name||'')+'" onchange="YELLOWCARD.fluSetField(\''+id+'\',\'name\',this.value)" style="flex:1 1 80px;min-width:70px;border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-size:.8rem;font-family:\'Noto Sans TC\',sans-serif;">';
+      h+='<input type="date" value="'+esc(it.injectDate||'')+'" onchange="YELLOWCARD.fluSetField(\''+id+'\',\'injectDate\',this.value)" style="flex:1 1 130px;min-width:120px;border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-size:.8rem;">';
+      h+='<input type="text" placeholder="施打診所" value="'+esc(it.clinic||'')+'" onchange="YELLOWCARD.fluSetField(\''+id+'\',\'clinic\',this.value)" style="flex:1 1 100px;min-width:90px;border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-size:.8rem;font-family:\'Noto Sans TC\',sans-serif;">';
+      h+='<input type="text" placeholder="疫苗品牌" value="'+esc(it.brand||'')+'" onchange="YELLOWCARD.fluSetField(\''+id+'\',\'brand\',this.value)" style="flex:1 1 100px;min-width:90px;border:1px solid #ddd;border-radius:6px;padding:5px 8px;font-size:.8rem;font-family:\'Noto Sans TC\',sans-serif;">';
+      h+='<button onclick="YELLOWCARD.fluRemoveRow(\''+id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;flex:none;">&#x1F5D1;&#xFE0F;</button>';
+      h+='</div>';
+    });
+    h+='</div>';
+    h+='<button onclick="YELLOWCARD.fluAddRow()" style="padding:8px 16px;background:var(--run-bd);color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">＋ 新增</button>';
+    h+='</div>';
+    return h;
+  }
+  function fluSetYear(y){_fluYear=parseInt(y,10);_wrap().innerHTML=render();}
+  function fluAddRow(){
+    var id='f'+Date.now();
+    var ords=Object.keys(db.flu).map(function(k){return db.flu[k].order||0;});
+    var maxOrd=ords.length?Math.max.apply(null,ords):0;
+    db.flu[id]={name:'',injectDate:'',clinic:'',brand:'',year:_fluYear,order:maxOrd+1};
+    saveAll();pushItemFb('flu',id,db.flu[id]);
+    _wrap().innerHTML=render();
+  }
+  function fluRemoveRow(id){
+    if(!confirm('確定要刪除這筆紀錄嗎？此操作無法復原。'))return;
+    delete db.flu[id];
+    saveAll();removeItemFb('flu',id);
+    _wrap().innerHTML=render();
+  }
+  function fluSetField(id,field,val){
+    if(!db.flu[id])return;
+    db.flu[id][field]=val;
+    saveAll();pushItemFb('flu',id,db.flu[id]);
+  }
+
   function render(){
     var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
     h+='<div style="font-size:.78rem;color:#888;padding:0 16px 10px;">老師隨時異動時，點 ✕ 刪除、點「＋ 新增」加入新的照片即可。</div>';
     SECTIONS.forEach(function(sec){h+=renderSection(sec);});
     h+='<div class="lf-btns" style="flex-wrap:wrap;">';
-    h+='<button class="lf-dl-btn" onclick="YELLOWCARD.download()" style="flex:none;padding:12px 28px;">🖨️ 列印</button>';
+    h+='<button class="lf-dl-btn" onclick="YELLOWCARD.downloadCards()" style="flex:none;padding:12px 28px;">🖨️ 列印黃卡紀錄</button>';
+    h+='</div>';
+    h+=renderFluSection();
+    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
+    h+='<button class="lf-dl-btn" onclick="YELLOWCARD.downloadFlu()" style="flex:none;padding:12px 28px;">🖨️ 列印流感疫苗紀錄</button>';
     h+='</div>';
     h+='</div>';
     return h;
@@ -14861,9 +14928,6 @@ var YELLOWCARD=(function(){
   }
 
   /* ─── 列印 ─── */
-  function download(){
-    _doPrint(_buildHTML());
-  }
   function _doPrint(h){
     var w=null;try{w=window.open('','_blank');}catch(e){}
     if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
@@ -14875,10 +14939,15 @@ var YELLOWCARD=(function(){
       setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
     }
   }
-  function _buildHTML(){
-    var logoSrc=(typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();
+  function downloadCards(){_doPrint(_buildCardsHTML());}
+  function downloadFlu(){_doPrint(_buildFluHTML());}
+  function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function _logoSrc(){return (typeof _CLEAN_LOGO!=='undefined'&&_CLEAN_LOGO)?_CLEAN_LOGO:(function(){var el=document.querySelector('.hero-logo');return el?el.src:'';})();}
+  /* 黃卡紀錄照片列印：原本4欄排版照片太小，改成一張A4固定排6張
+     （2欄×3列），每6張自己分一頁，照片才看得清楚。 */
+  function _buildCardsHTML(){
+    var logoSrc=_logoSrc();
     var AC='#2d9c6f',AL='#e8f7f0';
-    function esc2(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
     var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>托育人員黃卡紀錄</title><style>';
     p+='*{box-sizing:border-box;margin:0;padding:0;}';
     p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
@@ -14887,38 +14956,78 @@ var YELLOWCARD=(function(){
     p+='.hdr-txt{flex:1;text-align:center;}';
     p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
     p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
-    p+='.sec-hd{background:'+AC+';color:#fff;font-weight:800;font-size:11pt;padding:5px 12px;border-radius:8px;margin:14px 0 10px;letter-spacing:.5px;}';
-    p+='.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}';
+    p+='.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;}';
     p+='.card{border:1px solid '+AC+';border-radius:8px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
-    p+='.card .pic{position:relative;height:110px;background:#fafafa;display:flex;align-items:center;justify-content:center;}';
+    p+='.card .pic{position:relative;height:270px;background:#fafafa;display:flex;align-items:center;justify-content:center;}';
     p+='.card .pic img{max-width:100%;max-height:100%;object-fit:contain;width:100%;height:100%;}';
-    p+='.card .pic .dstamp{position:absolute;right:3px;bottom:3px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:7pt;padding:1px 4px;border-radius:3px;}';
-    p+='.card .name{text-align:center;font-size:9pt;padding:4px 2px;background:'+AL+';color:'+AC+';font-weight:700;}';
+    p+='.card .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:9pt;padding:2px 6px;border-radius:4px;}';
+    p+='.card .name{text-align:center;font-size:11pt;padding:6px 2px;background:'+AL+';color:'+AC+';font-weight:700;}';
+    p+='.pagebreak{page-break-after:always;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body>';
     p+='<div class="hdr">';
     if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
     p+='<div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">🟡 托育人員黃卡紀錄</div></div>';
     p+='</div>';
-    SECTIONS.forEach(function(sec){
-      p+='<div class="sec-hd">'+sec.emoji+' '+esc2(sec.title)+'</div>';
-      var items=db[sec.key];
-      var ids=Object.keys(items).sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
-      if(!ids.length){p+='<div style="color:#999;font-size:9.5pt;padding:4px 2px 10px;">尚無資料</div>';}
-      else{
+    var items=db.cards;
+    var ids=Object.keys(items).sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
+    if(!ids.length){p+='<div style="color:#999;font-size:9.5pt;padding:4px 2px 10px;">尚無資料</div>';}
+    else{
+      for(var i=0;i<ids.length;i+=6){
+        var chunk=ids.slice(i,i+6);
         p+='<div class="grid">';
-        ids.forEach(function(id){
+        chunk.forEach(function(id){
           var it=items[id];
           var ds=fmtDate(it.date);
           p+='<div class="card"><div class="pic">'+(it.photo?'<img src="'+it.photo+'">':'')+(it.photo&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="name">'+esc2(it.name||'（未填姓名）')+'</div></div>';
         });
         p+='</div>';
+        if(i+6<ids.length)p+='<div class="pagebreak"></div>';
       }
-    });
+    }
     p+='</body></html>';
     return p;
   }
-  return{init:init,addCard:addCard,removeCard:removeCard,onNameChange:onNameChange,onDateChange:onDateChange,uploadCardPhoto:uploadCardPhoto,download:download};
+  /* 流感疫苗紀錄列印：文字表格，姓名/施打日期/施打診所/疫苗品牌一人一行，
+     只印目前畫面上選到的那個年份。 */
+  function _buildFluHTML(){
+    var logoSrc=_logoSrc();
+    var AC='#2d9c6f',AL='#e8f7f0';
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>托育人員施打流感疫苗紀錄</title><style>';
+    p+='*{box-sizing:border-box;margin:0;padding:0;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:10px 16px;color:#111;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+    p+='.hdr{display:flex;align-items:center;gap:12px;border-bottom:2.5px solid '+AC+';padding-bottom:7px;margin-bottom:12px;}';
+    p+='.hdr img{height:52px;width:auto;}';
+    p+='.hdr-txt{flex:1;text-align:center;}';
+    p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
+    p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
+    p+='table{width:100%;border-collapse:collapse;font-size:11pt;}';
+    p+='th,td{border:1px solid '+AC+';padding:8px 10px;text-align:center;}';
+    p+='th{background:'+AL+';color:'+AC+';font-weight:800;}';
+    p+='@media print{body{padding:6px 12px;}@page{margin:10mm;size:A4 portrait;}}';
+    p+='</style></head><body>';
+    p+='<div class="hdr">';
+    if(logoSrc)p+='<img src="'+logoSrc+'" alt="logo">';
+    p+='<div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">💉 托育人員施打流感疫苗紀錄　'+_fluYear+' 年</div></div>';
+    p+='</div>';
+    var items=db.flu;
+    var ids=Object.keys(items).filter(function(id){return (items[id].year||_fluYear)===_fluYear;})
+      .sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
+    p+='<table><thead><tr><th>姓名</th><th>施打日期</th><th>施打診所</th><th>疫苗品牌</th></tr></thead><tbody>';
+    if(!ids.length){p+='<tr><td colspan="4" style="color:#999;">尚無資料</td></tr>';}
+    else{
+      ids.forEach(function(id){
+        var it=items[id];
+        p+='<tr><td>'+esc2(it.name||'')+'</td><td>'+esc2(fmtDate(it.injectDate))+'</td><td>'+esc2(it.clinic||'')+'</td><td>'+esc2(it.brand||'')+'</td></tr>';
+      });
+    }
+    p+='</tbody></table>';
+    p+='</body></html>';
+    return p;
+  }
+  return{init:init,addCard:addCard,removeCard:removeCard,onNameChange:onNameChange,onDateChange:onDateChange,uploadCardPhoto:uploadCardPhoto,
+    fluSetYear:fluSetYear,fluAddRow:fluAddRow,fluRemoveRow:fluRemoveRow,fluSetField:fluSetField,
+    downloadCards:downloadCards,downloadFlu:downloadFlu};
 })();
 
 
@@ -22734,7 +22843,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261021141819--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022092732--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
