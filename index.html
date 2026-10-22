@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022095428';
+  var BUILD='20261022114518';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18806,20 +18806,27 @@ function _moneyReportCss(){
 }
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
+/* 左邊表格（LEDGER_CATS_A）跟右邊表格裡的 LEDGER_CATS_B，其實是把全部
+   科目拆成兩組分開顯示（單純排版考量，一次列12個項目太長），兩組各自
+   最下面那行本來都寫「總結算」，看起來像兩個獨立的總數，但其實兩個
+   都只是「這一組科目的小計」，兩組小計加起來才等於右表的「總支出」
+   （13,689＋2,500＝16,189）。原本的「總結算」字樣很容易讓人誤會成
+   兩邊應該要對得起來、或應該等於總支出，改成「小計」講清楚這只是
+   這組科目的部分加總，不是總數。 */
 function _ledgerSummaryTablesHtml(t,open){
   var h='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
   h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
   LEDGER_CATS_A.forEach(function(c){h+='<tr><td>'+c+'</td><td class="num">'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';});
   var sumA=LEDGER_CATS_A.reduce(function(s,c){return s+(t.byCat[c]||0);},0);
-  h+='<tr class="tot-row"><td>總結算</td><td class="num" style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
+  h+='<tr class="tot-row"><td>小計</td><td class="num" style="color:#c0392b;">'+sumA.toLocaleString()+'</td></tr>';
   h+='</tbody></table></div>';
   h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
   h+='<tr><td>總收入</td><td class="num">'+t.totalIncome.toLocaleString()+'</td></tr>';
   if(open!=null)h+='<tr><td>上期結餘</td><td class="num">'+open.toLocaleString()+'</td></tr>';
-  h+='<tr><td>總支出</td><td class="num">'+t.totalExpense.toLocaleString()+'</td></tr>';
+  h+='<tr class="tot-row"><td>總支出</td><td class="num" style="color:#c0392b;">'+t.totalExpense.toLocaleString()+'</td></tr>';
   var sumB=0;
   LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td class="num">'+v.toLocaleString()+'</td></tr>';});
-  h+='<tr class="tot-row"><td>總結算</td><td class="num" style="color:#c0392b;">'+sumB.toLocaleString()+'</td></tr>';
+  h+='<tr class="tot-row"><td>小計</td><td class="num">'+sumB.toLocaleString()+'</td></tr>';
   if(open!=null){
     /* 餘額只跟著自己新增的調整項目（manual）變動，零用金自動帶入的
        灰字明細只是參考、不是自己身上的現金進出，不能拿來扣餘額。 */
@@ -18827,6 +18834,7 @@ function _ledgerSummaryTablesHtml(t,open){
     h+='<tr class="tot-row" style="background:#fff6e0;"><td>目前餘額</td><td class="num" style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
   }
   h+='</tbody></table></div>';
+  h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 兩張表各自是「餐費/設備…等日常科目」跟「薪資/房租…等大項科目」的小計，兩個小計加起來＝總支出，不是對應同一筆數字。</div>';
   h+='</div>';
   return h;
 }
@@ -22854,7 +22862,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022095428--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022114518--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
