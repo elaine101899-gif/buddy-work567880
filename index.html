@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022154747';
+  var BUILD='20261022160028';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9893,6 +9893,12 @@ var LEAVE=(function(){
     w.document.write(r.html);
     w.document.close();
     setTimeout(function(){w.print();},600);
+    /* 點列印＝這份交接單已經確認看過了，直接標記已閱，不用再手動點一次，
+       只從未閱→已閱，已經閱過的不會被重複動作影響。 */
+    if(_setRead(fid,true)){
+      var wrap=document.getElementById('leaveTeacherWrap');
+      if(wrap)showList();
+    }
   }
 
   /* ── 列印（從表單頁列印，先儲存） ── */
@@ -9966,14 +9972,28 @@ var LEAVE=(function(){
     });
   }
 
-  function toggleRead(fid){
+  /* 共用的「設定已閱狀態」：不要直接用 getAll() 判斷這份假單存不存在——
+     本機 localStorage 如果因為存了太多簽名圖片超過容量，寫入會悄悄失敗，
+     getAll() 可能缺這位老師的資料，但雲端其實是有的（_lFbCache 裡還留著），
+     這樣就會變成「有些人的標記已閱按不動」。改用跟列表畫面一樣有雲端備援
+     的 getTeacherForms() 來判斷，只要雲端有資料就能標記，不會因為本機
+     存不下而卡住。val 給 true/false 是直接設定，不給則是切換目前狀態。 */
+  function _setRead(fid,val){
+    var forms=getTeacherForms(lTid);
+    if(!forms[fid])return false;
     var all=getAll();
-    if(!all[lTid]||!all[lTid][fid])return;
-    all[lTid][fid].read=!all[lTid][fid].read;
+    if(!all[lTid])all[lTid]={};
+    if(!all[lTid][fid])all[lTid][fid]=Object.assign({},forms[fid]);
+    all[lTid][fid].read=(val===undefined)?!all[lTid][fid].read:!!val;
+    _lFbCache[lTid]=_lFbCache[lTid]||{};
+    _lFbCache[lTid][fid]=all[lTid][fid];
     try{localStorage.setItem(_ckey(_KEY),JSON.stringify(all));}catch(e){}
     if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(_KEY),JSON.stringify(all));
     try{var fb=_fbInit();if(fb)fb.ref(_FB_PATH+'/'+lTid+'/'+fid+'/read').set(all[lTid][fid].read);}catch(e){}
-    showList();
+    return true;
+  }
+  function toggleRead(fid){
+    if(_setRead(fid))showList();
   }
 
   /* 最上面那顆大的「← 返回」（跳出整個老師假單歷史頁，回到交接單選老師
@@ -10000,13 +10020,22 @@ var _LSFB=(function(){
     if(_refs[ck]){try{_refs[ck].off('value');}catch(e){}delete _refs[ck];}
   }
 
-  /* 讀 localStorage（失敗時回退記憶體快取） */
+  /* 讀 localStorage，並跟雲端記憶體快取逐人合併（不是整包二選一）。
+     本機 localStorage 存了很多人的簽名圖片，總量超過瀏覽器容量上限時，
+     寫入會整包悄悄失敗（catch 吞掉），這時 localStorage 裡可能還留著
+     「大部分人」沒問題的舊內容，只是漏了某幾位剛好寫入失敗那次的人——
+     如果整包比對「非空就直接回傳」，漏掉的那幾位就永遠補不回來，變成
+     「有些人的功能按不動」。改成逐人合併：雲端記憶體快取裡有的人，
+     一定要補進結果，不能被本機那份（即使本機非空）整包蓋過去。 */
   function readLocal(KEY,path){
-    try{
-      var d=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');
-      if(d&&Object.keys(d).length)return d;
-    }catch(e){}
-    return cacheOf(path);
+    var d={};
+    try{d=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}')||{};}catch(e){}
+    var c=cacheOf(path);
+    Object.keys(c).forEach(function(nm){
+      if(!d[nm]){d[nm]=c[nm];return;}
+      Object.keys(c[nm]||{}).forEach(function(fid){if(!d[nm][fid])d[nm][fid]=c[nm][fid];});
+    });
+    return d;
   }
 
   /* 掛上即時監聽。onUpdate 會在雲端資料變動時被呼叫，讓畫面重繪 */
@@ -10313,11 +10342,15 @@ var LEAVE_BOSS=(function(){
     _LSFB.remove(FB_PATH,curName,fid);
     _wrap().innerHTML=renderList();
   }
-  function toggleRead(fid){
-    var all=getAll();if(!all[curName]||!all[curName][fid])return;
-    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+  function _setRead(fid,val){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return false;
+    all[curName][fid].read=(val===undefined)?!all[curName][fid].read:!!val;
+    setAll(all);
     _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
-    _wrap().innerHTML=renderList();
+    return true;
+  }
+  function toggleRead(fid){
+    if(_setRead(fid))_wrap().innerHTML=renderList();
   }
 
   /* ─── 部門主管簽名 ─── */
@@ -10457,8 +10490,9 @@ var LEAVE_BOSS=(function(){
     var w=null;try{w=window.open('','_blank');}catch(e){}
     if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
   }
-  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
-  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 點列印＝這份交接單已經確認看過了，直接標記已閱，不用再手動點一次。 */
+  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));if(_setRead(curFid,true)&&curStep==='list')_wrap().innerHTML=renderList();}
+  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));if(_setRead(fid,true))_wrap().innerHTML=renderList();}
   /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
      backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
      情況，這裡也要補一次存檔。 */
@@ -10650,11 +10684,15 @@ var LEAVE_FLEX=(function(){
     }
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
-  function toggleRead(fid){
-    var all=getAll();if(!all[curName]||!all[curName][fid])return;
-    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+  function _setRead(fid,val){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return false;
+    all[curName][fid].read=(val===undefined)?!all[curName][fid].read:!!val;
+    setAll(all);
     _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
-    _wrap().innerHTML=renderList();
+    return true;
+  }
+  function toggleRead(fid){
+    if(_setRead(fid))_wrap().innerHTML=renderList();
   }
   function _openMgrSig(){
     var d=getForms(curName)[curFid]||{};
@@ -10712,8 +10750,9 @@ var LEAVE_FLEX=(function(){
     p+='</body></html>';return p;
   }
   function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
-  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
-  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 點列印＝這份交接單已經確認看過了，直接標記已閱，不用再手動點一次。 */
+  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));if(_setRead(curFid,true)&&curStep==='list')_wrap().innerHTML=renderList();}
+  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));if(_setRead(fid,true))_wrap().innerHTML=renderList();}
   /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
      backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
      情況，這裡也要補一次存檔。 */
@@ -10896,11 +10935,15 @@ var LEAVE_COOK=(function(){
     }
   }
   function deleteFid(fid){if(!confirm('確定要刪除這份假單嗎？'))return;var all=getAll();if(all[curName])delete all[curName][fid];setAll(all);_LSFB.remove(FB_PATH,curName,fid);_wrap().innerHTML=renderList();}
-  function toggleRead(fid){
-    var all=getAll();if(!all[curName]||!all[curName][fid])return;
-    all[curName][fid].read=!all[curName][fid].read;setAll(all);
+  function _setRead(fid,val){
+    var all=getAll();if(!all[curName]||!all[curName][fid])return false;
+    all[curName][fid].read=(val===undefined)?!all[curName][fid].read:!!val;
+    setAll(all);
     _LSFB.push(FB_PATH,curName,fid,all[curName][fid]);
-    _wrap().innerHTML=renderList();
+    return true;
+  }
+  function toggleRead(fid){
+    if(_setRead(fid))_wrap().innerHTML=renderList();
   }
   function _openMgrSig(){
     var d=getForms(curName)[curFid]||{};
@@ -10962,8 +11005,9 @@ var LEAVE_COOK=(function(){
     p+='</body></html>';return p;
   }
   function _doPrint(html){var w=null;try{w=window.open('','_blank');}catch(e){}if(w){w.document.write(html);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}}
-  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));}
-  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));}
+  /* 點列印＝這份交接單已經確認看過了，直接標記已閱，不用再手動點一次。 */
+  function download(){saveForm();_doPrint(_buildHTML(getForms(curName)[curFid]||{}));if(_setRead(curFid,true)&&curStep==='list')_wrap().innerHTML=renderList();}
+  function printFid(fid){_doPrint(_buildHTML(getForms(curName)[fid]||{}));if(_setRead(fid,true))_wrap().innerHTML=renderList();}
   /* 最上面那顆大的「← 返回」直接 GO('leave-menu') 跳出整頁，跟
      backToHub/backToList 是分開接線的，只修那兩個救不到從這裡離開的
      情況，這裡也要補一次存檔。 */
@@ -22900,7 +22944,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022154747--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022160028--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
