@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022160028';
+  var BUILD='20261022162735';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2017,7 +2017,7 @@ function _applyRoleUI(){
   /* 這幾張卡片本來就是用 display:flex 排版（icon+文字+箭頭一列），
      重新顯示時要明確設回 'flex'，不能單純清空 style.display 讓它
      掉回 div 預設的 block，不然 icon/文字會變成直的、版面會跑掉。 */
-  ['billingCardAccounting','billingCardTeacherLeave','billingCardChildLeave'].forEach(function(id){
+  ['billingCardAccounting','billingCardTeacherLeave','billingCardChildLeave','billingCardSchedule'].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.style.display=(CURRENT_ROLE==='teacher')?'none':'flex';
   });
@@ -2027,7 +2027,7 @@ function _applyRoleUI(){
 /* 防呆：就算有人用舊書籤、瀏覽器上一頁等方式繞過卡片直接想跳頁，GO() 這裡
    還是會依角色擋下來，不是只靠「卡片沒顯示」這一層。總帳另外在 GO() 裡
    單獨限定只有 owner 能進（見下面 GO 函式）。 */
-var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary'];
+var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary','schedule','schedule-detail'];
 /* 總帳底下所有子頁面（零用金清單/明細、結帳）都要 owner 才能進，
    跟 _ADMIN_UP_PAGES 分開列是因為總帳還多一層密碼（見 GO() 裡的 PWGATE）。 */
 var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout'];
@@ -3906,8 +3906,31 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">會計</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月費單、零用金</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div id="billingCardSchedule" onclick="GO('schedule')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
+        <span style="font-size:1.8rem;">&#x1F4C5;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">排班表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每日班別人員安排，僅行政/owner可見</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
     </div>
   </div>
+</div>
+<!-- ═══ 排班表 ═══ -->
+<div class="pg" id="pg-schedule">
+  <div class="bbar">
+    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
+    <span class="btitle">排班表</span>
+  </div>
+  <div style="padding:20px 16px 40px;" id="scheduleWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<!-- ═══ 排班表 編輯 ═══ -->
+<div class="pg" id="pg-schedule-detail">
+  <div class="bbar">
+    <button class="bbtn" onclick="SCHEDULE.backToList()">&#x2190; 排班表</button>
+    <span class="btitle" id="scheduleDetailTitle">排班表</span>
+  </div>
+  <div style="padding:20px 16px 40px;max-width:900px;margin:0 auto;" id="scheduleDetailWrap"></div>
 </div>
 <!-- ═══ 會計 ═══ -->
 <div class="pg" id="pg-accounting">
@@ -4656,6 +4679,7 @@ function GO(id, _roleRetry) {
   if (id === 'teach') { YR((new Date()>=new Date(2026,7,1))?'115':'114'); }
   if (id === 'diary') { if (typeof DIARY !== 'undefined') DIARY.openDiary(); }
   if (id === 'leave') { if (typeof LEAVE !== 'undefined') LEAVE.init(); }
+  if (id === 'schedule') { if (typeof SCHEDULE !== 'undefined') SCHEDULE.init(); }
   if (id === 'leave-teacher') { /* handled by LEAVE.openTeacher() */ }
   if (id === 'leave-menu') { /* 靜態頁，不需初始化 */ }
   if (id === 'leave-cook') { if (typeof LEAVE_COOK !== 'undefined') LEAVE_COOK.init(); }
@@ -11017,6 +11041,277 @@ var LEAVE_COOK=(function(){
   }
 
   return{init:init,openPerson:openPerson,backToHub:backToHub,backToList:backToList,newForm:newForm,editForm:editForm,deleteFid:deleteFid,toggleRead:toggleRead,saveForm:saveForm,download:download,printFid:printFid,_openMgrSig:_openMgrSig,_openSubSig:_openSubSig,getSubForDate:getSubForDate,exitTop:exitTop};
+})();
+
+/* ════ 排班表（行政專用，老師看不到，GO() 的 _ADMIN_UP_PAGES 擋住）════
+   跟其他行政模組一樣，每間公司各自存各自的排班表（走 _fbInit() 自動
+   依 CURRENT_COMPANY 加前綴，不用另外處理）。每個月的排班各自是一筆
+   獨立的「期別」，舊的月份不會被新月份蓋掉，可以回頭查。 */
+var SCHEDULE=(function(){
+  var FB_PATH='xiaobuddyDutySchedule';
+  var KEY='xbdDutySchedule';
+  var db={};
+  var _fbRef=null,_fbAttachedCompany=null;
+  var curStep='list';
+  var curPid=null;
+  var _saveTimer=null;
+
+  var DEFAULT_COLS=[
+    {key:'c0',label:'7:15-16:45'},
+    {key:'c1',label:'7:45-17:15'},
+    {key:'c2',label:'8:00-17:30'},
+    {key:'c3',label:'倒垃圾 15:50'},
+    {key:'c4',label:'晚3打掃 17:20'},
+    {key:'c5',label:'晚值人員(8:30-18:00)'}
+  ];
+  /* 這幾段說明文字平常月月都一樣，新增排班表時先幫忙帶入上一份常見的
+     寫法，行政人員要改字再自己改，不用每個月重新手打一次。 */
+  var DEFAULT_NOTES={
+    nightNurse:'晚職護人員：巡視各樓層的電源（冷氣、空氣清淨機、插座），是否各樓層有關好、窗簾是否有關好並確認。',
+    trash:'倒垃圾人員：15:45 將各教室的垃圾收齊，15:55 將垃圾跟鄰班一起推出去倒垃圾，每次倒完垃圾要將垃圾桶洗淨並歸定位。',
+    eveningDuty:'晚值人員：17:25 帶下來一樓教室，各空間留一位，接手給幼兒帶離開，一樓空間要整理好地。',
+    early:'1.早值人員協助開窗通風、整理環境\n第一順位：開音樂、拿耳溫槍、收床墊\n第二順位：開全部窗戶、鋪地板棉、開冷氣\n2.早值人員於7:15在門口迎接入園幼兒。\n3.協助幼童量體溫、消毒手部。\n4.Baby 要詢問喝奶的時間。',
+    mid:'1.早上8點就定位，依序帶幼兒進班。\n2.下午17點將幼兒送往一樓教室，環境整理好。\n3.未回幼班請托育人員填寫交接本。',
+    late:'1.17:30 將一樓教室集合，由晚值人員協調。\n2.晚值人員打掃一樓教室和廁所公共區域，並確認所有門窗及所有電器及插座是否關閉，房旁及都要去巡視。\n3.晚值人員17:30後，待到幼兒全部回家後，請將所有門窗開好並拉鐵門上。\n4.接應入園門，輪流看顧幼兒安全'
+  };
+
+  function _wrap(){return document.getElementById('scheduleWrap');}
+  function _dwrap(){return document.getElementById('scheduleDetailWrap');}
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function escAttr(s){return esc(s).replace(/"/g,'&quot;');}
+  /* 跟 LEAVE 模組的 _leaveTeachers() 邏輯一樣，但那個是定義在 LEAVE 自己的
+     IIFE 裡面、外面叫不到，這裡自己照抄一份（目前這間公司的老師名單）。 */
+  function _teachers(){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    return pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:null)||[];
+  }
+
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    db={};
+    _fbRef=fb.ref(FB_PATH);
+    _fbRef.on('value',function(snap){
+      var remote=snap.val()||{};
+      /* 正在編輯中的那一份（curPid）不要被這個監聽器整包蓋過去：存檔是
+         debounce 500ms 才真的寫回雲端，如果中途（例如剛新增一週、還沒
+         存檔完成）雲端送回的舊版快照把記憶體裡 db 整個換掉，剛剛加的
+         那一週就會憑空消失。正在編輯的那份先跳過，交給 _save() 自己
+         負責把它寫回雲端，離開編輯畫面之後這裡才會重新同步。 */
+      Object.keys(remote).forEach(function(pid){
+        if(pid===curPid&&curStep==='detail')return;
+        db[pid]=remote[pid];
+      });
+      Object.keys(db).forEach(function(pid){
+        if(pid===curPid&&curStep==='detail')return;
+        if(!remote[pid])delete db[pid];
+      });
+      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+      /* 同理，正在編輯畫面時完全不要重畫——重畫會讓使用者正在打字的
+         輸入框整個重建、游標跳掉。curPid 這份已經在上面跳過不會被蓋掉，
+         不重畫也不會漏看到東西。 */
+      if(curStep==='list')renderList();
+    });
+  }
+  function init(){
+    try{var r=localStorage.getItem(_ckey(KEY));if(r){var d=JSON.parse(r);if(d)db=d;}}catch(e){}
+    attachFb();
+    curStep='list';
+    renderList();
+  }
+  /* 文字類欄位（標題、週期範圍、說明文字）用 debounce 存檔，不要每敲一個
+     字就整塊重畫畫面——重畫會讓輸入框失焦、游標跳掉，打到一半被打斷。
+     只存資料，不重畫 DOM；真的動到表格結構（新增/刪除週、加減人）才重畫。 */
+  function _save(rerender){
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(function(){
+      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+      if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+      try{var fb=_fbInit();if(fb&&curPid&&db[curPid])fb.ref(FB_PATH+'/'+curPid).set(db[curPid]);}catch(e){}
+    },500);
+    if(rerender)renderDetail();
+  }
+
+  function renderList(){
+    var w=_wrap();if(!w)return;
+    var ids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var h='<button onclick="SCHEDULE.newPeriod()" style="width:100%;padding:14px;background:#2b90b0;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增排班表</button>';
+    if(!ids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無排班表</div>';
+    }else{
+      h+='<div style="display:flex;flex-direction:column;gap:10px;">';
+      ids.forEach(function(pid){
+        var p=db[pid]||{};
+        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #2b90b0;overflow:hidden;">';
+        h+='<div style="padding:14px 16px;cursor:pointer;" onclick="SCHEDULE.openPeriod(\''+pid+'\')"><div style="font-weight:800;font-size:.95rem;color:#1a6a80;">'+esc(p.label||'未命名')+'</div><div style="font-size:.78rem;color:#888;margin-top:3px;">共 '+((p.weeks||[]).length)+' 週排班</div></div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="SCHEDULE.openPeriod(\''+pid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#2b90b0;font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="SCHEDULE.deletePeriod(\''+pid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑 刪除</button>';
+        h+='</div></div>';
+      });
+      h+='</div>';
+    }
+    w.innerHTML=h;
+  }
+
+  function newPeriod(){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var now=new Date();
+    var label=prompt('請輸入這份排班表的名稱（例如：115年11月）',autoYr+'年'+(now.getMonth()+1)+'月');
+    if(label===null)return;
+    var pid='sch'+Date.now();
+    db[pid]={label:label||'未命名',cols:JSON.parse(JSON.stringify(DEFAULT_COLS)),weeks:[],notes:JSON.parse(JSON.stringify(DEFAULT_NOTES)),createdAt:Date.now()};
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+pid).set(db[pid]);}catch(e){}
+    openPeriod(pid);
+  }
+  function deletePeriod(pid){
+    if(!confirm('確定要刪除「'+((db[pid]||{}).label||'這份')+'」排班表嗎？刪除後無法復原。'))return;
+    delete db[pid];
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+pid).remove();}catch(e){}
+    renderList();
+  }
+  function openPeriod(pid){
+    if(!db[pid])return;
+    curPid=pid;curStep='detail';
+    GO('schedule-detail');
+    renderDetail();
+  }
+  function backToList(){curStep='list';curPid=null;GO('schedule');}
+
+  function renderDetail(){
+    var p=db[curPid];
+    if(!p){backToList();return;}
+    var w=_dwrap();if(!w)return;
+    if(!p.cols)p.cols=JSON.parse(JSON.stringify(DEFAULT_COLS));
+    if(!p.weeks)p.weeks=[];
+    if(!p.notes)p.notes=JSON.parse(JSON.stringify(DEFAULT_NOTES));
+    var cols=p.cols,weeks=p.weeks;
+    var teachers=_teachers();
+    var titleEl=document.getElementById('scheduleDetailTitle');
+    if(titleEl)titleEl.textContent=p.label||'排班表';
+    var h='<input value="'+escAttr(p.label||'')+'" oninput="SCHEDULE.setLabel(this.value)" placeholder="排班表名稱" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:1rem;font-weight:800;margin-bottom:14px;box-sizing:border-box;">';
+    h+='<div class="tbl-wrap" style="overflow-x:auto;margin-bottom:14px;"><table class="ck-table" style="min-width:760px;"><thead><tr><th style="min-width:90px;">日期</th>';
+    cols.forEach(function(c,ci){
+      h+='<th style="min-width:130px;"><input value="'+escAttr(c.label)+'" oninput="SCHEDULE.setColLabel('+ci+',this.value)" style="width:100%;border:none;background:transparent;font-weight:700;text-align:center;font-size:.76rem;box-sizing:border-box;"></th>';
+    });
+    h+='<th style="width:36px;"></th></tr></thead><tbody>';
+    weeks.forEach(function(wk,wi){
+      h+='<tr><td><input value="'+escAttr(wk.range||'')+'" oninput="SCHEDULE.setWeekRange('+wi+',this.value)" placeholder="10/5-10/9" style="width:100%;border:none;background:transparent;font-weight:700;box-sizing:border-box;"></td>';
+      cols.forEach(function(c){
+        var names=(wk.shifts&&wk.shifts[c.key])||[];
+        h+='<td><div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px;">';
+        names.forEach(function(nm){
+          h+='<span style="background:#e8f0fb;color:#2b5a9c;border-radius:8px;padding:2px 6px;font-size:.7rem;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'+esc(nm)+'<span onclick="SCHEDULE.removeName('+wi+',\''+c.key+'\',\''+String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="cursor:pointer;color:#e74c3c;font-weight:900;">×</span></span>';
+        });
+        h+='</div><select onchange="if(this.value)SCHEDULE.addName('+wi+',\''+c.key+'\',this.value);this.value=\'\';" style="width:100%;font-size:.7rem;padding:3px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"><option value="">＋加人</option>';
+        teachers.forEach(function(t){h+='<option value="'+escAttr(t.name)+'">'+esc(t.name)+'</option>';});
+        h+='</select></td>';
+      });
+      h+='<td><button onclick="SCHEDULE.removeWeek('+wi+')" style="border:none;background:none;color:#e57373;cursor:pointer;font-size:1rem;">🗑</button></td></tr>';
+    });
+    h+='</tbody></table></div>';
+    h+='<button onclick="SCHEDULE.addWeek()" style="padding:9px 18px;background:#2b90b0;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;margin-bottom:22px;">＋ 新增一週</button>';
+
+    h+='<div style="font-size:.78rem;color:#888;margin-bottom:8px;">以下說明文字每個月通常不太會變，已經先帶入上次常見的寫法，需要的話可以自己修改：</div>';
+    [['nightNurse','晚職護人員'],['trash','倒垃圾人員'],['eveningDuty','晚值人員']].forEach(function(nd){
+      h+='<div style="margin-bottom:12px;"><div style="font-weight:700;font-size:.82rem;color:#555;margin-bottom:4px;">'+nd[1]+'</div><textarea oninput="SCHEDULE.setNote(\''+nd[0]+'\',this.value)" style="width:100%;min-height:54px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.8rem;box-sizing:border-box;font-family:inherit;">'+esc(p.notes[nd[0]]||'')+'</textarea></div>';
+    });
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">';
+    [['early','早班注意事項'],['mid','中班注意事項'],['late','晚班注意事項']].forEach(function(nd){
+      h+='<div style="flex:1;min-width:180px;"><div style="font-weight:700;font-size:.82rem;color:#555;margin-bottom:4px;">'+nd[1]+'</div><textarea oninput="SCHEDULE.setNote(\''+nd[0]+'\',this.value)" style="width:100%;min-height:130px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.76rem;box-sizing:border-box;font-family:inherit;">'+esc(p.notes[nd[0]]||'')+'</textarea></div>';
+    });
+    h+='</div>';
+    h+='<button onclick="SCHEDULE.printPeriod()" style="width:100%;padding:12px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    w.innerHTML=h;
+  }
+
+  function setLabel(v){db[curPid].label=v;_save(false);var titleEl=document.getElementById('scheduleDetailTitle');if(titleEl)titleEl.textContent=v||'排班表';}
+  function setColLabel(ci,v){db[curPid].cols[ci].label=v;_save(false);}
+  function setWeekRange(wi,v){db[curPid].weeks[wi].range=v;_save(false);}
+  function setNote(key,v){db[curPid].notes[key]=v;_save(false);}
+  function addWeek(){
+    var p=db[curPid];
+    var shifts={};p.cols.forEach(function(c){shifts[c.key]=[];});
+    p.weeks.push({range:'',shifts:shifts});
+    _save(true);
+  }
+  function removeWeek(wi){
+    if(!confirm('確定要刪除這一週嗎？'))return;
+    db[curPid].weeks.splice(wi,1);
+    _save(true);
+  }
+  function addName(wi,colKey,name){
+    var wk=db[curPid].weeks[wi];
+    if(!wk.shifts)wk.shifts={};
+    if(!wk.shifts[colKey])wk.shifts[colKey]=[];
+    if(wk.shifts[colKey].indexOf(name)<0)wk.shifts[colKey].push(name);
+    _save(true);
+  }
+  function removeName(wi,colKey,name){
+    var wk=db[curPid].weeks[wi];
+    if(!wk.shifts||!wk.shifts[colKey])return;
+    var idx=wk.shifts[colKey].indexOf(name);
+    if(idx>=0)wk.shifts[colKey].splice(idx,1);
+    _save(true);
+  }
+
+  function _doPrint(html){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
+    w.document.write(html);w.document.close();
+    setTimeout(function(){try{w.print();}catch(e){}},600);
+  }
+  function printPeriod(){
+    var p=db[curPid];if(!p)return;
+    var cols=p.cols||DEFAULT_COLS,weeks=p.weeks||[];
+    var teachers=_teachers();
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'排班表')+'</title><style>';
+    html+='*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;padding:14px 18px;}';
+    html+='h1{font-size:15pt;text-align:center;margin-bottom:2px;}h2{font-size:12pt;text-align:center;color:#555;margin-bottom:12px;font-weight:700;}';
+    html+='table{width:100%;border-collapse:collapse;margin-bottom:14px;}th,td{border:1px solid #999;padding:5px 6px;font-size:8.5pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
+    html+='.tlist{font-size:8.5pt;margin-bottom:10px;line-height:1.7;}';
+    html+='.note{font-size:8.5pt;margin-bottom:8px;line-height:1.6;white-space:pre-wrap;}';
+    html+='.notes3{display:flex;gap:10px;}.notes3>div{flex:1;border:1px solid #999;padding:6px 8px;}';
+    html+='.notes3 h3{font-size:9pt;text-align:center;margin-bottom:4px;}';
+    html+='@media print{@page{size:A4 landscape;margin:10mm;}}';
+    html+='</style></head><body>';
+    html+='<h1>'+esc(_companyFullName())+'</h1><h2>'+esc(p.label||'排班表')+'</h2>';
+    html+='<table><thead><tr><th>日期</th>';
+    cols.forEach(function(c){html+='<th>'+esc(c.label)+'</th>';});
+    html+='</tr></thead><tbody>';
+    weeks.forEach(function(wk){
+      html+='<tr><td>'+esc(wk.range||'')+'</td>';
+      cols.forEach(function(c){
+        var names=(wk.shifts&&wk.shifts[c.key])||[];
+        html+='<td>'+esc(names.join('、'))+'</td>';
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    if(teachers.length){
+      html+='<div class="tlist"><b>托育人員：</b>'+teachers.map(function(t,i){return (i+1)+'. '+esc(t.name);}).join('　')+'</div>';
+    }
+    var notes=p.notes||DEFAULT_NOTES;
+    [notes.nightNurse,notes.trash,notes.eveningDuty].forEach(function(n){
+      if(n)html+='<div class="note">'+esc(n)+'</div>';
+    });
+    html+='<div class="notes3">';
+    [['早班注意事項',notes.early],['中班注意事項',notes.mid],['晚班注意事項',notes.late]].forEach(function(nd){
+      html+='<div><h3>'+esc(nd[0])+'</h3><div class="note">'+esc(nd[1]||'')+'</div></div>';
+    });
+    html+='</div>';
+    html+='</body></html>';
+    _doPrint(html);
+  }
+
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -22944,7 +23239,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022160028--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022162735--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
