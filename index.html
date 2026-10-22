@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022092732';
+  var BUILD='20261022095428';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14956,13 +14956,19 @@ var YELLOWCARD=(function(){
     p+='.hdr-txt{flex:1;text-align:center;}';
     p+='.hdr-txt .t1{font-size:14pt;font-weight:900;color:#2d3057;}';
     p+='.hdr-txt .t2{font-size:12.5pt;font-weight:800;color:'+AC+';margin-top:3px;}';
-    p+='.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:14px;}';
-    p+='.card{border:1px solid '+AC+';border-radius:8px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;}';
+    /* 版面用 <table> 排版，不是用 CSS Grid——Grid 配合強制分頁在 Safari/
+       iOS 上的分頁計算常常不準（量出來一張A4明明放得下6張，卻硬是被
+       擠出一張幾乎全空白的第3頁），同樣的東西換成表格，每一列用
+       page-break-after 控制分頁，各家瀏覽器的支援度跟行為一致得多，
+       這是處理「列印強制分頁」最穩妥的傳統作法。 */
+    p+='table{width:100%;border-collapse:separate;border-spacing:14px;table-layout:fixed;margin-bottom:0;}';
+    p+='td{width:50%;vertical-align:top;padding:0;}';
+    p+='.card{border:1px solid '+AC+';border-radius:8px;overflow:hidden;}';
     p+='.card .pic{position:relative;height:270px;background:#fafafa;display:flex;align-items:center;justify-content:center;}';
     p+='.card .pic img{max-width:100%;max-height:100%;object-fit:contain;width:100%;height:100%;}';
     p+='.card .pic .dstamp{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.55);color:#ffd24d;font-family:"Courier New",monospace;font-size:9pt;padding:2px 6px;border-radius:4px;}';
     p+='.card .name{text-align:center;font-size:11pt;padding:6px 2px;background:'+AL+';color:'+AC+';font-weight:700;}';
-    p+='.pagebreak{page-break-after:always;}';
+    p+='.pgbreak-row{page-break-after:always;}';
     p+='@media print{body{padding:6px 12px;}@page{margin:8mm;size:A4 portrait;}}';
     p+='</style></head><body>';
     p+='<div class="hdr">';
@@ -14973,17 +14979,22 @@ var YELLOWCARD=(function(){
     var ids=Object.keys(items).sort(function(a,b){return (items[a].order||0)-(items[b].order||0);});
     if(!ids.length){p+='<div style="color:#999;font-size:9.5pt;padding:4px 2px 10px;">尚無資料</div>';}
     else{
-      for(var i=0;i<ids.length;i+=6){
-        var chunk=ids.slice(i,i+6);
-        p+='<div class="grid">';
-        chunk.forEach(function(id){
-          var it=items[id];
-          var ds=fmtDate(it.date);
-          p+='<div class="card"><div class="pic">'+(it.photo?'<img src="'+it.photo+'">':'')+(it.photo&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="name">'+esc2(it.name||'（未填姓名）')+'</div></div>';
-        });
-        p+='</div>';
-        if(i+6<ids.length)p+='<div class="pagebreak"></div>';
+      function cardTd(id){
+        if(!id)return '<td></td>';
+        var it=items[id];
+        var ds=fmtDate(it.date);
+        return '<td><div class="card"><div class="pic">'+(it.photo?'<img src="'+it.photo+'">':'')+(it.photo&&ds?'<span class="dstamp">'+esc2(ds)+'</span>':'')+'</div><div class="name">'+esc2(it.name||'（未填姓名）')+'</div></div></td>';
       }
+      p+='<table>';
+      for(var i=0;i<ids.length;i+=2){
+        var rowInPage=(Math.floor(i/2))%3; // 每頁3列（6張），第3列（索引2）結束要分頁
+        var isLastRowOfPage=(rowInPage===2)||(i+2>=ids.length);
+        p+='<tr'+(isLastRowOfPage&&i+2<ids.length?' class="pgbreak-row"':'')+'>';
+        p+=cardTd(ids[i]);
+        p+=cardTd(ids[i+1]);
+        p+='</tr>';
+      }
+      p+='</table>';
     }
     p+='</body></html>';
     return p;
@@ -22843,7 +22854,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022092732--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022095428--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
