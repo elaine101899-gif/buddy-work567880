@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022114518';
+  var BUILD='20261022120340';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18540,7 +18540,15 @@ var LEDGER=(function(){
     var totalIncome=0,totalExpense=0,manualIncome=0,manualExpense=0,byCat={};
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
-      totalIncome+=inc;totalExpense+=exp;
+      totalIncome+=inc;
+      /* 總支出只算「日常科目」（LEDGER_CATS_A：餐費/設備/行政/雜項/清潔/
+         水電/廚房用品/教具材料），薪資支出/員工福利/退費/房租這四個大項
+         科目（LEDGER_CATS_B）是另外記的，不算進總支出，兩邊才不會混在
+         一起變成一個誰都對不起來的數字——使用者明確要求的分法。這四個
+         科目的明細還是會顯示在畫面上，只是不計入總支出這個加總。
+         目前餘額的計算（manualIncome/manualExpense）不受影響，照樣算
+         所有自己新增的調整項目，不分科目。 */
+      if(LEDGER_CATS_B.indexOf(r.cat)<0)totalExpense+=exp;
       if(r.source==='manual'){manualIncome+=inc;manualExpense+=exp;}
       if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=exp;}
     });
@@ -18834,7 +18842,7 @@ function _ledgerSummaryTablesHtml(t,open){
     h+='<tr class="tot-row" style="background:#fff6e0;"><td>目前餘額</td><td class="num" style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
   }
   h+='</tbody></table></div>';
-  h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 兩張表各自是「餐費/設備…等日常科目」跟「薪資/房租…等大項科目」的小計，兩個小計加起來＝總支出，不是對應同一筆數字。</div>';
+  h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 總支出只算左邊「餐費/設備…」這類日常科目；薪資/員工福利/退費/房租這四項是另外記的明細，不計入總支出。</div>';
   h+='</div>';
   return h;
 }
@@ -22862,7 +22870,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022114518--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022120340--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
