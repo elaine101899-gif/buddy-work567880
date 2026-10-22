@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022153100';
+  var BUILD='20261022154747';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9350,10 +9350,29 @@ var LEAVE=(function(){
     return pl.teachers||asrDB.teachers||[];
   }
   /* ── 開啟老師假單歷史 ── */
-  function openTeacher(tid){
+  function openTeacher(tid,_retry){
+    /* tid 一定要是「目前這份名冊」裡真的存在的老師 id，不然存檔會寫到一個
+       查無此人的雲端路徑（例如版面太舊、name 的 button 點出來的 tid 早就
+       跟現在的名冊兜不起來），畫面上看起來存檔成功，但之後用新版頁面打開
+       同一位老師完全看不到剛剛存的東西，像是資料憑空消失。寧可當下就卡住
+       提醒重新整理，也不要讓它悄悄寫到錯的地方。
+       但名冊本身是雲端非同步載入的，剛登入那幾百毫秒名冊可能還是空的——
+       這種情況不能馬上判定是「版面太舊」，要先重試幾次，真的等到名冊
+       有內容、裡面還是找不到這個 tid，才算是真的異常。 */
+    var list=_leaveTeachers();
+    var teacherCheck=tid?list.find(function(t){return t.id===tid;}):null;
+    if(tid&&!teacherCheck&&!list.length&&(_retry||0)<20){
+      setTimeout(function(){openTeacher(tid,(_retry||0)+1);},150);
+      return;
+    }
+    if(!tid||!teacherCheck){
+      alert('找不到這位老師的最新資料，可能是頁面太舊了，請重新整理網頁後再試一次。');
+      if(typeof location!=='undefined')location.reload();
+      return;
+    }
     lTid=tid;lFid='';
     GO('leave-teacher');
-    var teacher=_leaveTeachers().find(function(t){return t.id===tid;});
+    var teacher=teacherCheck;
     var titleEl=document.getElementById('leaveTeacherTitle');
     if(titleEl&&teacher)titleEl.textContent=teacher.name+' 的假單';
     var wrap=document.getElementById('leaveTeacherWrap');
@@ -22881,7 +22900,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022153107--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022154747--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -22938,12 +22957,15 @@ document.addEventListener('DOMContentLoaded',function(){
     if(_shown)return;
     _shown=true;
     var banner=document.createElement('div');
-    banner.textContent='🔄 有新版本可以用，點這裡重新整理';
+    banner.textContent='⚠️ 這個分頁已經開很久了，資料可能存不進去，點這裡重新整理（不會弄丟已經填的內容）';
     banner.style.cssText='position:fixed;top:0;left:0;right:0;background:#1565c0;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700;z-index:999999;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);';
     banner.onclick=function(){location.reload();};
     document.body.appendChild(banner);
   }
-  setInterval(checkVersion,5*60*1000);
+  /* 剛打開分頁20秒先檢查一次（之前只排五分鐘一次，如果是一打開就已經是
+     舊分頁的情況，等五分鐘才提醒太慢了），之後固定每2分鐘再檢查一次。 */
+  setTimeout(checkVersion,20*1000);
+  setInterval(checkVersion,2*60*1000);
 })();
 </script>
 
