@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023140404';
+  var BUILD='20261023174755';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11240,10 +11240,22 @@ var SCHEDULE=(function(){
     }
     return h;
   }
+  /* 下拉選單要能選到的人，不能只有班級老師名冊（_teachers()）——金佩樺、
+     黃苡綸這種主管身分根本不在那份名冊裡，不補進來的話，自動排班排進去
+     的這兩位，管理者想手動換人的時候反而選不到他們自己。小布迪已經有
+     固定的15人名單（XBD_AUTO.ORDER），兩份合併、去重複。 */
+  function _rosterNames(){
+    var names=_teachers().map(function(t){return t.name;});
+    if(CURRENT_COMPANY==='xbd'){
+      var have={};names.forEach(function(n){have[n]=true;});
+      XBD_AUTO.ORDER.forEach(function(n){if(!have[n]){have[n]=true;names.push(n);}});
+    }
+    return names;
+  }
   /* ── 編輯模式：原本的表格，下拉選單加減人、文字輸入框改日期/說明 ── */
   function _renderEdit(p){
     var cols=p.cols,weeks=p.weeks;
-    var teachers=_teachers();
+    var teachers=_rosterNames();
     var h='<input value="'+escAttr(p.label||'')+'" oninput="SCHEDULE.setLabel(this.value)" placeholder="排班表名稱" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:1rem;font-weight:800;margin-bottom:14px;box-sizing:border-box;">';
     h+='<div class="tbl-wrap" style="overflow-x:auto;margin-bottom:14px;"><table class="ck-table" style="min-width:760px;"><thead><tr><th style="min-width:90px;">日期</th>';
     cols.forEach(function(c,ci){
@@ -11259,7 +11271,7 @@ var SCHEDULE=(function(){
           h+='<span style="background:#e8f0fb;color:#2b5a9c;border-radius:8px;padding:2px 6px;font-size:.7rem;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;">'+esc(nm)+'<span onclick="SCHEDULE.removeName('+wi+',\''+c.key+'\',\''+String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')" style="cursor:pointer;color:#e74c3c;font-weight:900;">×</span></span>';
         });
         h+='</div><select onchange="if(this.value)SCHEDULE.addName('+wi+',\''+c.key+'\',this.value);this.value=\'\';" style="width:100%;font-size:.7rem;padding:3px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;"><option value="">＋加人</option>';
-        teachers.forEach(function(t){h+='<option value="'+escAttr(t.name)+'">'+esc(t.name)+'</option>';});
+        teachers.forEach(function(nm){h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
         h+='</select></td>';
       });
       h+='<td><button onclick="SCHEDULE.removeWeek('+wi+')" style="border:none;background:none;color:#e57373;cursor:pointer;font-size:1rem;">🗑</button></td></tr>';
@@ -11318,14 +11330,37 @@ var SCHEDULE=(function(){
   /* 列印用：姓不用印，只留名字後兩個字，省空間用（排班表內部用的還是
      完整姓名，不影響資料本身，純粹列印時顯示用）。單字名（罕見）就照印。 */
   function _shortName(n){n=String(n||'');return n.length>2?n.slice(-2):n;}
+  /* 托育人員清單不能只用 _teachers()（班級老師名冊）——金佩樺、黃苡綸這種
+     主管身分的人根本不在那份名冊裡，印出來會少兩個人。改成直接從這份
+     排班表「真正排進去的人」去湊名單，一定不會漏掉任何一個有排到班的人。
+     小布迪有固定的 1~15 號順序（跟行政人員確認過的），照那個順序排；
+     不是小布迪、或排班表裡出現了那份名單以外的人，就照第一次出現的
+     順序接在後面，不會憑空漏掉人。 */
+  function _rosterForPrint(p){
+    var seen={},out=[];
+    (p.weeks||[]).forEach(function(wk){
+      Object.keys((wk&&wk.shifts)||{}).forEach(function(ck){
+        (wk.shifts[ck]||[]).forEach(function(n){if(n&&!seen[n]){seen[n]=true;out.push(n);}});
+      });
+    });
+    if(CURRENT_COMPANY==='xbd'){
+      var orderIdx={};XBD_AUTO.ORDER.forEach(function(n,i){orderIdx[n]=i;});
+      out.sort(function(a,b){
+        var ia=(orderIdx[a]!==undefined)?orderIdx[a]:999;
+        var ib=(orderIdx[b]!==undefined)?orderIdx[b]:999;
+        return ia-ib;
+      });
+    }
+    return out;
+  }
   function printPeriod(){
     var p=db[curPid];if(!p)return;
     var cols=p.cols||DEFAULT_COLS,weeks=p.weeks||[];
-    var teachers=_teachers();
+    var teachers=_rosterForPrint(p);
     var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'排班表')+'</title><style>';
-    html+='*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;padding:8px 14px;}';
-    html+='h1{font-size:17pt;text-align:center;margin-bottom:2px;}h2{font-size:13pt;text-align:center;color:#555;margin-bottom:8px;font-weight:700;}';
-    html+='table{width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:fixed;}th,td{border:1px solid #999;padding:3px 5px;font-size:12pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
+    html+='*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;padding:5px 12px;}';
+    html+='h1{font-size:15pt;text-align:center;margin-bottom:2px;}h2{font-size:11.5pt;text-align:center;color:#555;margin-bottom:6px;font-weight:700;}';
+    html+='table{width:100%;border-collapse:collapse;margin-bottom:7px;table-layout:fixed;}th,td{border:1px solid #999;padding:2px 4px;font-size:10.8pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
     /* 日期欄固定寬度、不換行——11/30-12/04這種11個字的範圍之前寬度不夠，
        數字會被欄框擠到看不全，這裡加寬確保放得下。倒垃圾/晚3打掃/晚值
        人員這三個欄位的標題改成「文字／時間」兩行顯示（看 splitLabel），
@@ -11341,11 +11376,11 @@ var SCHEDULE=(function(){
     html+='td:nth-child(5),th:nth-child(5){width:66px;}';
     html+='td:nth-child(6),th:nth-child(6){width:66px;}';
     html+='td:nth-child(7),th:nth-child(7){width:100px;}';
-    html+='.tlist{font-size:10.3pt;margin-bottom:7px;line-height:1.5;}';
-    html+='.note{font-size:10.3pt;margin-bottom:5px;line-height:1.32;white-space:pre-wrap;}';
-    html+='.notes3{display:flex;gap:9px;}.notes3>div{flex:1;border:1px solid #999;padding:5px 7px;}';
-    html+='.notes3 h3{font-size:10.6pt;text-align:center;margin-bottom:3px;}';
-    html+='@media print{@page{size:A4 landscape;margin:7mm;}}';
+    html+='.tlist{font-size:9.3pt;margin-bottom:6px;line-height:1.4;}';
+    html+='.note{font-size:9.3pt;margin-bottom:4px;line-height:1.26;white-space:pre-wrap;}';
+    html+='.notes3{display:flex;gap:8px;}.notes3>div{flex:1;border:1px solid #999;padding:4px 6px;}';
+    html+='.notes3 h3{font-size:9.6pt;text-align:center;margin-bottom:2px;}';
+    html+='@media print{@page{size:A4 landscape;margin:6mm;}}';
     html+='</style></head><body>';
     html+='<h1>'+esc(_companyFullName())+'</h1><h2>'+esc(p.label||'排班表')+'</h2>';
     /* 標題文字如果帶空格或括號（例如「晚3打掃 17:20」「晚值人員(8:30-18:00)」），
@@ -11374,7 +11409,7 @@ var SCHEDULE=(function(){
     });
     html+='</tbody></table>';
     if(teachers.length){
-      html+='<div class="tlist"><b>托育人員：</b>'+teachers.map(function(t,i){return (i+1)+'. '+esc(t.name);}).join('　')+'</div>';
+      html+='<div class="tlist"><b>托育人員：</b>'+teachers.map(function(nm,i){return (i+1)+'. '+esc(nm);}).join('　')+'</div>';
     }
     var notes=p.notes||DEFAULT_NOTES;
     [notes.nightNurse,notes.trash,notes.eveningDuty].forEach(function(n){
@@ -23449,7 +23484,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023140404--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023174755--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
