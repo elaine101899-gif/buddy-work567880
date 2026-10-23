@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023195321';
+  var BUILD='20261023210254';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2030,7 +2030,7 @@ function _applyRoleUI(){
 var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary','schedule','schedule-detail'];
 /* 總帳底下所有子頁面（零用金清單/明細、結帳）都要 owner 才能進，
    跟 _ADMIN_UP_PAGES 分開列是因為總帳還多一層密碼（見 GO() 裡的 PWGATE）。 */
-var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout','ledger-payroll'];
+var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout','ledger-payroll','ledger-payroll-detail','ledger-payroll-person'];
 
 /* ── 登入關卡：authGateOv 蓋住全站，確認登入狀態之前／沒登入的時候
    一直擋著，登入成功才會藏起來、讓底下原本的公司選擇/首頁正常運作。
@@ -4027,9 +4027,23 @@ function _rosterKidsAsOf(cls,dateStr){
     <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
     <span class="btitle">薪資</span>
   </div>
-  <div style="padding:14px 16px 40px;" id="ledgerPayrollWrap">
-    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">這個功能還在建置中，之後會放薪資相關的記錄。</div>
+  <div style="padding:14px 16px 40px;" id="payrollListWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
+</div>
+<div class="pg" id="pg-ledger-payroll-detail">
+  <div class="bbar">
+    <button class="bbtn" onclick="PAYROLL.backToList()">&#x2190; 薪資</button>
+    <span class="btitle" id="payrollDetailTitle">薪資表</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="payrollDetailWrap"></div>
+</div>
+<div class="pg" id="pg-ledger-payroll-person">
+  <div class="bbar">
+    <button class="bbtn" onclick="PAYROLL.backToDetail()">&#x2190; 返回</button>
+    <span class="btitle" id="payrollPersonTitle">薪資明細</span>
+  </div>
+  <div style="padding:14px 16px 40px;max-width:640px;margin:0 auto;" id="payrollPersonWrap"></div>
 </div>
 <div class="pg" id="pg-ledger-cash">
   <div class="bbar">
@@ -4700,6 +4714,7 @@ function GO(id, _roleRetry) {
   if (id === 'diary') { if (typeof DIARY !== 'undefined') DIARY.openDiary(); }
   if (id === 'leave') { if (typeof LEAVE !== 'undefined') LEAVE.init(); }
   if (id === 'schedule') { if (typeof SCHEDULE !== 'undefined') SCHEDULE.init(); }
+  if (id === 'ledger-payroll') { if (typeof PAYROLL !== 'undefined') PAYROLL.init(); }
   if (id === 'leave-teacher') { /* handled by LEAVE.openTeacher() */ }
   if (id === 'leave-menu') { /* 靜態頁，不需初始化 */ }
   if (id === 'leave-cook') { if (typeof LEAVE_COOK !== 'undefined') LEAVE_COOK.init(); }
@@ -11577,6 +11592,368 @@ var SCHEDULE=(function(){
   }
 
   return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,toggleMode:toggleMode,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod,autoGenerateXBD:autoGenerateXBD};
+})();
+
+/* ════ 薪資（總帳底下，owner 專用+另外密碼，GO() 已經處理權限跟密碼）════
+   2026-10-23 跟行政人員要了現有的 Excel 薪資清冊當範本，先把「架構」
+   建起來：每個月一份薪資表，底下一人一筆紀錄，欄位照 Excel 那份原本
+   的欄位（投保金額/底薪/加班/津貼/值班/年終/保費/特休/育嬰假…）。
+   行政人員說了「先建構起來，之後再說每個人特休怎麼算、薪水怎麼組成」，
+   所以這裡大部分欄位先留空白讓她自己填／之後再談規則，**只有「當月
+   請假天數」這塊照需求直接從每日回報(TEACHERLEAVE)的出缺勤紀錄自動
+   帶入、不用手動輸入**，因為那份資料本來就已經在系統裡了。
+   跟排班表一樣，每間公司各自存各自的薪資表（_fbInit 自動依公司隔離）。 */
+var PAYROLL=(function(){
+  var FB_PATH='xiaobuddyPayroll';
+  var KEY='xbdPayroll';
+  var db={};
+  var _fbRef=null,_fbAttachedCompany=null;
+  var curStep='list';
+  var curPid=null,curName=null;
+  var _saveTimer=null;
+
+  /* 薪資涵蓋的不只是班級老師，主管/機動/廚工也都要能領薪水、被加進
+     薪資表——這幾位剛好就是之前排班表也遇到的同一批「不在班級名冊裡」
+     的人，所以这里一样額外補上去，兩間公司名單不一樣分開列。 */
+  var EXTRA_STAFF={
+    xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷','林素珍'],
+    bambino:['黃鈺雯','林素珍']
+  };
+  function _teachers(){
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    return pl.teachers||(typeof asrDB!=='undefined'?asrDB.teachers:null)||[];
+  }
+  function _rosterNames(){
+    var names=_teachers().map(function(t){return t.name;});
+    var have={};names.forEach(function(n){have[n]=true;});
+    (EXTRA_STAFF[CURRENT_COMPANY]||[]).forEach(function(n){if(!have[n]){have[n]=true;names.push(n);}});
+    return names;
+  }
+
+  /* 每一筆薪資紀錄的欄位，照 Excel 原本的欄位分組——先全部留空/0，
+     實際數字、特休規則都等行政人員之後再告訴我。 */
+  var FIELD_GROUPS=[
+    ['基本資料',[['birthday','生日','text'],['startDate','到職日','text']]],
+    ['投保與底薪',[['insuredAmount','投保金額','num'],['baseSalary','底薪','num']]],
+    ['加班',[['otAmt','加班費','num'],['otHours','加班時數','num'],['ot2Amt','逾時加班費','num'],['ot2Hours','逾時加班時數','num']]],
+    ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
+    ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
+    ['年終',[['yearEndBonus','年終獎金','num']]],
+    ['保費／扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['leaveDeduct','請假扣薪','num']]],
+    ['結算',[['totalAmt','總金額','num'],['transferAmt','薪轉薪資','num']]],
+    ['特休',[['annualQuota','特休天數','text'],['annualRange','特休起訖','text'],['annualRemain','特休餘額','text'],['annualUsed','特休已使用日期','textarea']]],
+    ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
+  ];
+  /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
+     「當月請假天數」就是照這個順序列出來，特休不算在這裡（特休走上面
+     「特休」那組，不是請假扣薪的概念）。 */
+  var LEAVE_TYPES_FOR_PAYROLL=['事假','病假','家庭照顧假','生理假','安胎假','公傷假','婚假','喪假','公假','產檢假','產假','福利假','其他'];
+
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function escAttr(s){return esc(s).replace(/"/g,'&quot;');}
+  function _lwrap(){return document.getElementById('payrollListWrap');}
+  function _dwrap(){return document.getElementById('payrollDetailWrap');}
+  function _pwrap(){return document.getElementById('payrollPersonWrap');}
+
+  function attachFb(){
+    if(_fbAttachedCompany===CURRENT_COMPANY)return;
+    var fb=_fbInit();if(!fb)return;
+    if(_fbRef){try{_fbRef.off('value');}catch(e){}}
+    _fbAttachedCompany=CURRENT_COMPANY;
+    db={};
+    _fbRef=fb.ref(FB_PATH);
+    _fbRef.on('value',function(snap){
+      var remote=snap.val()||{};
+      /* 跟排班表一樣，正在編輯中的那份不要被雲端同步整包蓋過去，
+         避免存檔還沒完成就被舊快照蓋掉剛打的資料。 */
+      Object.keys(remote).forEach(function(pid){
+        if(pid===curPid&&curStep!=='list')return;
+        db[pid]=remote[pid];
+      });
+      Object.keys(db).forEach(function(pid){
+        if(pid===curPid&&curStep!=='list')return;
+        if(!remote[pid])delete db[pid];
+      });
+      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+      if(curStep==='list')renderList();
+    });
+  }
+  function init(){
+    try{var r=localStorage.getItem(_ckey(KEY));if(r){var d=JSON.parse(r);if(d)db=d;}}catch(e){}
+    attachFb();
+    curStep='list';
+    renderList();
+  }
+  function _save(){
+    clearTimeout(_saveTimer);
+    _saveTimer=setTimeout(function(){
+      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+      if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+      try{var fb=_fbInit();if(fb&&curPid&&db[curPid])fb.ref(FB_PATH+'/'+curPid).set(db[curPid]);}catch(e){}
+    },500);
+  }
+
+  function renderList(){
+    var w=_lwrap();if(!w)return;
+    var ids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var h='<button onclick="PAYROLL.newPeriod()" style="width:100%;padding:14px;background:#a53a3a;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增月份</button>';
+    if(!ids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無薪資資料</div>';
+    }else{
+      h+='<div style="display:flex;flex-direction:column;gap:10px;">';
+      ids.forEach(function(pid){
+        var p=db[pid]||{};
+        var cnt=Object.keys(p.people||{}).length;
+        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #a53a3a;overflow:hidden;">';
+        h+='<div style="padding:14px 16px;cursor:pointer;" onclick="PAYROLL.openPeriod(\''+pid+'\')"><div style="font-weight:800;font-size:.95rem;color:#a53a3a;">'+esc(p.label||'未命名')+'</div><div style="font-size:.78rem;color:#888;margin-top:3px;">共 '+cnt+' 人</div></div>';
+        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
+        h+='<button onclick="PAYROLL.openPeriod(\''+pid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#a53a3a;font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
+        h+='<button onclick="PAYROLL.deletePeriod(\''+pid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑 刪除</button>';
+        h+='</div></div>';
+      });
+      h+='</div>';
+    }
+    w.innerHTML=h;
+  }
+
+  function newPeriod(){
+    var now=new Date();
+    var rocYr=(now.getFullYear()-1911);
+    var label=prompt('請輸入月份（例如：115年10月）',rocYr+'年'+(now.getMonth()+1)+'月');
+    if(label===null)return;
+    var pid='pr'+Date.now();
+    db[pid]={label:label||'未命名',people:{},createdAt:Date.now()};
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+pid).set(db[pid]);}catch(e){}
+    openPeriod(pid);
+  }
+  function deletePeriod(pid){
+    if(!confirm('確定要刪除「'+((db[pid]||{}).label||'這份')+'」薪資表嗎？刪除後無法復原。'))return;
+    delete db[pid];
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+pid).remove();}catch(e){}
+    renderList();
+  }
+  function openPeriod(pid){
+    if(!db[pid])return;
+    curPid=pid;curStep='detail';curName=null;
+    GO('ledger-payroll-detail');
+    renderDetail();
+  }
+  function backToList(){curStep='list';curPid=null;GO('ledger-payroll');}
+  function backToDetail(){curStep='detail';curName=null;GO('ledger-payroll-detail');renderDetail();}
+
+  function renderDetail(){
+    var p=db[curPid];
+    if(!p){backToList();return;}
+    if(!p.people)p.people={};
+    var w=_dwrap();if(!w)return;
+    var titleEl=document.getElementById('payrollDetailTitle');
+    if(titleEl)titleEl.textContent=p.label||'薪資表';
+    var names=Object.keys(p.people).sort();
+    var roster=_rosterNames();
+    var h='<div style="font-size:1.05rem;font-weight:800;color:#a53a3a;margin-bottom:12px;">'+esc(p.label||'薪資表')+'</div>';
+    h+='<div style="display:flex;gap:8px;margin-bottom:14px;">';
+    h+='<select onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';" style="flex:1;padding:10px;border:1.5px solid #a53a3a;border-radius:10px;font-size:.85rem;"><option value="">＋ 新增人員</option>';
+    roster.forEach(function(nm){if(names.indexOf(nm)<0)h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
+    h+='</select>';
+    h+='<button onclick="PAYROLL.printAll()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 全部列印</button>';
+    h+='</div>';
+    if(!names.length){
+      h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有人，上面選單新增人員</div>';
+    }else{
+      h+='<div style="display:flex;flex-direction:column;gap:8px;">';
+      names.forEach(function(nm){
+        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;overflow:hidden;">';
+        var nmJs="'"+String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
+        h+='<div onclick="PAYROLL.openPerson('+nmJs+')" style="flex:1;padding:14px 16px;cursor:pointer;font-weight:700;color:#333;">'+esc(nm)+'</div>';
+        h+='<button onclick="PAYROLL.removePerson('+nmJs+')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.9rem;cursor:pointer;">🗑</button>';
+        h+='</div>';
+      });
+      h+='</div>';
+    }
+    w.innerHTML=h;
+  }
+  function addPerson(name){
+    var p=db[curPid];if(!p)return;
+    if(!p.people)p.people={};
+    if(!p.people[name])p.people[name]={};
+    _save();
+    renderDetail();
+  }
+  function removePerson(name){
+    if(!confirm('確定要移除 '+name+' 這個月的薪資紀錄嗎？'))return;
+    var p=db[curPid];if(!p||!p.people)return;
+    delete p.people[name];
+    _save();
+    renderDetail();
+  }
+  function openPerson(name){
+    curName=name;curStep='person';
+    GO('ledger-payroll-person');
+    renderPerson();
+  }
+  /* 把這個人「上一份存在的月份」資料複製過來（薪資組成這些月跟月之間
+     通常變動不大，不用每個月重打一次），當月請假天數是現算的，
+     複製不會把舊的「當月」數字帶過來，只會帶「人員固定資料」那些。 */
+  function copyFromPrev(){
+    var names=Object.keys(db).filter(function(pid){return pid!==curPid&&db[pid].people&&db[pid].people[curName];});
+    if(!names.length){alert('找不到 '+curName+' 之前月份的資料可以複製。');return;}
+    names.sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var src=db[names[0]].people[curName];
+    var p=db[curPid];
+    p.people[curName]=JSON.parse(JSON.stringify(src));
+    _save();
+    renderPerson();
+    alert('已經把「'+(db[names[0]].label||'')+'」的資料複製過來了，記得檢查有沒有要調整的地方。');
+  }
+  function _rocFromLabel(label){
+    var m=String(label||'').match(/(\d+)年\s*(\d+)月/);
+    if(!m)return null;
+    return {y:m[1],m:parseInt(m[2],10)};
+  }
+  function renderPerson(){
+    var p=db[curPid];
+    if(!p||!p.people||!p.people[curName]){backToDetail();return;}
+    var rec=p.people[curName];
+    var w=_pwrap();if(!w)return;
+    var titleEl=document.getElementById('payrollPersonTitle');
+    if(titleEl)titleEl.textContent=curName+'（'+(p.label||'')+'）';
+    var h='<div style="display:flex;gap:8px;margin-bottom:16px;">';
+    h+='<button onclick="PAYROLL.copyFromPrev()" style="flex:1;padding:10px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">📋 複製上個月資料</button>';
+    h+='<button onclick="PAYROLL.printPerson()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    h+='</div>';
+    /* 當月請假天數：直接從每日回報現算，唯讀顯示，不是這個人可以
+       手動改的欄位——改法要去每日回報那邊改，這裡才會跟著變動。 */
+    h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
+    h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">當月請假天數（自動帶入自每日回報，這裡不能改）</div>';
+    var roc=_rocFromLabel(p.label);
+    var leaveCounts={};
+    if(roc&&typeof TEACHERLEAVE!=='undefined'){
+      try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(curName,roc.y,roc.m)||{};}catch(e){}
+    }
+    var hasAny=false;
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
+      var n=leaveCounts[t]||0;
+      if(n>0)hasAny=true;
+      h+='<span style="background:'+(n>0?'#fdecea':'#f5f5f5')+';color:'+(n>0?'#c0392b':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+n+'天</span>';
+    });
+    h+='</div>';
+    if(!hasAny)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">這個月每日回報沒有登記過請假</div>';
+    if(!roc)h+='<div style="font-size:.76rem;color:#e67e22;margin-top:6px;">⚠️ 月份名稱要照「115年10月」這種格式，才能自動對到每日回報的日期</div>';
+    h+='</div>';
+    FIELD_GROUPS.forEach(function(grp){
+      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
+      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">'+grp[0]+'</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:8px;">';
+      grp[1].forEach(function(f){
+        var key=f[0],label=f[1],type=f[2];
+        var val=rec[key];
+        h+='<div>';
+        h+='<div style="font-size:.76rem;color:#888;margin-bottom:3px;">'+label+'</div>';
+        if(type==='textarea'){
+          h+='<textarea oninput="PAYROLL.setField(\''+key+'\',this.value)" style="width:100%;min-height:50px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.84rem;box-sizing:border-box;font-family:inherit;">'+esc(val||'')+'</textarea>';
+        }else if(type==='num'){
+          h+='<input type="number" inputmode="decimal" value="'+escAttr(val==null?'':val)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+        }else{
+          h+='<input value="'+escAttr(val||'')+'" oninput="PAYROLL.setField(\''+key+'\',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+        }
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+    w.innerHTML=h;
+  }
+  function setField(key,val){
+    var rec=db[curPid]&&db[curPid].people&&db[curPid].people[curName];
+    if(!rec)return;
+    rec[key]=val;
+    _save();
+  }
+
+  function _doPrint(html){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(!w){alert('請允許彈出視窗以開啟列印頁面');return;}
+    w.document.write(html);w.document.close();
+    setTimeout(function(){try{w.print();}catch(e){}},600);
+  }
+  function _personSlipHtml(p,name,rec){
+    var roc=_rocFromLabel(p.label);
+    var leaveCounts={};
+    if(roc&&typeof TEACHERLEAVE!=='undefined'){
+      try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(name,roc.y,roc.m)||{};}catch(e){}
+    }
+    var s='<div class="slip">';
+    s+='<div class="shd">'+esc(_companyFullName())+'　'+esc(p.label||'')+'【薪資表暨出缺席紀錄統計】</div>';
+    s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+'</div>';
+    s+='<table class="sgrid"><tr><th>項目</th><th>金額／內容</th><th>項目</th><th>金額／內容</th></tr>';
+    var rows=[
+      ['投保金額',rec.insuredAmount,'底薪',rec.baseSalary],
+      ['加班費',rec.otAmt,'加班時數',rec.otHours],
+      ['逾時加班費',rec.ot2Amt,'逾時加班時數',rec.ot2Hours],
+      ['職務津貼',rec.dutyAllow,'行政津貼',rec.adminAllow],
+      ['福利津貼',rec.welfareAllow,'學期考核',rec.examScore],
+      ['獎金',rec.bonus,'年終獎金',rec.yearEndBonus],
+      ['早值津貼',rec.earlyDuty,'晚值津貼',rec.lateDuty],
+      ['勞保費',rec.laborIns,'健保費',rec.healthIns],
+      ['眷屬保費',rec.depIns,'請假扣薪',rec.leaveDeduct],
+      ['總金額',rec.totalAmt,'薪轉薪資',rec.transferAmt]
+    ];
+    rows.forEach(function(r){
+      s+='<tr><td>'+r[0]+'</td><td>'+esc(r[1]==null?'':r[1])+'</td><td>'+r[2]+'</td><td>'+esc(r[3]==null?'':r[3])+'</td></tr>';
+    });
+    s+='</table>';
+    s+='<div class="ssub">當月請假天數（自每日回報自動帶入）</div>';
+    s+='<div class="sleave">';
+    var any=false;
+    LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){var n=leaveCounts[t]||0;if(n>0){any=true;s+='<span>'+t+' '+n+'天</span>';}});
+    if(!any)s+='<span style="color:#999;">（本月無請假紀錄）</span>';
+    s+='</div>';
+    s+='<div class="ssub">特休</div>';
+    s+='<div class="stext">天數：'+esc(rec.annualQuota||'')+'　起訖：'+esc(rec.annualRange||'')+'　餘額：'+esc(rec.annualRemain||'')+'</div>';
+    if(rec.annualUsed)s+='<div class="stext">已使用：'+esc(rec.annualUsed)+'</div>';
+    if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
+    if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
+    if(rec.note)s+='<div class="stext">備註：'+esc(rec.note)+'</div>';
+    s+='<div class="ssig">主管簽名：＿＿＿＿＿＿＿＿　　老師簽名：＿＿＿＿＿＿＿＿</div>';
+    s+='</div>';
+    return s;
+  }
+  function _printCss(){
+    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;}'
+      +'.slip{padding:14mm 12mm;page-break-after:always;}.slip:last-child{page-break-after:auto;}'
+      +'.shd{font-size:13pt;font-weight:800;text-align:center;margin-bottom:8px;}'
+      +'.sname{font-size:11pt;font-weight:700;margin-bottom:10px;border-bottom:1.5px solid #333;padding-bottom:6px;}'
+      +'.sgrid{width:100%;border-collapse:collapse;margin-bottom:10px;}.sgrid th,.sgrid td{border:1px solid #999;padding:5px 8px;font-size:9.5pt;}'
+      +'.sgrid th{background:#f0f0f0;width:18%;}.sgrid td{width:32%;}'
+      +'.ssub{font-size:9.5pt;font-weight:700;color:#555;margin:8px 0 4px;}'
+      +'.sleave span{display:inline-block;background:#fdecea;color:#c0392b;border-radius:6px;padding:2px 8px;font-size:9pt;margin:0 4px 4px 0;}'
+      +'.stext{font-size:9.3pt;color:#333;margin-bottom:3px;}'
+      +'.ssig{margin-top:16px;font-size:10pt;}'
+      +'@media print{@page{size:A4 portrait;margin:8mm;}}';
+  }
+  function printPerson(){
+    var p=db[curPid];if(!p||!p.people||!p.people[curName])return;
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(curName)+' 薪資表</title><style>'+_printCss()+'</style></head><body>';
+    html+=_personSlipHtml(p,curName,p.people[curName]);
+    html+='</body></html>';
+    _doPrint(html);
+  }
+  function printAll(){
+    var p=db[curPid];if(!p||!p.people)return;
+    var names=Object.keys(p.people).sort();
+    if(!names.length){alert('這個月還沒有人，先新增人員。');return;}
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+'</title><style>'+_printCss()+'</style></head><body>';
+    names.forEach(function(nm){html+=_personSlipHtml(p,nm,p.people[nm]);});
+    html+='</body></html>';
+    _doPrint(html);
+  }
+
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -23427,7 +23804,25 @@ var TEACHERLEAVE=(function(){
     var ok=false;try{ok=document.execCommand('copy');}catch(e){}_flashSubCopied(ok);
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport};
+  /* 給薪資模組用：算出某個人在某個月（民國年/月）每一種假別請了幾天，
+     直接從每日回報的出缺勤紀錄現算，不用另外維護一份請假統計——
+     這樣每日回報那邊登記完，薪資這邊「當月請假天數」就自動是對的，
+     不用再手動對一次。只算 onLeave===true 的那幾天，用 leaveType 分類加總。 */
+  function leaveDaysForMonth(name,rocYear,rocMonth){
+    var prefix=rocYear+'_'+pad2(rocMonth)+'_';
+    var counts={};
+    Object.keys(db.today).forEach(function(dk){
+      if(dk.indexOf(prefix)!==0)return;
+      var rec=db.today[dk][name];
+      if(rec&&rec.onLeave){
+        var t=rec.leaveType||'其他';
+        counts[t]=(counts[t]||0)+1;
+      }
+    });
+    return counts;
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,ensureLoaded:load};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -23504,7 +23899,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023195321--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023210254--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
