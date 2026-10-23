@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023135504';
+  var BUILD='20261023135914';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11282,20 +11282,21 @@ var SCHEDULE=(function(){
     html+='*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;padding:8px 14px;}';
     html+='h1{font-size:17pt;text-align:center;margin-bottom:2px;}h2{font-size:13pt;text-align:center;color:#555;margin-bottom:8px;font-weight:700;}';
     html+='table{width:100%;border-collapse:collapse;margin-bottom:8px;table-layout:fixed;}th,td{border:1px solid #999;padding:3px 5px;font-size:12pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
-    /* 日期欄固定寬度、不換行；其餘欄依照通常人數給寬度——8:00那班人數最多
-       但姓名已經縮成兩個字，欄位不用太寬也能兩行放完，省下來的空間給
-       7:15欄（3個人常常也會擠成兩行）跟晚3打掃欄（標題「晚3打掃 17:20」
-       字變大之後需要夠寬才能一行放完，不然標題自己會先換行）。.nm 是
-       每個人名字自己的不換行容器，確保換行只會發生在「、」這個頓號的
-       地方，不會把兩個字的名字從中間拆開。 */
+    /* 日期欄固定寬度、不換行——11/30-12/04這種11個字的範圍之前寬度不夠，
+       數字會被欄框擠到看不全，這裡加寬確保放得下。倒垃圾/晚3打掃/晚值
+       人員這三個欄位的標題改成「文字／時間」兩行顯示（看 splitLabel），
+       不用再橫向塞進同一行，欄寬就能縮小；倒垃圾、晚3打掃兩欄寬度故意
+       設成一樣。.nm 是每個人名字自己的不換行容器，確保換行只會發生在
+       「、」這個頓號的地方，不會把兩個字的名字從中間拆開。 */
     html+='.nm{white-space:nowrap;}';
-    html+='td:nth-child(1),th:nth-child(1){width:66px;white-space:nowrap;}';
+    html+='.hd2{font-size:.82em;color:#555;font-weight:400;}';
+    html+='td:nth-child(1),th:nth-child(1){width:84px;white-space:nowrap;}';
     html+='td:nth-child(2),th:nth-child(2){width:118px;}';
     html+='td:nth-child(3),th:nth-child(3){width:64px;}';
     html+='td:nth-child(4),th:nth-child(4){width:178px;}';
-    html+='td:nth-child(5),th:nth-child(5){width:64px;}';
-    html+='td:nth-child(6),th:nth-child(6){width:126px;white-space:nowrap;}';
-    html+='td:nth-child(7),th:nth-child(7){width:116px;}';
+    html+='td:nth-child(5),th:nth-child(5){width:66px;}';
+    html+='td:nth-child(6),th:nth-child(6){width:66px;}';
+    html+='td:nth-child(7),th:nth-child(7){width:100px;}';
     html+='.tlist{font-size:10.3pt;margin-bottom:7px;line-height:1.5;}';
     html+='.note{font-size:10.3pt;margin-bottom:5px;line-height:1.32;white-space:pre-wrap;}';
     html+='.notes3{display:flex;gap:9px;}.notes3>div{flex:1;border:1px solid #999;padding:5px 7px;}';
@@ -11303,8 +11304,21 @@ var SCHEDULE=(function(){
     html+='@media print{@page{size:A4 landscape;margin:7mm;}}';
     html+='</style></head><body>';
     html+='<h1>'+esc(_companyFullName())+'</h1><h2>'+esc(p.label||'排班表')+'</h2>';
+    /* 標題文字如果帶空格或括號（例如「晚3打掃 17:20」「晚值人員(8:30-18:00)」），
+       把後半段（時間）拆到第二行顯示，不要跟前面文字擠在同一行。 */
+    function splitLabel(label){
+      label=String(label||'');
+      var sp=label.indexOf(' '),pa=label.indexOf('(');
+      var idx=-1;
+      if(sp>=0&&pa>=0)idx=Math.min(sp,pa);else if(sp>=0)idx=sp;else if(pa>=0)idx=pa;
+      if(idx<0)return [label,''];
+      return [label.slice(0,idx),label.slice(idx).replace(/^ /,'')];
+    }
     html+='<table><thead><tr><th>日期</th>';
-    cols.forEach(function(c){html+='<th>'+esc(c.label)+'</th>';});
+    cols.forEach(function(c){
+      var parts=splitLabel(c.label);
+      html+='<th>'+esc(parts[0])+(parts[1]?'<div class="hd2">'+esc(parts[1])+'</div>':'')+'</th>';
+    });
     html+='</tr></thead><tbody>';
     weeks.forEach(function(wk){
       html+='<tr><td>'+esc(wk.range||'')+'</td>';
@@ -23391,7 +23405,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023135504--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023135914--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
