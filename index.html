@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023174755';
+  var BUILD='20261023195321';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2030,7 +2030,7 @@ function _applyRoleUI(){
 var _ADMIN_UP_PAGES=['accounting','childfee','childfee-income','pettycash','pettycash-detail','teacherleave','childleave','childleave-summary','schedule','schedule-detail'];
 /* 總帳底下所有子頁面（零用金清單/明細、結帳）都要 owner 才能進，
    跟 _ADMIN_UP_PAGES 分開列是因為總帳還多一層密碼（見 GO() 裡的 PWGATE）。 */
-var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout'];
+var _LEDGER_PAGES=['ledger','ledger-cash','ledger-cash-detail','ledger-checkout','ledger-payroll'];
 
 /* ── 登入關卡：authGateOv 蓋住全站，確認登入狀態之前／沒登入的時候
    一直擋著，登入成功才會藏起來、讓底下原本的公司選擇/首頁正常運作。
@@ -4014,7 +4014,21 @@ function _rosterKidsAsOf(cls,dateStr){
         <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">結帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每月總結算：收入/零用金自動帶入，薪資房租等手動輸入</div></div>
         <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
       </div>
+      <div onclick="GO('ledger-payroll')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #a53a3a;">
+        <span style="font-size:1.8rem;">&#x1F510;</span>
+        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">薪資</div><div style="font-size:.78rem;color:#888;margin-top:2px;">僅 owner 可見，需另外輸入密碼</div></div>
+        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      </div>
     </div>
+  </div>
+</div>
+<div class="pg" id="pg-ledger-payroll">
+  <div class="bbar">
+    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <span class="btitle">薪資</span>
+  </div>
+  <div style="padding:14px 16px 40px;" id="ledgerPayrollWrap">
+    <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">這個功能還在建置中，之後會放薪資相關的記錄。</div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-cash">
@@ -4656,6 +4670,12 @@ function GO(id, _roleRetry) {
      跟其他頁面「身分對了就直接進去」不一樣。 */
   if (id === 'ledger' && PWGATE.need('ledger')) {
     PWGATE.prompt('ledger','總帳','92800', function(){ GO('ledger'); });
+    return;
+  }
+  /* 薪資比零用金/結帳更敏感，就算已經是 owner 身分、也通過總帳那層密碼，
+     點進薪資還要再單獨輸入一次自己的密碼，多一層保護。 */
+  if (id === 'ledger-payroll' && PWGATE.need('ledger-payroll')) {
+    PWGATE.prompt('ledger-payroll','薪資','101899', function(){ GO('ledger-payroll'); });
     return;
   }
   var pgs = document.getElementsByClassName('pg');
@@ -23484,7 +23504,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023174755--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023195321--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
