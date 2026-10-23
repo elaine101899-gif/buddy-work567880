@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023133840';
+  var BUILD='20261023134239';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11280,23 +11280,23 @@ var SCHEDULE=(function(){
     var teachers=_teachers();
     var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'排班表')+'</title><style>';
     html+='*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;padding:8px 14px;}';
-    html+='h1{font-size:14pt;text-align:center;margin-bottom:1px;}h2{font-size:11pt;text-align:center;color:#555;margin-bottom:8px;font-weight:700;}';
-    html+='table{width:100%;border-collapse:collapse;margin-bottom:10px;table-layout:fixed;}th,td{border:1px solid #999;padding:3px 4px;font-size:8pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
+    html+='h1{font-size:16pt;text-align:center;margin-bottom:2px;}h2{font-size:12pt;text-align:center;color:#555;margin-bottom:8px;font-weight:700;}';
+    html+='table{width:100%;border-collapse:collapse;margin-bottom:11px;table-layout:fixed;}th,td{border:1px solid #999;padding:5px 6px;font-size:10.3pt;text-align:center;vertical-align:middle;}th{background:#f0f0f0;}';
     /* 日期欄固定寬度、不換行；其餘欄依照通常人數給寬度——8:00那班人最多
        （常常8~10人），欄位本來就要比其他班別寬，只是比「日期+8:00都寬鬆」
        時省一點給日期欄，不是把它縮到比別欄還窄，不然名字會每行只剩一兩個
        字、整個很醜還會爆版。 */
-    html+='td:nth-child(1),th:nth-child(1){width:60px;white-space:nowrap;}';
-    html+='td:nth-child(2),th:nth-child(2){width:90px;}';
-    html+='td:nth-child(3),th:nth-child(3){width:60px;}';
-    html+='td:nth-child(4),th:nth-child(4){width:230px;}';
-    html+='td:nth-child(5),th:nth-child(5){width:60px;}';
-    html+='td:nth-child(6),th:nth-child(6){width:60px;}';
-    html+='td:nth-child(7),th:nth-child(7){width:95px;}';
-    html+='.tlist{font-size:8pt;margin-bottom:8px;line-height:1.6;}';
-    html+='.note{font-size:8pt;margin-bottom:6px;line-height:1.45;white-space:pre-wrap;}';
-    html+='.notes3{display:flex;gap:8px;}.notes3>div{flex:1;border:1px solid #999;padding:5px 7px;}';
-    html+='.notes3 h3{font-size:8.5pt;text-align:center;margin-bottom:3px;}';
+    html+='td:nth-child(1),th:nth-child(1){width:75px;white-space:nowrap;}';
+    html+='td:nth-child(2),th:nth-child(2){width:112px;}';
+    html+='td:nth-child(3),th:nth-child(3){width:75px;}';
+    html+='td:nth-child(4),th:nth-child(4){width:290px;}';
+    html+='td:nth-child(5),th:nth-child(5){width:75px;}';
+    html+='td:nth-child(6),th:nth-child(6){width:75px;}';
+    html+='td:nth-child(7),th:nth-child(7){width:120px;}';
+    html+='.tlist{font-size:9.3pt;margin-bottom:9px;line-height:1.6;}';
+    html+='.note{font-size:9.3pt;margin-bottom:7px;line-height:1.45;white-space:pre-wrap;}';
+    html+='.notes3{display:flex;gap:9px;}.notes3>div{flex:1;border:1px solid #999;padding:6px 8px;}';
+    html+='.notes3 h3{font-size:10pt;text-align:center;margin-bottom:4px;}';
     html+='@media print{@page{size:A4 landscape;margin:7mm;}}';
     html+='</style></head><body>';
     html+='<h1>'+esc(_companyFullName())+'</h1><h2>'+esc(p.label||'排班表')+'</h2>';
@@ -23365,7 +23365,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023133840--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023134239--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
