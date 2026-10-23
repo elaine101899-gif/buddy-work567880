@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023212738';
+  var BUILD='20261023213607';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11646,7 +11646,6 @@ var PAYROLL=(function(){
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
     ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['otherDeduct','其他扣款（請假以外）','num']]],
-    ['特休',[['annualQuota','特休天數','text'],['annualRange','特休期間','text'],['annualRemain','特休餘額','text'],['annualUsed','特休已使用日期','textarea']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
   ];
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
@@ -11857,6 +11856,58 @@ var PAYROLL=(function(){
     if(!m)return null;
     return {y:m[1],m:parseInt(m[2],10)};
   }
+  /* 「特休起算日」欄位讓行政人員自己打字，格式照 Excel 原本慣用的
+     「114/08/01」這種民國年斜線格式，這裡負責解析成西元 ISO 日期，
+     看不懂的格式就回傳 null（表示先不自動算特休，不要亂猜）。 */
+  function _rocDateToIso(s){
+    var m=String(s||'').trim().match(/(\d{2,3})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+    if(!m)return null;
+    var y=parseInt(m[1],10)+1911,mo=parseInt(m[2],10),d=parseInt(m[3],10);
+    if(mo<1||mo>12||d<1||d>31)return null;
+    return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  }
+  function _isoToRocSlash(iso){
+    if(!iso)return '';
+    var p=iso.split('-');
+    return (parseInt(p[0],10)-1911)+'/'+parseInt(p[1],10)+'/'+parseInt(p[2],10);
+  }
+  /* 特休是從「特休起算日」那天開始，每滿半年／一年就跳到下一個級距
+     （滿6個月3天、滿1年7天、滿2年10天、滿3年14天、滿5年15天、滿10年
+     以後每滿1年+1天，最多30天——這張對照表照 Excel 範本上的附註文字，
+     每個人都一樣，不是各自設定的）。這裡算出「現在是第幾個級距、
+     這個級距的起訖日期、總共有幾天」，asOfIso 通常給薪資表那個月的
+     月底日期，這樣重印舊月份的薪資單，特休餘額不會因為「現在」又過了
+     幾個月而跟著變動——每個月的薪資單應該要凍結在那個月當下的餘額。 */
+  function _annualLeaveInfo(name,anchorIso,asOfIso){
+    if(!anchorIso)return null;
+    var anchor=new Date(anchorIso+'T00:00:00');
+    var asOf=new Date((asOfIso||new Date().toISOString().slice(0,10))+'T00:00:00');
+    if(isNaN(anchor.getTime())||isNaN(asOf.getTime())||asOf<anchor)return null;
+    var years=asOf.getFullYear()-anchor.getFullYear();
+    var anniv=new Date(anchor);anniv.setFullYear(anchor.getFullYear()+years);
+    if(anniv>asOf){years--;anniv=new Date(anchor);anniv.setFullYear(anchor.getFullYear()+years);}
+    var halfAnniv=new Date(anchor);halfAnniv.setMonth(anchor.getMonth()+6);
+    var days=0,winStart=null,winEnd=null;
+    if(years>=1){
+      days=years>=10?Math.min(30,15+(years-10+1)):years>=5?15:years>=3?14:years>=2?10:7;
+      winStart=new Date(anchor);winStart.setFullYear(anchor.getFullYear()+years);
+      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+years+1);winEnd.setDate(winEnd.getDate()-1);
+    }else if(asOf>=halfAnniv){
+      days=3;
+      winStart=halfAnniv;
+      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+1);winEnd.setDate(winEnd.getDate()-1);
+    }else{
+      return {days:0,winStart:null,winEnd:null,used:0,remain:0,usedDates:[]};
+    }
+    function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+    var winStartIso=fmt(winStart),winEndIso=fmt(winEnd);
+    var usedEndIso=asOfIso<winEndIso?asOfIso:winEndIso;
+    var usedInfo={count:0,dates:[]};
+    if(typeof TEACHERLEAVE!=='undefined'){
+      try{TEACHERLEAVE.ensureLoaded();usedInfo=TEACHERLEAVE.leaveDaysInRange(name,winStartIso,usedEndIso,'特休')||usedInfo;}catch(e){}
+    }
+    return {days:days,winStart:winStartIso,winEnd:winEndIso,used:usedInfo.count,remain:days-usedInfo.count,usedDates:usedInfo.dates};
+  }
   function renderPerson(){
     var p=db[curPid];
     if(!p||!p.people||!p.people[curName]){backToDetail();return;}
@@ -11889,6 +11940,7 @@ var PAYROLL=(function(){
     if(!roc)h+='<div style="font-size:.76rem;color:#e67e22;margin-top:6px;">⚠️ 月份名稱要照「115年10月」這種格式，才能自動對到每日回報的日期</div>';
     h+='</div>';
     h+='<div id="payrollSummaryBox"></div>';
+    h+='<div id="payrollAnnualBox"></div>';
     FIELD_GROUPS.forEach(function(grp){
       h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
       h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">'+grp[0]+'</div>';
@@ -11911,6 +11963,7 @@ var PAYROLL=(function(){
     });
     w.innerHTML=h;
     _refreshSummary();
+    _refreshAnnualBox();
   }
   /* 結算結果（固定薪資/時薪/加班費/請假扣薪/總金額/扣除薪資/薪轉薪資）
      是算出來的，不是使用者打的欄位，所以輸入數字變動時只重畫這一小塊
@@ -11940,12 +11993,49 @@ var PAYROLL=(function(){
     h+='</div></div>';
     box.innerHTML=h;
   }
+  /* 特休是從起算日開始累積一整年的額度，休一天少一天，每滿半年/一年
+     跳下一個級距——這裡顯示自動算出來的「目前這個級距有幾天、起訖、
+     已經休了幾天、還剩幾天」，行政人員只需要填「特休起算日」這一個
+     欄位，其餘都是現算的，不用自己對日期、不用自己扣天數。
+     asOf 用這份薪資表所在月份的月底，不是「今天」——這樣以後回頭印
+     舊月份的薪資單，餘額會凍結在那個月當下，不會因為現在又過了幾個月
+     而變動，比較符合薪資單「那個月的紀錄就是那個月」的用途。 */
+  function _refreshAnnualBox(){
+    var box=document.getElementById('payrollAnnualBox');
+    if(!box)return;
+    var p=db[curPid];
+    if(!p||!p.people||!p.people[curName])return;
+    var rec=p.people[curName];
+    var anchorIso=_rocDateToIso(rec.annualStartDate);
+    var h='<div style="background:#eef7f2;border:1.5px solid #2d9c6f;border-radius:12px;padding:14px 16px;margin-bottom:12px;">';
+    h+='<div style="font-weight:800;font-size:.9rem;color:#1a7a4f;margin-bottom:8px;">🌴 特休（系統自動算，只要填上面的「特休起算日」）</div>';
+    if(!anchorIso){
+      h+='<div style="font-size:.8rem;color:#999;">還沒填特休起算日，填了之後這裡會自動算出目前有幾天、用了幾天、剩幾天。</div>';
+    }else{
+      var roc=_rocFromLabel(p.label);
+      var asOfIso=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
+      var info=_annualLeaveInfo(curName,anchorIso,asOfIso);
+      if(!info||info.days===0){
+        h+='<div style="font-size:.8rem;color:#999;">起算日：'+esc(_isoToRocSlash(anchorIso))+'　目前還沒滿6個月，還沒有特休可以用。</div>';
+      }else{
+        h+='<div style="font-size:.8rem;color:#555;line-height:1.8;">';
+        h+='起算日：'+esc(_isoToRocSlash(anchorIso))+'<br>';
+        h+='這個級距有 <b>'+info.days+'</b> 天（'+esc(_isoToRocSlash(info.winStart))+'～'+esc(_isoToRocSlash(info.winEnd))+'）<br>';
+        h+='已使用 <b>'+info.used+'</b> 天'+(info.usedDates.length?('：'+info.usedDates.map(_isoToRocSlash).join('、')):'')+'<br>';
+        h+='</div>';
+        h+='<div style="margin-top:6px;font-weight:800;font-size:1.1rem;color:'+(info.remain<0?'#c0392b':'#1a7a4f')+';">剩餘 '+info.remain+' 天</div>';
+      }
+    }
+    h+='</div>';
+    box.innerHTML=h;
+  }
   function setField(key,val){
     var rec=db[curPid]&&db[curPid].people&&db[curPid].people[curName];
     if(!rec)return;
     rec[key]=val;
     _save();
     _refreshSummary();
+    _refreshAnnualBox();
   }
 
   function _doPrint(html){
@@ -11990,8 +12080,15 @@ var PAYROLL=(function(){
     if(!any)s+='<span style="color:#999;">（本月無請假紀錄）</span>';
     s+='</div>';
     s+='<div class="ssub">特休（起算日：'+esc(rec.annualStartDate||'')+'）</div>';
-    s+='<div class="stext">天數：'+esc(rec.annualQuota||'')+'　期間：'+esc(rec.annualRange||'')+'　餘額：'+esc(rec.annualRemain||'')+'</div>';
-    if(rec.annualUsed)s+='<div class="stext">已使用：'+esc(rec.annualUsed)+'</div>';
+    var annualIso=_rocDateToIso(rec.annualStartDate);
+    var annualAsOf=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
+    var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf):null;
+    if(annualInfo&&annualInfo.days>0){
+      s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'　已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
+      if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(_isoToRocSlash).join('、')+'</div>';
+    }else{
+      s+='<div class="stext">（尚未滿特休資格，或未填特休起算日）</div>';
+    }
     if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
     if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
     if(rec.note)s+='<div class="stext">備註：'+esc(rec.note)+'</div>';
@@ -23928,8 +24025,22 @@ var TEACHERLEAVE=(function(){
     });
     return hours;
   }
+  /* 給薪資模組算特休餘額用：某個人在某段日期區間（西元 ISO 日期）裡，
+     某一種假別（通常是特休）總共請了幾天——特休是跨好幾個月累積扣的，
+     不是只看單一月份，所以要能查「整個特休年度區間」而不是只查一個月。 */
+  function leaveDaysInRange(name,startIso,endIso,type){
+    var cnt=0,dates=[];
+    Object.keys(db.today).forEach(function(dk){
+      var iso=keyToDateInputVal(dk);
+      if(iso<startIso||iso>endIso)return;
+      var rec=db.today[dk][name];
+      if(rec&&rec.onLeave&&(!type||rec.leaveType===type)){cnt++;dates.push(iso);}
+    });
+    dates.sort();
+    return {count:cnt,dates:dates};
+  }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,leaveHoursForMonth:leaveHoursForMonth,ensureLoaded:load};
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,leaveHoursForMonth:leaveHoursForMonth,leaveDaysInRange:leaveDaysInRange,ensureLoaded:load};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -24006,7 +24117,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023212738--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023213607--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
