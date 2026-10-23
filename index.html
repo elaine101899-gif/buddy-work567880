@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023210254';
+  var BUILD='20261023212738';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11631,24 +11631,66 @@ var PAYROLL=(function(){
     return names;
   }
 
-  /* 每一筆薪資紀錄的欄位，照 Excel 原本的欄位分組——先全部留空/0，
-     實際數字、特休規則都等行政人員之後再告訴我。 */
+  /* 每一筆薪資紀錄的欄位，照 Excel 原本的欄位分組。2026-10-23 跟行政
+     人員確認過公式之後，加班費/逾時加班費/請假扣薪/總金額/扣除薪資/
+     薪轉薪資這幾個都改成自動算（不在這個表單裡當輸入欄位），只留
+     「小時數」「固定薪資組成」「保費」「其他扣款」這些真正需要人工
+     輸入的數字，算出來的結果在 renderPerson()/列印那邊另外用唯讀
+     區塊顯示。到職日、特休起算日是分開兩個欄位——同一個人這兩個
+     日期常常不一樣（特休優於法規，起算日通常比到職日早）。 */
   var FIELD_GROUPS=[
-    ['基本資料',[['birthday','生日','text'],['startDate','到職日','text']]],
+    ['基本資料',[['birthday','生日','text'],['startDate','到職日','text'],['annualStartDate','特休起算日（優於法規）','text']]],
     ['投保與底薪',[['insuredAmount','投保金額','num'],['baseSalary','底薪','num']]],
-    ['加班',[['otAmt','加班費','num'],['otHours','加班時數','num'],['ot2Amt','逾時加班費','num'],['ot2Hours','逾時加班時數','num']]],
+    ['加班（填小時，系統自動算錢）',[['otHours','加班時數','num'],['ot2Hours','逾時加班時數','num']]],
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
-    ['保費／扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['leaveDeduct','請假扣薪','num']]],
-    ['結算',[['totalAmt','總金額','num'],['transferAmt','薪轉薪資','num']]],
-    ['特休',[['annualQuota','特休天數','text'],['annualRange','特休起訖','text'],['annualRemain','特休餘額','text'],['annualUsed','特休已使用日期','textarea']]],
+    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['otherDeduct','其他扣款（請假以外）','num']]],
+    ['特休',[['annualQuota','特休天數','text'],['annualRange','特休期間','text'],['annualRemain','特休餘額','text'],['annualUsed','特休已使用日期','textarea']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
   ];
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
      「當月請假天數」就是照這個順序列出來，特休不算在這裡（特休走上面
      「特休」那組，不是請假扣薪的概念）。 */
   var LEAVE_TYPES_FOR_PAYROLL=['事假','病假','家庭照顧假','生理假','安胎假','公傷假','婚假','喪假','公假','產檢假','產假','福利假','其他'];
+  /* 這幾種假別是會扣薪的（時薪×請假小時），其餘（公假/公傷假/產檢假/
+     婚假/喪假/福利假/其他）照Excel範本是不扣薪的，只算天數留紀錄用。 */
+  var DEDUCT_LEAVE_TYPES=['病假','生理假','安胎假','事假','家庭照顧假'];
+  /* 2026-10-23 跟行政人員確認過的公式：
+     固定薪資＝底薪＋職務津貼＋行政津貼＋福利津貼（不含學期考核/獎金/值班/年終，這些是變動的）
+     時薪＝固定薪資÷240
+     加班費＝時薪×1.34×加班時數，無條件進位＋5元
+     逾時加班費＝時薪×1.67×逾時加班時數，無條件進位＋5元
+     請假扣薪＝時薪×請假小時，無條件捨去小數（病假/生理假/安胎假/事假/家庭照顧假才扣，其餘假別不扣薪）
+     總金額＝底薪＋全部津貼＋值班＋年終＋加班費＋逾時加班費
+     扣除薪資＝勞健保＋眷屬保＋請假扣薪＋其他扣款
+     薪轉薪資＝總金額－扣除薪資
+     用黃苡綸、金佩樺兩筆實際資料驗證過，算出來的數字完全對得上。 */
+  function _calc(p,name,rec){
+    var fixedSalary=(rec.baseSalary||0)+(rec.dutyAllow||0)+(rec.adminAllow||0)+(rec.welfareAllow||0);
+    var hourly=fixedSalary/240;
+    var otHours=rec.otHours||0,ot2Hours=rec.ot2Hours||0;
+    var otAmt=otHours>0?(Math.ceil(hourly*1.34*otHours)+5):0;
+    var ot2Amt=ot2Hours>0?(Math.ceil(hourly*1.67*ot2Hours)+5):0;
+    var roc=_rocFromLabel(p.label);
+    var leaveHours={};
+    if(roc&&typeof TEACHERLEAVE!=='undefined'){
+      try{TEACHERLEAVE.ensureLoaded();leaveHours=TEACHERLEAVE.leaveHoursForMonth(name,roc.y,roc.m)||{};}catch(e){}
+    }
+    var leaveDeduct=0,leaveDetail=[];
+    DEDUCT_LEAVE_TYPES.forEach(function(t){
+      var hrs=leaveHours[t]||0;
+      if(hrs>0){
+        var amt=Math.floor(hourly*hrs);
+        leaveDeduct+=amt;
+        leaveDetail.push({type:t,hours:hrs,amt:amt});
+      }
+    });
+    var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt;
+    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+leaveDeduct+(rec.otherDeduct||0);
+    var transferAmt=totalAmt-deductAmt;
+    return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
+  }
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function escAttr(s){return esc(s).replace(/"/g,'&quot;');}
@@ -11846,6 +11888,7 @@ var PAYROLL=(function(){
     if(!hasAny)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">這個月每日回報沒有登記過請假</div>';
     if(!roc)h+='<div style="font-size:.76rem;color:#e67e22;margin-top:6px;">⚠️ 月份名稱要照「115年10月」這種格式，才能自動對到每日回報的日期</div>';
     h+='</div>';
+    h+='<div id="payrollSummaryBox"></div>';
     FIELD_GROUPS.forEach(function(grp){
       h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
       h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">'+grp[0]+'</div>';
@@ -11867,12 +11910,42 @@ var PAYROLL=(function(){
       h+='</div></div>';
     });
     w.innerHTML=h;
+    _refreshSummary();
+  }
+  /* 結算結果（固定薪資/時薪/加班費/請假扣薪/總金額/扣除薪資/薪轉薪資）
+     是算出來的，不是使用者打的欄位，所以輸入數字變動時只重畫這一小塊
+     唯讀摘要、不重畫整個表單——不然每打一個字整張表單重建，正在輸入
+     的欄位會失焦、游標跳掉。 */
+  function _refreshSummary(){
+    var box=document.getElementById('payrollSummaryBox');
+    if(!box)return;
+    var p=db[curPid];
+    if(!p||!p.people||!p.people[curName])return;
+    var rec=p.people[curName];
+    var c=_calc(p,curName,rec);
+    var h='<div style="background:#fff6e0;border:1.5px solid #e0b84a;border-radius:12px;padding:14px 16px;margin-bottom:12px;">';
+    h+='<div style="font-weight:800;font-size:.9rem;color:#9a6a1a;margin-bottom:8px;">💰 薪資結算（系統自動算，不能直接改——要調整請改上面的數字欄位）</div>';
+    h+='<div style="font-size:.8rem;color:#555;line-height:1.9;">';
+    h+='固定薪資（底薪＋職務／行政／福利津貼）：<b>'+Math.round(c.fixedSalary).toLocaleString()+'</b> 元　｜　時薪：<b>'+c.hourly.toFixed(2)+'</b> 元<br>';
+    if(rec.otHours)h+='加班費：<b>'+c.otAmt.toLocaleString()+'</b> 元（'+rec.otHours+'小時 × 1.34）<br>';
+    if(rec.ot2Hours)h+='逾時加班費：<b>'+c.ot2Amt.toLocaleString()+'</b> 元（'+rec.ot2Hours+'小時 × 1.67）<br>';
+    if(c.leaveDetail.length){
+      h+='請假扣薪：'+c.leaveDetail.map(function(d){return d.type+' '+d.hours+'小時（'+d.amt.toLocaleString()+'元）';}).join('、')+'　合計 <b>'+c.leaveDeduct.toLocaleString()+'</b> 元<br>';
+    }
+    h+='</div>';
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;border-top:1px solid #e8d8a8;padding-top:8px;">';
+    h+='<div style="flex:1;min-width:110px;"><div style="font-size:.72rem;color:#999;">總金額</div><div style="font-weight:800;font-size:1.05rem;color:#333;">'+c.totalAmt.toLocaleString()+'</div></div>';
+    h+='<div style="flex:1;min-width:110px;"><div style="font-size:.72rem;color:#999;">扣除薪資</div><div style="font-weight:800;font-size:1.05rem;color:#c0392b;">'+c.deductAmt.toLocaleString()+'</div></div>';
+    h+='<div style="flex:1;min-width:110px;"><div style="font-size:.72rem;color:#999;">薪轉薪資</div><div style="font-weight:800;font-size:1.15rem;color:#1a7a4f;">'+c.transferAmt.toLocaleString()+'</div></div>';
+    h+='</div></div>';
+    box.innerHTML=h;
   }
   function setField(key,val){
     var rec=db[curPid]&&db[curPid].people&&db[curPid].people[curName];
     if(!rec)return;
     rec[key]=val;
     _save();
+    _refreshSummary();
   }
 
   function _doPrint(html){
@@ -11887,25 +11960,28 @@ var PAYROLL=(function(){
     if(roc&&typeof TEACHERLEAVE!=='undefined'){
       try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(name,roc.y,roc.m)||{};}catch(e){}
     }
+    var c=_calc(p,name,rec);
     var s='<div class="slip">';
     s+='<div class="shd">'+esc(_companyFullName())+'　'+esc(p.label||'')+'【薪資表暨出缺席紀錄統計】</div>';
     s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+'</div>';
     s+='<table class="sgrid"><tr><th>項目</th><th>金額／內容</th><th>項目</th><th>金額／內容</th></tr>';
     var rows=[
       ['投保金額',rec.insuredAmount,'底薪',rec.baseSalary],
-      ['加班費',rec.otAmt,'加班時數',rec.otHours],
-      ['逾時加班費',rec.ot2Amt,'逾時加班時數',rec.ot2Hours],
+      ['加班費',c.otAmt||'',(rec.otHours?'加班時數':'　'),(rec.otHours?rec.otHours+'小時':'')],
+      ['逾時加班費',c.ot2Amt||'',(rec.ot2Hours?'逾時加班時數':'　'),(rec.ot2Hours?rec.ot2Hours+'小時':'')],
       ['職務津貼',rec.dutyAllow,'行政津貼',rec.adminAllow],
       ['福利津貼',rec.welfareAllow,'學期考核',rec.examScore],
       ['獎金',rec.bonus,'年終獎金',rec.yearEndBonus],
       ['早值津貼',rec.earlyDuty,'晚值津貼',rec.lateDuty],
       ['勞保費',rec.laborIns,'健保費',rec.healthIns],
-      ['眷屬保費',rec.depIns,'請假扣薪',rec.leaveDeduct],
-      ['總金額',rec.totalAmt,'薪轉薪資',rec.transferAmt]
+      ['眷屬保費',rec.depIns,'其他扣款',rec.otherDeduct],
+      ['請假扣薪',c.leaveDeduct||'','　','']
     ];
     rows.forEach(function(r){
       s+='<tr><td>'+r[0]+'</td><td>'+esc(r[1]==null?'':r[1])+'</td><td>'+r[2]+'</td><td>'+esc(r[3]==null?'':r[3])+'</td></tr>';
     });
+    s+='<tr style="background:#fdf5e0;font-weight:700;"><td>總金額</td><td>'+c.totalAmt.toLocaleString()+'</td><td>扣除薪資</td><td>'+c.deductAmt.toLocaleString()+'</td></tr>';
+    s+='<tr style="background:#fdf5e0;font-weight:700;"><td colspan="3">薪轉薪資</td><td>'+c.transferAmt.toLocaleString()+'</td></tr>';
     s+='</table>';
     s+='<div class="ssub">當月請假天數（自每日回報自動帶入）</div>';
     s+='<div class="sleave">';
@@ -11913,8 +11989,8 @@ var PAYROLL=(function(){
     LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){var n=leaveCounts[t]||0;if(n>0){any=true;s+='<span>'+t+' '+n+'天</span>';}});
     if(!any)s+='<span style="color:#999;">（本月無請假紀錄）</span>';
     s+='</div>';
-    s+='<div class="ssub">特休</div>';
-    s+='<div class="stext">天數：'+esc(rec.annualQuota||'')+'　起訖：'+esc(rec.annualRange||'')+'　餘額：'+esc(rec.annualRemain||'')+'</div>';
+    s+='<div class="ssub">特休（起算日：'+esc(rec.annualStartDate||'')+'）</div>';
+    s+='<div class="stext">天數：'+esc(rec.annualQuota||'')+'　期間：'+esc(rec.annualRange||'')+'　餘額：'+esc(rec.annualRemain||'')+'</div>';
     if(rec.annualUsed)s+='<div class="stext">已使用：'+esc(rec.annualUsed)+'</div>';
     if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
     if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
@@ -23822,7 +23898,38 @@ var TEACHERLEAVE=(function(){
     return counts;
   }
 
-  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,ensureLoaded:load};
+  /* 給薪資模組算請假扣薪用：每日回報登記請假時，沒特別寫備註就是請一整天
+     （8小時）；半天/幾小時是行政人員自己打字寫在備註欄裡的（例如「下午」
+     「1.5hr」「7.5hr」），這裡負責把這些五花八門的寫法解讀成小時數。
+     看不懂的文字保守當整天處理，薪資表那邊的時數本來就還是看得到、
+     可以手動微調，不會因為解讀錯誤就無法修正。 */
+  function _hoursFromLeaveNote(note){
+    var s=String(note||'').trim();
+    if(!s)return 8;
+    var m=s.match(/(\d+(\.\d+)?)\s*(hrs?|小時|時)/i);
+    if(m)return parseFloat(m[1]);
+    if(s.indexOf('整天')>=0)return 8;
+    if(s.indexOf('下午')>=0||s.indexOf('上午')>=0||s.indexOf('半天')>=0||s.indexOf('下休')>=0||s.indexOf('上休')>=0)return 4;
+    return 8;
+  }
+  /* 跟 leaveDaysForMonth 類似，但算的是「小時數」不是「天數」——扣薪的
+     請假（病假/事假/生理假/安胎假/家庭照顧假這類）是用小時乘時薪去扣錢，
+     不是整天整天扣，薪資表要靠這個才能自動算出扣款金額。 */
+  function leaveHoursForMonth(name,rocYear,rocMonth){
+    var prefix=rocYear+'_'+pad2(rocMonth)+'_';
+    var hours={};
+    Object.keys(db.today).forEach(function(dk){
+      if(dk.indexOf(prefix)!==0)return;
+      var rec=db.today[dk][name];
+      if(rec&&rec.onLeave){
+        var t=rec.leaveType||'其他';
+        hours[t]=(hours[t]||0)+_hoursFromLeaveNote(rec.note);
+      }
+    });
+    return hours;
+  }
+
+  return{init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,leaveHoursForMonth:leaveHoursForMonth,ensureLoaded:load};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -23899,7 +24006,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023210254--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023212738--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
