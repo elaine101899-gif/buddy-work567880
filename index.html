@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261022162735';
+  var BUILD='20261023132622';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11138,7 +11138,10 @@ var SCHEDULE=(function(){
   function renderList(){
     var w=_wrap();if(!w)return;
     var ids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
-    var h='<button onclick="SCHEDULE.newPeriod()" style="width:100%;padding:14px;background:#2b90b0;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增排班表</button>';
+    var h='<button onclick="SCHEDULE.newPeriod()" style="width:100%;padding:14px;background:#2b90b0;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">＋ 新增排班表</button>';
+    if(CURRENT_COMPANY==='xbd'){
+      h+='<button onclick="SCHEDULE.autoGenerateXBD()" style="width:100%;padding:12px;background:#fff;color:#2b90b0;border:1.5px dashed #2b90b0;border-radius:12px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:16px;">🤖 自動排班（11月、12月）</button>';
+    }
     if(!ids.length){
       h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無排班表</div>';
     }else{
@@ -11311,7 +11314,116 @@ var SCHEDULE=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod};
+  /* ── 小布迪自動排班規則（2026-10-23 跟行政人員口頭確認，只適用小布迪，
+     邦比諾規則不同、之後另外問再加） ──
+     15位托育人員的順序、固定班別、不能排的班、倒垃圾/晚3的輪流邏輯，
+     全部是行政人員親口一條一條講的，不是用猜的。日期範圍算法：早職
+     （7:15/7:45）兩班、晚值輪流那一位從清單後面排，是因為同一個人如果
+     早班晚班都被排到，兩個時段會互相衝突。 */
+  var XBD_AUTO=(function(){
+    var ORDER=['金佩樺','杜雯捷','蔡季涵','梁欣萍','鄭亞柔','黃苡綸','陳巧芳','林筠蓉','柯楷倫','吳婉寧','徐華家','周香瑩','陳珮如','郭于綺','徐郁婷'];
+    var FIXED_C2=['金佩樺','黃苡綸','柯楷倫'];   /* 固定 8:00，不排倒垃圾/晚3 */
+    var FIXED_C0='蔡季涵';   /* 固定 7:15 */
+    var FIXED_C1='林筠蓉';   /* 固定 7:45 */
+    var FIXED_C5='梁欣萍';   /* 固定 8:30（晚值人員兩位之一） */
+    var CANNOT_EARLY=['郭于綺','杜雯捷'];   /* 不能排 7:15/7:45 */
+    var CANNOT_LATE=['郭于綺'];   /* 不能排 8:30 */
+    var GROUPS={baby:['陳巧芳','吳婉寧','徐華家'],crawl:['郭于綺','周香瑩','梁欣萍'],runFront:['蔡季涵','鄭亞柔','徐郁婷'],runBack:['杜雯捷','陳珮如','林筠蓉']};
+    function notFixedSlot(n){return n!==FIXED_C0&&n!==FIXED_C1&&n!==FIXED_C5&&FIXED_C2.indexOf(n)<0;}
+    var POOL_0715=ORDER.filter(function(n){return notFixedSlot(n)&&CANNOT_EARLY.indexOf(n)<0;});
+    var POOL_0830=ORDER.filter(function(n){return notFixedSlot(n)&&CANNOT_LATE.indexOf(n)<0;});
+    var POOL_0830_REV=POOL_0830.slice().reverse();
+    var POOL_TRASH=ORDER.filter(function(n){return FIXED_C2.indexOf(n)<0;});
+    function takeN(arr,startIdx,n){var out=[];for(var i=0;i<n;i++)out.push(arr[(startIdx+i)%arr.length]);return out;}
+    /* 2026-10-23 跟行政人員對過「10/26-10/30 這一週」的實際輪值狀況，
+       算出下一週（11/02）該從哪個位置接著輪，不是從頭開始。 */
+    function initialState(){
+      return {p0715:5,p0830:2,trash:3,washPtr:5};
+    }
+    function genWeek(range,state){
+      var shifts={c0:[],c1:[],c2:[],c3:[],c4:[],c5:[]};
+      shifts.c0.push(FIXED_C0);
+      shifts.c1.push(FIXED_C1);
+      shifts.c5.push(FIXED_C5);
+      takeN(POOL_0715,state.p0715,2).forEach(function(n){shifts.c0.push(n);});
+      state.p0715=(state.p0715+2)%POOL_0715.length;
+      takeN(POOL_0830_REV,state.p0830,1).forEach(function(n){shifts.c5.push(n);});
+      state.p0830=(state.p0830+1)%POOL_0830_REV.length;
+      var assigned={};
+      shifts.c0.concat(shifts.c1,shifts.c5).forEach(function(n){assigned[n]=true;});
+      FIXED_C2.forEach(function(n){shifts.c2.push(n);assigned[n]=true;});
+      ORDER.forEach(function(n){if(!assigned[n])shifts.c2.push(n);});
+      var pickedTrash=takeN(POOL_TRASH,state.trash,1);
+      shifts.c3.push(pickedTrash[0]);
+      state.trash=(state.trash+1)%POOL_TRASH.length;
+      var c2Set={};shifts.c2.forEach(function(n){c2Set[n]=true;});
+      var tries=0,idx=state.washPtr,picked=null;
+      while(tries<ORDER.length){
+        var nm=ORDER[idx%ORDER.length];
+        if(c2Set[nm]&&FIXED_C2.indexOf(nm)<0){picked=nm;state.washPtr=(idx+1)%ORDER.length;break;}
+        idx++;tries++;
+      }
+      if(picked)shifts.c4.push(picked);
+      /* 檢查「同空間不能全部早職晚職」：早職=7:15/7:45，晚值以外的
+         8:00/8:30 才算安全。不自動調整（怕越調越亂），只回傳警告訊息
+         讓行政人員自己決定要不要手動換人。 */
+      var warn=[];
+      var okSet={};shifts.c2.concat(shifts.c5).forEach(function(n){okSet[n]=true;});
+      Object.keys(GROUPS).forEach(function(g){
+        var hasOk=GROUPS[g].some(function(n){return okSet[n];});
+        if(!hasOk)warn.push(g);
+      });
+      return {range:range,shifts:shifts,warn:warn};
+    }
+    function mondayRange(d){
+      var end=new Date(d);end.setDate(end.getDate()+4);
+      function fmt(dd){return (dd.getMonth()+1)+'/'+String(dd.getDate()).padStart(2,'0');}
+      return fmt(d)+'-'+fmt(end);
+    }
+    /* 從某個起始週一開始，連續產生 n 週，state 會跨週累積變動
+       （同一個 state 物件一路往下傳，輪流位置才會連續不中斷）。 */
+    function genWeeks(startMonday,n,state){
+      var weeks=[],d=new Date(startMonday);
+      for(var i=0;i<n;i++){
+        weeks.push(genWeek(mondayRange(d),state));
+        d.setDate(d.getDate()+7);
+      }
+      return weeks;
+    }
+    return{ORDER:ORDER,initialState:initialState,genWeeks:genWeeks};
+  })();
+
+  /* 自動排班：目前只有小布迪的規則，邦比諾還沒問過規則，先擋掉避免
+     誤用小布迪的規則排到邦比諾頭上。11/02 那週開始接續 10/26 那週的
+     輪值位置往下排，11月、12月各自存成一份（用週一所在月份分），
+     這樣可以分開列印，跟行政人員的習慣一致。 */
+  function autoGenerateXBD(){
+    if(CURRENT_COMPANY!=='xbd'){alert('目前只設定好小布迪的排班規則，邦比諾還沒有規則，無法自動排班。');return;}
+    if(!confirm('要從 11/02 那週開始，接續排到 12 月底嗎？會自動產生「115年11月」「115年12月」兩份排班表。'))return;
+    var state=XBD_AUTO.initialState();
+    var novWeeks=XBD_AUTO.genWeeks(new Date(2026,10,2),5,state);   /* 11/02~11/30 五週 */
+    var decWeeks=XBD_AUTO.genWeeks(new Date(2026,11,7),4,state);   /* 12/07~12/28 四週 */
+    function mkPeriod(label,weeks){
+      var pid='sch'+Date.now()+'_'+Math.floor(Math.random()*1000);
+      db[pid]={label:label,cols:JSON.parse(JSON.stringify(DEFAULT_COLS)),weeks:weeks.map(function(w){return{range:w.range,shifts:w.shifts};}),notes:JSON.parse(JSON.stringify(DEFAULT_NOTES)),createdAt:Date.now()};
+      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+      if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+      try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+pid).set(db[pid]);}catch(e){}
+      return pid;
+    }
+    var novPid=mkPeriod('115年11月',novWeeks);
+    var decPid=mkPeriod('115年12月',decWeeks);
+    var allWarn=[];
+    novWeeks.concat(decWeeks).forEach(function(w){if(w.warn&&w.warn.length)allWarn.push(w.range+'：'+w.warn.join('、'));});
+    if(allWarn.length){
+      alert('已經排好「115年11月」「115年12月」，但有幾週同一空間可能全部都早職或晚職，建議檢查一下：\n'+allWarn.join('\n'));
+    }else{
+      alert('已經排好「115年11月」「115年12月」，請檢查一下對不對。');
+    }
+    openPeriod(novPid);
+  }
+
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod,autoGenerateXBD:autoGenerateXBD};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -23239,7 +23351,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261022162735--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023132622--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
