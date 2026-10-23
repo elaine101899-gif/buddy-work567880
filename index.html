@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023135914';
+  var BUILD='20261023140404';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11182,12 +11182,20 @@ var SCHEDULE=(function(){
   }
   function openPeriod(pid){
     if(!db[pid])return;
-    curPid=pid;curStep='detail';
+    curPid=pid;curStep='detail';curMode='view';
     GO('schedule-detail');
     renderDetail();
   }
   function backToList(){curStep='list';curPid=null;GO('schedule');}
 
+  /* 手機上用原本「編輯用」的寬表格看排班很吃力——欄位多、要橫向捲動，
+     每格又有下拉選單佔位，完全沒辦法一眼掃過去看今天誰上什麼班。
+     改成預設先顯示「檢視模式」：一週一張卡片直向排列，完全不用橫向
+     捲動；真的要改資料的時候再切到「編輯模式」，才會看到原本那個
+     有下拉選單可以加減人的表格。兩個模式共用同一份資料，只是畫面
+     呈現方式不同。 */
+  var curMode='view';
+  function toggleMode(){curMode=(curMode==='view')?'edit':'view';renderDetail();}
   function renderDetail(){
     var p=db[curPid];
     if(!p){backToList();return;}
@@ -11195,10 +11203,47 @@ var SCHEDULE=(function(){
     if(!p.cols)p.cols=JSON.parse(JSON.stringify(DEFAULT_COLS));
     if(!p.weeks)p.weeks=[];
     if(!p.notes)p.notes=JSON.parse(JSON.stringify(DEFAULT_NOTES));
-    var cols=p.cols,weeks=p.weeks;
-    var teachers=_teachers();
     var titleEl=document.getElementById('scheduleDetailTitle');
     if(titleEl)titleEl.textContent=p.label||'排班表';
+    var h='<div style="display:flex;gap:8px;margin-bottom:14px;">';
+    h+='<button onclick="SCHEDULE.toggleMode()" style="flex:1;padding:10px;background:'+(curMode==='edit'?'#2b90b0':'#fff')+';color:'+(curMode==='edit'?'#fff':'#2b90b0')+';border:1.5px solid #2b90b0;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">'+(curMode==='edit'?'✏️ 編輯中（點此看檢視版）':'✏️ 切換到編輯模式')+'</button>';
+    h+='<button onclick="SCHEDULE.printPeriod()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    h+='</div>';
+    h+=(curMode==='view')?_renderView(p):_renderEdit(p);
+    w.innerHTML=h;
+  }
+  /* ── 檢視模式：一目了然，一週一張卡片，直向排列不用橫向捲動 ── */
+  function _renderView(p){
+    var cols=p.cols,weeks=p.weeks,notes=p.notes;
+    var h='<div style="font-size:1.05rem;font-weight:800;color:#2b5a9c;margin-bottom:12px;">'+esc(p.label||'排班表')+'</div>';
+    if(!weeks.length){
+      h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有任何一週的資料，點上面「切換到編輯模式」新增。</div>';
+    }
+    weeks.forEach(function(wk){
+      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:10px;">';
+      h+='<div style="font-weight:800;font-size:.98rem;color:#2b90b0;margin-bottom:8px;border-bottom:1px solid #f0f0f0;padding-bottom:6px;">'+esc(wk.range||'（未填日期）')+'</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:7px;">';
+      cols.forEach(function(c){
+        var names=(wk.shifts&&wk.shifts[c.key])||[];
+        if(!names.length)return;
+        h+='<div style="display:flex;align-items:baseline;gap:8px;">';
+        h+='<span style="flex:0 0 92px;color:#888;font-size:.74rem;line-height:1.3;">'+esc(c.label)+'</span>';
+        h+='<span style="font-weight:700;font-size:.9rem;color:#333;">'+esc(names.join('、'))+'</span>';
+        h+='</div>';
+      });
+      h+='</div></div>';
+    });
+    if(weeks.length){
+      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:10px;font-size:.78rem;color:#666;line-height:1.7;">';
+      [notes.nightNurse,notes.trash,notes.eveningDuty].forEach(function(n){if(n)h+='<div style="margin-bottom:5px;">'+esc(n)+'</div>';});
+      h+='</div>';
+    }
+    return h;
+  }
+  /* ── 編輯模式：原本的表格，下拉選單加減人、文字輸入框改日期/說明 ── */
+  function _renderEdit(p){
+    var cols=p.cols,weeks=p.weeks;
+    var teachers=_teachers();
     var h='<input value="'+escAttr(p.label||'')+'" oninput="SCHEDULE.setLabel(this.value)" placeholder="排班表名稱" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:10px;font-size:1rem;font-weight:800;margin-bottom:14px;box-sizing:border-box;">';
     h+='<div class="tbl-wrap" style="overflow-x:auto;margin-bottom:14px;"><table class="ck-table" style="min-width:760px;"><thead><tr><th style="min-width:90px;">日期</th>';
     cols.forEach(function(c,ci){
@@ -11231,8 +11276,7 @@ var SCHEDULE=(function(){
       h+='<div style="flex:1;min-width:180px;"><div style="font-weight:700;font-size:.82rem;color:#555;margin-bottom:4px;">'+nd[1]+'</div><textarea oninput="SCHEDULE.setNote(\''+nd[0]+'\',this.value)" style="width:100%;min-height:130px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.76rem;box-sizing:border-box;font-family:inherit;">'+esc(p.notes[nd[0]]||'')+'</textarea></div>';
     });
     h+='</div>';
-    h+='<button onclick="SCHEDULE.printPeriod()" style="width:100%;padding:12px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.9rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
-    w.innerHTML=h;
+    return h;
   }
 
   function setLabel(v){db[curPid].label=v;_save(false);var titleEl=document.getElementById('scheduleDetailTitle');if(titleEl)titleEl.textContent=v||'排班表';}
@@ -11477,7 +11521,7 @@ var SCHEDULE=(function(){
     openPeriod(novPid);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod,autoGenerateXBD:autoGenerateXBD};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,toggleMode:toggleMode,setLabel:setLabel,setColLabel:setColLabel,setWeekRange:setWeekRange,setNote:setNote,addWeek:addWeek,removeWeek:removeWeek,addName:addName,removeName:removeName,printPeriod:printPeriod,autoGenerateXBD:autoGenerateXBD};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -23405,7 +23449,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023135914--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023140404--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
