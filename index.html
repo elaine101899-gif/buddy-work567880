@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261023213607';
+  var BUILD='20261024104508';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11645,7 +11645,7 @@ var PAYROLL=(function(){
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
-    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['otherDeduct','其他扣款（請假以外）','num']]],
+    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['lateDeduct','遲到扣款','num'],['otherDeduct','其他扣款','num']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
   ];
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
@@ -11686,7 +11686,7 @@ var PAYROLL=(function(){
       }
     });
     var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt;
-    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+leaveDeduct+(rec.otherDeduct||0);
+    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+leaveDeduct+(rec.otherDeduct||0);
     var transferAmt=totalAmt-deductAmt;
     return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
   }
@@ -11801,7 +11801,8 @@ var PAYROLL=(function(){
     h+='<select onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';" style="flex:1;padding:10px;border:1.5px solid #a53a3a;border-radius:10px;font-size:.85rem;"><option value="">＋ 新增人員</option>';
     roster.forEach(function(nm){if(names.indexOf(nm)<0)h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
     h+='</select>';
-    h+='<button onclick="PAYROLL.printAll()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 全部列印</button>';
+    h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
+    h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
     h+='</div>';
     if(!names.length){
       h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有人，上面選單新增人員</div>';
@@ -11915,9 +11916,10 @@ var PAYROLL=(function(){
     var w=_pwrap();if(!w)return;
     var titleEl=document.getElementById('payrollPersonTitle');
     if(titleEl)titleEl.textContent=curName+'（'+(p.label||'')+'）';
-    var h='<div style="display:flex;gap:8px;margin-bottom:16px;">';
-    h+='<button onclick="PAYROLL.copyFromPrev()" style="flex:1;padding:10px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">📋 複製上個月資料</button>';
-    h+='<button onclick="PAYROLL.printPerson()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    var h='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
+    h+='<button onclick="PAYROLL.copyFromPrev()" style="flex:1;min-width:140px;padding:10px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">📋 複製上個月資料</button>';
+    h+='<button onclick="PAYROLL.printPerson()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
+    h+='<button onclick="PAYROLL.printStub()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
     h+='</div>';
     /* 當月請假天數：直接從每日回報現算，唯讀顯示，不是這個人可以
        手動改的欄位——改法要去每日回報那邊改，這裡才會跟著變動。 */
@@ -12044,6 +12046,37 @@ var PAYROLL=(function(){
     w.document.write(html);w.document.close();
     setTimeout(function(){try{w.print();}catch(e){}},600);
   }
+  /* 詳細薪資表（給行政/owner自己留存看的那份）：A4橫式一張，左邊「應發」
+     右邊「應扣」用顏色分開，一眼就看得出來哪些是加的、哪些是扣的，
+     不用再像以前那樣東一格西一格混著看。遲到是手動填的欄位（時數對照
+     扣多少錢公司自己有規定，系統不猜），其餘都是前面確認過的公式算的。 */
+  function _addRows(rec,c){
+    var rows=[
+      ['底薪',rec.baseSalary],
+      ['職務津貼',rec.dutyAllow],
+      ['行政津貼',rec.adminAllow],
+      ['福利津貼',rec.welfareAllow],
+      ['學期考核',rec.examScore],
+      ['獎金',rec.bonus],
+      ['早值津貼',rec.earlyDuty],
+      ['晚值津貼',rec.lateDuty],
+      ['年終獎金',rec.yearEndBonus]
+    ];
+    if(rec.otHours)rows.push(['加班費（'+rec.otHours+'小時）',c.otAmt]);
+    if(rec.ot2Hours)rows.push(['逾時加班費（'+rec.ot2Hours+'小時）',c.ot2Amt]);
+    return rows;
+  }
+  function _deductRows(rec,c){
+    var rows=[
+      ['勞保費',rec.laborIns],
+      ['健保費',rec.healthIns],
+      ['眷屬保費',rec.depIns],
+      ['遲到扣款',rec.lateDeduct],
+      ['其他扣款',rec.otherDeduct]
+    ];
+    c.leaveDetail.forEach(function(d){rows.push(['請假扣薪－'+d.type+'（'+d.hours+'小時）',d.amt]);});
+    return rows;
+  }
   function _personSlipHtml(p,name,rec){
     var roc=_rocFromLabel(p.label);
     var leaveCounts={};
@@ -12051,63 +12084,75 @@ var PAYROLL=(function(){
       try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(name,roc.y,roc.m)||{};}catch(e){}
     }
     var c=_calc(p,name,rec);
+    var addRows=_addRows(rec,c),deductRows=_deductRows(rec,c);
     var s='<div class="slip">';
     s+='<div class="shd">'+esc(_companyFullName())+'　'+esc(p.label||'')+'【薪資表暨出缺席紀錄統計】</div>';
-    s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+'</div>';
-    s+='<table class="sgrid"><tr><th>項目</th><th>金額／內容</th><th>項目</th><th>金額／內容</th></tr>';
-    var rows=[
-      ['投保金額',rec.insuredAmount,'底薪',rec.baseSalary],
-      ['加班費',c.otAmt||'',(rec.otHours?'加班時數':'　'),(rec.otHours?rec.otHours+'小時':'')],
-      ['逾時加班費',c.ot2Amt||'',(rec.ot2Hours?'逾時加班時數':'　'),(rec.ot2Hours?rec.ot2Hours+'小時':'')],
-      ['職務津貼',rec.dutyAllow,'行政津貼',rec.adminAllow],
-      ['福利津貼',rec.welfareAllow,'學期考核',rec.examScore],
-      ['獎金',rec.bonus,'年終獎金',rec.yearEndBonus],
-      ['早值津貼',rec.earlyDuty,'晚值津貼',rec.lateDuty],
-      ['勞保費',rec.laborIns,'健保費',rec.healthIns],
-      ['眷屬保費',rec.depIns,'其他扣款',rec.otherDeduct],
-      ['請假扣薪',c.leaveDeduct||'','　','']
-    ];
-    rows.forEach(function(r){
-      s+='<tr><td>'+r[0]+'</td><td>'+esc(r[1]==null?'':r[1])+'</td><td>'+r[2]+'</td><td>'+esc(r[3]==null?'':r[3])+'</td></tr>';
-    });
-    s+='<tr style="background:#fdf5e0;font-weight:700;"><td>總金額</td><td>'+c.totalAmt.toLocaleString()+'</td><td>扣除薪資</td><td>'+c.deductAmt.toLocaleString()+'</td></tr>';
-    s+='<tr style="background:#fdf5e0;font-weight:700;"><td colspan="3">薪轉薪資</td><td>'+c.transferAmt.toLocaleString()+'</td></tr>';
-    s+='</table>';
+    s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+'　投保金額：'+esc(rec.insuredAmount==null?'':rec.insuredAmount)+'</div>';
+    s+='<div class="scols">';
+    s+='<div class="scol sadd"><div class="scolhd">＋ 應發</div><table>';
+    addRows.forEach(function(r){s+='<tr><td>'+r[0]+'</td><td>'+(r[1]?Number(r[1]).toLocaleString():'0')+'</td></tr>';});
+    s+='<tr class="ssum"><td>總金額</td><td>'+c.totalAmt.toLocaleString()+'</td></tr>';
+    s+='</table></div>';
+    s+='<div class="scol sdeduct"><div class="scolhd">－ 應扣</div><table>';
+    deductRows.forEach(function(r){s+='<tr><td>'+r[0]+'</td><td>'+(r[1]?Number(r[1]).toLocaleString():'0')+'</td></tr>';});
+    s+='<tr class="ssum"><td>扣除薪資</td><td>'+c.deductAmt.toLocaleString()+'</td></tr>';
+    s+='</table></div>';
+    s+='</div>';
+    s+='<div class="stransfer">薪轉薪資　<b>'+c.transferAmt.toLocaleString()+'</b></div>';
+    s+='<div class="sbottom">';
+    s+='<div class="sbleft">';
     s+='<div class="ssub">當月請假天數（自每日回報自動帶入）</div>';
     s+='<div class="sleave">';
     var any=false;
     LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){var n=leaveCounts[t]||0;if(n>0){any=true;s+='<span>'+t+' '+n+'天</span>';}});
     if(!any)s+='<span style="color:#999;">（本月無請假紀錄）</span>';
     s+='</div>';
+    if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
+    if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
+    if(rec.note)s+='<div class="stext">備註：'+esc(rec.note)+'</div>';
+    s+='</div>';
+    s+='<div class="sbright">';
     s+='<div class="ssub">特休（起算日：'+esc(rec.annualStartDate||'')+'）</div>';
     var annualIso=_rocDateToIso(rec.annualStartDate);
     var annualAsOf=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
     var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf):null;
     if(annualInfo&&annualInfo.days>0){
-      s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'　已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
+      s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'</div>';
+      s+='<div class="stext">已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
       if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(_isoToRocSlash).join('、')+'</div>';
     }else{
       s+='<div class="stext">（尚未滿特休資格，或未填特休起算日）</div>';
     }
-    if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
-    if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
-    if(rec.note)s+='<div class="stext">備註：'+esc(rec.note)+'</div>';
+    s+='</div>';
+    s+='</div>';
     s+='<div class="ssig">主管簽名：＿＿＿＿＿＿＿＿　　老師簽名：＿＿＿＿＿＿＿＿</div>';
     s+='</div>';
     return s;
   }
   function _printCss(){
     return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;}'
-      +'.slip{padding:14mm 12mm;page-break-after:always;}.slip:last-child{page-break-after:auto;}'
-      +'.shd{font-size:13pt;font-weight:800;text-align:center;margin-bottom:8px;}'
-      +'.sname{font-size:11pt;font-weight:700;margin-bottom:10px;border-bottom:1.5px solid #333;padding-bottom:6px;}'
-      +'.sgrid{width:100%;border-collapse:collapse;margin-bottom:10px;}.sgrid th,.sgrid td{border:1px solid #999;padding:5px 8px;font-size:9.5pt;}'
-      +'.sgrid th{background:#f0f0f0;width:18%;}.sgrid td{width:32%;}'
-      +'.ssub{font-size:9.5pt;font-weight:700;color:#555;margin:8px 0 4px;}'
-      +'.sleave span{display:inline-block;background:#fdecea;color:#c0392b;border-radius:6px;padding:2px 8px;font-size:9pt;margin:0 4px 4px 0;}'
-      +'.stext{font-size:9.3pt;color:#333;margin-bottom:3px;}'
-      +'.ssig{margin-top:16px;font-size:10pt;}'
-      +'@media print{@page{size:A4 portrait;margin:8mm;}}';
+      +'.slip{padding:8mm 12mm;page-break-after:always;}.slip:last-child{page-break-after:auto;}'
+      +'.shd{font-size:13pt;font-weight:800;text-align:center;margin-bottom:6px;}'
+      +'.sname{font-size:10pt;font-weight:700;margin-bottom:8px;border-bottom:1.5px solid #333;padding-bottom:5px;}'
+      +'.scols{display:flex;gap:10px;margin-bottom:8px;}'
+      +'.scol{flex:1;border-radius:8px;overflow:hidden;border:1.5px solid;}'
+      +'.sadd{border-color:#2d9c6f;}.sdeduct{border-color:#c0392b;}'
+      +'.scolhd{font-size:10.5pt;font-weight:800;text-align:center;padding:5px;color:#fff;}'
+      +'.sadd .scolhd{background:#2d9c6f;}.sdeduct .scolhd{background:#c0392b;}'
+      +'.scol table{width:100%;border-collapse:collapse;}'
+      +'.scol td{padding:3.5px 10px;font-size:9.3pt;border-bottom:1px solid #eee;}'
+      +'.scol td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}'
+      +'.sadd td:last-child{color:#1a7a4f;}.sdeduct td:last-child{color:#c0392b;}'
+      +'.scol tr.ssum td{font-weight:800;border-top:1.5px solid #999;border-bottom:none;background:#f7f7f7;}'
+      +'.stransfer{text-align:center;background:#fdf5e0;border:1.5px solid #e0b84a;border-radius:8px;padding:6px;font-size:12pt;font-weight:800;color:#9a6a1a;margin-bottom:8px;}'
+      +'.stransfer b{font-size:15pt;color:#1a7a4f;}'
+      +'.sbottom{display:flex;gap:14px;}'
+      +'.sbleft,.sbright{flex:1;}'
+      +'.ssub{font-size:9pt;font-weight:700;color:#555;margin:4px 0 3px;}'
+      +'.sleave span{display:inline-block;background:#fdecea;color:#c0392b;border-radius:6px;padding:2px 8px;font-size:8.6pt;margin:0 3px 3px 0;}'
+      +'.stext{font-size:8.8pt;color:#333;margin-bottom:2px;}'
+      +'.ssig{margin-top:10px;font-size:9.5pt;}'
+      +'@media print{@page{size:A4 landscape;margin:7mm;}}';
   }
   function printPerson(){
     var p=db[curPid];if(!p||!p.people||!p.people[curName])return;
@@ -12125,8 +12170,73 @@ var PAYROLL=(function(){
     html+='</body></html>';
     _doPrint(html);
   }
+  /* 薪資條：給老師本人的，不用像上面那份那麼大、那麼多行政細節
+     （不用看到特休起算日、每日回報明細那些管理用的東西）。設計成
+     A4一張直式分上下兩截的收據樣式，一次印可以印兩個人、省紙，
+     單獨列印一個人的時候就只會有一截、下面留白也沒關係。一樣是
+     左加右扣、顏色分開，最後用大字顯示實領金額。 */
+  function _stubHtml(p,name,rec){
+    var c=_calc(p,name,rec);
+    var addRows=_addRows(rec,c).filter(function(r){return r[1];});
+    var deductRows=_deductRows(rec,c).filter(function(r){return r[1];});
+    var s='<div class="stub">';
+    s+='<div class="tbhd"><span>'+esc(_companyFullName())+'</span><span>'+esc(p.label||'')+' 薪資條</span></div>';
+    s+='<div class="tbname">'+esc(name)+'</div>';
+    s+='<div class="tbcols">';
+    s+='<div class="tbcol tbadd"><div class="tbcolhd">應發</div>';
+    addRows.forEach(function(r){s+='<div class="tbrow"><span>'+r[0]+'</span><span>'+Number(r[1]).toLocaleString()+'</span></div>';});
+    if(!addRows.length)s+='<div class="tbrow" style="color:#aaa;">（無）</div>';
+    s+='<div class="tbrow tbsum"><span>小計</span><span>'+c.totalAmt.toLocaleString()+'</span></div>';
+    s+='</div>';
+    s+='<div class="tbcol tbdeduct"><div class="tbcolhd">應扣</div>';
+    deductRows.forEach(function(r){s+='<div class="tbrow"><span>'+r[0]+'</span><span>'+Number(r[1]).toLocaleString()+'</span></div>';});
+    if(!deductRows.length)s+='<div class="tbrow" style="color:#aaa;">（無）</div>';
+    s+='<div class="tbrow tbsum"><span>小計</span><span>'+c.deductAmt.toLocaleString()+'</span></div>';
+    s+='</div>';
+    s+='</div>';
+    s+='<div class="tbnet">實發金額　<b>'+c.transferAmt.toLocaleString()+'</b> 元</div>';
+    s+='<div class="tbsig">老師簽收：＿＿＿＿＿＿＿＿＿＿＿＿</div>';
+    s+='</div>';
+    return s;
+  }
+  function _stubCss(){
+    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;}'
+      +'.stub{border:1.5px dashed #bbb;border-radius:10px;padding:10mm;margin-bottom:8mm;}'
+      +'.stub:nth-child(2n){page-break-after:always;}.stub:last-child{page-break-after:auto;}'
+      +'.tbhd{display:flex;justify-content:space-between;font-size:10pt;color:#666;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:6px;}'
+      +'.tbname{font-size:14pt;font-weight:800;margin-bottom:8px;}'
+      +'.tbcols{display:flex;gap:12px;}'
+      +'.tbcol{flex:1;border-radius:8px;padding:8px 10px;}'
+      +'.tbadd{background:#eef7f2;}.tbdeduct{background:#fdecea;}'
+      +'.tbcolhd{font-size:9.5pt;font-weight:800;margin-bottom:4px;}'
+      +'.tbadd .tbcolhd{color:#1a7a4f;}.tbdeduct .tbcolhd{color:#c0392b;}'
+      +'.tbrow{display:flex;justify-content:space-between;font-size:9pt;padding:2px 0;}'
+      +'.tbrow span:last-child{font-variant-numeric:tabular-nums;}'
+      +'.tbadd .tbrow span:last-child{color:#1a7a4f;}.tbdeduct .tbrow span:last-child{color:#c0392b;}'
+      +'.tbrow.tbsum{border-top:1px solid rgba(0,0,0,.15);margin-top:3px;padding-top:4px;font-weight:800;}'
+      +'.tbnet{text-align:center;background:#fdf5e0;border-radius:8px;padding:8px;margin-top:10px;font-size:11pt;font-weight:700;color:#9a6a1a;}'
+      +'.tbnet b{font-size:16pt;color:#1a7a4f;}'
+      +'.tbsig{margin-top:8px;font-size:9pt;color:#555;text-align:right;}'
+      +'@media print{@page{size:A4 portrait;margin:10mm;}}';
+  }
+  function printStub(){
+    var p=db[curPid];if(!p||!p.people||!p.people[curName])return;
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(curName)+' 薪資條</title><style>'+_stubCss()+'</style></head><body>';
+    html+=_stubHtml(p,curName,p.people[curName]);
+    html+='</body></html>';
+    _doPrint(html);
+  }
+  function printAllStubs(){
+    var p=db[curPid];if(!p||!p.people)return;
+    var names=Object.keys(p.people).sort();
+    if(!names.length){alert('這個月還沒有人，先新增人員。');return;}
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+' 薪資條</title><style>'+_stubCss()+'</style></head><body>';
+    names.forEach(function(nm){html+=_stubHtml(p,nm,p.people[nm]);});
+    html+='</body></html>';
+    _doPrint(html);
+  }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24117,7 +24227,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261023213607--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261024104508--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
