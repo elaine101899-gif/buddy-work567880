@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261026222003';
+  var BUILD='20261026224954';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21025,6 +21025,12 @@ var TEACHSYNC=(function(){
     save();
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/teachSync/'+id+'/'+field).set(val);
+    /* 課程領域/名稱一改，立刻叫王國（點點）去比對已經存檔的適性記錄，
+       有落差直接自動修正，不用等老師自己發現、或等誰哪天打開王國才抓到——
+       免得老師都已經傳去 Google 雲端了才發現要重傳一次。 */
+    if((field==='dom'||field==='name')&&typeof KINGDOM!=='undefined'&&KINGDOM._syncNow){
+      setTimeout(function(){KINGDOM._syncNow();},400);
+    }
   }
   function pushMats(actEl,matsArr){
     var id=actId(actEl);
@@ -24600,7 +24606,7 @@ var KINGDOM=(function(){
   ];
   var M={}; (function(){for(var i=0;i<MAYORS.length;i++)M[MAYORS[i].id]=MAYORS[i];})();
   var LV={ok:{c:'#5aa878',t:'完成'},info:{c:'#6a7ab8',t:'進行中'},warn:{c:'#f2a03a',t:'提醒'},bad:{c:'#e04040',t:'要追蹤'}};
-  var mode='inspect', lines=[], conclusion='', pos=-1, autoTimer=null, ctx=null, findings=[], onFinish=null;
+  var mode='inspect', lines=[], conclusion='', pos=-1, autoTimer=null, ctx=null, findings=[], onFinish=null, syncIssues=[];
 
   function $(id){return document.getElementById(id);}
   /* 王國議事廳只有園長（owner）和行政（admin）看得到，老師看不到 */
@@ -24761,6 +24767,97 @@ var KINGDOM=(function(){
       sum:R.rows.length+' 份：可以列印 '+c.ok+(c.fix?'、小修 '+c.fix:'')+(c.back?'、退回 '+c.back:'')+'。',det:det,go:'kg-batch'};
   }
 
+  /* 課程同步：老師存檔適性記錄時，課程領域/名稱會整份「拍照存檔」存進
+     那一筆紀錄——之後教學課程如果又被改過，已經存好的紀錄不會自動跟著
+     變，這裡幫點點抓出「已經寫好、但教學課程後來被改掉」的落差，本週
+     跟上週都查，任何人隨時開王國都看得到，不用等排程。 */
+  function chkCurriculumSync(todayD){
+    var det=[],bad=0,issues=[];
+    safe(function(){
+      var sc=asrScope();
+      var weeks=[];if(sc.cur)weeks.push(sc.cur);if(sc.prev)weeks.push(sc.prev);
+      var reps=(typeof asrDB!=='undefined'&&asrDB.reports)||{};
+      var tsItems=(typeof TEACHSYNC!=='undefined'&&TEACHSYNC.getDB)?((TEACHSYNC.getDB()||{}).items||{}):{};
+      function tsDaysOf(dates){
+        var s=String(dates||'').split('~')[0].split('/');
+        var m=parseInt(s[0],10),d=parseInt(s[1],10);
+        var start=new Date(m>=8?2025:2026,m-1,d),days=[];
+        for(var i=0;i<5;i++){var dt=new Date(start.getTime()+i*86400000);
+          days.push(p2(dt.getMonth()+1)+'-'+p2(dt.getDate()));}
+        return days;
+      }
+      weeks.forEach(function(w){
+        var th=allThemes[sc.yr]&&allThemes[sc.yr][w.th];
+        var baseActs=(th&&th.acts&&th.acts[w.wk])||{};
+        var tsDays=tsDaysOf(w.dates);
+        sc.teachers.forEach(function(t){
+          var cs=sc.kids[t.id]||[],clsActs=baseActs[t.cls]||[];
+          cs.forEach(function(c){
+            var rep=reps[sc.yr+'_'+w.th+'_'+t.id+c.id+w.wk];
+            if(!rep||!rep.acts||!rep.acts.length)return;
+            var reportHasIssue=false;
+            for(var ai=0;ai<rep.acts.length;ai++){
+              var saved=rep.acts[ai]||{},cur=clsActs[ai];
+              if(!cur)continue;
+              /* 孩子請假/停班停課那幾天，老師會把活動改寫成請假紀錄（課程領域
+                 常常就直接寫「生活花絮」），本來就該跟當天班級課程不一樣，
+                 不算課程沒同步 */
+              if(saved.dom==='生活花絮')continue;
+              if(/請假|颱風|停課|停班|腸病毒|事\s*假|病\s*假|公假/.test(saved.name||''))continue;
+              var curDom=cur.dom||'',curName=cur.name||'';
+              /* 套用 TEACHSYNC 後台覆蓋，比對的是「現在畫面上真正會顯示的」，
+                 跟 DIARY openForm()/_getBaseActs() 同一套比對方式 */
+              var tsSuffix='_'+t.cls+'_'+tsDays[ai];
+              for(var tk in tsItems){
+                if(tk.length>=tsSuffix.length&&tk.slice(-tsSuffix.length)===tsSuffix){
+                  if(tsItems[tk].dom)curDom=tsItems[tk].dom;
+                  if(tsItems[tk].name)curName=tsItems[tk].name;
+                  break;
+                }
+              }
+              if((saved.dom||'')!==curDom||(saved.name||'')!==curName){
+                /* det（給人看的巡視報告）一份記錄只列一行，避免洗版；
+                   issues（給一鍵修正用）每個對不起來的活動都要收，不然
+                   同一份記錄裡第二個以後的落差永遠不會被修到，下次重新
+                   檢查又會一直抓到同一份記錄、看起來像沒修好。 */
+                if(!reportHasIssue){
+                  bad++;
+                  det.push(w.dates+' '+(CLSN[t.cls]||t.cls)+' '+nick(t.name)+'・'+c.name+'：已存的是「'+(saved.dom||'（空）')+' '+(saved.name||'')+'」，教學課程現在是「'+curDom+' '+curName+'」');
+                  reportHasIssue=true;
+                }
+                issues.push({key:sc.yr+'_'+w.th+'_'+t.id+c.id+w.wk,ai:ai,oldDom:saved.dom||'',oldName:saved.name||'',newDom:curDom,newName:curName,
+                  label:w.dates+' '+(CLSN[t.cls]||t.cls)+' '+nick(t.name)+'・'+c.name});
+              }
+            }
+          });
+        });
+      });
+    });
+    syncIssues=issues;
+    var lv=bad?'warn':'ok';
+    var sum=lv==='ok'?'本週、上週已寫的適性記錄，課程領域都跟教學課程對得上。':'有 '+bad+' 份已寫的適性記錄，課程領域/名稱跟教學課程現在不一樣了（教學課程後來被改過，記錄沒有自動跟著變）。';
+    return {mayor:'dot',icon:'🔄',title:'課程同步',lv:lv,sum:sum,det:det,go:'asr'};
+  }
+  /* 一鍵套用課程同步：把上面抓到的落差，直接把現在教學課程的領域/名稱
+     寫回那幾筆已存檔的適性記錄（只改 dom/name，不動省思、照片、家長
+     回饋等老師自己寫的內容）。 */
+  function fixSyncIssues(){
+    var fb=_fbInit();
+    if(!fb||!syncIssues.length)return 0;
+    var n=0;
+    syncIssues.forEach(function(it){
+      var rep=(typeof asrDB!=='undefined'&&asrDB.reports)?asrDB.reports[it.key]:null;
+      if(!rep||!rep.acts||!rep.acts[it.ai])return;
+      rep.acts[it.ai].dom=it.newDom;
+      rep.acts[it.ai].name=it.newName;
+      fb.ref('xiaobuddyClean/asr/reports/'+it.key+'/acts/'+it.ai+'/dom').set(it.newDom);
+      fb.ref('xiaobuddyClean/asr/reports/'+it.key+'/acts/'+it.ai+'/name').set(it.newName);
+      n++;
+    });
+    syncIssues=[];
+    return n;
+  }
+
   /* 體溫：今天＋本週已過的平日；順便看有沒有發燒 */
   function chkTemp(todayD){
     if(typeof BODYTEMP==='undefined'||!BODYTEMP.kgDay)return {mayor:'warm',icon:'🌡️',title:'體溫管理',lv:'info',sum:'讀不到體溫資料。',det:[],go:'bodytemp'};
@@ -24891,7 +24988,7 @@ var KINGDOM=(function(){
 
   function runInspect(){
     var now=new Date();
-    findings=[chkDiary(isoOf(now)),chkAsr(now),chkTemp(now),chkClean(now),chkPhone(now),chkLeave(now)];
+    findings=[chkDiary(isoOf(now)),chkAsr(now),chkCurriculumSync(now),chkTemp(now),chkClean(now),chkPhone(now),chkLeave(now)];
     /* 算算只有真正的 owner 才看得到，所以她的檢查結果只在 owner 身上
        加進 findings，admin 身上 findings 維持原本 6 項不變。 */
     if(isFinanceOwner())findings.push(chkFinance(now));
@@ -25565,7 +25662,17 @@ var KINGDOM=(function(){
     applyRole();
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
-  return {applyRole:applyRole,open:open,openAsr:openAsr,openHall:openHall,openBatch:openBatch,_bparse:batchParse,_checkAsr:checkAsr,_bpayload:function(i){return batchPayload(i);},close:close,_parse:parse,_findings:function(){return findings;}};
+  /* 教學課程領域/名稱一被改，馬上比對＋修正已存檔的適性記錄，不用等
+     誰打開王國才發現——這裡故意不開王國的畫面、不用 isOwner() 擋，
+     純粹背景跑完就好，老師跟行政都感覺不到發生過這件事。 */
+  function syncNow(){
+    safe(function(){
+      chkCurriculumSync(new Date());
+      var n=fixSyncIssues();
+      if(window.console&&n)console.log('[KINGDOM] 課程同步：自動修正了 '+n+' 筆適性記錄');
+    });
+  }
+  return {applyRole:applyRole,open:open,openAsr:openAsr,openHall:openHall,openBatch:openBatch,_bparse:batchParse,_checkAsr:checkAsr,_bpayload:function(i){return batchPayload(i);},close:close,_parse:parse,_findings:function(){return findings;},_syncNow:syncNow,_syncIssues:function(){return syncIssues;}};
 })();
 </script>
 
