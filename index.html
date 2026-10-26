@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027072301';
+  var BUILD='20261027074530';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24383,7 +24383,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027072301--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027074530--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25258,6 +25258,30 @@ var KINGDOM=(function(){
     }
     return out;
   }
+  /* ABS 清單裡「完全不」「都不」本身就帶否定，意思已經很明確，照原本
+     邏輯直接抓。但「一直」「總是」「從來」是中性的頻率詞，後面接正面
+     內容（像「一直看著哥哥笑」）完全沒問題，只有接在否定字（不/沒/没）
+     或 NEG 負面字眼附近，才是真的在講絕對化的負面行為，才該提醒改得
+     「溫和一點」。 */
+  var ABS_NEUTRAL=['一直','總是','從來'];
+  function foundAbs(txt){
+    var out=[];
+    for(var i=0;i<ABS.length;i++){
+      var kw=ABS[i],idx=-1,real=false;
+      if(ABS_NEUTRAL.indexOf(kw)<0){
+        if(txt.indexOf(kw)>=0)out.push(kw);
+        continue;
+      }
+      while((idx=txt.indexOf(kw,idx+1))>=0){
+        var after=txt.slice(idx+kw.length,idx+kw.length+8);
+        if(/[不沒没]/.test(after)){real=true;break;}
+        for(var j=0;j<NEG.length;j++){if(after.indexOf(NEG[j])>=0){real=true;break;}}
+        if(real)break;
+      }
+      if(real)out.push(kw);
+    }
+    return out;
+  }
   function plain(t){return String(t||'').replace(/\s+/g,'');}
   function bigrams(t){var o={},n=0;t=plain(t).replace(/[，。、！？～~,.!?：:；;「」（）()]/g,'');for(var i=0;i<t.length-1;i++){var g=t.substr(i,2);o[g]=(o[g]||0)+1;n++;}return {g:o,n:n};}
   function simil(a,b){
@@ -25281,7 +25305,7 @@ var KINGDOM=(function(){
     if(dup)out.warn.push({who:'墨墨',msg:label+'有重複的字或標點：'+dup.slice(0,3).join('、'),fix:'刪掉多打的字'});
     if(/[一-鿿],[一-鿿]/.test(t))out.warn.push({who:'墨墨',msg:label+'中文裡夾了半形逗號「,」',fix:'改成全形「，」'});
     x=found(t,WORRY);if(x.length)out.warn.push({who:'暖暖',msg:label+'提到'+x.join('、')+'，家長會特別在意',fix:'確認已經另外告知家長，文字寫清楚處理經過'});
-    x=found(t,ABS);if(x.length)out.warn.push({who:'暖暖',msg:label+'用了「'+x.join('」「')+'」這種絕對的說法',fix:'改成「有時候」「目前還在練習」比較溫和'});
+    x=foundAbs(t);if(x.length)out.warn.push({who:'暖暖',msg:label+'用了「'+x.join('」「')+'」這種絕對的說法',fix:'改成「有時候」「目前還在練習」比較溫和'});
     return out;
   }
   function toResult(o,kind){
