@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261026214121';
+  var BUILD='20261026222003';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -7107,14 +7107,21 @@ var ASR = (function() {
     };
   }
 
-  function saveF(){
+  /* 存檔的實際寫入邏輯抽成共用函式——「儲存」按鈕跟「傳給組長」按鈕都要呼叫，
+     不然老師按了傳給組長以為資料存好了，其實只是把畫面上還沒存檔的內容輸出
+     成一份 HTML，App 本身完全沒記到，王國議事廳巡視才會查不到。 */
+  function _doSave(){
     var r=document.getElementById('asrRef');
     var p=document.getElementById('asrPar');
     var _actsArr=[];var _aCnt=document.querySelectorAll('.asr-arow').length;for(var _ai=0;_ai<_aCnt;_ai++){var _dE=document.getElementById('asrDom'+_ai);var _iE=document.getElementById('asrInd'+_ai);var _nE=document.getElementById('asrNm'+_ai);_actsArr.push({dom:_dE?_dE.value:'',ind:_iE?_iE.value:'',name:_nE?_nE.value:''});}
     var _saveKey=selYear+"_"+selTheme+"_"+fCtx.tid+fCtx.cid+fCtx.wno;
     asrDB.reports[_saveKey]={wno:fCtx.wno,reflection:r?r.value:'',parentFeedback:p?p.value:'',photos:fCtx.photos,cropStates:crpSt,acts:_actsArr,_ts:Date.now()};
     _idbDel(_draftKey());
-    asrSave();_pushAsrReport(_saveKey,0);cf();rdrW();rdrC();toast('已儲存！');
+    asrSave();_pushAsrReport(_saveKey,0);
+  }
+  function saveF(){
+    _doSave();
+    cf();rdrW();rdrC();toast('已儲存！');
   }
   function setYrTh(){
     var yr=document.getElementById("selYrDrop").value;
@@ -7375,6 +7382,8 @@ var ASR = (function() {
     var card = document.getElementById('asrFmCard');
     var titleEl = document.getElementById('asrFmTitle');
     if (!card) return;
+    /* 傳給組長之前先存檔，不然老師以為傳出去就算完成，其實資料還沒進系統 */
+    _doSave();rdrW();rdrC();
     var tname = titleEl ? titleEl.textContent : '適性發展活動';
 
     /* ── 擷取資料 ── */
@@ -7568,7 +7577,7 @@ var ASR = (function() {
     /* Toast */
     var t=document.createElement('div');
     t.style.cssText='position:fixed;top:70px;right:16px;z-index:9999;background:#9870c8;color:white;padding:10px 18px;border-radius:10px;font-weight:700;font-size:.82rem;box-shadow:0 4px 14px rgba(0,0,0,.25)';
-    t.innerHTML='&#x1F4E4; HTML 檔案已下載，可直接傳給組長！';
+    t.innerHTML='&#x2713; 已儲存　&#x1F4E4; HTML 檔案已下載，可直接傳給組長！';
     document.body.appendChild(t);
     setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},4000);
   }
@@ -25132,6 +25141,26 @@ var KINGDOM=(function(){
   var ABS=['一直','總是','完全不','都不','從來'];
   var SIMP='们这个说时会发动学对进为吗让给过还么没东见现听写读认识爱妈爷问题头脑买卖饭鱼鸟马车门开关长乐习气汉语话谢请欢观觉实宝贝孙儿总经应该样种边级节双两当从众体处备齐产业专万与丽举义书乱争亏亚亲亿仅优伙伞伟传伤价侧债倾储党兴养写军农决况冻净凉减凑凭击划则刚创删别剂剧劝办务励劲劳势区医华协单卫厂厅历压厕县参变号叹吓听启员响团园围图圆圣场坏块坚执扩扫扬护报担拥拦择挂挡挤挥损换据摄摆敌数断无旧显晓暂术机杀杂权条来极构枪柜标栏树档桥梦检楼欧残毕汇汤沟泪洁浅测济浓涂润涨渐温湿满灭灯灵灾炉点烂烟烦烧热牵独环电画疗疯盐监盖盘码础确礼离积称稳穷竞笔笼简粮紧纠红约纪纯纸线练组细织终绍绕绘给络绝统继续绳维绵绿缓编网罗罚职联聪肠肤胜脚脱脸艺苏苹荐药获营萝蓝虑虫虽补装规视览触计订认讨训议记讲许论设访证评识诉词试诗询详误课谁调谈贝负财责败货质购贴贵费贺资赏赔赛赞赢赶跃践轨转轮软轻较辅辆辉输达迁迈运远违连迟适选递遗邮邻释针钟钢钥钱铁铃铅银链销锁锅错键镜闪闭闯闲间闹闻阅队阳阴阶际陆险随隐难雾韩页顶项顺须顾顿预领颜额风飞饮饱饺饼馆驾骂验骑骗鲜鸡鸭鹅齿龙龟';
   function found(txt,list){var o=[];for(var i=0;i<list.length;i++)if(txt.indexOf(list[i])>=0)o.push(list[i]);return o;}
+  /* DIAG 是逐字比對，「透過」「經過」後面接「動…」（透過動物、經過動作）
+     剛好會湊出「過動」兩個字、但意思完全無關；「沒有問題」「不會有問題」
+     也會湊出「有問題」但其實是否定句。逐一比對每個出現的位置，只排掉這
+     幾種已知會誤判的寫法，其他真的提到這些字眼的還是要抓出來。 */
+  function foundDiag(txt){
+    var out=[];
+    for(var i=0;i<DIAG.length;i++){
+      var kw=DIAG[i],idx=-1,real=false;
+      while((idx=txt.indexOf(kw,idx+1))>=0){
+        if(kw==='過動'&&idx>0&&(txt.charAt(idx-1)==='透'||txt.charAt(idx-1)==='經')){continue;}
+        if(kw==='有問題'){
+          var pre=txt.slice(Math.max(0,idx-2),idx);
+          if(pre.indexOf('沒')>=0||pre.indexOf('不')>=0)continue;
+        }
+        real=true;break;
+      }
+      if(real)out.push(kw);
+    }
+    return out;
+  }
   function plain(t){return String(t||'').replace(/\s+/g,'');}
   function bigrams(t){var o={},n=0;t=plain(t).replace(/[，。、！？～~,.!?：:；;「」（）()]/g,'');for(var i=0;i<t.length-1;i++){var g=t.substr(i,2);o[g]=(o[g]||0)+1;n++;}return {g:o,n:n};}
   function simil(a,b){
@@ -25148,7 +25177,7 @@ var KINGDOM=(function(){
     var t=plain(txt),out=o||{bad:[],warn:[]},x;
     if(!t)return out;
     x=found(t,NEG);if(x.length)out.bad.push({who:'墨墨',msg:label+'有負面標籤的說法：'+x.join('、'),fix:'把「'+x[0]+'」改成描述實際行為，例如「需要較多時間適應」「情緒較需要陪伴」'});
-    x=found(t,DIAG);if(x.length)out.bad.push({who:'暖暖',msg:label+'用了像診斷的字眼：'+x.join('、')+'，家長看了會很擔心',fix:'改寫成觀察到的具體行為，發展疑慮另外跟主管討論、再當面跟家長說'});
+    x=foundDiag(t);if(x.length)out.bad.push({who:'暖暖',msg:label+'用了像診斷的字眼：'+x.join('、')+'，家長看了會很擔心',fix:'改寫成觀察到的具體行為，發展疑慮另外跟主管討論、再當面跟家長說'});
     var sc=[];for(var i=0;i<t.length;i++){if(SIMP.indexOf(t.charAt(i))>=0&&sc.indexOf(t.charAt(i))<0)sc.push(t.charAt(i));}
     if(sc.length)out.bad.push({who:'墨墨',msg:label+'混到簡體字：'+sc.slice(0,8).join('、'),fix:'把簡體字改成繁體（可能是輸入法切到簡體）'});
     var dup=t.match(/(的的|了了|是是|在在|和和|。。|，，|！！！|\?\?)/g);
