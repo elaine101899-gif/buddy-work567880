@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261024104508';
+  var BUILD='20261026211155';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -8589,6 +8589,7 @@ var DIARY=(function(){
             if(_tsk.length>=_tsSuffix.length&&_tsk.slice(-_tsSuffix.length)===_tsSuffix){
               act=JSON.parse(JSON.stringify(act));
               if(_tsItems[_tsk].name)act.name=_tsItems[_tsk].name;
+              if(_tsItems[_tsk].dom)act.dom=_tsItems[_tsk].dom;
               break;
             }
           }
@@ -8640,6 +8641,7 @@ var DIARY=(function(){
           if(_tsItems2[_tsk2].name)act.name=_tsItems2[_tsk2].name;
           if(_tsItems2[_tsk2].content)act.desc=_tsItems2[_tsk2].content;
           if(_tsItems2[_tsk2].ind)act.ind=_tsItems2[_tsk2].ind;
+          if(_tsItems2[_tsk2].dom)act.dom=_tsItems2[_tsk2].dom;
           break;
         }
       }
