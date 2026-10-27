@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027152307';
+  var BUILD='20261027155348';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11833,11 +11833,22 @@ var PAYROLL=(function(){
   }
   function _save(){
     clearTimeout(_saveTimer);
-    _saveTimer=setTimeout(function(){
-      try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
-      if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
-      try{var fb=_fbInit();if(fb&&curPid&&db[curPid])fb.ref(FB_PATH+'/'+curPid).set(db[curPid]);}catch(e){}
-    },500);
+    _saveTimer=setTimeout(_doSave,500);
+  }
+  function _doSave(){
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb&&curPid&&db[curPid])fb.ref(FB_PATH+'/'+curPid).set(db[curPid]);}catch(e){}
+  }
+  /* 打字後會先等0.5秒才真的存到雲端（避免每打一個字就寫一次）。如果
+     剛打完字馬上按「返回」，curPid 切換／清空後，雲端監聽器原本保護
+     「正在編輯這份」不被舊快照蓋過去的那層保護就會失效——如果這時候
+     存檔還沒真的送出去，舊的雲端快照一回來就會把剛打的東西蓋掉，
+     畫面上看起來「資料不見了」（其實有存到，只是画面被旧资料盖过，
+     重新整理後抓到的就是已經存好的新資料）。所以離開前要先把還沒送出
+     的存檔動作立刻跑完，確保雲端一定是最新的，才不會有這個空窗期。 */
+  function _flushSave(){
+    if(_saveTimer){clearTimeout(_saveTimer);_saveTimer=null;_doSave();}
   }
   /* 「本月薪資表」一鍵建立：一定要由行政人員自己按一下才會建立/寫入，
      不能在頁面一打開、雲端資料可能都還沒載入完成的時候就背景自動寫入
@@ -11934,8 +11945,8 @@ var PAYROLL=(function(){
     GO('ledger-payroll-detail');
     renderDetail();
   }
-  function backToList(){curStep='list';curPid=null;GO('ledger-payroll');}
-  function backToDetail(){curStep='detail';curName=null;GO('ledger-payroll-detail');renderDetail();}
+  function backToList(){_flushSave();curStep='list';curPid=null;GO('ledger-payroll');}
+  function backToDetail(){_flushSave();curStep='detail';curName=null;GO('ledger-payroll-detail');renderDetail();}
 
   function renderDetail(){
     var p=db[curPid];
@@ -24549,7 +24560,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027152307--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027155348--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
