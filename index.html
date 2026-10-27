@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027151647';
+  var BUILD='20261027152307';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11686,6 +11686,23 @@ var PAYROLL=(function(){
     xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷','林素珍'],
     bambino:['黃鈺雯','林素珍']
   };
+  /* 2026-10-27：行政人員說以後新老師直接在薪資這裡加，不想再去適齡
+     適性那邊新增一次——這份名單存雲端（依公司隔離，跟其他薪資資料
+     一樣），只影響薪資頁面自己的人員名單，不會同步到班級名冊/排班表/
+     適齡適性那些地方（那些是各自獨立的名單），加新人之後如果那幾個
+     地方也需要這個人，還是要去各自的地方手動加。 */
+  var _extraStaff={};
+  var _extraStaffRef=null;
+  function _attachExtraStaff(){
+    var fb=_fbInit();if(!fb)return;
+    if(_extraStaffRef){try{_extraStaffRef.off('value');}catch(e){}}
+    _extraStaffRef=fb.ref('xiaobuddyPayrollExtraStaff');
+    _extraStaffRef.on('value',function(snap){
+      _extraStaff=snap.val()||{};
+      if(curStep==='list')renderList();
+      if(curStep==='detail')renderDetail();
+    });
+  }
   function _teachers(){
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
     var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
@@ -11695,7 +11712,17 @@ var PAYROLL=(function(){
     var names=_teachers().map(function(t){return t.name;});
     var have={};names.forEach(function(n){have[n]=true;});
     (EXTRA_STAFF[CURRENT_COMPANY]||[]).forEach(function(n){if(!have[n]){have[n]=true;names.push(n);}});
+    Object.keys(_extraStaff).forEach(function(n){if(!have[n]){have[n]=true;names.push(n);}});
     return names;
+  }
+  function addNewTeacher(){
+    var name=prompt('請輸入新老師的姓名\n（只會加進「薪資」的人員名單，班級名冊／排班表／適齡適性如果也需要這個人，還是要去那邊另外加）');
+    if(name===null)return;
+    name=name.trim();
+    if(!name)return;
+    _extraStaff[name]=true;
+    try{var fb=_fbInit();if(fb)fb.ref('xiaobuddyPayrollExtraStaff/'+name).set(true);}catch(e){}
+    addPerson(name);
   }
 
   /* 每一筆薪資紀錄的欄位，照 Excel 原本的欄位分組。2026-10-23 跟行政
@@ -11800,6 +11827,7 @@ var PAYROLL=(function(){
   function init(){
     try{var r=localStorage.getItem(_ckey(KEY));if(r){var d=JSON.parse(r);if(d)db=d;}}catch(e){}
     attachFb();
+    _attachExtraStaff();
     curStep='list';
     renderList();
   }
@@ -11923,6 +11951,7 @@ var PAYROLL=(function(){
     h+='<select onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';" style="flex:1;padding:10px;border:1.5px solid #a53a3a;border-radius:10px;font-size:.85rem;"><option value="">＋ 新增人員</option>';
     roster.forEach(function(nm){if(names.indexOf(nm)<0)h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
     h+='</select>';
+    h+='<button onclick="PAYROLL.addNewTeacher()" style="padding:10px 12px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ 新老師</button>';
     h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
     h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
     h+='</div>';
@@ -12432,7 +12461,7 @@ var PAYROLL=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24520,7 +24549,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027151647--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027152307--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
