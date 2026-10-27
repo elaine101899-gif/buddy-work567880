@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027134001';
+  var BUILD='20261027134713';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11708,7 +11708,7 @@ var PAYROLL=(function(){
   var FIELD_GROUPS=[
     ['基本資料',[['birthday','生日','text'],['startDate','到職日','text'],['annualStartDate','特休起算日（優於法規）','text']]],
     ['投保與底薪',[['insuredAmount','投保金額','num'],['baseSalary','底薪','num']]],
-    ['加班（填分鐘，系統自動算錢）',[['otHours','加班時數（分鐘）','minutes'],['ot2Hours','逾時加班時數（分鐘）','minutes']]],
+    ['加班（填分鐘，系統自動算錢）',[['otHours','加班時數（分鐘）','minutes'],['ot2Hours','逾時加班時數（分鐘）','minutes'],['lateDutyOtAmt','晚值加班費（自己填金額）','num']]],
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
@@ -11757,7 +11757,7 @@ var PAYROLL=(function(){
         leaveDetail.push({type:t,hours:hrs,amt:amt});
       }
     });
-    var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt;
+    var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
     var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+leaveDeduct+(rec.otherDeduct||0);
     var transferAmt=totalAmt-deductAmt;
     return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
@@ -12098,6 +12098,7 @@ var PAYROLL=(function(){
     h+='固定薪資（底薪＋職務／行政／福利津貼）：<b>'+Math.round(c.fixedSalary).toLocaleString()+'</b> 元　｜　時薪：<b>'+c.hourly.toFixed(2)+'</b> 元<br>';
     if(rec.otHours)h+='加班費：<b>'+c.otAmt.toLocaleString()+'</b> 元（'+Math.round(rec.otHours*60)+'分鐘 × 1.34）<br>';
     if(rec.ot2Hours)h+='逾時加班費：<b>'+c.ot2Amt.toLocaleString()+'</b> 元（'+Math.round(rec.ot2Hours*60)+'分鐘 × 1.67）<br>';
+    if(rec.lateDutyOtAmt)h+='晚值加班費：<b>'+Number(rec.lateDutyOtAmt).toLocaleString()+'</b> 元（自己填的金額）<br>';
     if(c.leaveDetail.length){
       h+='請假扣薪：'+c.leaveDetail.map(function(d){return d.type+' '+d.hours+'小時（'+d.amt.toLocaleString()+'元）';}).join('、')+'　合計 <b>'+c.leaveDeduct.toLocaleString()+'</b> 元<br>';
     }
@@ -12178,6 +12179,7 @@ var PAYROLL=(function(){
     ];
     if(rec.otHours)rows.push(['加班費（'+Math.round(rec.otHours*60)+'分鐘）',c.otAmt]);
     if(rec.ot2Hours)rows.push(['逾時加班費（'+Math.round(rec.ot2Hours*60)+'分鐘）',c.ot2Amt]);
+    if(rec.lateDutyOtAmt)rows.push(['晚值加班費',rec.lateDutyOtAmt]);
     return rows;
   }
   function _deductRows(rec,c){
@@ -12296,6 +12298,18 @@ var PAYROLL=(function(){
     var s='<div class="stub">';
     s+='<div class="tbhd"><span>'+esc(_companyFullName())+'</span><span>'+esc(p.label||'')+' 薪資條</span></div>';
     s+='<div class="tbname">'+esc(name)+'</div>';
+    /* 特休也印在薪資條上，跟編輯畫面「🌴 特休」那塊同一套算法
+       （_annualLeaveInfo），讓老師自己看薪資條就知道剩幾天特休，
+       不用另外再去問。沒填特休起算日、或還沒滿6個月的人不印這行。 */
+    var _vacAnchor=_rocDateToIso(rec.annualStartDate);
+    if(_vacAnchor){
+      var _vacRoc=_rocFromLabel(p.label);
+      var _vacAsOf=_vacRoc?(new Date(parseInt(_vacRoc.y,10)+1911,_vacRoc.m,0)).toISOString().slice(0,10):null;
+      var _vacInfo=_annualLeaveInfo(name,_vacAnchor,_vacAsOf);
+      if(_vacInfo&&_vacInfo.days>0){
+        s+='<div class="tbvac">🌴 特休：這個級距 '+_vacInfo.days+' 天，已用 '+_vacInfo.used+' 天，剩餘 <b>'+_vacInfo.remain+'</b> 天</div>';
+      }
+    }
     s+='<div class="tbcols">';
     s+='<div class="tbcol tbadd"><div class="tbcolhd">應發</div>';
     addRows.forEach(function(r){s+='<div class="tbrow"><span>'+r[0]+'</span><span>'+Number(r[1]).toLocaleString()+'</span></div>';});
@@ -12319,6 +12333,8 @@ var PAYROLL=(function(){
       +'.stub:nth-child(2n){page-break-after:always;}.stub:last-child{page-break-after:auto;}'
       +'.tbhd{display:flex;justify-content:space-between;font-size:10pt;color:#666;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:6px;}'
       +'.tbname{font-size:14pt;font-weight:800;margin-bottom:8px;}'
+      +'.tbvac{font-size:9pt;color:#1a7a4f;background:#eef7f2;border-radius:6px;padding:4px 8px;margin-bottom:8px;}'
+      +'.tbvac b{font-size:10.5pt;}'
       +'.tbcols{display:flex;gap:12px;}'
       +'.tbcol{flex:1;border-radius:8px;padding:8px 10px;}'
       +'.tbadd{background:#eef7f2;}.tbdeduct{background:#fdecea;}'
@@ -24438,7 +24454,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027134001--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027134713--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
