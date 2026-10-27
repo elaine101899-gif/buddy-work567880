@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027141705';
+  var BUILD='20261027151647';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11839,7 +11839,7 @@ var PAYROLL=(function(){
     }
     var p=db[pid];
     if(!p.people)p.people={};
-    st.missing.forEach(function(nm){if(!p.people[nm])p.people[nm]={};});
+    st.missing.forEach(function(nm){if(!p.people[nm])p.people[nm]=_prevRecordFor(nm,pid)||{};});
     _save2(pid);
     renderList();
   }
@@ -11941,10 +11941,24 @@ var PAYROLL=(function(){
     }
     w.innerHTML=h;
   }
+  /* 新增人員時自動帶入「這個人最近一份有資料的月份」——底薪／津貼／
+     保費／特休起算日這些月跟月之間通常不會變，不用每個月重打，只有
+     加班（加班時數/逾時加班時數/晚值加班費）會變動，所以這三個欄位
+     不帶，保持空白讓行政人員自己重新填這個月實際的加班。 */
+  function _prevRecordFor(name,excludePid){
+    var ids=Object.keys(db).filter(function(pid){return pid!==excludePid&&db[pid].people&&db[pid].people[name];});
+    if(!ids.length)return null;
+    ids.sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var copy=JSON.parse(JSON.stringify(db[ids[0]].people[name]));
+    delete copy.otHours;
+    delete copy.ot2Hours;
+    delete copy.lateDutyOtAmt;
+    return copy;
+  }
   function addPerson(name){
     var p=db[curPid];if(!p)return;
     if(!p.people)p.people={};
-    if(!p.people[name])p.people[name]={};
+    if(!p.people[name])p.people[name]=_prevRecordFor(name,curPid)||{};
     _save();
     renderDetail();
   }
@@ -24506,7 +24520,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027141705--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027151647--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
