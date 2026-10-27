@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027074530';
+  var BUILD='20261027095235';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20948,32 +20948,48 @@ var TEACHSYNC=(function(){
     return (wid+'_'+cls+'_'+date).replace(/[.#$\[\]\/]/g,'_');
   }
   function apply(){
-    if(document.body.classList.contains('adm'))return; /* 後台編輯中不套用遠端同步，避免互相覆蓋 */
+    /* 名稱/內容/指標/領域這幾個是會被老師打字編輯的欄位，後台編輯中先不要
+       套用遠端同步，避免打字打到一半被蓋掉——這段維持原本的保護邏輯。 */
+    var inAdmin=document.body.classList.contains('adm');
     var acts=document.querySelectorAll('.activity'),i;
     for(i=0;i<acts.length;i++){
       var el=acts[i];
       var id=actId(el);
       var item=db.items[id];
       if(!item)continue;
-      var nameEl=el.querySelector('.act-name');
-      var contentEl=el.querySelector('.act-content');
-      if(item.name!=null&&nameEl&&nameEl.textContent!==item.name)nameEl.textContent=item.name;
-      if(item.content!=null&&contentEl&&contentEl.textContent!==item.content)contentEl.textContent=item.content;
-      var indEl=el.querySelector('.act-indicator');
-      if(item.ind!=null&&indEl&&indEl.textContent!==item.ind)indEl.textContent=item.ind;
-      var domEl=el.querySelector('.act-domain');
-      if(item.dom!=null&&domEl&&domEl.textContent!==item.dom){
-        if(typeof DOM_ALL_CLASSES!=='undefined'){DOM_ALL_CLASSES.forEach(function(c){el.classList.remove(c);});el.classList.add(_domClassFor(item.dom));}
-        domEl.textContent=item.dom;
+      if(!inAdmin){
+        var nameEl=el.querySelector('.act-name');
+        var contentEl=el.querySelector('.act-content');
+        if(item.name!=null&&nameEl&&nameEl.textContent!==item.name)nameEl.textContent=item.name;
+        if(item.content!=null&&contentEl&&contentEl.textContent!==item.content)contentEl.textContent=item.content;
+        var indEl=el.querySelector('.act-indicator');
+        if(item.ind!=null&&indEl&&indEl.textContent!==item.ind)indEl.textContent=item.ind;
+        var domEl=el.querySelector('.act-domain');
+        if(item.dom!=null&&domEl&&domEl.textContent!==item.dom){
+          if(typeof DOM_ALL_CLASSES!=='undefined'){DOM_ALL_CLASSES.forEach(function(c){el.classList.remove(c);});el.classList.add(_domClassFor(item.dom));}
+          domEl.textContent=item.dom;
+        }
       }
+      /* 教學資源（mat-tags）不管在不在後台編輯模式都要同步，不然另一台
+         裝置畫面停在刪除前的舊標籤清單，那台裝置之後只要點掉別的標籤，
+         _matsArr() 會把畫面上還看得到、但其實已經被別人刪掉的舊資源
+         一起送回 Firebase，變成剛刪掉的資源過一陣子又自己冒出來——
+         先比對現在畫面上的標籤跟同步資料是否一樣，不一樣才重畫，減少
+         不必要的畫面閃動。 */
       if(item.mats){
         var mb=el.querySelector('.mat-tags');
         if(mb){
-          mb.innerHTML='';
-          item.mats.forEach(function(m){
-            var tg=document.createElement('span');tg.className='mat-tag';tg.textContent=m;
-            mb.appendChild(tg);
-          });
+          var curTags=[],curEls=mb.querySelectorAll('.mat-tag');
+          for(var ti=0;ti<curEls.length;ti++)curTags.push(curEls[ti].textContent);
+          var same=curTags.length===item.mats.length&&curTags.every(function(t,ti2){return t===item.mats[ti2];});
+          if(!same){
+            mb.innerHTML='';
+            item.mats.forEach(function(m){
+              var tg=document.createElement('span');tg.className='mat-tag';tg.textContent=m;
+              mb.appendChild(tg);
+            });
+            if(typeof setupM==='function')setupM(el);
+          }
         }
       }
     }
@@ -24383,7 +24399,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027074530--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027095235--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
