@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027134713';
+  var BUILD='20261027141705';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11712,7 +11712,7 @@ var PAYROLL=(function(){
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
-    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['lateDeduct','遲到扣款','num'],['otherDeduct','其他扣款','num']]],
+    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['lateMinutes','遲到分鐘數（當月累計，扣15分鐘緩衝後自動算錢）','num'],['lateDeduct','遲到扣款（舊式手動填，新的請用上面分鐘數）','num'],['otherDeduct','其他扣款','num']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
   ];
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
@@ -11757,10 +11757,15 @@ var PAYROLL=(function(){
         leaveDetail.push({type:t,hours:hrs,amt:amt});
       }
     });
+    /* 遲到：每個月有15分鐘緩衝，當月累計遲到分鐘數扣掉15分後，
+       剩下的分鐘才用時薪（換算成分鐘薪）算錢，無條件捨去小數。 */
+    var lateMin=rec.lateMinutes||0;
+    var lateBillableMin=Math.max(0,lateMin-15);
+    var lateAutoAmt=lateBillableMin>0?Math.floor((hourly/60)*lateBillableMin):0;
     var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
-    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+leaveDeduct+(rec.otherDeduct||0);
+    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0);
     var transferAmt=totalAmt-deductAmt;
-    return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
+    return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,lateMin:lateMin,lateBillableMin:lateBillableMin,lateAutoAmt:lateAutoAmt,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
   }
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -11806,11 +11811,56 @@ var PAYROLL=(function(){
       try{var fb=_fbInit();if(fb&&curPid&&db[curPid])fb.ref(FB_PATH+'/'+curPid).set(db[curPid]);}catch(e){}
     },500);
   }
+  /* 「本月薪資表」一鍵建立：一定要由行政人員自己按一下才會建立/寫入，
+     不能在頁面一打開、雲端資料可能都還沒載入完成的時候就背景自動寫入
+     ——之前就是背景自動寫入版本，在雲端資料還沒到之前誤判「這個月
+     沒有資料」，把真實的10月薪資表蓋成空的，造成資料遺失。 */
+  function _currentMonthStatus(){
+    var now=new Date();
+    var y=(now.getFullYear()-1911)+'',m=now.getMonth()+1;
+    var label=y+'年'+m+'月';
+    var pid=null,p=null;
+    Object.keys(db).forEach(function(k){
+      var r=_rocFromLabel(db[k].label);
+      if(r&&String(r.y)===y&&r.m===m){pid=k;p=db[k];}
+    });
+    var roster=_rosterNames();
+    var have=p&&p.people?Object.keys(p.people):[];
+    var haveSet={};have.forEach(function(n){haveSet[n]=true;});
+    var missing=roster.filter(function(n){return !haveSet[n];});
+    return{label:label,pid:pid,exists:!!p,missing:missing};
+  }
+  function quickCreateCurrentMonth(){
+    var st=_currentMonthStatus();
+    var pid=st.pid;
+    if(!pid){
+      pid='pr'+Date.now();
+      db[pid]={label:st.label,people:{},createdAt:Date.now()};
+    }
+    var p=db[pid];
+    if(!p.people)p.people={};
+    st.missing.forEach(function(nm){if(!p.people[nm])p.people[nm]={};});
+    _save2(pid);
+    renderList();
+  }
+  function _save2(pid){
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+    if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(db));
+    try{var fb=_fbInit();if(fb&&db[pid])fb.ref(FB_PATH+'/'+pid).set(db[pid]);}catch(e){}
+  }
 
   function renderList(){
     var w=_lwrap();if(!w)return;
     var ids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
-    var h='<button onclick="PAYROLL.newPeriod()" style="width:100%;padding:14px;background:#a53a3a;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增月份</button>';
+    var h='';
+    var st=_currentMonthStatus();
+    if(!st.exists||st.missing.length){
+      h+='<div style="background:#fff3cd;border:1.5px solid #e0b84a;border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
+      h+='<div style="font-size:.84rem;color:#8a6414;font-weight:700;margin-bottom:8px;">'+(st.exists?('「'+esc(st.label)+'」還少 '+st.missing.length+' 位在職人員沒加進薪資表'):('「'+esc(st.label)+'」薪資表還沒建立'))+'</div>';
+      h+='<button onclick="PAYROLL.quickCreateCurrentMonth()" style="width:100%;padding:10px;background:#e0b84a;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;">⚡ 一鍵建立「'+esc(st.label)+'」並加入全部在職人員</button>';
+      h+='</div>';
+    }
+    h+='<button onclick="PAYROLL.newPeriod()" style="width:100%;padding:14px;background:#a53a3a;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增月份</button>';
     if(!ids.length){
       h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無薪資資料</div>';
     }else{
@@ -12099,6 +12149,7 @@ var PAYROLL=(function(){
     if(rec.otHours)h+='加班費：<b>'+c.otAmt.toLocaleString()+'</b> 元（'+Math.round(rec.otHours*60)+'分鐘 × 1.34）<br>';
     if(rec.ot2Hours)h+='逾時加班費：<b>'+c.ot2Amt.toLocaleString()+'</b> 元（'+Math.round(rec.ot2Hours*60)+'分鐘 × 1.67）<br>';
     if(rec.lateDutyOtAmt)h+='晚值加班費：<b>'+Number(rec.lateDutyOtAmt).toLocaleString()+'</b> 元（自己填的金額）<br>';
+    if(c.lateMin>0)h+='遲到：'+c.lateMin+'分鐘（扣15分鐘緩衝後 '+c.lateBillableMin+' 分鐘）＝<b>'+c.lateAutoAmt.toLocaleString()+'</b> 元<br>';
     if(c.leaveDetail.length){
       h+='請假扣薪：'+c.leaveDetail.map(function(d){return d.type+' '+d.hours+'小時（'+d.amt.toLocaleString()+'元）';}).join('、')+'　合計 <b>'+c.leaveDeduct.toLocaleString()+'</b> 元<br>';
     }
@@ -12190,6 +12241,7 @@ var PAYROLL=(function(){
       ['遲到扣款',rec.lateDeduct],
       ['其他扣款',rec.otherDeduct]
     ];
+    if(c.lateMin>0)rows.push(['遲到（'+c.lateMin+'分鐘，扣15分緩衝後'+c.lateBillableMin+'分鐘）',c.lateAutoAmt]);
     c.leaveDetail.forEach(function(d){rows.push(['請假扣薪－'+d.type+'（'+d.hours+'小時）',d.amt]);});
     return rows;
   }
@@ -12366,7 +12418,7 @@ var PAYROLL=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,kgStatus:kgStatus};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24454,7 +24506,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027134713--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027141705--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
