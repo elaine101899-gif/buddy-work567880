@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027131358';
+  var BUILD='20261027132758';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11539,11 +11539,19 @@ var SCHEDULE=(function(){
     var POOL_0830=ORDER.filter(function(n){return notFixedSlot(n)&&CANNOT_LATE.indexOf(n)<0;});
     var POOL_0830_REV=POOL_0830.slice().reverse();
     var POOL_TRASH=ORDER.filter(function(n){return FIXED_C2.indexOf(n)<0;});
+    /* 晚3打掃：固定8點的3人、固定晚值的梁欣萍都不排，其餘的人照順序
+       一路往下輪（不是只看「這週剛好排到8點班」的人），兩位行政跟我
+       確認過接受「可能轉到剛好排早班的人身上，前後週自己對調」這種
+       做法，所以這裡不額外跳過早班的人——只跳過「這週剛好被排去當
+       晚值8:30那位」的人，因為同一人不可能同時晚3又晚值。 */
+    var POOL_LATE3=ORDER.filter(function(n){return FIXED_C2.indexOf(n)<0&&n!==FIXED_C5;});
     function takeN(arr,startIdx,n){var out=[];for(var i=0;i<n;i++)out.push(arr[(startIdx+i)%arr.length]);return out;}
     /* 2026-10-23 跟行政人員對過「10/26-10/30 這一週」的實際輪值狀況，
-       算出下一週（11/02）該從哪個位置接著輪，不是從頭開始。 */
+       算出下一週（11/02）該從哪個位置接著輪，不是從頭開始。
+       2026-10-27 晚3改成獨立順序輪（POOL_LATE3），從陳巧芳開始排，
+       late3 存的是 POOL_LATE3 裡的索引（陳巧芳是第 3 個，從0算起）。 */
     function initialState(){
-      return {p0715:5,p0830:2,trash:3,washPtr:5};
+      return {p0715:5,p0830:2,trash:3,late3:3};
     }
     function genWeek(range,state){
       var shifts={c0:[],c1:[],c2:[],c3:[],c4:[],c5:[]};
@@ -11572,11 +11580,10 @@ var SCHEDULE=(function(){
       var pickedTrash=takeN(POOL_TRASH,state.trash,1);
       shifts.c3.push(pickedTrash[0]);
       state.trash=(state.trash+1)%POOL_TRASH.length;
-      var c2Set={};shifts.c2.forEach(function(n){c2Set[n]=true;});
-      var tries=0,idx=state.washPtr,picked=null;
-      while(tries<ORDER.length){
-        var nm=ORDER[idx%ORDER.length];
-        if(c2Set[nm]&&FIXED_C2.indexOf(nm)<0){picked=nm;state.washPtr=(idx+1)%ORDER.length;break;}
+      var tries=0,idx=state.late3,picked=null;
+      while(tries<POOL_LATE3.length){
+        var nm=POOL_LATE3[idx%POOL_LATE3.length];
+        if(nm!==pick0830){picked=nm;state.late3=(idx+1)%POOL_LATE3.length;break;}
         idx++;tries++;
       }
       if(picked)shifts.c4.push(picked);
@@ -24404,7 +24411,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027131358--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027132758--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
