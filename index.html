@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027155348';
+  var BUILD='20261027155920';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12033,6 +12033,20 @@ var PAYROLL=(function(){
     if(!m)return null;
     return {y:m[1],m:parseInt(m[2],10)};
   }
+  /* 「當月請假天數」顯示用：不是用「有登記這天就算1天」去數，是照
+     實際時數換算（8小時＝1天），沒滿一天的部分直接顯示小時數，不要
+     換算成0.幾天——跟行政人員原本Excel上「幾天又幾小時」的習慣寫法
+     一致（例如徐郁婷請事假2小時，就直接顯示「2小時」，不是「1天」
+     也不是「0.25天」）。 */
+  function _fmtDaysHours(hours){
+    hours=hours||0;
+    if(hours<=0)return '0天';
+    var d=Math.floor(hours/8),h=hours-d*8;
+    h=Math.round(h*100)/100;
+    if(d>0&&h>0)return d+'天又'+h+'小時';
+    if(d>0)return d+'天';
+    return h+'小時';
+  }
   /* 給「算算」市長巡視用：本月薪資期別建好了嗎？在職人員名冊有沒有
      全部都加進這個月的薪資表（跟排班表同一套「不在班級名冊」人員名單）。 */
   function kgStatus(){
@@ -12117,16 +12131,16 @@ var PAYROLL=(function(){
     h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
     h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">當月請假天數（自動帶入自每日回報，這裡不能改）</div>';
     var roc=_rocFromLabel(p.label);
-    var leaveCounts={};
+    var leaveHoursMo={};
     if(roc&&typeof TEACHERLEAVE!=='undefined'){
-      try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(curName,roc.y,roc.m)||{};}catch(e){}
+      try{TEACHERLEAVE.ensureLoaded();leaveHoursMo=TEACHERLEAVE.leaveHoursForMonth(curName,roc.y,roc.m)||{};}catch(e){}
     }
     var hasAny=false;
     h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
     LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
-      var n=leaveCounts[t]||0;
-      if(n>0)hasAny=true;
-      h+='<span style="background:'+(n>0?'#fdecea':'#f5f5f5')+';color:'+(n>0?'#c0392b':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+n+'天</span>';
+      var hrs=leaveHoursMo[t]||0;
+      if(hrs>0)hasAny=true;
+      h+='<span style="background:'+(hrs>0?'#fdecea':'#f5f5f5')+';color:'+(hrs>0?'#c0392b':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+_fmtDaysHours(hrs)+'</span>';
     });
     h+='</div>';
     if(!hasAny)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">這個月每日回報沒有登記過請假</div>';
@@ -12145,10 +12159,10 @@ var PAYROLL=(function(){
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
       var hasAnyYear=false;
       LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
-        var n=0;
-        try{n=TEACHERLEAVE.leaveDaysInRange(curName,janIso,monthEndIso,t).count||0;}catch(e){}
-        if(n>0)hasAnyYear=true;
-        h+='<span style="background:'+(n>0?'#fff3cd':'#f5f5f5')+';color:'+(n>0?'#8a6414':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+n+'天</span>';
+        var hrs=0;
+        try{hrs=TEACHERLEAVE.leaveHoursInRange(curName,janIso,monthEndIso,t)||0;}catch(e){}
+        if(hrs>0)hasAnyYear=true;
+        h+='<span style="background:'+(hrs>0?'#fff3cd':'#f5f5f5')+';color:'+(hrs>0?'#8a6414':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+_fmtDaysHours(hrs)+'</span>';
       });
       h+='</div>';
       if(!hasAnyYear)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">今年每日回報沒有登記過請假</div>';
@@ -24458,6 +24472,20 @@ var TEACHERLEAVE=(function(){
     dates.sort();
     return {count:cnt,dates:dates};
   }
+  /* 跟 leaveDaysInRange 類似，但回傳的是實際時數總和，不是「有登記這天
+     就算1天」的天數——給薪資那邊「OO年累計請假天數」要用小時換算天數
+     顯示（例如只請2小時不要顯示成1天），不影響特休那邊原本用天數算
+     的邏輯（leaveDaysInRange 保留不動）。 */
+  function leaveHoursInRange(name,startIso,endIso,type){
+    var hrs=0;
+    Object.keys(db.today).forEach(function(dk){
+      var iso=keyToDateInputVal(dk);
+      if(iso<startIso||iso>endIso)return;
+      var rec=db.today[dk][name];
+      if(rec&&rec.onLeave&&(!type||rec.leaveType===type))hrs+=_hoursFromLeaveNote(rec.note);
+    });
+    return hrs;
+  }
 
   /* 給「算算」市長巡視用：本月扣薪假別（病假/生理假/安胎假/事假/
      家庭照顧假）裡，沒寫備註（代表系統會預設整天8小時扣薪）的那幾筆，
@@ -24483,7 +24511,7 @@ var TEACHERLEAVE=(function(){
        hasForm 標記那天有沒有找到對應的交接人（_resolveSub 查得到就算有）。 */
     kgRows:function(s,e){load();var rows=_compRows(s,e);rows.forEach(function(r){r.hasForm=!!_resolveSub(r.name,r.iso);});return rows;},
     kgDeductCheck:function(rocYear,rocMonth){load();return kgDeductCheck(rocYear,rocMonth);},
-    init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,leaveHoursForMonth:leaveHoursForMonth,leaveDaysInRange:leaveDaysInRange,ensureLoaded:load};
+    init:init,refresh:render,viewDate:viewDate,backToday:backToday,openEdit:openEdit,closeEdit:closeEdit,pickEditType:pickEditType,reviewFormCur:reviewFormCur,clearLeave:clearLeave,saveEdit:saveEdit,openParental:openParental,closeParental:closeParental,saveParental:saveParental,deleteParental:deleteParental,openReport:openReport,closeReport:closeReport,copyReport:copyReport,reviewForm:reviewForm,openCompletion:openCompletion,closeCompletion:closeCompletion,renderCompletion:renderCompletion,printCompletion:printCompletion,toggleCompFlag:toggleCompFlag,openSubReport:openSubReport,closeSubReport:closeSubReport,copySubReport:copySubReport,renderSubReport:renderSubReport,leaveDaysForMonth:leaveDaysForMonth,leaveHoursForMonth:leaveHoursForMonth,leaveDaysInRange:leaveDaysInRange,leaveHoursInRange:leaveHoursInRange,ensureLoaded:load};
 })();
 
 /* ════ LOGINTEST：隱藏的登入試用頁（只能用網址 #logintest 進來）════
@@ -24560,7 +24588,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027155348--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027155920--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
