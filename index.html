@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027111150';
+  var BUILD='20261027131358';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11713,18 +11713,22 @@ var PAYROLL=(function(){
      「特休」那組，不是請假扣薪的概念）。 */
   var LEAVE_TYPES_FOR_PAYROLL=['事假','病假','家庭照顧假','生理假','安胎假','公傷假','婚假','喪假','公假','產檢假','產假','福利假','其他'];
   /* 這幾種假別是會扣薪的（時薪×請假小時），其餘（公假/公傷假/產檢假/
-     婚假/喪假/福利假/其他）照Excel範本是不扣薪的，只算天數留紀錄用。 */
+     婚假/喪假/福利假/其他）照Excel範本是不扣薪的，只算天數留紀錄用。
+     病假/生理假/安胎假屬於普通傷病假性質，照勞基法是「半薪」（時薪×
+     小時×0.5）；事假/家庭照顧假沒有薪資保障，是全額扣（時薪×小時）。 */
   var DEDUCT_LEAVE_TYPES=['病假','生理假','安胎假','事假','家庭照顧假'];
-  /* 2026-10-23 跟行政人員確認過的公式：
+  var HALF_PAY_LEAVE_TYPES=['病假','生理假','安胎假'];
+  /* 2026-10-27 跟行政人員確認過的公式：
      固定薪資＝底薪＋職務津貼＋行政津貼＋福利津貼（不含學期考核/獎金/值班/年終，這些是變動的）
      時薪＝固定薪資÷240
      加班費＝時薪×1.34×加班時數，無條件進位＋5元
      逾時加班費＝時薪×1.67×逾時加班時數，無條件進位＋5元
-     請假扣薪＝時薪×請假小時，無條件捨去小數（病假/生理假/安胎假/事假/家庭照顧假才扣，其餘假別不扣薪）
+     請假扣薪＝時薪×請假小時，無條件捨去小數（病假/生理假/安胎假/事假/家庭照顧假才扣，其餘假別不扣薪；
+       病假/生理假/安胎假是半薪，只扣時薪×小時×0.5，事假/家庭照顧假扣全額時薪×小時）
      總金額＝底薪＋全部津貼＋值班＋年終＋加班費＋逾時加班費
      扣除薪資＝勞健保＋眷屬保＋請假扣薪＋其他扣款
      薪轉薪資＝總金額－扣除薪資
-     用黃苡綸、金佩樺兩筆實際資料驗證過，算出來的數字完全對得上。 */
+     用黃苡綸、金佩樺、杜雯捷、黃郁婷四筆實際資料驗證過，算出來的數字完全對得上。 */
   function _calc(p,name,rec){
     var fixedSalary=(rec.baseSalary||0)+(rec.dutyAllow||0)+(rec.adminAllow||0)+(rec.welfareAllow||0);
     var hourly=fixedSalary/240;
@@ -11740,7 +11744,8 @@ var PAYROLL=(function(){
     DEDUCT_LEAVE_TYPES.forEach(function(t){
       var hrs=leaveHours[t]||0;
       if(hrs>0){
-        var amt=Math.floor(hourly*hrs);
+        var rate=HALF_PAY_LEAVE_TYPES.indexOf(t)>=0?0.5:1;
+        var amt=Math.floor(hourly*hrs*rate);
         leaveDeduct+=amt;
         leaveDetail.push({type:t,hours:hrs,amt:amt});
       }
@@ -24399,7 +24404,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027111150--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027131358--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
