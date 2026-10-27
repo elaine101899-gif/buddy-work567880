@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261027095235';
+  var BUILD='20261027105251';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22578,8 +22578,11 @@ var CHILDLEAVE=(function(){
     }
     return true;
   }
-  /* 病假／住院：把日期串成一段一段連續請假，只有「中間確實跨過一個完整六日」
-     （前後都還有平日請假）的那一段，整段平日才算退費天數 */
+  /* 病假／住院：把日期串成一段一段連續請假（中間只隔週末一樣算連續，
+     因為生病本來就不會剛好只在平日發生），整個連續區間要超過5天，
+     從第5天（含）開始才退費，前4天不退——用「這天是連續病假的第幾天」
+     去算，不是用記錄筆數，所以同一個人同一段病假裡，有些天退、有些
+     天不退是正常的。 */
   function _eligibleSickDateKeys(cid){
     var dates=_fullTypeDatesForChild(cid,SICK_TYPES);
     var eligible={};
@@ -22590,12 +22593,11 @@ var CHILDLEAVE=(function(){
       while(j<dates.length&&_onlyWeekendBetween(run[run.length-1].date,dates[j].date)){
         run.push(dates[j]);j++;
       }
-      var bridgesWeekend=false;
-      for(var k2=1;k2<run.length;k2++){
-        var gapDays=Math.round((run[k2].date-run[k2-1].date)/86400000);
-        if(gapDays>1){bridgesWeekend=true;break;}
-      }
-      if(bridgesWeekend)run.forEach(function(e){eligible[e.dateKey]=true;});
+      var runStart=run[0].date;
+      run.forEach(function(e){
+        var dayPos=Math.round((e.date-runStart)/86400000)+1;
+        if(dayPos>=5)eligible[e.dateKey]=true;
+      });
       i=j;
     }
     return eligible;
@@ -24399,7 +24401,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027095235--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261027105251--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
