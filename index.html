@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028220353';
+  var BUILD='20261028222726';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12105,37 +12105,85 @@ var PAYROLL=(function(){
      這個級距的起訖日期、總共有幾天」，asOfIso 通常給薪資表那個月的
      月底日期，這樣重印舊月份的薪資單，特休餘額不會因為「現在」又過了
      幾個月而跟著變動——每個月的薪資單應該要凍結在那個月當下的餘額。 */
+  /* 育嬰留職停薪：起算日不變，但中間停薪留職的天數不算年資，等於
+     「按了暫停鍵」，復職後從暫停的地方繼續算，所以每一個週年日（半年
+     那次、滿1年、滿2年…）都要把「到那個週年日為止，已經發生過的留停
+     天數」往後加回去，而且加了之後可能又涵蓋到更多留停天數，所以要
+     反覆算到數字不再變動為止。parentalText 欄位可能一次寫好幾段區間
+     （用、,;或換行分開），每一段都要算進去。 */
+  function _parsePauseRanges(text){
+    if(!text)return [];
+    var out=[];
+    String(text).split(/[、,;\n]+/).forEach(function(seg){
+      var m=seg.match(/(\d{2,3}\/\d{1,2}\/\d{1,2})\s*[~～\-]\s*(\d{2,3}\/\d{1,2}\/\d{1,2})/);
+      if(m){
+        var s=_rocDateToIso(m[1]),e=_rocDateToIso(m[2]);
+        if(s&&e&&s<=e)out.push({start:s,end:e});
+      }
+    });
+    return out;
+  }
+  function _pauseDaysInRange(pauses,aIso,bIso){
+    var total=0;
+    pauses.forEach(function(p){
+      var s=p.start<aIso?aIso:p.start;
+      var e=p.end<bIso?p.end:bIso;
+      if(s<e){
+        var sd=new Date(s+'T00:00:00'),ed=new Date(e+'T00:00:00');
+        total+=Math.round((ed-sd)/86400000);
+      }
+    });
+    return total;
+  }
   /* earlyGrant：有些老師談好「一入職就能先用滿半年才有的3天」，不用
      等半年——這種情況不是把起算日往前推6個月（推6個月會讓可休區間
      變成「起算日往後6個月～起算日滿1年」，只剩半年可以用，不是整年），
      是整個「未滿1年」級距都不等 halfAnniv，從到職當天開始算，整年
      （到職日～到職日滿1年前一天）都可以用這3天。 */
-  function _annualLeaveInfo(name,anchorIso,asOfIso,earlyGrant){
+  function _annualLeaveInfo(name,anchorIso,asOfIso,earlyGrant,pauseText){
     if(!anchorIso)return null;
     var anchor=new Date(anchorIso+'T00:00:00');
     var asOf=new Date((asOfIso||new Date().toISOString().slice(0,10))+'T00:00:00');
     if(isNaN(anchor.getTime())||isNaN(asOf.getTime())||asOf<anchor)return null;
-    var years=asOf.getFullYear()-anchor.getFullYear();
-    var anniv=new Date(anchor);anniv.setFullYear(anchor.getFullYear()+years);
-    if(anniv>asOf){years--;anniv=new Date(anchor);anniv.setFullYear(anchor.getFullYear()+years);}
-    var halfAnniv=new Date(anchor);halfAnniv.setMonth(anchor.getMonth()+6);
+    function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+    var anchorIsoStr=fmt(anchor);
+    var pauses=_parsePauseRanges(pauseText);
+    /* 算「加滿 n 年（或半年，monthsOverride=6）的週年日，含留停天數順延」，
+       反覆算到收斂（留停通常不會太長，10次內一定會穩定下來）。 */
+    function adjustedAnniv(n,monthsOverride){
+      var naive=new Date(anchor);
+      if(monthsOverride)naive.setMonth(anchor.getMonth()+monthsOverride);
+      else naive.setFullYear(anchor.getFullYear()+n);
+      for(var i=0;i<10;i++){
+        var pd=_pauseDaysInRange(pauses,anchorIsoStr,fmt(naive));
+        var cand=new Date(anchor);
+        if(monthsOverride)cand.setMonth(anchor.getMonth()+monthsOverride);
+        else cand.setFullYear(anchor.getFullYear()+n);
+        cand.setDate(cand.getDate()+pd);
+        if(fmt(cand)===fmt(naive))break;
+        naive=cand;
+      }
+      return naive;
+    }
+    var years=0;
+    while(years<100&&adjustedAnniv(years+1)<=asOf)years++;
+    var halfAnniv=adjustedAnniv(0,6);
     var days=0,winStart=null,winEnd=null;
     if(years>=1){
       days=years>=10?Math.min(30,15+(years-10+1)):years>=5?15:years>=3?14:years>=2?10:7;
-      winStart=new Date(anchor);winStart.setFullYear(anchor.getFullYear()+years);
-      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+years+1);winEnd.setDate(winEnd.getDate()-1);
+      winStart=adjustedAnniv(years);
+      winEnd=new Date(adjustedAnniv(years+1));winEnd.setDate(winEnd.getDate()-1);
     }else if(earlyGrant){
       days=3;
       winStart=anchor;
-      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+1);winEnd.setDate(winEnd.getDate()-1);
+      winEnd=new Date(adjustedAnniv(1));winEnd.setDate(winEnd.getDate()-1);
     }else if(asOf>=halfAnniv){
       days=3;
       winStart=halfAnniv;
-      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+1);winEnd.setDate(winEnd.getDate()-1);
+      winEnd=new Date(adjustedAnniv(1));winEnd.setDate(winEnd.getDate()-1);
     }else{
       return {days:0,winStart:null,winEnd:null,used:0,remain:0,usedDates:[],usedNotes:[]};
     }
-    function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
     var winStartIso=fmt(winStart),winEndIso=fmt(winEnd);
     var usedEndIso=asOfIso<winEndIso?asOfIso:winEndIso;
     var usedInfo={count:0,dates:[]};
@@ -12283,14 +12331,14 @@ var PAYROLL=(function(){
     }else{
       var roc=_rocFromLabel(p.label);
       var asOfIso=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
-      var info=_annualLeaveInfo(curName,anchorIso,asOfIso,rec.earlyAnnualGrant);
+      var info=_annualLeaveInfo(curName,anchorIso,asOfIso,rec.earlyAnnualGrant,rec.parentalText);
       if(!info||info.days===0){
         h+='<div style="font-size:.8rem;color:#999;">起算日：'+esc(_isoToRocSlash(anchorIso))+'　目前還沒滿6個月，還沒有特休可以用。</div>';
       }else{
         h+='<div style="font-size:.8rem;color:#555;line-height:1.8;">';
         h+='起算日：'+esc(_isoToRocSlash(anchorIso))+'<br>';
         h+='這個級距有 <b>'+info.days+'</b> 天（'+esc(_isoToRocSlash(info.winStart))+'～'+esc(_isoToRocSlash(info.winEnd))+'）<br>';
-        h+='已使用 <b>'+info.used+'</b> 天'+(info.usedDates.length?('：'+info.usedDates.map(function(d,i){return _isoToRocSlash(d)+esc(info.usedNotes[i]||'');}).join('、')):'')+'<br>';
+        h+='已使用 <b>'+info.used+'</b> 天'+(info.usedDates.length?('：'+info.usedDates.map(function(d,i){return _isoToRocSlash(d)+(info.usedNotes[i]?' '+esc(info.usedNotes[i]):'');}).join('、')):'')+'<br>';
         h+='</div>';
         h+='<div style="margin-top:6px;font-weight:800;font-size:1.1rem;color:'+(info.remain<0?'#c0392b':'#1a7a4f')+';">剩餘 '+info.remain+' 天</div>';
       }
@@ -12384,11 +12432,11 @@ var PAYROLL=(function(){
     s+='<div class="ssub">特休（起算日：'+esc(rec.annualStartDate||'')+'）</div>';
     var annualIso=_rocDateToIso(rec.annualStartDate);
     var annualAsOf=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
-    var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf,rec.earlyAnnualGrant):null;
+    var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf,rec.earlyAnnualGrant,rec.parentalText):null;
     if(annualInfo&&annualInfo.days>0){
       s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'</div>';
       s+='<div class="stext">已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
-      if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(function(d,i){return _isoToRocSlash(d)+esc(annualInfo.usedNotes[i]||'');}).join('、')+'</div>';
+      if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(function(d,i){return _isoToRocSlash(d)+(annualInfo.usedNotes[i]?' '+esc(annualInfo.usedNotes[i]):'');}).join('、')+'</div>';
     }else{
       s+='<div class="stext">（尚未滿特休資格，或未填特休起算日）</div>';
     }
@@ -12458,7 +12506,7 @@ var PAYROLL=(function(){
     if(_vacAnchor){
       var _vacRoc=_rocFromLabel(p.label);
       var _vacAsOf=_vacRoc?(new Date(parseInt(_vacRoc.y,10)+1911,_vacRoc.m,0)).toISOString().slice(0,10):null;
-      var _vacInfo=_annualLeaveInfo(name,_vacAnchor,_vacAsOf,rec.earlyAnnualGrant);
+      var _vacInfo=_annualLeaveInfo(name,_vacAnchor,_vacAsOf,rec.earlyAnnualGrant,rec.parentalText);
       if(_vacInfo&&_vacInfo.days>0){
         s+='<div class="tbvac">🌴 特休：這個級距 '+_vacInfo.days+' 天，已用 '+_vacInfo.used+' 天，剩餘 <b>'+_vacInfo.remain+'</b> 天</div>';
       }
@@ -24621,7 +24669,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028220353--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028222726--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
