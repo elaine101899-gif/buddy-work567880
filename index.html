@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029074023';
+  var BUILD='20261029075016';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20342,6 +20342,11 @@ var LEDGER=(function(){
       Object.keys(pp.rows||{}).forEach(function(rid){
         var r=pp.rows[rid]||{};
         if(!_inRange(r.date,p.startDate,p.endDate))return;
+        /* 零用金「請款」科目如果記在收入欄（不是支出欄），代表是請款
+           收到的錢，不是公司日常零用金的收支，使用者要求不要帶進總帳。
+           請款記在支出欄的（真的拿零用金去幫忙代墊的那種）維持照常
+           帶入，只排除「請款＋收入」這個組合。 */
+        if(r.cat==='請款'&&(parseFloat(r.income)||0)>0)return;
         rows.push({id:'pc_'+pid+'_'+rid,date:r.date||'',cat:r.cat||'',
           note:r.note||'',
           income:r.income,expense:r.expense,ts:r.ts||0,source:'pettycash'});
@@ -24868,7 +24873,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029074023--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029075016--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
