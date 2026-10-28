@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028211527';
+  var BUILD='20261028213109';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12038,6 +12038,27 @@ var PAYROLL=(function(){
      換算成0.幾天——跟行政人員原本Excel上「幾天又幾小時」的習慣寫法
      一致（例如徐郁婷請事假2小時，就直接顯示「2小時」，不是「1天」
      也不是「0.25天」）。 */
+  /* 「累積至上月請假」那個文字欄位（leaveCumText）本來只是給人看的備註，
+     但行政人員說很多老師是半路才開始用系統，之前的請假歷史懶得一天一天
+     回填每日回報，只想「直接把累計數字打上去就好」——所以把這欄位也拿來
+     當「期初累計」的資料來源，直接從文字裡解析「OO累計X天（又Y小時）」
+     或「OO累計X分」這種格式，算出對應的小時數，加進「OO年累計請假天數」
+     那個方塊（跟每日回報現抓的數字相加，不會互相蓋掉）。文字欄位本身
+     還是手動打的、不會每個月自動變動，所以只能反映「寫這段文字當下」
+     的歷史累計，之後新發生的假別還是要靠每日回報才會持續往上累加。 */
+  function _leaveCumBaseHours(text,type){
+    if(!text)return 0;
+    var reDay=new RegExp(type+'累計\\s*([\\d.]+)\\s*天(?:又\\s*([\\d.]+)\\s*小時)?');
+    var m=text.match(reDay);
+    if(m){
+      var d=parseFloat(m[1])||0,hh=parseFloat(m[2])||0;
+      return d*8+hh;
+    }
+    var reMin=new RegExp(type+'累計\\s*([\\d.]+)\\s*分');
+    var m2=text.match(reMin);
+    if(m2)return (parseFloat(m2[1])||0)/60;
+    return 0;
+  }
   function _fmtDaysHours(hours){
     hours=hours||0;
     if(hours<=0)return '0天';
@@ -12155,12 +12176,13 @@ var PAYROLL=(function(){
       var monthEndD=new Date(ceYear,roc.m,0);
       var monthEndIso=monthEndD.getFullYear()+'-'+String(monthEndD.getMonth()+1).padStart(2,'0')+'-'+String(monthEndD.getDate()).padStart(2,'0');
       h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:4px;">'+ceYear+'年累計請假天數（1/1～'+monthEndIso+'，自動帶入每日回報）</div>';
+      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:4px;">'+ceYear+'年累計請假天數（1/1～'+monthEndIso+'，自動帶入每日回報＋下方「累積至上月請假」文字欄位）</div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
       var hasAnyYear=false;
       LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
         var hrs=0;
         try{hrs=TEACHERLEAVE.leaveHoursInRange(curName,janIso,monthEndIso,t)||0;}catch(e){}
+        hrs+=_leaveCumBaseHours(rec.leaveCumText,t);
         if(hrs>0)hasAnyYear=true;
         h+='<span style="background:'+(hrs>0?'#fff3cd':'#f5f5f5')+';color:'+(hrs>0?'#8a6414':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+_fmtDaysHours(hrs)+'</span>';
       });
@@ -24588,7 +24610,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028211527--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028213109--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
