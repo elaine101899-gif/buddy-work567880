@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028235805';
+  var BUILD='20261029000329';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11745,12 +11745,14 @@ var PAYROLL=(function(){
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
      「當月請假天數」就是照這個順序列出來，特休不算在這裡（特休走上面
      「特休」那組，不是請假扣薪的概念）。 */
-  var LEAVE_TYPES_FOR_PAYROLL=['事假','病假','家庭照顧假','生理假','安胎假','公傷假','婚假','喪假','公假','產檢假','產假','福利假','其他'];
+  var LEAVE_TYPES_FOR_PAYROLL=['事假','病假','家庭照顧假','育嬰假','生理假','安胎假','公傷假','婚假','喪假','公假','產檢假','產假','福利假','其他'];
   /* 這幾種假別是會扣薪的（時薪×請假小時），其餘（公假/公傷假/產檢假/
      婚假/喪假/福利假/其他）照Excel範本是不扣薪的，只算天數留紀錄用。
      病假/生理假/安胎假屬於普通傷病假性質，照勞基法是「半薪」（時薪×
-     小時×0.5）；事假/家庭照顧假沒有薪資保障，是全額扣（時薪×小時）。 */
-  var DEDUCT_LEAVE_TYPES=['病假','生理假','安胎假','事假','家庭照顧假'];
+     小時×0.5）；事假/家庭照顧假/育嬰假（2026-10開放可以按日請，行政
+     人員確認扣薪方式照事假，全額扣）沒有薪資保障，是全額扣（時薪×
+     小時）。 */
+  var DEDUCT_LEAVE_TYPES=['病假','生理假','安胎假','事假','家庭照顧假','育嬰假'];
   var HALF_PAY_LEAVE_TYPES=['病假','生理假','安胎假'];
   /* 2026-10-27 跟行政人員確認過的公式：
      固定薪資＝底薪＋職務津貼＋行政津貼＋福利津貼（不含學期考核/獎金/值班/年終，這些是變動的）
@@ -23992,7 +23994,11 @@ var TEACHERLEAVE=(function(){
     });
     return set;
   }
-  var LEAVE_TYPE_OPTS=['公假','病假','特休','喪假','事假','家庭照顧假','婚假','生理假','公傷假','安胎假','福利假','產檢假','產假','其他'];
+  /* 2026-10-28：育嬰留職停薪開放可以「按日請」（不用整段連續請），
+     所以每日回報這邊也要能單獨選「育嬰假」這個假別，跟原本db.parental
+     那個連續區間的育嬰留停紀錄是分開的兩件事，這裡只是多一個可以
+     選的假別選項。 */
+  var LEAVE_TYPE_OPTS=['公假','病假','特休','喪假','事假','家庭照顧假','育嬰假','婚假','生理假','公傷假','安胎假','福利假','產檢假','產假','其他'];
 
   function save(){
     var json=JSON.stringify(db);
@@ -24706,10 +24712,10 @@ var TEACHERLEAVE=(function(){
   }
 
   /* 給「算算」市長巡視用：本月扣薪假別（病假/生理假/安胎假/事假/
-     家庭照顧假）裡，沒寫備註（代表系統會預設整天8小時扣薪）的那幾筆，
-     提醒行政人員確認是不是真的請整天，免得薪水算錯。 */
+     家庭照顧假/育嬰假）裡，沒寫備註（代表系統會預設整天8小時扣薪）的
+     那幾筆，提醒行政人員確認是不是真的請整天，免得薪水算錯。 */
   function kgDeductCheck(rocYear,rocMonth){
-    var DEDUCT=['病假','生理假','安胎假','事假','家庭照顧假'];
+    var DEDUCT=['病假','生理假','安胎假','事假','家庭照顧假','育嬰假'];
     var prefix=rocYear+'_'+pad2(rocMonth)+'_';
     var out=[];
     Object.keys(db.today).forEach(function(dk){
@@ -24806,7 +24812,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028235805--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029000329--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
