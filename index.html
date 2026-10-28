@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028233750';
+  var BUILD='20261028235340';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12256,6 +12256,19 @@ var PAYROLL=(function(){
       });
       h+='</div>';
       if(!hasAnyYear)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">今年每日回報沒有登記過請假</div>';
+      h+='</div>';
+    }
+    /* 事假一年14天上限：統一照日曆年（1/1~12/31）算，跟上面「OO年累計
+       請假天數」那個方塊同一個區間，直接重用同樣的 janIso/monthEndIso，
+       只是這裡只挑事假出來，用大字體＋顏色提醒有沒有超過14天。 */
+    if(roc&&typeof TEACHERLEAVE!=='undefined'){
+      var _syHrs=0;
+      try{_syHrs=TEACHERLEAVE.leaveHoursInRange(curName,janIso,monthEndIso,'事假')||0;}catch(e){}
+      _syHrs+=_leaveCumBaseHours(rec.leaveCumText,'事假');
+      var _syOver=_syHrs>=112;
+      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
+      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:4px;">事假上限提醒（'+ceYear+'年1/1～12/31，上限14天）</div>';
+      h+='<div style="font-size:'+(_syOver?'1.05rem':'.9rem')+';font-weight:800;color:'+(_syOver?'#c0392b':'#2d9c6f')+';">今年已用事假 '+_fmtDaysHours(_syHrs)+(_syOver?'　⚠️ 已達或超過14天上限':'')+'</div>';
       h+='</div>';
     }
     h+='<div id="payrollSummaryBox"></div>';
@@ -24779,7 +24792,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028233750--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028235340--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
