@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028213109';
+  var BUILD='20261028220353';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11733,7 +11733,7 @@ var PAYROLL=(function(){
      區塊顯示。到職日、特休起算日是分開兩個欄位——同一個人這兩個
      日期常常不一樣（特休優於法規，起算日通常比到職日早）。 */
   var FIELD_GROUPS=[
-    ['基本資料',[['birthday','生日','text'],['startDate','到職日','text'],['annualStartDate','特休起算日（優於法規）','text']]],
+    ['基本資料',[['birthday','生日','text'],['startDate','到職日','text'],['annualStartDate','特休起算日（優於法規）','text'],['earlyAnnualGrant','入職即可用滿半年的3天特休（整年都能用，不用等滿半年）','bool']]],
     ['投保與底薪',[['insuredAmount','投保金額','num'],['baseSalary','底薪','num']]],
     ['加班（填分鐘，系統自動算錢）',[['otHours','加班時數（分鐘）','minutes'],['ot2Hours','逾時加班時數（分鐘）','minutes'],['lateDutyOtTime','晚值加班時間（紀錄用，文字自己填）','text'],['lateDutyOtAmt','晚值加班費（自己填金額）','num']]],
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
@@ -12105,7 +12105,12 @@ var PAYROLL=(function(){
      這個級距的起訖日期、總共有幾天」，asOfIso 通常給薪資表那個月的
      月底日期，這樣重印舊月份的薪資單，特休餘額不會因為「現在」又過了
      幾個月而跟著變動——每個月的薪資單應該要凍結在那個月當下的餘額。 */
-  function _annualLeaveInfo(name,anchorIso,asOfIso){
+  /* earlyGrant：有些老師談好「一入職就能先用滿半年才有的3天」，不用
+     等半年——這種情況不是把起算日往前推6個月（推6個月會讓可休區間
+     變成「起算日往後6個月～起算日滿1年」，只剩半年可以用，不是整年），
+     是整個「未滿1年」級距都不等 halfAnniv，從到職當天開始算，整年
+     （到職日～到職日滿1年前一天）都可以用這3天。 */
+  function _annualLeaveInfo(name,anchorIso,asOfIso,earlyGrant){
     if(!anchorIso)return null;
     var anchor=new Date(anchorIso+'T00:00:00');
     var asOf=new Date((asOfIso||new Date().toISOString().slice(0,10))+'T00:00:00');
@@ -12119,6 +12124,10 @@ var PAYROLL=(function(){
       days=years>=10?Math.min(30,15+(years-10+1)):years>=5?15:years>=3?14:years>=2?10:7;
       winStart=new Date(anchor);winStart.setFullYear(anchor.getFullYear()+years);
       winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+years+1);winEnd.setDate(winEnd.getDate()-1);
+    }else if(earlyGrant){
+      days=3;
+      winStart=anchor;
+      winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+1);winEnd.setDate(winEnd.getDate()-1);
     }else if(asOf>=halfAnniv){
       days=3;
       winStart=halfAnniv;
@@ -12210,6 +12219,8 @@ var PAYROLL=(function(){
           h+='<input type="number" inputmode="numeric" value="'+escAttr(mins)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':(parseFloat(this.value)||0)/60)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
         }else if(type==='num'){
           h+='<input type="number" inputmode="decimal" value="'+escAttr(val==null?'':val)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+        }else if(type==='bool'){
+          h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" '+(val?'checked':'')+' onchange="PAYROLL.setField(\''+key+'\',this.checked)" style="width:18px;height:18px;">　<span style="font-size:.78rem;color:#666;">目前：'+(val?'是':'否')+'</span></label>';
         }else{
           h+='<input value="'+escAttr(val||'')+'" oninput="PAYROLL.setField(\''+key+'\',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
         }
@@ -12272,7 +12283,7 @@ var PAYROLL=(function(){
     }else{
       var roc=_rocFromLabel(p.label);
       var asOfIso=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
-      var info=_annualLeaveInfo(curName,anchorIso,asOfIso);
+      var info=_annualLeaveInfo(curName,anchorIso,asOfIso,rec.earlyAnnualGrant);
       if(!info||info.days===0){
         h+='<div style="font-size:.8rem;color:#999;">起算日：'+esc(_isoToRocSlash(anchorIso))+'　目前還沒滿6個月，還沒有特休可以用。</div>';
       }else{
@@ -12373,7 +12384,7 @@ var PAYROLL=(function(){
     s+='<div class="ssub">特休（起算日：'+esc(rec.annualStartDate||'')+'）</div>';
     var annualIso=_rocDateToIso(rec.annualStartDate);
     var annualAsOf=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
-    var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf):null;
+    var annualInfo=annualIso?_annualLeaveInfo(name,annualIso,annualAsOf,rec.earlyAnnualGrant):null;
     if(annualInfo&&annualInfo.days>0){
       s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'</div>';
       s+='<div class="stext">已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
@@ -12447,7 +12458,7 @@ var PAYROLL=(function(){
     if(_vacAnchor){
       var _vacRoc=_rocFromLabel(p.label);
       var _vacAsOf=_vacRoc?(new Date(parseInt(_vacRoc.y,10)+1911,_vacRoc.m,0)).toISOString().slice(0,10):null;
-      var _vacInfo=_annualLeaveInfo(name,_vacAnchor,_vacAsOf);
+      var _vacInfo=_annualLeaveInfo(name,_vacAnchor,_vacAsOf,rec.earlyAnnualGrant);
       if(_vacInfo&&_vacInfo.days>0){
         s+='<div class="tbvac">🌴 特休：這個級距 '+_vacInfo.days+' 天，已用 '+_vacInfo.used+' 天，剩餘 <b>'+_vacInfo.remain+'</b> 天</div>';
       }
@@ -24610,7 +24621,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028213109--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028220353--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
