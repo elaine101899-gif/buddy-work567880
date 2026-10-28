@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028223221';
+  var BUILD='20261028224421';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11965,6 +11965,7 @@ var PAYROLL=(function(){
     h+='<button onclick="PAYROLL.addNewTeacher()" style="padding:10px 12px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ 新老師</button>';
     h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
     h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
+    h+='<button onclick="PAYROLL.printAllCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一人一張A4）</button>';
     h+='</div>';
     if(!names.length){
       h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有人，上面選單新增人員</div>';
@@ -12206,6 +12207,7 @@ var PAYROLL=(function(){
     h+='<button onclick="PAYROLL.copyFromPrev()" style="flex:1;min-width:140px;padding:10px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">📋 複製上個月資料</button>';
     h+='<button onclick="PAYROLL.printPerson()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
     h+='<button onclick="PAYROLL.printStub()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
+    h+='<button onclick="PAYROLL.printCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一張A4）</button>';
     h+='</div>';
     /* 當月請假天數：直接從每日回報現算，唯讀顯示，不是這個人可以
        手動改的欄位——改法要去每日回報那邊改，這裡才會跟著變動。 */
@@ -12495,7 +12497,7 @@ var PAYROLL=(function(){
      A4一張直式分上下兩截的收據樣式，一次印可以印兩個人、省紙，
      單獨列印一個人的時候就只會有一截、下面留白也沒關係。一樣是
      左加右扣、顏色分開，最後用大字顯示實領金額。 */
-  function _stubHtml(p,name,rec){
+  function _stubHtml(p,name,rec,noSig){
     var c=_calc(p,name,rec);
     var addRows=_addRows(rec,c).filter(function(r){return r[1];});
     var deductRows=_deductRows(rec,c).filter(function(r){return r[1];});
@@ -12527,7 +12529,7 @@ var PAYROLL=(function(){
     s+='</div>';
     s+='</div>';
     s+='<div class="tbnet">實發金額　<b>'+c.transferAmt.toLocaleString()+'</b> 元</div>';
-    s+='<div class="tbsig">老師簽收：＿＿＿＿＿＿＿＿＿＿＿＿</div>';
+    if(!noSig)s+='<div class="tbsig">老師簽收：＿＿＿＿＿＿＿＿＿＿＿＿</div>';
     s+='</div>';
     return s;
   }
@@ -12569,8 +12571,82 @@ var PAYROLL=(function(){
     html+='</body></html>';
     _doPrint(html);
   }
+  /* 合併列印：薪資條＋薪資表擠在同一張A4直式，一個人一頁。薪資條不用
+     簽收那行（這份是留底／行政用，不是給老師簽收的那份）。因為每個人
+     請假、特休明細多寡不一樣，印出來的總高度會不一樣，用.pagewrap
+     固定成A4扣掉邊界後的高度（overflow:hidden），裡面包一層.scalebox，
+     列印前用JS量實際內容高度，超過一頁高度就整體等比例縮小
+     （transform:scale），確保一定擠得進一張，不會印成兩張。 */
+  function _comboCss(){
+    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;margin:0;}'
+      +'.pagewrap{width:194mm;height:281mm;overflow:hidden;page-break-after:always;}'
+      +'.pagewrap:last-child{page-break-after:auto;}'
+      +'.scalebox{width:194mm;transform-origin:top left;}'
+      +'.stub{border:1.5px dashed #bbb;border-radius:10px;padding:8mm;margin-bottom:6mm;}'
+      +'.tbhd{display:flex;justify-content:space-between;font-size:10pt;color:#666;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:6px;}'
+      +'.tbname{font-size:14pt;font-weight:800;margin-bottom:8px;}'
+      +'.tbvac{font-size:9pt;color:#1a7a4f;background:#eef7f2;border-radius:6px;padding:4px 8px;margin-bottom:8px;}'
+      +'.tbvac b{font-size:10.5pt;}'
+      +'.tbcols{display:flex;gap:12px;}'
+      +'.tbcol{flex:1;border-radius:8px;padding:8px 10px;}'
+      +'.tbadd{background:#eef7f2;}.tbdeduct{background:#fdecea;}'
+      +'.tbcolhd{font-size:9.5pt;font-weight:800;margin-bottom:4px;}'
+      +'.tbadd .tbcolhd{color:#1a7a4f;}.tbdeduct .tbcolhd{color:#c0392b;}'
+      +'.tbrow{display:flex;justify-content:space-between;font-size:9pt;padding:2px 0;}'
+      +'.tbrow span:last-child{font-variant-numeric:tabular-nums;}'
+      +'.tbadd .tbrow span:last-child{color:#1a7a4f;}.tbdeduct .tbrow span:last-child{color:#c0392b;}'
+      +'.tbrow.tbsum{border-top:1px solid rgba(0,0,0,.15);margin-top:3px;padding-top:4px;font-weight:800;}'
+      +'.tbnet{text-align:center;background:#fdf5e0;border-radius:8px;padding:8px;margin-top:10px;font-size:11pt;font-weight:700;color:#9a6a1a;}'
+      +'.tbnet b{font-size:16pt;color:#1a7a4f;}'
+      +'.slip{padding:0;margin-top:4mm;border-top:2px dashed #ccc;padding-top:6mm;}'
+      +'.shd{font-size:12pt;font-weight:800;text-align:center;margin-bottom:6px;}'
+      +'.sname{font-size:9.5pt;font-weight:700;margin-bottom:8px;border-bottom:1.5px solid #333;padding-bottom:5px;}'
+      +'.scols{display:flex;gap:10px;margin-bottom:8px;}'
+      +'.scol{flex:1;border-radius:8px;overflow:hidden;border:1.5px solid;}'
+      +'.sadd{border-color:#2d9c6f;}.sdeduct{border-color:#c0392b;}'
+      +'.scolhd{font-size:10pt;font-weight:800;text-align:center;padding:5px;color:#fff;}'
+      +'.sadd .scolhd{background:#2d9c6f;}.sdeduct .scolhd{background:#c0392b;}'
+      +'.scol table{width:100%;border-collapse:collapse;}'
+      +'.scol td{padding:3px 10px;font-size:9pt;border-bottom:1px solid #eee;}'
+      +'.scol td:last-child{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}'
+      +'.sadd td:last-child{color:#1a7a4f;}.sdeduct td:last-child{color:#c0392b;}'
+      +'.scol tr.ssum td{font-weight:800;border-top:1.5px solid #999;border-bottom:none;background:#f7f7f7;}'
+      +'.stransfer{text-align:center;background:#fdf5e0;border:1.5px solid #e0b84a;border-radius:8px;padding:6px;font-size:11pt;font-weight:800;color:#9a6a1a;margin-bottom:8px;}'
+      +'.stransfer b{font-size:14pt;color:#1a7a4f;}'
+      +'.sbottom{display:flex;gap:14px;}'
+      +'.sbleft,.sbright{flex:1;}'
+      +'.ssub{font-size:8.6pt;font-weight:700;color:#555;margin:4px 0 3px;}'
+      +'.sleave span{display:inline-block;background:#fdecea;color:#c0392b;border-radius:6px;padding:2px 8px;font-size:8.3pt;margin:0 3px 3px 0;}'
+      +'.stext{font-size:8.5pt;color:#333;margin-bottom:2px;}'
+      +'.ssig{margin-top:8px;font-size:9pt;}'
+      +'@media print{@page{size:A4 portrait;margin:8mm;}}';
+  }
+  function _comboHtml(p,name,rec){
+    return '<div class="pagewrap"><div class="scalebox">'+_stubHtml(p,name,rec,true)+_personSlipHtml(p,name,rec)+'</div></div>';
+  }
+  function _scaleScript(){
+    return '<script>(function(){var px=96/25.4;var targetH=281*px;document.querySelectorAll(".pagewrap").forEach(function(pw){var box=pw.querySelector(".scalebox");var h=box.scrollHeight;if(h>targetH){var sc=targetH/h;box.style.transform="scale("+sc+")";box.style.width=(100/sc)+"%";}});})();<\/script>';
+  }
+  function printCombo(){
+    var p=db[curPid];if(!p||!p.people||!p.people[curName])return;
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(curName)+' 薪資條+薪資表</title><style>'+_comboCss()+'</style></head><body>';
+    html+=_comboHtml(p,curName,p.people[curName]);
+    html+=_scaleScript();
+    html+='</body></html>';
+    _doPrint(html);
+  }
+  function printAllCombo(){
+    var p=db[curPid];if(!p||!p.people)return;
+    var names=Object.keys(p.people).sort();
+    if(!names.length){alert('這個月還沒有人，先新增人員。');return;}
+    var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+' 薪資條+薪資表</title><style>'+_comboCss()+'</style></head><body>';
+    names.forEach(function(nm){html+=_comboHtml(p,nm,p.people[nm]);});
+    html+=_scaleScript();
+    html+='</body></html>';
+    _doPrint(html);
+  }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24672,7 +24748,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028223221--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028224421--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
