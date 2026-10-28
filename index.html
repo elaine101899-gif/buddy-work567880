@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028205940';
+  var BUILD='20261028211527';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12103,7 +12103,7 @@ var PAYROLL=(function(){
       winStart=halfAnniv;
       winEnd=new Date(anchor);winEnd.setFullYear(anchor.getFullYear()+1);winEnd.setDate(winEnd.getDate()-1);
     }else{
-      return {days:0,winStart:null,winEnd:null,used:0,remain:0,usedDates:[]};
+      return {days:0,winStart:null,winEnd:null,used:0,remain:0,usedDates:[],usedNotes:[]};
     }
     function fmt(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
     var winStartIso=fmt(winStart),winEndIso=fmt(winEnd);
@@ -12112,7 +12112,7 @@ var PAYROLL=(function(){
     if(typeof TEACHERLEAVE!=='undefined'){
       try{TEACHERLEAVE.ensureLoaded();usedInfo=TEACHERLEAVE.leaveDaysInRange(name,winStartIso,usedEndIso,'特休')||usedInfo;}catch(e){}
     }
-    return {days:days,winStart:winStartIso,winEnd:winEndIso,used:usedInfo.count,remain:days-usedInfo.count,usedDates:usedInfo.dates};
+    return {days:days,winStart:winStartIso,winEnd:winEndIso,used:usedInfo.count,remain:days-usedInfo.count,usedDates:usedInfo.dates,usedNotes:usedInfo.notes||[]};
   }
   function renderPerson(){
     var p=db[curPid];
@@ -12257,7 +12257,7 @@ var PAYROLL=(function(){
         h+='<div style="font-size:.8rem;color:#555;line-height:1.8;">';
         h+='起算日：'+esc(_isoToRocSlash(anchorIso))+'<br>';
         h+='這個級距有 <b>'+info.days+'</b> 天（'+esc(_isoToRocSlash(info.winStart))+'～'+esc(_isoToRocSlash(info.winEnd))+'）<br>';
-        h+='已使用 <b>'+info.used+'</b> 天'+(info.usedDates.length?('：'+info.usedDates.map(_isoToRocSlash).join('、')):'')+'<br>';
+        h+='已使用 <b>'+info.used+'</b> 天'+(info.usedDates.length?('：'+info.usedDates.map(function(d,i){return _isoToRocSlash(d)+esc(info.usedNotes[i]||'');}).join('、')):'')+'<br>';
         h+='</div>';
         h+='<div style="margin-top:6px;font-weight:800;font-size:1.1rem;color:'+(info.remain<0?'#c0392b':'#1a7a4f')+';">剩餘 '+info.remain+' 天</div>';
       }
@@ -12355,7 +12355,7 @@ var PAYROLL=(function(){
     if(annualInfo&&annualInfo.days>0){
       s+='<div class="stext">天數：'+annualInfo.days+'天　期間：'+esc(_isoToRocSlash(annualInfo.winStart))+'～'+esc(_isoToRocSlash(annualInfo.winEnd))+'</div>';
       s+='<div class="stext">已用：'+annualInfo.used+'天　餘額：'+annualInfo.remain+'天</div>';
-      if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(_isoToRocSlash).join('、')+'</div>';
+      if(annualInfo.usedDates.length)s+='<div class="stext">已使用日期：'+annualInfo.usedDates.map(function(d,i){return _isoToRocSlash(d)+esc(annualInfo.usedNotes[i]||'');}).join('、')+'</div>';
     }else{
       s+='<div class="stext">（尚未滿特休資格，或未填特休起算日）</div>';
     }
@@ -24462,15 +24462,15 @@ var TEACHERLEAVE=(function(){
      某一種假別（通常是特休）總共請了幾天——特休是跨好幾個月累積扣的，
      不是只看單一月份，所以要能查「整個特休年度區間」而不是只查一個月。 */
   function leaveDaysInRange(name,startIso,endIso,type){
-    var cnt=0,dates=[];
+    var items=[];
     Object.keys(db.today).forEach(function(dk){
       var iso=keyToDateInputVal(dk);
       if(iso<startIso||iso>endIso)return;
       var rec=db.today[dk][name];
-      if(rec&&rec.onLeave&&(!type||rec.leaveType===type)){cnt++;dates.push(iso);}
+      if(rec&&rec.onLeave&&(!type||rec.leaveType===type))items.push({iso:iso,note:rec.note||''});
     });
-    dates.sort();
-    return {count:cnt,dates:dates};
+    items.sort(function(a,b){return a.iso<b.iso?-1:a.iso>b.iso?1:0;});
+    return {count:items.length,dates:items.map(function(it){return it.iso;}),notes:items.map(function(it){return it.note;})};
   }
   /* 跟 leaveDaysInRange 類似，但回傳的是實際時數總和，不是「有登記這天
      就算1天」的天數——給薪資那邊「OO年累計請假天數」要用小時換算天數
@@ -24588,7 +24588,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028205940--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028211527--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
