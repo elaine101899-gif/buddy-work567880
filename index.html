@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029071256';
+  var BUILD='20261029072519';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5558,6 +5558,7 @@ function printSummaryB(cls) {
       <option value="run" selected>跑跑班</option>
     </select>
     <input class="asr-mi" id="inpTBedCls" type="text" placeholder="第幾班（選填，例如：跑跑一班；會自動建立寢具表班級）">
+    <input class="asr-mi" id="inpTStartDate" type="text" placeholder="到職日（選填，格式115/08/01；新增老師時會自動加進本月薪資表）">
     <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">身分（請假交接單會依這個分類）</div>
     <select class="asr-msel" id="inpTRole">
       <option value="teacher" selected>托育人員</option>
@@ -6727,6 +6728,7 @@ var ASR = (function() {
     document.getElementById('inpTN').value=t.name||'';
     document.getElementById('inpTC').value=t.cls||'run';
     document.getElementById('inpTBedCls').value=t.bedCls||'';
+    document.getElementById('inpTStartDate').value='';
     document.getElementById('inpTRole').value=t.role||'teacher';
     var isBaby=t.certType==='baby';
     document.querySelector('input[name="inpTCertType"][value="'+(isBaby?'baby':'edu')+'"]').checked=true;
@@ -6739,6 +6741,8 @@ var ASR = (function() {
     var n=(document.getElementById('inpTN').value||'').trim();
     var c=document.getElementById('inpTC').value;
     var bedCls=(document.getElementById('inpTBedCls').value||'').trim();
+    var startDateEl=document.getElementById('inpTStartDate');
+    var startDate=startDateEl?(startDateEl.value||'').trim():'';
     var role=document.getElementById('inpTRole').value;
     var certType=document.querySelector('input[name="inpTCertType"]:checked').value;
     var certNo=(document.getElementById('inpTCertNo').value||'').trim();
@@ -6776,6 +6780,11 @@ var ASR = (function() {
     if(typeof ROSTER!=='undefined')ROSTER.addTeacher(selYear,newTeacher,function(ok){
       if(!ok)toast('⚠️ 雲端同步失敗，其他裝置可能看不到，請點「立即同步」重試');
     });
+    /* 新增老師時順手把人加進「本月」薪資表（不用再跑一趟薪資頁面自己按
+       新增人員）——用PAYROLL.addFromRoster，這個函式自己直接讀雲端最新
+       狀態再寫入（不依賴薪資頁面是否已經在這次連線裡init過、本地db
+       有沒有同步好），避免薪資頁面還沒載入過資料就被寫入覆蓋掉的風險。 */
+    if(typeof PAYROLL!=='undefined'&&PAYROLL.addFromRoster)PAYROLL.addFromRoster(n,startDate);
     /* 有填班別的話，順手在寢具表建立對應班級，不用再跑一趟寢具表後台手動新增。
        這裡刻意用「老師的 id」當寢具班級的 id（不是隨機 id）：寢具表是靠這個 id
        去對應名單裡的幼兒，id 對上了，以後這位老師底下新增/刪除幼兒，寢具表才會
@@ -7346,6 +7355,7 @@ var ASR = (function() {
       document.getElementById('asrModalTTitle').textContent='👩‍🏫 新增托育人員';
       document.getElementById('asrModalTOkBtn').textContent='新增';
       document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';
+      document.getElementById('inpTStartDate').value='';
       document.getElementById('inpTRole').value='teacher';
       document.querySelector('input[name="inpTCertType"][value="edu"]').checked=true;
       document.getElementById('inpTCertNo').value='';document.getElementById('inpTCertNo').style.display='none';
@@ -11724,6 +11734,42 @@ var PAYROLL=(function(){
     try{var fb=_fbInit();if(fb)fb.ref('xiaobuddyPayrollExtraStaff/'+name).set(true);}catch(e){}
     addPerson(name);
   }
+  /* 給「適性」新增老師用：新增老師時順手把人加進「本月」薪資表，不用
+     再跑一趟薪資頁面自己按新增人員。這裡刻意不依賴薪資頁面這次連線
+     是否已經 init()／本地 db 是否已經從雲端同步好——直接另外讀一次
+     雲端最新狀態，只針對「這個月份」「這個人」做最小範圍的寫入，不碰
+     其他月份、其他人，這樣不管薪資頁面這次連線有沒有開過，都不會有
+     拿本地還沒同步好的舊資料去覆蓋雲端的風險（之前10月薪資表被背景
+     自動建立覆蓋掉的慘痛教訓）。 */
+  function addFromRoster(name,startDateRocSlash){
+    var fb=_fbInit();if(!fb)return;
+    var now=new Date();
+    var y=(now.getFullYear()-1911)+'',m=now.getMonth()+1;
+    var label=y+'年'+m+'月';
+    fb.ref(FB_PATH).once('value',function(snap){
+      var remote=snap.val()||{};
+      var pid=null;
+      Object.keys(remote).forEach(function(k){
+        var r=_rocFromLabel((remote[k]||{}).label);
+        if(r&&String(r.y)===y&&r.m===m)pid=k;
+      });
+      var rec={};
+      if(startDateRocSlash)rec.startDate=startDateRocSlash;
+      if(!pid){
+        pid='pr'+Date.now();
+        var people={};people[name]=rec;
+        var newPeriodObj={label:label,people:people,createdAt:Date.now()};
+        fb.ref(FB_PATH+'/'+pid).set(newPeriodObj);
+        db[pid]=newPeriodObj;
+      }else{
+        var p=remote[pid]||{};
+        if(p.people&&p.people[name])return;
+        fb.ref(FB_PATH+'/'+pid+'/people/'+name).set(rec);
+        if(db[pid]){if(!db[pid].people)db[pid].people={};db[pid].people[name]=rec;}
+      }
+      if(curStep==='list')renderList();
+    });
+  }
 
   /* 每一筆薪資紀錄的欄位，照 Excel 原本的欄位分組。2026-10-23 跟行政
      人員確認過公式之後，加班費/逾時加班費/請假扣薪/總金額/扣除薪資/
@@ -12716,7 +12762,7 @@ var PAYROLL=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher,addFromRoster:addFromRoster};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24822,7 +24868,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029071256--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029072519--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
