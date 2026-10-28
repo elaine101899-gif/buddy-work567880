@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028225112';
+  var BUILD='20261028225806';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12410,9 +12410,9 @@ var PAYROLL=(function(){
   }
   function _personSlipHtml(p,name,rec){
     var roc=_rocFromLabel(p.label);
-    var leaveCounts={};
+    var leaveHoursMo={};
     if(roc&&typeof TEACHERLEAVE!=='undefined'){
-      try{TEACHERLEAVE.ensureLoaded();leaveCounts=TEACHERLEAVE.leaveDaysForMonth(name,roc.y,roc.m)||{};}catch(e){}
+      try{TEACHERLEAVE.ensureLoaded();leaveHoursMo=TEACHERLEAVE.leaveHoursForMonth(name,roc.y,roc.m)||{};}catch(e){}
     }
     var c=_calc(p,name,rec);
     var addRows=_addRows(rec,c),deductRows=_deductRows(rec,c);
@@ -12435,7 +12435,7 @@ var PAYROLL=(function(){
     s+='<div class="ssub">當月請假天數（自每日回報自動帶入）</div>';
     s+='<div class="sleave">';
     var any=false;
-    LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){var n=leaveCounts[t]||0;if(n>0){any=true;s+='<span>'+t+' '+n+'天</span>';}});
+    LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){var hrs=leaveHoursMo[t]||0;if(hrs>0){any=true;s+='<span>'+t+' '+_fmtDaysHours(hrs)+'</span>';}});
     if(!any)s+='<span style="color:#999;">（本月無請假紀錄）</span>';
     s+='</div>';
     if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
@@ -24757,7 +24757,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028225112--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028225806--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
