@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028225806';
+  var BUILD='20261028230256';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12408,6 +12408,22 @@ var PAYROLL=(function(){
     c.leaveDetail.forEach(function(d){rows.push(['請假扣薪－'+d.type+'（'+d.hours+'小時）',d.amt]);});
     return rows;
   }
+  /* 年資：照特休起算日算（不是到職日——特休起算日可能因為承認前份工作
+     年資而比到職日早），算到這份薪資表所在月份的月底，只顯示幾年幾個月
+     不顯示到日，不滿1個月就只顯示「0個月」。 */
+  function _tenureText(anchorIso,asOfIso){
+    if(!anchorIso)return '';
+    var a=new Date(anchorIso+'T00:00:00');
+    var b=new Date((asOfIso||new Date().toISOString().slice(0,10))+'T00:00:00');
+    if(isNaN(a.getTime())||isNaN(b.getTime())||b<a)return '';
+    var months=(b.getFullYear()-a.getFullYear())*12+(b.getMonth()-a.getMonth());
+    if(b.getDate()<a.getDate())months--;
+    if(months<0)months=0;
+    var y=Math.floor(months/12),m=months%12;
+    if(y>0&&m>0)return y+'年'+m+'個月';
+    if(y>0)return y+'年';
+    return m+'個月';
+  }
   function _personSlipHtml(p,name,rec){
     var roc=_rocFromLabel(p.label);
     var leaveHoursMo={};
@@ -12418,7 +12434,10 @@ var PAYROLL=(function(){
     var addRows=_addRows(rec,c),deductRows=_deductRows(rec,c);
     var s='<div class="slip">';
     s+='<div class="shd">'+esc(_companyFullName())+'　'+esc(p.label||'')+'【薪資表暨出缺席紀錄統計】</div>';
-    s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+'　投保金額：'+esc(rec.insuredAmount==null?'':rec.insuredAmount)+'</div>';
+    var _tenureAnchor=_rocDateToIso(rec.annualStartDate);
+    var _tenureAsOf=roc?(new Date(parseInt(roc.y,10)+1911,roc.m,0)).toISOString().slice(0,10):null;
+    var _tenureStr=_tenureAnchor?_tenureText(_tenureAnchor,_tenureAsOf):'';
+    s+='<div class="sname">姓名：'+esc(name)+'　生日：'+esc(rec.birthday||'')+'　到職日：'+esc(rec.startDate||'')+(_tenureStr?'（年資 '+_tenureStr+'）':'')+'　投保金額：'+esc(rec.insuredAmount==null?'':rec.insuredAmount)+'</div>';
     s+='<div class="scols">';
     s+='<div class="scol sadd"><div class="scolhd">＋ 應發</div><table>';
     addRows.forEach(function(r){s+='<tr><td>'+r[0]+'</td><td>'+(r[1]?Number(r[1]).toLocaleString():'0')+'</td></tr>';});
@@ -12511,7 +12530,7 @@ var PAYROLL=(function(){
     var addRows=_addRows(rec,c).filter(function(r){return r[1];});
     var deductRows=_deductRows(rec,c).filter(function(r){return r[1];});
     var s='<div class="stub">';
-    s+='<div class="tbhd"><span>'+esc(_companyFullName())+'</span><span>'+esc(p.label||'')+' 薪資條</span></div>';
+    s+='<div class="tbhd"><span>'+esc(p.label||'')+' 薪資條</span></div>';
     s+='<div class="tbname">'+esc(name)+'</div>';
     /* 特休也印在薪資條上，跟編輯畫面「🌴 特休」那塊同一套算法
        （_annualLeaveInfo），讓老師自己看薪資條就知道剩幾天特休，
@@ -24757,7 +24776,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028225806--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028230256--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
