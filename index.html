@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028231913';
+  var BUILD='20261028233750';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12606,7 +12606,7 @@ var PAYROLL=(function(){
     return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;margin:0;}'
       +'.pagewrap{width:194mm;height:281mm;overflow:hidden;page-break-after:always;}'
       +'.pagewrap:last-child{page-break-after:auto;}'
-      +'.scalebox{width:194mm;transform-origin:top left;}'
+      +'.scalebox{width:194mm;}'
       +'.stub{border:1.5px dashed #bbb;border-radius:10px;padding:8mm;margin-bottom:6mm;}'
       +'.tbhd{display:flex;justify-content:space-between;font-size:10pt;color:#666;border-bottom:1px solid #ddd;padding-bottom:5px;margin-bottom:6px;}'
       +'.tbname{font-size:14pt;font-weight:800;margin-bottom:8px;}'
@@ -12649,8 +12649,14 @@ var PAYROLL=(function(){
   function _comboHtml(p,name,rec){
     return '<div class="pagewrap"><div class="scalebox">'+_stubHtml(p,name,rec,true)+_personSlipHtml(p,name,rec)+'</div></div>';
   }
+  /* 用transform:scale縮小只是「視覺上」變小，瀏覽器列印分頁是照「版面
+     實際佔的空間」去分頁，不是照畫面看起來多大，所以transform縮小後
+     畫面看起來一頁放得下，但列印引擎還是照縮小前的高度去分頁，印出來
+     就會多出一張幾乎空白的第二頁（iOS Safari印出來真的遇到這個狀況）。
+     改用zoom——這個屬性會真的改變版面大小（不是只改畫面呈現），列印
+     分頁才會照縮小後的實際高度算，才真的擠得進一頁。 */
   function _scaleScript(){
-    return '<script>(function(){var px=96/25.4;var targetH=281*px;document.querySelectorAll(".pagewrap").forEach(function(pw){var box=pw.querySelector(".scalebox");var h=box.scrollHeight;if(h>targetH){var sc=targetH/h;box.style.transform="scale("+sc+")";box.style.width=(100/sc)+"%";}});})();<\/script>';
+    return '<script>(function(){var px=96/25.4;var targetH=281*px;document.querySelectorAll(".pagewrap").forEach(function(pw){var box=pw.querySelector(".scalebox");var h=box.scrollHeight;if(h>targetH){var sc=targetH/h;box.style.zoom=sc;}});})();<\/script>';
   }
   function printCombo(){
     var p=db[curPid];if(!p||!p.people||!p.people[curName])return;
@@ -24773,7 +24779,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028231913--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028233750--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
