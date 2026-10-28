@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028222726';
+  var BUILD='20261028223221';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12123,14 +12123,17 @@ var PAYROLL=(function(){
     });
     return out;
   }
+  /* 留停區間的起訖日都算在留停裡（頭尾都算），例如114/02/03～114/08/01
+     是連頭帶尾180天，不是179天（差一天沒扣到小孩一樣要算，不是只算
+     到前一天）。 */
   function _pauseDaysInRange(pauses,aIso,bIso){
     var total=0;
     pauses.forEach(function(p){
       var s=p.start<aIso?aIso:p.start;
       var e=p.end<bIso?p.end:bIso;
-      if(s<e){
+      if(s<=e){
         var sd=new Date(s+'T00:00:00'),ed=new Date(e+'T00:00:00');
-        total+=Math.round((ed-sd)/86400000);
+        total+=Math.round((ed-sd)/86400000)+1;
       }
     });
     return total;
@@ -24669,7 +24672,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028222726--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028223221--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
