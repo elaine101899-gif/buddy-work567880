@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261028231210';
+  var BUILD='20261028231913';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12049,16 +12049,13 @@ var PAYROLL=(function(){
      的歷史累計，之後新發生的假別還是要靠每日回報才會持續往上累加。 */
   function _leaveCumBaseHours(text,type){
     if(!text)return 0;
-    var reDay=new RegExp(type+'累計\\s*([\\d.]+)\\s*天(?:又\\s*([\\d.]+)\\s*小時)?');
-    var m=text.match(reDay);
-    if(m){
-      var d=parseFloat(m[1])||0,hh=parseFloat(m[2])||0;
-      return d*8+hh;
-    }
-    var reMin=new RegExp(type+'累計\\s*([\\d.]+)\\s*分');
-    var m2=text.match(reMin);
-    if(m2)return (parseFloat(m2[1])||0)/60;
-    return 0;
+    /* 天/小時/分可以任意組合出現（「1天又4小時」「2小時又30分」
+       「2天」「30分」都要吃得下），三段都設成可有可無，按順序抓。 */
+    var re=new RegExp(type+'累計\\s*(?:([\\d.]+)\\s*天)?\\s*(?:又\\s*)?(?:([\\d.]+)\\s*小時)?\\s*(?:又\\s*)?(?:([\\d.]+)\\s*分)?');
+    var m=text.match(re);
+    if(!m||(!m[1]&&!m[2]&&!m[3]))return 0;
+    var d=parseFloat(m[1])||0,h=parseFloat(m[2])||0,mi=parseFloat(m[3])||0;
+    return d*8+h+mi/60;
   }
   function _fmtDaysHours(hours){
     hours=hours||0;
@@ -12459,25 +12456,6 @@ var PAYROLL=(function(){
     s+='</div>';
     if(rec.parentalText)s+='<div class="stext">育嬰假：'+esc(rec.parentalText)+'</div>';
     if(rec.leaveCumText)s+='<div class="stext">累積至上月請假：'+esc(rec.leaveCumText)+'</div>';
-    /* 年度累計（每日回報整年現抓＋累積至上月請假文字欄位解析出來的數字
-       相加），跟畫面編輯那邊「OO年累計請假天數」同一套算法——薪資表
-       之前只有印「當月」，沒印這個，所以像杜雯捷9月那筆真實記錄在
-       每日回報的事假（不是打在文字欄位裡的），印10月薪資表時就看不到，
-       這裡補上去跟畫面一致。 */
-    if(roc&&typeof TEACHERLEAVE!=='undefined'){
-      var _ceYear=parseInt(roc.y,10)+1911;
-      var _janIso=_ceYear+'-01-01';
-      var _monthEndD=new Date(_ceYear,roc.m,0);
-      var _monthEndIso=_monthEndD.getFullYear()+'-'+String(_monthEndD.getMonth()+1).padStart(2,'0')+'-'+String(_monthEndD.getDate()).padStart(2,'0');
-      var _yearParts=[];
-      LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
-        var hrs=0;
-        try{hrs=TEACHERLEAVE.leaveHoursInRange(name,_janIso,_monthEndIso,t)||0;}catch(e){}
-        hrs+=_leaveCumBaseHours(rec.leaveCumText,t);
-        if(hrs>0)_yearParts.push(t+' '+_fmtDaysHours(hrs));
-      });
-      if(_yearParts.length)s+='<div class="stext">'+_ceYear+'年累計：'+_yearParts.join('、')+'</div>';
-    }
     if(rec.note)s+='<div class="stext">備註：'+esc(rec.note)+'</div>';
     s+='</div>';
     s+='<div class="sbright">';
@@ -24795,7 +24773,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028231210--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261028231913--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
