@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030151822';
+  var BUILD='20261030154237';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24991,7 +24991,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030151822--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030154237--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25044,14 +25044,29 @@ document.addEventListener('DOMContentLoaded',function(){
       if(m[1]!==_curBuild)showBanner();
     }).catch(function(){_checking=false;});
   }
+  /* 2026-10-30 原本只是頂端一條細細的橫幅，老師常常沒注意到、一直沒點
+     就忘記了。改成跳正中間的視窗，比較不容易錯過；但還是不強制自動
+     重整（怕剛好填表單填到一半還沒存檔，硬重整會弄丟），改成給「稍後
+     再說」選項，按了5分鐘後會再跳一次，不會因為漏看一次就再也不提醒。 */
   function showBanner(){
     if(_shown)return;
     _shown=true;
-    var banner=document.createElement('div');
-    banner.textContent='⚠️ 這個分頁已經開很久了，資料可能存不進去，點這裡重新整理（不會弄丟已經填的內容）';
-    banner.style.cssText='position:fixed;top:0;left:0;right:0;background:#1565c0;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:700;z-index:999999;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);';
-    banner.onclick=function(){location.reload();};
-    document.body.appendChild(banner);
+    var ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:999999;background:rgba(20,20,10,.6);display:flex;align-items:center;justify-content:center;padding:16px;';
+    ov.innerHTML='<div style="max-width:360px;width:100%;background:#fff;border-radius:16px;padding:22px 20px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">'+
+      '<div style="font-size:1.8rem;margin-bottom:8px;">🔄</div>'+
+      '<div style="font-weight:800;font-size:1.02rem;margin-bottom:6px;color:#222;">有新版本可以用了</div>'+
+      '<div style="font-size:.84rem;color:#666;margin-bottom:18px;line-height:1.6;">系統剛剛更新過，點下面按鈕重新整理就能看到最新版本（不會弄丟已經填的內容，但如果正在填表單建議先存檔）。</div>'+
+      '<button id="_verReloadBtn" style="width:100%;padding:12px;background:#1565c0;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:.92rem;cursor:pointer;margin-bottom:8px;">立即重新整理</button>'+
+      '<button id="_verLaterBtn" style="width:100%;padding:9px;background:transparent;color:#999;border:none;font-size:.78rem;cursor:pointer;">稍後再說（5分鐘後再提醒我）</button>'+
+    '</div>';
+    document.body.appendChild(ov);
+    document.getElementById('_verReloadBtn').onclick=function(){location.reload();};
+    document.getElementById('_verLaterBtn').onclick=function(){
+      document.body.removeChild(ov);
+      _shown=false;
+      setTimeout(checkVersion,5*60*1000);
+    };
   }
   /* 剛打開分頁20秒先檢查一次（之前只排五分鐘一次，如果是一打開就已經是
      舊分頁的情況，等五分鐘才提醒太慢了），之後固定每2分鐘再檢查一次。 */
