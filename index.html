@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029203330';
+  var BUILD='20261030093515';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18755,7 +18755,15 @@ var CLEAN=(function(){
     if(sec==='temp'&&typeof TEMP!=='undefined')TEMP.init();
   }
 
-  function init(){show('hub');}
+  /* 2026-10-30 真正找到王國「186處沒完成」的根本原因：其他模組
+     （TEMP/BEDDING）的 init() 都會順便 load()，只有這個清潔模組的
+     init() 只負責切畫面到 hub，從來沒叫 load()/attachFb() 去接
+     Firebase 監聽——除非使用者自己點進「環境清潔」那個子畫面
+     （show('env') 才會 load()），不然 db.records 永遠是空的初始值。
+     王國巡視只會呼叫 CLEAN.init() 把模組叫醒，不會真的點進環境清潔
+     畫面，所以 checkMonth() 查到的永遠是空資料，把全部日子都當成
+     沒勾沒簽，這才是數字一直爆炸、怎麼等怎麼清快取都沒用的真正原因。 */
+  function init(){show('hub');load();}
 
   /* 月檢查用：這個月（y=民國年,m=月）每個清潔區域、每個平日，格子沒勾齊或沒簽名都列出來 */
   function checkMonth(y,m){
@@ -24935,7 +24943,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029203330--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030093515--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
