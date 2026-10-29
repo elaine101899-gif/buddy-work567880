@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030120415';
+  var BUILD='20261030131542';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24969,7 +24969,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030120415--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030131542--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25114,6 +25114,22 @@ document.addEventListener('DOMContentLoaded',function(){
         <button class="kg-btn" id="kgCopyRep">📋 複製報告文字</button>
       </div>
       <button class="kg-btn" id="kgOpenBatch" style="width:100%;margin-top:8px;background:#5a4fa8;">📦 適齡適性整週檢查</button>
+      <button class="kg-btn" id="kgOpenRemind" style="width:100%;margin-top:8px;background:#c98a2e;">➕ 發送提醒</button>
+    </div>
+
+    <!-- 自訂提醒：owner/admin 打字發送給指定老師，老師自己打勾完成 -->
+    <div class="kg-card" id="kgRemind" style="display:none;">
+      <h4>➕ 發送提醒</h4>
+      <p style="margin:0 0 8px;">打字寫提醒內容，勾選要發給誰，對方登入後首頁的提醒卡片就會看到，她自己打勾「完成」才會消失。</p>
+      <textarea class="kg-ta" id="kgRmText" placeholder="提醒內容，例如：記得補交10月的電訪表"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:10px 0 4px;">
+        <div style="font-size:.78rem;color:#c9cbe6;">收件人</div>
+        <div><button class="kg-btn sub" id="kgRmAll" style="padding:4px 10px;font-size:.74rem;">全選</button> <button class="kg-btn sub" id="kgRmNone" style="padding:4px 10px;font-size:.74rem;">全不選</button></div>
+      </div>
+      <div id="kgRmTeachers" style="max-height:160px;overflow:auto;background:rgba(255,255,255,.04);border-radius:10px;padding:8px;margin-bottom:10px;"></div>
+      <button class="kg-btn" id="kgRmSend" style="width:100%;">📤 發送</button>
+      <h4 style="margin-top:16px;">已發送的提醒</h4>
+      <div id="kgRmList"></div>
     </div>
 
     <!-- 適性批次送審 -->
@@ -25300,7 +25316,7 @@ var KINGDOM=(function(){
   function resetView(){
     stopAuto();pos=-1;lines=[];conclusion='';onFinish=null;
     $('kgLog').innerHTML='';
-    var hide=['kgLogCard','kgConclCard','kgStep','kgAgain','kgRepCard','kgBatch','kgBRes','kgLocal'];
+    var hide=['kgLogCard','kgConclCard','kgStep','kgAgain','kgRepCard','kgBatch','kgBRes','kgLocal','kgRemind'];
     for(var i=0;i<hide.length;i++)$(hide[i]).style.display='none';
     $('kgCtl').style.display='none';$('kgNext').disabled=false;$('kgSkip').disabled=false;$('kgAuto').disabled=false;
     setTalk(null);
@@ -26023,6 +26039,95 @@ var KINGDOM=(function(){
     $('kgBatch').scrollIntoView({behavior:'smooth',block:'start'});
   }
 
+  /* ════ 自訂提醒：owner/admin 打字發送給指定老師 ════
+     2026-10-30 新增。存在 xiaobuddyClean/customReminders/{rid}，每筆
+     {text,teacherIds:[...],createdAt,createdBy,doneBy:{tid:true}}。
+     收件人在首頁個人提醒卡片（MYREMINDER）看得到，自己打勾「完成」
+     才會消失——owner/admin 在這裡可以看到誰打勾了、誰還沒。 */
+  var _rmTeachers=[];
+  function _rmPath(){return 'xiaobuddyClean/customReminders';}
+  function openRemind(){
+    $('kgRemind').style.display='';
+    _rmLoadTeachers();
+    _rmLoadList();
+    $('kgRemind').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  function _rmLoadTeachers(){
+    var fb=_fbInit();
+    if(!fb)return;
+    fb.ref('xiaobuddyClean/roster/'+curYr()+'/teachers').once('value',function(snap){
+      var v=snap.val()||{};
+      _rmTeachers=Object.keys(v).map(function(tid){return {id:tid,name:(v[tid]||{}).name||'（未命名）'};})
+        .sort(function(a,b){return a.name<b.name?-1:1;});
+      _renderRmTeachers();
+      _rmLoadList();
+    });
+  }
+  function _renderRmTeachers(){
+    var host=$('kgRmTeachers');
+    if(!host)return;
+    if(!_rmTeachers.length){host.innerHTML='<div style="color:#999;font-size:.78rem;">讀取老師名單中…</div>';return;}
+    var h='';
+    _rmTeachers.forEach(function(t){
+      h+='<label style="display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:.84rem;color:#e8e9f5;"><input type="checkbox" class="kg-rm-ck" value="'+t.id+'" style="width:17px;height:17px;">'+esc(t.name)+'</label>';
+    });
+    host.innerHTML=h;
+  }
+  function _rmSend(){
+    var textEl=$('kgRmText');
+    var text=(textEl&&textEl.value||'').trim();
+    if(!text){alert('請輸入提醒內容');return;}
+    var ids=[];
+    document.querySelectorAll('.kg-rm-ck:checked').forEach(function(el){ids.push(el.value);});
+    if(!ids.length){alert('請至少勾選一位收件人');return;}
+    var fb=_fbInit();
+    if(!fb){alert('目前連不上雲端，請稍後再試');return;}
+    var rid='rm'+Date.now();
+    var who=(typeof CURRENT_USER_EMAIL!=='undefined'&&CURRENT_USER_EMAIL)||'owner';
+    fb.ref(_rmPath()+'/'+rid).set({text:text,teacherIds:ids,createdAt:Date.now(),createdBy:who},function(err){
+      if(err){alert('發送失敗，請檢查網路後再試');return;}
+      textEl.value='';
+      document.querySelectorAll('.kg-rm-ck').forEach(function(el){el.checked=false;});
+      _rmLoadList();
+    });
+  }
+  function _rmLoadList(){
+    var fb=_fbInit();
+    if(!fb)return;
+    fb.ref(_rmPath()).once('value',function(snap){
+      _renderRmList(snap.val()||{});
+    });
+  }
+  function _renderRmList(all){
+    var host=$('kgRmList');
+    if(!host)return;
+    var ids=Object.keys(all).sort(function(a,b){return (all[b].createdAt||0)-(all[a].createdAt||0);});
+    if(!ids.length){host.innerHTML='<div style="color:#999;font-size:.8rem;text-align:center;padding:16px 0;">還沒發送過提醒</div>';return;}
+    var nameOf={};_rmTeachers.forEach(function(t){nameOf[t.id]=t.name;});
+    var h='';
+    ids.forEach(function(rid){
+      var r=all[rid]||{};
+      var teacherIds=r.teacherIds||[];
+      var doneBy=r.doneBy||{};
+      var doneCount=teacherIds.filter(function(tid){return doneBy[tid];}).length;
+      var dt=r.createdAt?new Date(r.createdAt):null;
+      var dtStr=dt?(dt.getMonth()+1)+'/'+dt.getDate()+' '+p2(dt.getHours())+':'+p2(dt.getMinutes()):'';
+      h+='<div style="background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;margin-bottom:8px;">';
+      h+='<div style="font-size:.85rem;color:#fff;margin-bottom:4px;">'+esc(r.text||'')+'</div>';
+      h+='<div style="font-size:.72rem;color:#9a9cc0;margin-bottom:6px;">'+dtStr+'　完成 '+doneCount+'/'+teacherIds.length+'</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">';
+      teacherIds.forEach(function(tid){
+        var nm=nameOf[tid]||tid;
+        var isDone=!!doneBy[tid];
+        h+='<span style="font-size:.72rem;padding:2px 8px;border-radius:10px;background:'+(isDone?'#1f7a54':'#5a4a2a')+';color:#fff;">'+(isDone?'✓ ':'　')+esc(nm)+'</span>';
+      });
+      h+='</div>';
+      h+='<button class="kg-btn sub" data-rmdel="'+rid+'" style="padding:4px 10px;font-size:.74rem;">🗑 刪除</button>';
+      h+='</div>';
+    });
+    host.innerHTML=h;
+  }
+
   function openHall(){
     if(!isOwner())return;
     mode='inspect';ctx=null;
@@ -26238,6 +26343,17 @@ var KINGDOM=(function(){
       if(t.getAttribute('data-more')){var el=$('kgMore'+t.getAttribute('data-more'));if(el)el.style.display='';t.style.display='none';}
     });
     $('kgOpenBatch').addEventListener('click',openBatch);
+    $('kgOpenRemind').addEventListener('click',openRemind);
+    $('kgRmAll').addEventListener('click',function(){document.querySelectorAll('.kg-rm-ck').forEach(function(el){el.checked=true;});});
+    $('kgRmNone').addEventListener('click',function(){document.querySelectorAll('.kg-rm-ck').forEach(function(el){el.checked=false;});});
+    $('kgRmSend').addEventListener('click',_rmSend);
+    $('kgRmList').addEventListener('click',function(e){
+      var rid=e.target.getAttribute('data-rmdel');
+      if(!rid)return;
+      if(!confirm('確定要刪除這則提醒？'))return;
+      var fb=_fbInit();
+      if(fb)fb.ref(_rmPath()+'/'+rid).remove(function(){_rmLoadList();});
+    });
     $('kgBWeek').addEventListener('change',function(){batchBuild();batchShow(false);});
     $('kgBTeacher').addEventListener('change',batchBuild);
     $('kgBSkip').addEventListener('change',batchBuild);
@@ -26336,18 +26452,20 @@ var MYREMINDER=(function(){
      （2026-10-30 測試時真的重現過：周香瑩跟郭于綺的卡片互相蓋掉）。
      用一個遞增的序號只讓「最後一次呼叫」的結果真的畫出來。 */
   var _runSeq=0;
+  var _lastTeacher=null;
   function run(){
     var mySeq=++_runSeq;
     _findMyTeacher(function(t){
       if(mySeq!==_runSeq)return;
       if(!t)return;
+      _lastTeacher=t;
       _warmUp(function(){
         if(mySeq!==_runSeq)return;
-        _build(t);
+        _build(t,mySeq);
       });
     });
   }
-  function _build(t){
+  function _build(t,mySeq){
     var items=[];
     var now=new Date(),y=now.getFullYear()-1911,m=now.getMonth()+1;
     try{
@@ -26388,7 +26506,36 @@ var MYREMINDER=(function(){
         }
       }
     }catch(e){}
-    _render(t,items);
+    _loadCustom(t,function(customItems){
+      if(mySeq!==_runSeq)return;
+      _render(t,items.concat(customItems));
+    });
+  }
+  /* owner/admin 在王國「➕ 發送提醒」打字發給指定老師的自訂提醒——
+     只抓「收件人裡有我、而且我自己還沒打勾完成」的那幾筆。 */
+  function _loadCustom(t,cb){
+    var fb=_fbInit();
+    if(!fb){cb([]);return;}
+    fb.ref('xiaobuddyClean/customReminders').once('value',function(snap){
+      var v=snap.val()||{};
+      var out=[];
+      Object.keys(v).forEach(function(rid){
+        var r=v[rid]||{};
+        var ids=r.teacherIds||[];
+        if(ids.indexOf(t.id)<0)return;
+        if((r.doneBy||{})[t.id])return;
+        out.push({icon:'📢',text:r.text||'',custom:true,rid:rid});
+      });
+      cb(out);
+    },function(){cb([]);});
+  }
+  function markDone(rid){
+    if(!_lastTeacher||!rid)return;
+    var fb=_fbInit();
+    if(!fb)return;
+    fb.ref('xiaobuddyClean/customReminders/'+rid+'/doneBy/'+_lastTeacher.id).set(true,function(){
+      run();
+    });
   }
   function _render(t,items){
     var host=document.getElementById('myReminderCard');
@@ -26398,8 +26545,14 @@ var MYREMINDER=(function(){
     h+='<div style="font-weight:800;color:#a5680a;font-size:.92rem;">🔔 '+esc(t.name)+'，提醒妳有幾件事還沒完成</div>';
     h+='<button onclick="MYREMINDER.dismiss()" style="border:none;background:transparent;color:#a5680a;font-size:1rem;cursor:pointer;line-height:1;">✕</button></div>';
     items.forEach(function(it){
-      h+='<div onclick="GO(\''+it.go+'\')" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:.85rem;color:#333;">';
-      h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span><span style="color:#ccc;">›</span></div>';
+      if(it.custom){
+        h+='<div style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;font-size:.85rem;color:#333;">';
+        h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span>';
+        h+='<button onclick="MYREMINDER.markDone(\''+it.rid+'\')" style="border:none;background:#2a9d5c;color:#fff;border-radius:7px;padding:4px 10px;font-size:.72rem;cursor:pointer;white-space:nowrap;">✓ 完成</button></div>';
+      } else {
+        h+='<div onclick="GO(\''+it.go+'\')" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:.85rem;color:#333;">';
+        h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span><span style="color:#ccc;">›</span></div>';
+      }
     });
     host.innerHTML=h;
     host.style.display='';
@@ -26408,7 +26561,7 @@ var MYREMINDER=(function(){
     var host=document.getElementById('myReminderCard');
     if(host){host.style.display='none';}
   }
-  return{run:run,dismiss:dismiss};
+  return{run:run,dismiss:dismiss,markDone:markDone};
 })();
 </script>
 
