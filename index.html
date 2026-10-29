@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029103003';
+  var BUILD='20261029110912';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23334,14 +23334,24 @@ var CHILDFEE=(function(){
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/childfee/withdrawals/'+pk).set(db.withdrawals[pk]||[]);
   }
+  /* 打開頁面後，雲端資料還沒回來之前，db 只有「上次存在這台裝置的
+     localStorage快取」——如果是第一次在這台裝置打開、或快取被清掉，
+     這段空窗期畫面會先顯示「還沒有人繳費」，雲端資料才剛好幾秒後就
+     到。如果手腳快、頁面一打開就馬上按列印，會列印到這個還沒同步好
+     的空畫面，看起來像是「明明繳了錢，列印卻說沒人繳費」。用這個旗標
+     記錄「雲端資料真的回來過至少一次了沒」，列印前檢查一下，資料還
+     沒回來就提醒稍等，不要讓她印到空的。 */
+  var _loadedOnce=false;
   function attachFb(){
     if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
     if(_fbRef){try{_fbRef.off('value');}catch(e){}}
     _fbAttachedCompany=CURRENT_COMPANY;
+    _loadedOnce=false;
     _fbRef=fb.ref('xiaobuddyClean/childfee');
     _fbRef.on('value',function(snap){
+      _loadedOnce=true;
       var v=snap.val();
       db=(v&&(v.records||v.withdrawals))?{records:v.records||{},withdrawals:v.withdrawals||{}}:{records:{},withdrawals:{}};
       try{localStorage.setItem(_ckey('childfeeDB'),JSON.stringify(db));}catch(e){}
@@ -23366,7 +23376,12 @@ var CHILDFEE=(function(){
   }
   /* 這個小孩這一期是不是「真的有登記」──用有沒有選付款方式判斷，
      單純被畫面自動帶入延托費/退費預覽值，不算有登記 */
-  function _isBilled(rec){return !!(rec&&rec.payMethod);}
+  /* 付款方式選「未繳」代表還沒繳費，不算已繳——以前這裡只檢查
+     payMethod有沒有填，沒排除「未繳」這個選項本身，導致明確標成
+     「未繳」的小孩也被算進收支總表的「已繳費」清單跟收入總計裡，
+     跟「未繳名單」那邊（line ~23476）用的判斷邏輯不一致。改成跟那邊
+     一樣，payMethod要有填「而且」不是「未繳」才算已繳。 */
+  function _isBilled(rec){return !!(rec&&rec.payMethod&&rec.payMethod!=='未繳');}
   function _total(rec){
     var t=0;
     FIELDS.forEach(function(f){
@@ -23728,6 +23743,7 @@ var CHILDFEE=(function(){
   }
 
   function printIncomeReport(){
+    if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次列印，避免印到還沒更新的空白資料');return;}
     var pk=periodKey(_incEndY,_incEndM);
     var groups=getKidsByCls();
     var income=0,childCount=0;
@@ -23766,11 +23782,11 @@ var CHILDFEE=(function(){
     if(!billedList.length){
       html+='<table><tbody><tr><td style="text-align:center;color:#888;">這一期還沒有人繳費</td></tr></tbody></table>';
     } else {
-      html+='<table><thead><tr><th>繳費日期</th><th>姓名</th><th>明細</th><th class="num">金額</th><th class="num">累計總和</th></tr></thead><tbody>';
+      html+='<table><thead><tr><th>繳費日期</th><th>姓名</th><th>付款方式</th><th>明細</th><th class="num">金額</th><th class="num">累計總和</th></tr></thead><tbody>';
       var running=0;
       billedList.forEach(function(row){
         running+=row.total;
-        html+='<tr><td>'+(row.rec.payDate||'未填日期')+'</td><td>'+row.name+'</td><td style="font-size:8.5pt;">'+_itemize(row.rec)+'</td><td class="num">'+row.total+'</td><td class="num">'+running+'</td></tr>';
+        html+='<tr><td>'+(row.rec.payDate||'未填日期')+'</td><td>'+row.name+'</td><td>'+(row.rec.payMethod||'（未選）')+'</td><td style="font-size:8.5pt;">'+_itemize(row.rec)+'</td><td class="num">'+row.total+'</td><td class="num">'+running+'</td></tr>';
       });
       html+='</tbody></table>';
     }
@@ -23854,6 +23870,7 @@ var CHILDFEE=(function(){
     });
   }
   function printSlips(){
+    if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次列印，避免印到還沒更新的空白資料');return;}
     var pk=periodKey(_endY,_endM);
     var groups=getKidsByCls();
     /* 這份是要印出來「先給家長看這期要繳多少錢」的帳單，不是收完錢
@@ -24896,7 +24913,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029103003--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029110912--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
