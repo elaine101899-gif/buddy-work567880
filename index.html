@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030110512';
+  var BUILD='20261030113228';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21622,13 +21622,20 @@ var PHONEVISIT=(function(){
   }
   function getKids(cls){return _kidsForMonth(cls,_selectedMonthRange());}
   function _kidsForMonth(cls,range){
-    /* 永遠用正確學期的 preload 名單，避免 localStorage 舊學期資料干擾 */
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var isCurMonth=(range.roc===(new Date().getFullYear()-1911))&&(range.mo===(new Date().getMonth()+1));
     var teachers,children;
-    if(!isCurMonth&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
-      /* 選的不是當月：把月初、月底兩天的名單都抓出來取聯集，
-         這樣不管孩子是月中升班/入離園，只要那個月有在這個班，都找得到。 */
+    /* 2026-10-30 修正：本月跟其他月份原本分開處理——本月故意只用建置當下
+       寫死的 preload 名單，理由是「避免 localStorage 舊學期資料干擾」。
+       但 preload 是 deploy 當下的靜態快照，之後新增/刪除的孩子（例如後來
+       才轉入的陳芃佑）永遠不會反映進來，導致電訪表這類「每個孩子都要
+       有紀錄」的檢查，查到的名單一直是舊的，新孩子永遠不會被抓到漏填。
+       ROSTER.rosterAsOf 用的是真正即時同步雲端的 lastCloud（不是
+       localStorage），同樣是「這個年度、這個日期」查到的名單，沒有舊
+       學期資料混進來的風險，改成本月也走這條路，只有在 ROSTER 真的還沒
+       準備好時（例如還沒連上雲端）才退回用 preload 當保底。 */
+    if(typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
+      /* 把月初、月底兩天的名單都抓出來取聯集，這樣不管孩子是月中升班/
+         入離園，只要那個月有在這個班，都找得到。 */
       var rFirst=ROSTER.rosterAsOf(autoYr,range.first)||{teachers:[],children:{}};
       var rLast=ROSTER.rosterAsOf(autoYr,range.last)||{teachers:[],children:{}};
       teachers=(rFirst.teachers||[]).concat(rLast.teachers||[]);
@@ -22135,7 +22142,7 @@ var PHONEVISIT=(function(){
     var issues=[],range=_rangeFor(y,m);
     ['baby','crawl','run'].forEach(function(cls){
       _kidsForMonth(cls,range).forEach(function(k){
-        if(!counts[k.id])issues.push({area:CLSLABEL[cls],child:k.name});
+        if(!counts[k.id])issues.push({area:CLSLABEL[cls],child:k.name,teacherId:k.teacherId,teacherName:k.teacherName});
       });
     });
     return issues;
@@ -24957,7 +24964,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030110512--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030113228--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
