@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029110912';
+  var BUILD='20261029150530';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11725,15 +11725,6 @@ var PAYROLL=(function(){
     Object.keys(_extraStaff).forEach(function(n){if(!have[n]){have[n]=true;names.push(n);}});
     return names;
   }
-  function addNewTeacher(){
-    var name=prompt('請輸入新老師的姓名\n（只會加進「薪資」的人員名單，班級名冊／排班表／適齡適性如果也需要這個人，還是要去那邊另外加）');
-    if(name===null)return;
-    name=name.trim();
-    if(!name)return;
-    _extraStaff[name]=true;
-    try{var fb=_fbInit();if(fb)fb.ref('xiaobuddyPayrollExtraStaff/'+name).set(true);}catch(e){}
-    addPerson(name);
-  }
   /* 給「適性」新增老師用：新增老師時順手把人加進「本月」薪資表，不用
      再跑一趟薪資頁面自己按新增人員。這裡刻意不依賴薪資頁面這次連線
      是否已經 init()／本地 db 是否已經從雲端同步好——直接另外讀一次
@@ -12031,7 +12022,6 @@ var PAYROLL=(function(){
     h+='<select onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';" style="flex:1;padding:10px;border:1.5px solid #a53a3a;border-radius:10px;font-size:.85rem;"><option value="">＋ 新增人員</option>';
     roster.forEach(function(nm){if(names.indexOf(nm)<0)h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
     h+='</select>';
-    h+='<button onclick="PAYROLL.addNewTeacher()" style="padding:10px 12px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">✏️ 新老師</button>';
     h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
     h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
     h+='<button onclick="PAYROLL.printAllCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一人一張A4）</button>';
@@ -12785,7 +12775,7 @@ var PAYROLL=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addNewTeacher:addNewTeacher,addFromRoster:addFromRoster};
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addFromRoster:addFromRoster};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24913,7 +24903,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029110912--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029150530--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
