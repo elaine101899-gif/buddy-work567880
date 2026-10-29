@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030131542';
+  var BUILD='20261030141025';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2570,6 +2570,25 @@ function _rosterKidsAsOf(cls,dateStr){
     </script>
   </div>
   <div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
+  <!-- 2026-10-30 新增：提醒還沒確定有沒有內容之前，先用一個擋在最上面的
+       讀取畫面擋住首頁卡片，不讓老師在提醒跳出來之前就先點進別的功能，
+       等確定有沒有東西要提醒都只要一下下，不會卡太久。真的有東西要
+       提醒的話，接著彈出正中間的視窗，老師按❌關掉之後，內容還是會
+       留在首頁最上面那張卡片（myReminderCard），方便回頭點進去處理。 -->
+  <div id="myReminderGate" style="display:none;position:fixed;inset:0;z-index:999990;background:rgba(255,252,242,.96);align-items:center;justify-content:center;flex-direction:column;gap:10px;">
+    <div style="width:34px;height:34px;border:3px solid #f0c97a;border-top-color:#a5680a;border-radius:50%;animation:myRemSpin .8s linear infinite;"></div>
+    <div style="font-size:.82rem;color:#a5680a;">確認提醒事項中…</div>
+  </div>
+  <style>@keyframes myRemSpin{to{transform:rotate(360deg);}}</style>
+  <div id="myReminderModal" style="display:none;position:fixed;inset:0;z-index:999991;background:rgba(20,20,10,.55);align-items:center;justify-content:center;padding:16px;">
+    <div style="width:100%;max-width:420px;max-height:80vh;overflow:auto;background:#fff6e0;border:2px solid #f0c97a;border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-weight:800;color:#a5680a;font-size:1rem;">🔔 提醒事項</div>
+        <button onclick="MYREMINDER.closeModal()" style="border:none;background:#fff;color:#a5680a;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;">✕</button>
+      </div>
+      <div id="myReminderModalBody"></div>
+    </div>
+  </div>
   <div class="cards-wrap">
     <div class="cards-lbl">請選擇功能</div>
     <div class="hcard c-pur" id="kgHomeCard" style="display:none;">
@@ -24969,7 +24988,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030131542--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030141025--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26453,14 +26472,21 @@ var MYREMINDER=(function(){
      用一個遞增的序號只讓「最後一次呼叫」的結果真的畫出來。 */
   var _runSeq=0;
   var _lastTeacher=null;
+  function _gate(){return document.getElementById('myReminderGate');}
+  function _showGate(){var g=_gate();if(g)g.style.display='flex';}
+  function _hideGate(){var g=_gate();if(g)g.style.display='none';}
   function run(){
     var mySeq=++_runSeq;
+    _showGate();
+    /* 保底逾時：萬一網路一直卡住，最多擋8秒就自己放行，不要真的把
+       老師鎖在外面進不去首頁。 */
+    setTimeout(function(){if(mySeq===_runSeq)_hideGate();},8000);
     _findMyTeacher(function(t){
       if(mySeq!==_runSeq)return;
-      if(!t)return;
+      if(!t){_hideGate();return;}
       _lastTeacher=t;
       _warmUp(function(){
-        if(mySeq!==_runSeq)return;
+        if(mySeq!==_runSeq){_hideGate();return;}
         _build(t,mySeq);
       });
     });
@@ -26537,31 +26563,59 @@ var MYREMINDER=(function(){
       run();
     });
   }
-  function _render(t,items){
-    var host=document.getElementById('myReminderCard');
-    if(!host)return;
-    if(!items.length){host.style.display='none';host.innerHTML='';return;}
-    var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
-    h+='<div style="font-weight:800;color:#a5680a;font-size:.92rem;">🔔 '+esc(t.name)+'，提醒妳有幾件事還沒完成</div>';
-    h+='<button onclick="MYREMINDER.dismiss()" style="border:none;background:transparent;color:#a5680a;font-size:1rem;cursor:pointer;line-height:1;">✕</button></div>';
+  function _itemsHtml(items){
+    var h='';
     items.forEach(function(it){
       if(it.custom){
         h+='<div style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;font-size:.85rem;color:#333;">';
         h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span>';
-        h+='<button onclick="MYREMINDER.markDone(\''+it.rid+'\')" style="border:none;background:#2a9d5c;color:#fff;border-radius:7px;padding:4px 10px;font-size:.72rem;cursor:pointer;white-space:nowrap;">✓ 完成</button></div>';
+        h+='<button onclick="MYREMINDER.closeModal();MYREMINDER.markDone(\''+it.rid+'\')" style="border:none;background:#2a9d5c;color:#fff;border-radius:7px;padding:4px 10px;font-size:.72rem;cursor:pointer;white-space:nowrap;">✓ 完成</button></div>';
       } else {
-        h+='<div onclick="GO(\''+it.go+'\')" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:.85rem;color:#333;">';
+        h+='<div onclick="MYREMINDER.closeModal();GO(\''+it.go+'\')" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:.85rem;color:#333;">';
         h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span><span style="color:#ccc;">›</span></div>';
       }
     });
+    return h;
+  }
+  /* 提醒內容算好之前，首頁最上面擋著一個讀取畫面（myReminderGate），
+     老師沒辦法先點進別的功能卡片。算完之後：
+     - 真的有要提醒的事，彈出正中間的視窗（myReminderModal），老師一定
+       會看到，按❌才會關掉（或是直接點裡面某一項，一樣會關掉再跳頁）。
+     - 關掉之後，內容還是留在首頁最上面那張卡片（myReminderCard），
+       之後想回頭處理都點得到，不會整個不見。
+     - 沒有要提醒的事，兩個都收起來，首頁照常使用，不會多等。 */
+  function _render(t,items){
+    _hideGate();
+    var host=document.getElementById('myReminderCard');
+    var modal=document.getElementById('myReminderModal');
+    var modalBody=document.getElementById('myReminderModalBody');
+    if(!host)return;
+    if(!items.length){
+      host.style.display='none';host.innerHTML='';
+      if(modal)modal.style.display='none';
+      return;
+    }
+    var itemsH=_itemsHtml(items);
+    var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    h+='<div style="font-weight:800;color:#a5680a;font-size:.92rem;">🔔 '+esc(t.name)+'，提醒妳有幾件事還沒完成</div>';
+    h+='<button onclick="MYREMINDER.dismiss()" style="border:none;background:transparent;color:#a5680a;font-size:1rem;cursor:pointer;line-height:1;">✕</button></div>';
+    h+=itemsH;
     host.innerHTML=h;
     host.style.display='';
+    if(modal&&modalBody){
+      modalBody.innerHTML=itemsH;
+      modal.style.display='flex';
+    }
+  }
+  function closeModal(){
+    var modal=document.getElementById('myReminderModal');
+    if(modal)modal.style.display='none';
   }
   function dismiss(){
     var host=document.getElementById('myReminderCard');
     if(host){host.style.display='none';}
   }
-  return{run:run,dismiss:dismiss,markDone:markDone};
+  return{run:run,dismiss:dismiss,markDone:markDone,closeModal:closeModal};
 })();
 </script>
 
