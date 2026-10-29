@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030144610';
+  var BUILD='20261030151822';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1758,14 +1758,13 @@ document.addEventListener('DOMContentLoaded',function(){
 </head>
 <body>
 
-<!-- 2026-10-30 新增：個人提醒卡片/視窗/讀取遮罩，故意放在 body 最外層、
-     不屬於任何一個 .pg 頁面——原本放在首頁(pg-home)裡面，結果老師只要
-     重新整理頁面、剛好不是停在首頁（例如停在某個表單頁），這三個東西
-     跟著 pg-home 一起被 display:none 蓋住，登入後明明有算出提醒，畫面
-     卻完全看不到。放在 body 最外層，不管目前停在哪一頁，登入後都看得到，
-     也讓myReminderCard在老師切去別的頁面時還留著，不會因為離開首頁就
-     不見。 -->
-<div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
+<!-- 2026-10-30 新增：提醒的讀取遮罩／跳出視窗故意放在 body 最外層、
+     不屬於任何一個 .pg 頁面——放在首頁(pg-home)裡面的話，重新整理頁面
+     如果剛好不是停在首頁（例如停在某個表單頁），這兩個東西會跟著
+     pg-home 一起被 display:none 蓋住，登入後明明有算出提醒，畫面卻
+     完全看不到。放在 body 最外層，不管目前停在哪一頁，登入後都看得到。
+     （myReminderCard 那張常駐小卡片不放這裡——她只要出現在首頁logo
+     下面就好，放回 pg-home 裡面。） -->
 <div id="myReminderGate" style="display:none;position:fixed;inset:0;z-index:999990;background:rgba(255,252,242,.96);align-items:center;justify-content:center;flex-direction:column;gap:10px;">
   <div style="width:34px;height:34px;border:3px solid #f0c97a;border-top-color:#a5680a;border-radius:50%;animation:myRemSpin .8s linear infinite;"></div>
   <div style="font-size:.82rem;color:#a5680a;">確認提醒事項中…</div>
@@ -2592,6 +2591,7 @@ function _rosterKidsAsOf(cls,dateStr){
     })();
     </script>
   </div>
+  <div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
   <div class="cards-wrap">
     <div class="cards-lbl">請選擇功能</div>
     <div class="hcard c-pur" id="kgHomeCard" style="display:none;">
@@ -24991,7 +24991,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030144610--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030151822--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
