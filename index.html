@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029075016';
+  var BUILD='20261029103003';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11837,10 +11837,31 @@ var PAYROLL=(function(){
     var lateMin=rec.lateMinutes||0;
     var lateBillableMin=Math.max(0,lateMin-15);
     var lateAutoAmt=lateBillableMin>0?Math.floor((hourly/60)*lateBillableMin):0;
+    /* 未到職扣款：不是每個老師都剛好1號到職，到職日落在「這份薪資表
+       所在月份」裡面的話，到職日前那幾天還沒上班，要扣薪。固定薪資÷30
+       算一天的錢（跟時薪算法同一套邏輯：時薪是固定薪資÷240＝÷30÷8），
+       乘以到職日前的天數，無條件捨去小數。到職日如果是上個月或更早
+       （已經在職）、或下個月以後（還沒到那個月，這張薪資表本來就不該
+       有這個人），都不算，只在「到職日跟這份薪資表同一個月」才扣。 */
+    var startDaysBefore=0,startDateDeduct=0;
+    if(roc){
+      var _startIso=_rocDateToIso(rec.startDate);
+      if(_startIso){
+        var _ceYear=parseInt(roc.y,10)+1911;
+        var _periodYM=_ceYear+'-'+String(roc.m).padStart(2,'0');
+        if(_startIso.slice(0,7)===_periodYM){
+          var _startDay=parseInt(_startIso.slice(8,10),10);
+          if(_startDay>1){
+            startDaysBefore=_startDay-1;
+            startDateDeduct=Math.floor(fixedSalary/30*startDaysBefore);
+          }
+        }
+      }
+    }
     var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
-    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0);
+    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0)+startDateDeduct;
     var transferAmt=totalAmt-deductAmt;
-    return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,lateMin:lateMin,lateBillableMin:lateBillableMin,lateAutoAmt:lateAutoAmt,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
+    return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,lateMin:lateMin,lateBillableMin:lateBillableMin,lateAutoAmt:lateAutoAmt,startDaysBefore:startDaysBefore,startDateDeduct:startDateDeduct,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
   }
 
   function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -12385,6 +12406,7 @@ var PAYROLL=(function(){
     if(rec.ot2Hours)h+='逾時加班費：<b>'+c.ot2Amt.toLocaleString()+'</b> 元（'+Math.round(rec.ot2Hours*60)+'分鐘 × 1.67）<br>';
     if(rec.lateDutyOtAmt)h+='晚值加班費：<b>'+Number(rec.lateDutyOtAmt).toLocaleString()+'</b> 元（自己填的金額）'+(rec.lateDutyOtTime?'　'+esc(rec.lateDutyOtTime):'')+'<br>';
     if(c.lateMin>0)h+='遲到：'+c.lateMin+'分鐘（扣15分鐘緩衝後 '+c.lateBillableMin+' 分鐘）＝<b>'+c.lateAutoAmt.toLocaleString()+'</b> 元<br>';
+    if(c.startDaysBefore>0)h+='未到職扣款：到職日前 '+c.startDaysBefore+' 天 ＝<b>'+c.startDateDeduct.toLocaleString()+'</b> 元<br>';
     if(c.leaveDetail.length){
       h+='請假扣薪：'+c.leaveDetail.map(function(d){return d.type+' '+d.hours+'小時（'+d.amt.toLocaleString()+'元）';}).join('、')+'　合計 <b>'+c.leaveDeduct.toLocaleString()+'</b> 元<br>';
     }
@@ -12477,6 +12499,7 @@ var PAYROLL=(function(){
       ['其他扣款',rec.otherDeduct]
     ];
     if(c.lateMin>0)rows.push(['遲到（'+c.lateMin+'分鐘，扣15分緩衝後'+c.lateBillableMin+'分鐘）',c.lateAutoAmt]);
+    if(c.startDaysBefore>0)rows.push(['未到職扣款（到職日前'+c.startDaysBefore+'天）',c.startDateDeduct]);
     c.leaveDetail.forEach(function(d){rows.push(['請假扣薪－'+d.type+'（'+d.hours+'小時）',d.amt]);});
     return rows;
   }
@@ -24873,7 +24896,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029075016--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029103003--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
