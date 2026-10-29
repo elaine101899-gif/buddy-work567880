@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029160522';
+  var BUILD='20261029170215';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21416,8 +21416,14 @@ var TEACHSYNC=(function(){
     return (wid+'_'+cls+'_'+date).replace(/[.#$\[\]\/]/g,'_');
   }
   function apply(){
-    /* 名稱/內容/指標/領域這幾個是會被老師打字編輯的欄位，後台編輯中先不要
-       套用遠端同步，避免打字打到一半被蓋掉——這段維持原本的保護邏輯。 */
+    /* 名稱/內容/指標/領域這幾個是會被老師打字編輯的欄位，後台編輯中
+       「這一筆已經被本次編輯動過的活動」先不要套用遠端同步，避免打字
+       打到一半被蓋掉——但還沒動過的活動（el沒有.edited這個class）
+       還是要套用，不然每次進後台編輯一打開，畫面永遠只顯示最原始的
+       範本文字，看不到之前已經存檔的教學內容，會誤以為資料不見了。
+       2026-10-29 跟行政人員確認過這個bug：之前是「只要一進後台編輯
+       模式，整頁所有活動全部都不再套用同步」，不是只保護正在打字的
+       那一筆。 */
     var inAdmin=document.body.classList.contains('adm');
     var acts=document.querySelectorAll('.activity'),i;
     for(i=0;i<acts.length;i++){
@@ -21425,7 +21431,7 @@ var TEACHSYNC=(function(){
       var id=actId(el);
       var item=db.items[id];
       if(!item)continue;
-      if(!inAdmin){
+      if(!inAdmin||!el.classList.contains('edited')){
         var nameEl=el.querySelector('.act-name');
         var contentEl=el.querySelector('.act-content');
         if(item.name!=null&&nameEl&&nameEl.textContent!==item.name)nameEl.textContent=item.name;
@@ -24902,7 +24908,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029160522--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029170215--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
