@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030141025';
+  var BUILD='20261030144610';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1758,6 +1758,29 @@ document.addEventListener('DOMContentLoaded',function(){
 </head>
 <body>
 
+<!-- 2026-10-30 新增：個人提醒卡片/視窗/讀取遮罩，故意放在 body 最外層、
+     不屬於任何一個 .pg 頁面——原本放在首頁(pg-home)裡面，結果老師只要
+     重新整理頁面、剛好不是停在首頁（例如停在某個表單頁），這三個東西
+     跟著 pg-home 一起被 display:none 蓋住，登入後明明有算出提醒，畫面
+     卻完全看不到。放在 body 最外層，不管目前停在哪一頁，登入後都看得到，
+     也讓myReminderCard在老師切去別的頁面時還留著，不會因為離開首頁就
+     不見。 -->
+<div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
+<div id="myReminderGate" style="display:none;position:fixed;inset:0;z-index:999990;background:rgba(255,252,242,.96);align-items:center;justify-content:center;flex-direction:column;gap:10px;">
+  <div style="width:34px;height:34px;border:3px solid #f0c97a;border-top-color:#a5680a;border-radius:50%;animation:myRemSpin .8s linear infinite;"></div>
+  <div style="font-size:.82rem;color:#a5680a;">確認提醒事項中…</div>
+</div>
+<style>@keyframes myRemSpin{to{transform:rotate(360deg);}}</style>
+<div id="myReminderModal" style="display:none;position:fixed;inset:0;z-index:999991;background:rgba(20,20,10,.55);align-items:center;justify-content:center;padding:16px;">
+  <div style="width:100%;max-width:420px;max-height:80vh;overflow:auto;background:#fff6e0;border:2px solid #f0c97a;border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-weight:800;color:#a5680a;font-size:1rem;">🔔 提醒事項</div>
+      <button onclick="MYREMINDER.closeModal()" style="border:none;background:#fff;color:#a5680a;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;">✕</button>
+    </div>
+    <div id="myReminderModalBody"></div>
+  </div>
+</div>
+
 <!-- ── 登入關卡：整個網站要先登入才看得到，蓋在最上面擋住所有內容。
      authGateOv 預設就是顯示的，JS 確認過登入狀態之後才會把它藏起來。 ── -->
 <div id="authGateOv" style="position:fixed;inset:0;z-index:1000000;background:#f7f4ee;display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -2568,26 +2591,6 @@ function _rosterKidsAsOf(cls,dateStr){
       var cb=document.getElementById('compLogoBam'); if(cb&&window._BAMBINO_LOGO_SRC)cb.src=window._BAMBINO_LOGO_SRC;
     })();
     </script>
-  </div>
-  <div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
-  <!-- 2026-10-30 新增：提醒還沒確定有沒有內容之前，先用一個擋在最上面的
-       讀取畫面擋住首頁卡片，不讓老師在提醒跳出來之前就先點進別的功能，
-       等確定有沒有東西要提醒都只要一下下，不會卡太久。真的有東西要
-       提醒的話，接著彈出正中間的視窗，老師按❌關掉之後，內容還是會
-       留在首頁最上面那張卡片（myReminderCard），方便回頭點進去處理。 -->
-  <div id="myReminderGate" style="display:none;position:fixed;inset:0;z-index:999990;background:rgba(255,252,242,.96);align-items:center;justify-content:center;flex-direction:column;gap:10px;">
-    <div style="width:34px;height:34px;border:3px solid #f0c97a;border-top-color:#a5680a;border-radius:50%;animation:myRemSpin .8s linear infinite;"></div>
-    <div style="font-size:.82rem;color:#a5680a;">確認提醒事項中…</div>
-  </div>
-  <style>@keyframes myRemSpin{to{transform:rotate(360deg);}}</style>
-  <div id="myReminderModal" style="display:none;position:fixed;inset:0;z-index:999991;background:rgba(20,20,10,.55);align-items:center;justify-content:center;padding:16px;">
-    <div style="width:100%;max-width:420px;max-height:80vh;overflow:auto;background:#fff6e0;border:2px solid #f0c97a;border-radius:18px;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <div style="font-weight:800;color:#a5680a;font-size:1rem;">🔔 提醒事項</div>
-        <button onclick="MYREMINDER.closeModal()" style="border:none;background:#fff;color:#a5680a;border-radius:50%;width:30px;height:30px;font-size:1rem;cursor:pointer;">✕</button>
-      </div>
-      <div id="myReminderModalBody"></div>
-    </div>
   </div>
   <div class="cards-wrap">
     <div class="cards-lbl">請選擇功能</div>
@@ -24988,7 +24991,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030141025--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030144610--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
