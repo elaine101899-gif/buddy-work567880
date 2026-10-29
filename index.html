@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029180033';
+  var BUILD='20261029191208';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24912,7 +24912,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029180033--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029191208--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25298,13 +25298,14 @@ var KINGDOM=(function(){
 
   /* 課程同步：老師存檔適性記錄時，課程領域/名稱會整份「拍照存檔」存進
      那一筆紀錄——之後教學課程如果又被改過，已經存好的紀錄不會自動跟著
-     變，這裡幫點點抓出「已經寫好、但教學課程後來被改掉」的落差，本週
-     跟上週都查，任何人隨時開王國都看得到，不用等排程。 */
+     變，這裡幫點點抓出「已經寫好、但教學課程後來被改掉」的落差。只查
+     本週，上週的舊落差不用王國一直提醒——想看上週直接點進適性自己看
+     就好（2026-10-29 跟行政人員確認過，原本本週跟上週都查太吵了）。 */
   function chkCurriculumSync(todayD){
     var det=[],bad=0,issues=[];
     safe(function(){
       var sc=asrScope();
-      var weeks=[];if(sc.cur)weeks.push(sc.cur);if(sc.prev)weeks.push(sc.prev);
+      var weeks=[];if(sc.cur)weeks.push(sc.cur);
       var reps=(typeof asrDB!=='undefined'&&asrDB.reports)||{};
       var tsItems=(typeof TEACHSYNC!=='undefined'&&TEACHSYNC.getDB)?((TEACHSYNC.getDB()||{}).items||{}):{};
       function tsDaysOf(dates){
@@ -25977,7 +25978,11 @@ var KINGDOM=(function(){
     $('kgInboxLbl').textContent='待追蹤';$('kgInbox').textContent='…';
     bubble('議事廳','#9a9cc0','市長們出門巡視中，正在讀取最新資料…');
     warmUp();
-    setTimeout(runInspect,1600);
+    /* 2026-10-29 行動網路（4G）比家裡 wifi 慢，常常 1.6 秒時 Firebase
+       監聽還沒把清潔表單等資料讀回來，巡視結果會把「其實已經填好」
+       誤判成「還沒完成」——手機跟電腦明明看同一份資料卻顯示不一樣。
+       拉長到 3.2 秒給比較慢的網路多一點緩衝時間。 */
+    setTimeout(runInspect,3200);
   }
 
   /* ════════ 送審模式：單篇教保日誌／適齡適性記錄 ════════ */
