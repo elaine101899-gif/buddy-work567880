@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029153510';
+  var BUILD='20261029160522';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11776,7 +11776,7 @@ var PAYROLL=(function(){
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
     ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
-    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['depInsCount','眷屬加保人數（純記錄，不影響金額計算）','num'],['depInsChargeCount','眷屬保費實際扣款人數（有些滿65歲等情況會加保但不扣錢，人數可能跟上面不同）','num'],['lateMinutes','遲到分鐘數（當月累計，扣15分鐘緩衝後自動算錢）','num'],['lateDeduct','遲到扣款（舊式手動填，新的請用上面分鐘數）','num'],['otherDeduct','其他扣款','num']]],
+    ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['depInsCount','眷屬加保人數（純記錄，不影響金額計算）','num'],['depInsChargeCount','眷屬保費實際扣款人數（有些滿65歲等情況會加保但不扣錢，人數可能跟上面不同）','num'],['lateMinutes','遲到分鐘數（當月累計，扣15分鐘緩衝後自動算錢）','num'],['otherDeduct','其他扣款','num']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
   ];
   /* 這幾種假別跟 TEACHERLEAVE.LEAVE_TYPE_OPTS 的名稱是對得起來的，
@@ -11850,7 +11850,7 @@ var PAYROLL=(function(){
       }
     }
     var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
-    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+(rec.lateDeduct||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0)+startDateDeduct;
+    var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0)+startDateDeduct;
     var transferAmt=totalAmt-deductAmt;
     return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,lateMin:lateMin,lateBillableMin:lateBillableMin,lateAutoAmt:lateAutoAmt,startDaysBefore:startDaysBefore,startDateDeduct:startDateDeduct,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
   }
@@ -12485,7 +12485,6 @@ var PAYROLL=(function(){
       ['勞保費',rec.laborIns],
       ['健保費',rec.healthIns],
       ['眷屬保費'+(rec.depInsCount||rec.depInsChargeCount?'（加保'+(rec.depInsCount||0)+'人，扣款'+(rec.depInsChargeCount||0)+'人）':''),rec.depIns],
-      ['遲到扣款',rec.lateDeduct],
       ['其他扣款',rec.otherDeduct]
     ];
     if(c.lateMin>0)rows.push(['遲到（'+c.lateMin+'分鐘，扣15分緩衝後'+c.lateBillableMin+'分鐘）',c.lateAutoAmt]);
@@ -24903,7 +24902,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029153510--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029160522--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
