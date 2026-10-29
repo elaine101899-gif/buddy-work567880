@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030100244';
+  var BUILD='20261030110512';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1721,6 +1721,9 @@ function applyCompany(companyId){
     if(typeof SIGLIB!=='undefined'&&SIGLIB.reattach)SIGLIB.reattach();
     if(typeof BODYTEMP!=='undefined'&&BODYTEMP.init)BODYTEMP.init();
     if(typeof TEMP!=='undefined'&&TEMP.init)TEMP.init();
+    /* 換公司後「我是哪位老師」的對照結果可能不一樣（同一個email在兩間
+       公司可能對到不同老師，或只有一邊設定過），重新查一次個人提醒卡片。 */
+    if(typeof MYREMINDER!=='undefined'&&MYREMINDER.run)MYREMINDER.run();
   },1500);
 }
 function pickCompany(companyId){
@@ -2075,6 +2078,7 @@ function _authGateLogout(){
           _loadRoles(function(){
             CURRENT_ROLE=_computeRole(CURRENT_USER_EMAIL);
             _applyRoleUI();
+            if(typeof MYREMINDER!=='undefined'&&MYREMINDER.run)MYREMINDER.run();
           });
         }else{
           ov.style.display='flex';
@@ -2565,6 +2569,7 @@ function _rosterKidsAsOf(cls,dateStr){
     })();
     </script>
   </div>
+  <div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
   <div class="cards-wrap">
     <div class="cards-lbl">請選擇功能</div>
     <div class="hcard c-pur" id="kgHomeCard" style="display:none;">
@@ -5559,6 +5564,7 @@ function printSummaryB(cls) {
     </select>
     <input class="asr-mi" id="inpTBedCls" type="text" placeholder="第幾班（選填，例如：跑跑一班；會自動建立寢具表班級）">
     <input class="asr-mi" id="inpTStartDate" type="text" placeholder="到職日（選填，格式115/08/01；新增老師時會自動加進本月薪資表）">
+    <input class="asr-mi" id="inpTEmail" type="email" placeholder="登入Email（選填，填了這位老師打開網站才會看到自己的提醒卡片）">
     <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">身分（請假交接單會依這個分類）</div>
     <select class="asr-msel" id="inpTRole">
       <option value="teacher" selected>托育人員</option>
@@ -6729,6 +6735,7 @@ var ASR = (function() {
     document.getElementById('inpTC').value=t.cls||'run';
     document.getElementById('inpTBedCls').value=t.bedCls||'';
     document.getElementById('inpTStartDate').value='';
+    document.getElementById('inpTEmail').value=t.email||'';
     document.getElementById('inpTRole').value=t.role||'teacher';
     var isBaby=t.certType==='baby';
     document.querySelector('input[name="inpTCertType"][value="'+(isBaby?'baby':'edu')+'"]').checked=true;
@@ -6743,6 +6750,8 @@ var ASR = (function() {
     var bedCls=(document.getElementById('inpTBedCls').value||'').trim();
     var startDateEl=document.getElementById('inpTStartDate');
     var startDate=startDateEl?(startDateEl.value||'').trim():'';
+    var emailEl=document.getElementById('inpTEmail');
+    var email=emailEl?(emailEl.value||'').trim().toLowerCase():'';
     var role=document.getElementById('inpTRole').value;
     var certType=document.querySelector('input[name="inpTCertType"]:checked').value;
     var certNo=(document.getElementById('inpTCertNo').value||'').trim();
@@ -6751,11 +6760,12 @@ var ASR = (function() {
       var tid=_editingTeacherId;
       var _oldT=asrDB.teachers.filter(function(t){return t.id===tid;})[0]||{};
       var _oldName=_oldT.name,_oldRole=_oldT.role;
-      var patch={name:n,cls:c,bedCls:bedCls||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
+      var patch={name:n,cls:c,bedCls:bedCls||null,email:email||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
       asrDB.teachers=asrDB.teachers.map(function(t){
         if(t.id!==tid)return t;
         var merged={id:t.id,name:n,cls:c};
         if(bedCls)merged.bedCls=bedCls;
+        if(email)merged.email=email;
         merged.role=role;
         merged.certType=certType;
         if(certType==='baby'&&certNo)merged.certNo=certNo;
@@ -6771,6 +6781,7 @@ var ASR = (function() {
     }
     var newTeacher={id:'t'+Date.now(),name:n,cls:c};
     if(bedCls)newTeacher.bedCls=bedCls;
+    if(email)newTeacher.email=email;
     newTeacher.role=role;
     newTeacher.certType=certType;
     if(certType==='baby'&&certNo)newTeacher.certNo=certNo;
@@ -7360,6 +7371,7 @@ var ASR = (function() {
       document.getElementById('asrModalTOkBtn').textContent='新增';
       document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';
       document.getElementById('inpTStartDate').value='';
+      document.getElementById('inpTEmail').value='';
       document.getElementById('inpTRole').value='teacher';
       document.querySelector('input[name="inpTCertType"][value="edu"]').checked=true;
       document.getElementById('inpTCertNo').value='';document.getElementById('inpTCertNo').style.display='none';
@@ -24945,7 +24957,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030100244--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030110512--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26272,6 +26284,102 @@ var KINGDOM=(function(){
     });
   }
   return {applyRole:applyRole,open:open,openAsr:openAsr,openHall:openHall,openBatch:openBatch,_bparse:batchParse,_checkAsr:checkAsr,_bpayload:function(i){return batchPayload(i);},close:close,_parse:parse,_findings:function(){return findings;},_syncNow:syncNow,_syncIssues:function(){return syncIssues;}};
+})();
+
+/* ════ 個人提醒卡片 MYREMINDER ════
+   2026-10-30 新增：老師打開網址登入後，首頁最上面出現一張只跟自己有關的
+   提醒卡片（電訪表／請假交接單／清潔表單／寢具表），不用找owner開王國
+   才看得到。「我是哪位老師」靠登入email對照「適性→新增/編輯托育人員」
+   表單裡新增的「登入Email」欄位（存在roster/teachers/{id}/email），
+   這裡直接另外讀一次雲端最新的roster（不依賴asrDB當下是否已經同步
+   完成，避免拿到還沒更新的舊名單判斷錯人），只針對「現在登入的這個
+   email」查最小範圍的資料。找不到對應的老師（email還沒設定，或登入
+   的是owner/admin帳號）就什麼都不顯示，不會因為這個新功能擋到任何人。 */
+var MYREMINDER=(function(){
+  var CLSFULL={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function _findMyTeacher(cb){
+    var email=(typeof CURRENT_USER_EMAIL!=='undefined'&&CURRENT_USER_EMAIL)?CURRENT_USER_EMAIL.toLowerCase().trim():'';
+    if(!email){cb(null);return;}
+    var fb=_fbInit();
+    if(!fb){cb(null);return;}
+    fb.ref('xiaobuddyClean/roster/115/teachers').once('value',function(snap){
+      var v=snap.val()||{};
+      var found=null;
+      Object.keys(v).forEach(function(tid){
+        var t=v[tid]||{};
+        if((t.email||'').toLowerCase().trim()===email){found=Object.assign({id:tid},t);}
+      });
+      cb(found);
+    },function(){cb(null);});
+  }
+  function _warmUp(cb){
+    var mods=['PHONEVISIT','CLEAN','BEDDING'];
+    mods.forEach(function(n){try{if(window[n]&&window[n].init)window[n].init();}catch(e){}});
+    setTimeout(cb,2600);
+  }
+  function run(){
+    _findMyTeacher(function(t){
+      if(!t)return;
+      _warmUp(function(){_build(t);});
+    });
+  }
+  function _build(t){
+    var items=[];
+    var now=new Date(),y=now.getFullYear()-1911,m=now.getMonth()+1;
+    try{
+      var pv=(typeof PHONEVISIT!=='undefined'&&PHONEVISIT.checkMonth)?PHONEVISIT.checkMonth(y,m)||[]:[];
+      var myPv=pv.filter(function(x){return x.teacherId===t.id;});
+      if(myPv.length)items.push({icon:'📞',text:'電訪表：'+myPv.length+'位幼兒本月還沒電訪（'+myPv.map(function(x){return x.child;}).join('、')+'）',go:'phonevisit'});
+    }catch(e){}
+    try{
+      if(typeof TEACHERLEAVE!=='undefined'&&TEACHERLEAVE.kgRows){
+        var s=now.getFullYear()+'-'+String(m).padStart(2,'0')+'-01';
+        var e=now.getFullYear()+'-'+String(m).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+        var rows=TEACHERLEAVE.kgRows(s,e)||[];
+        var myRows=rows.filter(function(r){return r.name===t.name&&(!r.formWritten||!r.printed);});
+        if(myRows.length)items.push({icon:'📝',text:'請假交接單：有 '+myRows.length+' 筆還沒完成',go:'teacherleave'});
+      }
+    }catch(e){}
+    try{
+      if(typeof CLEAN!=='undefined'&&CLEAN.checkMonth){
+        var clsLabel=CLSFULL[t.cls]||'';
+        var env=CLEAN.checkMonth(y,m)||[];
+        var myEnv=clsLabel?env.filter(function(x){return x.area.indexOf(clsLabel)===0;}):[];
+        if(myEnv.length)items.push({icon:'🧹',text:clsLabel+'清潔表單：有 '+myEnv.length+' 天沒勾齊或沒簽名',go:'clean'});
+      }
+    }catch(e){}
+    try{
+      if(typeof BEDDING!=='undefined'&&BEDDING.checkMonth&&typeof BEDDING_CLASSES!=='undefined'){
+        var myClass=BEDDING_CLASSES.filter(function(c){return c.id===t.id;})[0];
+        if(myClass){
+          var bed=BEDDING.checkMonth(y,m)||[];
+          var myBed=bed.filter(function(x){return x.area===myClass.label;});
+          if(myBed.length)items.push({icon:'🛏️',text:myClass.label+'寢具表還沒填齊',go:'clean'});
+        }
+      }
+    }catch(e){}
+    _render(t,items);
+  }
+  function _render(t,items){
+    var host=document.getElementById('myReminderCard');
+    if(!host)return;
+    if(!items.length){host.style.display='none';host.innerHTML='';return;}
+    var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">';
+    h+='<div style="font-weight:800;color:#a5680a;font-size:.92rem;">🔔 '+esc(t.name)+'，提醒妳有幾件事還沒完成</div>';
+    h+='<button onclick="MYREMINDER.dismiss()" style="border:none;background:transparent;color:#a5680a;font-size:1rem;cursor:pointer;line-height:1;">✕</button></div>';
+    items.forEach(function(it){
+      h+='<div onclick="GO(\''+it.go+'\')" style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:.85rem;color:#333;">';
+      h+='<span>'+it.icon+'</span><span style="flex:1;">'+esc(it.text)+'</span><span style="color:#ccc;">›</span></div>';
+    });
+    host.innerHTML=h;
+    host.style.display='';
+  }
+  function dismiss(){
+    var host=document.getElementById('myReminderCard');
+    if(host){host.style.display='none';}
+  }
+  return{run:run,dismiss:dismiss};
 })();
 </script>
 
