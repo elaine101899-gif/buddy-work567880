@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029201145';
+  var BUILD='20261029203330';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18482,6 +18482,11 @@ var CLEAN=(function(){
   var db={records:{}};
   var _fbAttachedCompany=null;
   var _fbRef=null;
+  /* 王國巡視暖暖查清潔表單前，要先確定 Firebase 真的把最新資料讀回來了
+     （而不是用固定幾秒的猜測），不然行動網路比較慢的時候，巡視用到的
+     還是舊的／空的本機快取，會把「其實已經填好」誤判成「還沒完成」。 */
+  var _loaded=false;
+  function isLoaded(){return _loaded;}
 
   function key(){return curF+'_'+curY+'_'+curM;}
   function daysInMonth(y,m){return new Date(y+1911,m,0).getDate();}
@@ -18543,6 +18548,7 @@ var CLEAN=(function(){
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('cleanDB'),JSON.stringify(db));}catch(e){}
       if(!_autoFilled){_autoFilled=true;autoFillToday();}
+      _loaded=true;
       render();
     });
   }
@@ -18560,7 +18566,7 @@ var CLEAN=(function(){
       });
     }
     attachFb();
-    if(!_fbInit()&&!_autoFilled){_autoFilled=true;autoFillToday();}
+    if(!_fbInit()&&!_autoFilled){_autoFilled=true;autoFillToday();_loaded=true;}
   }
   function save(){
     var json=JSON.stringify(db);
@@ -18776,7 +18782,7 @@ var CLEAN=(function(){
     });
     return issues;
   }
-  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType,addSpace:addSpace,removeSpace:removeSpace,resetForms:resetForms,checkMonth:checkMonth};
+  return{init:init,show:show,selectForm:selectForm,backToAreaHub:backToAreaHub,changeForm:changeForm,changeYM:changeYM,toggle:toggle,openSig:openSig,download:download,setOffType:setOffType,addSpace:addSpace,removeSpace:removeSpace,resetForms:resetForms,checkMonth:checkMonth,isLoaded:isLoaded};
 })();
 
 /* ── 清潔表單：班級寢具 ──
@@ -24929,7 +24935,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029201145--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029203330--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25995,11 +26001,19 @@ var KINGDOM=(function(){
     $('kgInboxLbl').textContent='待追蹤';$('kgInbox').textContent='…';
     bubble('議事廳','#9a9cc0','市長們出門巡視中，正在讀取最新資料…');
     warmUp();
-    /* 2026-10-29 行動網路（4G）比家裡 wifi 慢，常常 1.6 秒時 Firebase
-       監聽還沒把清潔表單等資料讀回來，巡視結果會把「其實已經填好」
-       誤判成「還沒完成」——手機跟電腦明明看同一份資料卻顯示不一樣。
-       拉長到 3.2 秒給比較慢的網路多一點緩衝時間。 */
-    setTimeout(runInspect,3200);
+    /* 2026-10-29 固定等幾秒再巡視不保險：行動網路（4G）比家裡 wifi 慢，
+       常常 Firebase 監聽還沒把清潔表單等資料讀回來，巡視結果會把「其實
+       已經填好」誤判成「還沒完成」——手機跟電腦明明看同一份資料卻顯示
+       不一樣。改成真的等 CLEAN 回報「資料到了」才開始算，最慢等 8 秒，
+       超過還沒到就先用現有的資料算（總比一直空等好），最少也等 0.8 秒
+       讓「巡視中」的對話框至少有機會被看到，不要一閃而過。 */
+    var _waited=0,_minWait=800,_maxWait=8000,_step=300;
+    (function poll(){
+      _waited+=_step;
+      var ready=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      if((ready&&_waited>=_minWait)||_waited>=_maxWait){runInspect();return;}
+      setTimeout(poll,_step);
+    })();
   }
 
   /* ════════ 送審模式：單篇教保日誌／適齡適性記錄 ════════ */
