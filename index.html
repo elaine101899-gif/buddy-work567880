@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030113228';
+  var BUILD='20261030120415';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24635,7 +24635,12 @@ var TEACHERLEAVE=(function(){
       Object.keys(rec).forEach(function(name){
         var t=rec[name];
         if(t&&t.onLeave){
-          rows.push({iso:iso,name:name,leaveType:t.leaveType||'',note:t.note||'',formWritten:!!t.formWritten,printed:!!t.printed});
+          /* sub：這一筆的代理人是誰——優先用每日回報自己填的 subOverride，
+             沒有的話退回查請假單header裡存的代理人姓名。formWritten（假單，
+             請假人自己的部分）跟 printed（交接單，代理人要填代理人交接事項
+             並簽名才算完成）分屬不同人負責，個人提醒卡片要分開提醒正確的人，
+             不能兩個都算在請假人頭上。 */
+          rows.push({iso:iso,name:name,leaveType:t.leaveType||'',note:t.note||'',formWritten:!!t.formWritten,printed:!!t.printed,sub:t.subOverride||_resolveSub(name,iso)||''});
         }
       });
       d.setDate(d.getDate()+1);
@@ -24964,7 +24969,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030113228--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030120415--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26325,10 +26330,21 @@ var MYREMINDER=(function(){
     mods.forEach(function(n){try{if(window[n]&&window[n].init)window[n].init();}catch(e){}});
     setTimeout(cb,2600);
   }
+  /* 登入跟換公司都會各自呼叫一次run()，萬一兩次間隔太近，前一次還沒
+     跑完（email查詢/warmUp都是非同步）後一次就先開始，最後可能變成
+     用「舊的那次查到的老師」去蓋掉「新的這次」正確渲染出來的卡片
+     （2026-10-30 測試時真的重現過：周香瑩跟郭于綺的卡片互相蓋掉）。
+     用一個遞增的序號只讓「最後一次呼叫」的結果真的畫出來。 */
+  var _runSeq=0;
   function run(){
+    var mySeq=++_runSeq;
     _findMyTeacher(function(t){
+      if(mySeq!==_runSeq)return;
       if(!t)return;
-      _warmUp(function(){_build(t);});
+      _warmUp(function(){
+        if(mySeq!==_runSeq)return;
+        _build(t);
+      });
     });
   }
   function _build(t){
@@ -26344,8 +26360,14 @@ var MYREMINDER=(function(){
         var s=now.getFullYear()+'-'+String(m).padStart(2,'0')+'-01';
         var e=now.getFullYear()+'-'+String(m).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
         var rows=TEACHERLEAVE.kgRows(s,e)||[];
-        var myRows=rows.filter(function(r){return r.name===t.name&&(!r.formWritten||!r.printed);});
-        if(myRows.length)items.push({icon:'📝',text:'請假交接單：有 '+myRows.length+' 筆還沒完成',go:'teacherleave'});
+        /* 交接單分兩種責任：formWritten（假單，請假人自己填）歸請假人，
+           printed（交接單，代理人要填代理人交接事項並簽名才算完成）歸
+           代理人——不能兩種都算在請假人頭上，不然代理人永遠不知道要
+           提醒自己，請假人也會被提醒不屬於自己的事。 */
+        var asLeaver=rows.filter(function(r){return r.name===t.name&&!r.formWritten;});
+        var asSub=rows.filter(function(r){return r.sub===t.name&&!r.printed;});
+        if(asLeaver.length)items.push({icon:'📝',text:'請假單：有 '+asLeaver.length+' 筆自己的假單還沒填完',go:'teacherleave'});
+        if(asSub.length)items.push({icon:'🤝',text:'代理交接：有 '+asSub.length+' 筆要幫忙填代理人交接事項並簽名',go:'teacherleave'});
       }
     }catch(e){}
     try{
