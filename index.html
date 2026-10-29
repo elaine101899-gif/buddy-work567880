@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261029191208';
+  var BUILD='20261029201145';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18757,8 +18757,15 @@ var CLEAN=(function(){
     var endDay=isCur?now.getDate():daysInMonth(y,m);
     var issues=[];
     CLEAN_FORMS.forEach(function(fm){
+      /* 這個區域是後來才新增的，新增之前那幾天根本還不存在，不算漏填 */
+      var startDay=1;
+      if(fm.createdAt){
+        var cd=new Date(fm.createdAt),cy=cd.getFullYear()-1911,cm=cd.getMonth()+1;
+        if(cy>y||(cy===y&&cm>m))return;
+        if(cy===y&&cm===m)startDay=cd.getDate();
+      }
       var rec=db.records[fm.id+'_'+y+'_'+m];
-      for(var d=1;d<=endDay;d++){
+      for(var d=startDay;d<=endDay;d++){
         if(_isWeekend(y,m,d))continue;
         var dayRec=rec&&rec.days[d];
         if(dayRec&&dayRec.offType)continue;
@@ -19605,12 +19612,22 @@ var SPACES=(function(){
   var lists={clean:{},bedding:{},temp:{}};
   var attached={};
   function _path(kind){return 'xiaobuddyClean/spaces/'+kind;}
+  /* 新增空間的 id 是 'sp'+建立時間(36進位)+4碼亂數，這裡把時間解回來，
+     讓清潔表單的月檢查知道「這個區域是哪一天才新增的」，不要把新增前
+     就不存在的日子也算成漏填——舊的固定id（baby/kitchen...）解不出來，
+     回傳null，維持原本「從月初就要檢查」的行為，不受影響。 */
+  function _idTs(id){
+    if(!id||id.slice(0,2)!=='sp'||id.length<=6)return null;
+    var tsPart=id.slice(2,-4);
+    var ts=parseInt(tsPart,36);
+    return isNaN(ts)?null:ts;
+  }
   function _rebuild(kind){
     if(kind==='clean'){
       CLEAN_FORMS.length=0;
       Object.keys(lists.clean).forEach(function(id){
         var v=lists.clean[id]||{};
-        CLEAN_FORMS.push({id:id,label:v.label||'（未命名）',items:(v.items&&v.items.length)?v.items:['地板','門窗','垃圾桶']});
+        CLEAN_FORMS.push({id:id,label:v.label||'（未命名）',items:(v.items&&v.items.length)?v.items:['地板','門窗','垃圾桶'],createdAt:v.createdAt||_idTs(id)});
       });
       if(typeof CLEAN!=='undefined'&&CLEAN.resetForms)CLEAN.resetForms();
     } else if(kind==='bedding'){
@@ -24912,7 +24929,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029191208--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261029201145--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
