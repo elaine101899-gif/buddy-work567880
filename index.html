@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030093515';
+  var BUILD='20261030100244';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11696,8 +11696,10 @@ var PAYROLL=(function(){
   /* 薪資涵蓋的不只是班級老師，主管/機動/廚工也都要能領薪水、被加進
      薪資表——這幾位剛好就是之前排班表也遇到的同一批「不在班級名冊裡」
      的人，所以这里一样額外補上去，兩間公司名單不一樣分開列。 */
+  /* 2026-10-30：林素珍已經從小布迪離職，從xbd名單移除；她現在還是
+     邦比諾的廚工，bambino名單保留不動。 */
   var EXTRA_STAFF={
-    xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷','林素珍'],
+    xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷'],
     bambino:['黃鈺雯','林素珍']
   };
   /* 2026-10-27：行政人員說以後新老師直接在薪資這裡加，不想再去適齡
@@ -24943,7 +24945,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030093515--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030100244--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
