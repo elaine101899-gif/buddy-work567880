@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030154237';
+  var BUILD='20261030160512';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24991,7 +24991,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030154237--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030160512--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26478,10 +26478,23 @@ var MYREMINDER=(function(){
       cb(found);
     },function(){cb(null);});
   }
+  /* 2026-10-30 原本固定等2.6秒再開始算，行動網路比較慢的時候 CLEAN
+     的資料根本還沒讀回來，查到的會是空的本機快取，把「其實已經填好」
+     誤判成「全部都沒做」（陳巧芳反應過：寶寶室明明都做完了，提醒卻說
+     22處沒寫，就是這個原因）——跟之前王國巡視踩過的同一種坑。改成
+     真的輪詢等 CLEAN.isLoaded() 變 true 才繼續，最少等0.5秒（避免
+     網路夠快時瞬間閃過的空白感），最多等6秒（配合最外層讀取遮罩8秒
+     的保底逾時，不會互相打架）。 */
   function _warmUp(cb){
     var mods=['PHONEVISIT','CLEAN','BEDDING'];
     mods.forEach(function(n){try{if(window[n]&&window[n].init)window[n].init();}catch(e){}});
-    setTimeout(cb,2600);
+    var waited=0,minWait=500,maxWait=6000,step=250;
+    (function poll(){
+      waited+=step;
+      var ready=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      if((ready&&waited>=minWait)||waited>=maxWait){cb();return;}
+      setTimeout(poll,step);
+    })();
   }
   /* 登入跟換公司都會各自呼叫一次run()，萬一兩次間隔太近，前一次還沒
      跑完（email查詢/warmUp都是非同步）後一次就先開始，最後可能變成
