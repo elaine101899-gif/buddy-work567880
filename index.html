@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030160512';
+  var BUILD='20261030163045';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23352,11 +23352,25 @@ var CHILDFEE=(function(){
   }
 
   function pad2(n){return (n<10?'0':'')+n;}
+  /* 2026-10-30 修正：原本直接讀建置當下寫死的 preload 名單，後來新增
+     的孩子（例如11/2才入托、但現在就先繳了11月月費的新生）永遠不會
+     出現在月費單名單裡，因為這份快照從部署那一刻起就不會再更新。改成
+     優先用 ROSTER.rosterAll()（真正即時同步雲端、且不套用入園/離園
+     日期篩選的完整名單——月費單本來就常常要先收未來才入園那個月的費
+     用，不能因為入園日還沒到就看不到這個孩子），讀不到才退回用舊的
+     preload 當保底。 */
   function getKidsByCls(){
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
-    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
-    var teachers=pl.teachers||[];
-    var children=pl.children||{};
+    var teachers,children;
+    if(typeof ROSTER!=='undefined'&&ROSTER.rosterAll){
+      var r=ROSTER.rosterAll(autoYr)||{teachers:[],children:{}};
+      teachers=r.teachers||[];
+      children=r.children||{};
+    } else {
+      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+      teachers=pl.teachers||[];
+      children=pl.children||{};
+    }
     var groups={baby:[],crawl:[],run:[]};
     var seenId={};
     teachers.forEach(function(t){
@@ -24991,7 +25005,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030160512--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030163045--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
