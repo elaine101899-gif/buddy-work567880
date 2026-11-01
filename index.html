@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261101103625';
+  var BUILD='20261101105837';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21651,6 +21651,13 @@ var PHONEVISIT=(function(){
   var _pvFbRef=null;
   var curCls='baby';
   var curChild=null; // {id, name, teacherId, teacherName}
+  /* 2026-11-01：王國巡視／個人提醒卡片查電訪表之前，要先確定Firebase
+     真的把訪談紀錄讀回來了，不然db還是空的初始值，checkMonth()會把
+     幾乎每個孩子都當成「沒電訪」，誤報成一大串——這正是老師反應「同
+     一個電訪表檢查，這次說8個沒寫、下次說50個沒寫」的真正原因（跟
+     之前CLEAN模組踩過的是同一種bug，只是這次輪到PHONEVISIT自己）。 */
+  var _loaded=false;
+  function isLoaded(){return _loaded;}
 
   var METHOD=['','會面訪談','電話訪談'];
   var RELATION=['','爸爸','媽媽','(外)祖父','(外)祖母','其他'];
@@ -21850,11 +21857,15 @@ var PHONEVISIT=(function(){
       if(_pvFbRef){try{_pvFbRef.off('value');}catch(e){}}
       listeningCompany=CURRENT_COMPANY;
       db={};
+      _loaded=false;
       _pvFbRef=fb.ref('xiaobuddyClean/phonevisit');
       _pvFbRef.on('value',function(snap){
         db=snap.val()||{};
+        _loaded=true;
         renderRecords();
       });
+    } else if(!fb){
+      _loaded=true;
     }
   }
 
@@ -22208,7 +22219,7 @@ var PHONEVISIT=(function(){
     return issues;
   }
 
-  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange,checkMonth:checkMonth};
+  return{init:init,setCls:setCls,onChildChange:onChildChange,save:save,del:del,printForms:printForms,printMonthly:printMonthly,onRecMonthChange:onRecMonthChange,checkMonth:checkMonth,isLoaded:isLoaded};
 })();
 
 /* ════ 月檢查 MONTHCHECK：月底一次確認電訪表／清潔表單／環境溫濕度／班級寢具
@@ -25043,7 +25054,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101103625--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101105837--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26243,11 +26254,18 @@ var KINGDOM=(function(){
        已經填好」誤判成「還沒完成」——手機跟電腦明明看同一份資料卻顯示
        不一樣。改成真的等 CLEAN 回報「資料到了」才開始算，最慢等 8 秒，
        超過還沒到就先用現有的資料算（總比一直空等好），最少也等 0.8 秒
-       讓「巡視中」的對話框至少有機會被看到，不要一閃而過。 */
+       讓「巡視中」的對話框至少有機會被看到，不要一閃而過。
+       2026-11-01：電訪表（PHONEVISIT）也有一模一樣的問題——老師反應
+       同一次巡視，這次說電訪表8個沒寫，下次說50個沒寫，就是訪談紀錄
+       （db）還沒讀回來、查到的是空的，幾乎每個孩子都被當成沒電訪，
+       跟CLEAN是同一種bug。把PHONEVISIT.isLoaded()也一起加進這個輪詢
+       條件，兩個都真的讀到資料才開始算。 */
     var _waited=0,_minWait=800,_maxWait=8000,_step=300;
     (function poll(){
       _waited+=_step;
-      var ready=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      var cleanReady=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      var pvReady=(typeof PHONEVISIT==='undefined'||!PHONEVISIT.isLoaded)||PHONEVISIT.isLoaded();
+      var ready=cleanReady&&pvReady;
       if((ready&&_waited>=_minWait)||_waited>=_maxWait){runInspect();return;}
       setTimeout(poll,_step);
     })();
@@ -26563,7 +26581,9 @@ var MYREMINDER=(function(){
     var waited=0,minWait=500,maxWait=6000,step=250;
     (function poll(){
       waited+=step;
-      var ready=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      var cleanReady=(typeof CLEAN==='undefined'||!CLEAN.isLoaded)||CLEAN.isLoaded();
+      var pvReady=(typeof PHONEVISIT==='undefined'||!PHONEVISIT.isLoaded)||PHONEVISIT.isLoaded();
+      var ready=cleanReady&&pvReady;
       if((ready&&waited>=minWait)||waited>=maxWait){cb();return;}
       setTimeout(poll,step);
     })();
