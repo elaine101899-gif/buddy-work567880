@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261101095823';
+  var BUILD='20261101101232';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25043,7 +25043,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101095823--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101101232--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -25601,15 +25601,24 @@ var KINGDOM=(function(){
     return {mayor:'warm',icon:'🧹',title:'清潔表單',lv:lv,sum:sum,det:det,go:'clean'};
   }
 
-  /* 電訪表：每位幼兒每月至少一次 */
-  function chkPhone(todayD){
+  /* 電訪表：每位幼兒每月至少一次。2026-11-01 跟行政人員確認：每個月
+     15號之前查的是「上個月」（例如11/1~11/14查10月，給老師一點緩衝，
+     剛跨月不用馬上就被提醒當月的），15號（含）之後才開始查「當月」。 */
+  function _phoneCheckYm(todayD){
     var y=todayD.getFullYear()-1911,m=todayD.getMonth()+1;
+    if(todayD.getDate()<15){m--;if(m<1){m=12;y--;}}
+    return {y:y,m:m};
+  }
+  function chkPhone(todayD){
+    var ym=_phoneCheckYm(todayD),y=ym.y,m=ym.m;
+    var isPrevMonth=todayD.getDate()<15;
     var iss=safe(function(){return PHONEVISIT.checkMonth(y,m);},[]);
-    var last=new Date(todayD.getFullYear(),m,0).getDate(),left=last-todayD.getDate();
     if(!iss.length)return {mayor:'ink',icon:'📞',title:'電訪表',lv:'ok',sum:m+' 月每位幼兒都電訪過了！',det:[],go:'phonevisit'};
     var by={},det=[];
     iss.forEach(function(it){(by[it.area]=by[it.area]||[]).push(it.child);});
     Object.keys(by).forEach(function(a){det.push(a+'：'+by[a].join('、'));});
+    if(isPrevMonth)return {mayor:'ink',icon:'📞',title:'電訪表',lv:'bad',sum:m+' 月還有 '+iss.length+' 位幼兒沒電訪，已經過月底了，要盡快補。',det:det,go:'phonevisit'};
+    var last=new Date(todayD.getFullYear(),m,0).getDate(),left=last-todayD.getDate();
     return {mayor:'ink',icon:'📞',title:'電訪表',lv:left<=5?'bad':'warn',sum:m+' 月還有 '+iss.length+' 位幼兒沒電訪，離月底剩 '+left+' 天。',det:det,go:'phonevisit'};
   }
 
@@ -26578,9 +26587,14 @@ var MYREMINDER=(function(){
     var items=[];
     var now=new Date(),y=now.getFullYear()-1911,m=now.getMonth()+1;
     try{
-      var pv=(typeof PHONEVISIT!=='undefined'&&PHONEVISIT.checkMonth)?PHONEVISIT.checkMonth(y,m)||[]:[];
+      /* 2026-11-01：每個月15號之前查的是「上個月」，給老師一點緩衝，
+         剛跨月不用馬上被提醒當月電訪，15號（含）之後才開始查當月——
+         跟王國chkPhone()用同一套規則。 */
+      var pvY=y,pvM=m,pvIsPrev=now.getDate()<15;
+      if(pvIsPrev){pvM--;if(pvM<1){pvM=12;pvY--;}}
+      var pv=(typeof PHONEVISIT!=='undefined'&&PHONEVISIT.checkMonth)?PHONEVISIT.checkMonth(pvY,pvM)||[]:[];
       var myPv=pv.filter(function(x){return x.teacherId===t.id;});
-      if(myPv.length)items.push({icon:'📞',text:'電訪表：'+myPv.length+'位幼兒本月還沒電訪（'+myPv.map(function(x){return x.child;}).join('、')+'）',go:'phonevisit'});
+      if(myPv.length)items.push({icon:'📞',text:'電訪表：'+pvM+'月還有'+myPv.length+'位幼兒沒電訪（'+myPv.map(function(x){return x.child;}).join('、')+'）',go:'phonevisit'});
     }catch(e){}
     try{
       if(typeof TEACHERLEAVE!=='undefined'&&TEACHERLEAVE.kgRows){
