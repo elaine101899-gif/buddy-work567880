@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261101095144';
+  var BUILD='20261101095823';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25043,7 +25043,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101095144--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101095823--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26553,23 +26553,23 @@ var MYREMINDER=(function(){
      用「舊的那次查到的老師」去蓋掉「新的這次」正確渲染出來的卡片
      （2026-10-30 測試時真的重現過：周香瑩跟郭于綺的卡片互相蓋掉）。
      用一個遞增的序號只讓「最後一次呼叫」的結果真的畫出來。 */
+  /* 2026-11-01：原本提醒還沒確定有沒有內容之前，會先用讀取畫面
+     （myReminderGate）擋住首頁不讓老師點。後來發現沒必要了——跳出來
+     的視窗（myReminderModal）不管老師那時候已經點到哪一頁都一樣會
+     彈出來蓋在最上面（上次測試過：強制切到別的頁面再觸發，視窗照樣
+     正確出現），所以老師原本「等不到就先點走」的疑慮其實已經解決了，
+     不用再多一層擋著讓首頁感覺卡住。myReminderGate那個DOM元素還留著
+     （HTML沒刪），只是不再呼叫顯示它。 */
   var _runSeq=0;
   var _lastTeacher=null;
-  function _gate(){return document.getElementById('myReminderGate');}
-  function _showGate(){var g=_gate();if(g)g.style.display='flex';}
-  function _hideGate(){var g=_gate();if(g)g.style.display='none';}
   function run(){
     var mySeq=++_runSeq;
-    _showGate();
-    /* 保底逾時：萬一網路一直卡住，最多擋8秒就自己放行，不要真的把
-       老師鎖在外面進不去首頁。 */
-    setTimeout(function(){if(mySeq===_runSeq)_hideGate();},8000);
     _findMyTeacher(function(t){
       if(mySeq!==_runSeq)return;
-      if(!t){_hideGate();return;}
+      if(!t)return;
       _lastTeacher=t;
       _warmUp(function(){
-        if(mySeq!==_runSeq){_hideGate();return;}
+        if(mySeq!==_runSeq)return;
         _build(t,mySeq);
       });
     });
@@ -26668,7 +26668,6 @@ var MYREMINDER=(function(){
        之後想回頭處理都點得到，不會整個不見。
      - 沒有要提醒的事，兩個都收起來，首頁照常使用，不會多等。 */
   function _render(t,items){
-    _hideGate();
     var host=document.getElementById('myReminderCard');
     var modal=document.getElementById('myReminderModal');
     var modalBody=document.getElementById('myReminderModalBody');
