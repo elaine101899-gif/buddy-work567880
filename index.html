@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261101101232';
+  var BUILD='20261101103625';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25043,7 +25043,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101101232--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101103625--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26332,22 +26332,33 @@ var KINGDOM=(function(){
       +'活動省思：\n'+(val('dFReflection')||'（未填寫）');
     return anon(t);
   }
+  /* 2026-11-01 修正：原本優先用舊式的 execCommand('copy') 這招（用隱藏
+     textarea 選取文字再喊複製），這個寫法在現在的手機瀏覽器（尤其是
+     多行中文字的狀況）常常「回報成功，但剪貼簿裡其實是空的或內容不對」
+     ——老師反應「按了複製修改清單，但LINE貼不上」就是這樣，不是LINE
+     的問題，是複製這一步本來就沒有真的成功過，只是沒有錯誤訊息讓人
+     發現。改成優先用現在瀏覽器都支援的新式 navigator.clipboard.writeText
+     （比較可靠，Safari/Chrome都支援好幾年了），舊寫法只在新API不存在時
+     才當備案，兩個都失敗才跳出視窗讓人手動複製。 */
   function copyText(t,okMsg){
-    var done=false;
-    var ta=document.createElement('textarea');
-    ta.value=t;ta.setAttribute('readonly','');
-    ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px;';
-    document.body.appendChild(ta);
-    var r=document.createRange();r.selectNodeContents(ta);
-    var s=window.getSelection();s.removeAllRanges();s.addRange(r);
-    ta.setSelectionRange(0,t.length);
-    try{done=document.execCommand('copy');}catch(e){}
-    document.body.removeChild(ta);
-    if(!done&&navigator.clipboard&&navigator.clipboard.writeText){
-      navigator.clipboard.writeText(t).then(function(){toast(okMsg);},function(){window.prompt('請手動複製：',t);});
+    function legacyFallback(){
+      var done=false;
+      var ta=document.createElement('textarea');
+      ta.value=t;ta.setAttribute('readonly','');
+      ta.style.cssText='position:fixed;top:0;left:0;opacity:0;font-size:16px;';
+      document.body.appendChild(ta);
+      var r=document.createRange();r.selectNodeContents(ta);
+      var s=window.getSelection();s.removeAllRanges();s.addRange(r);
+      ta.setSelectionRange(0,t.length);
+      try{done=document.execCommand('copy');}catch(e){}
+      document.body.removeChild(ta);
+      if(done)toast(okMsg);else window.prompt('請手動複製：',t);
+    }
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(function(){toast(okMsg);},legacyFallback);
       return;
     }
-    if(done)toast(okMsg);else window.prompt('請手動複製：',t);
+    legacyFallback();
   }
   function parse(raw){
     raw=String(raw).replace(/\*\*/g,'').replace(/\r/g,'');
