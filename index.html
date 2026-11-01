@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261030163045';
+  var BUILD='20261101095144';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -18935,21 +18935,59 @@ var BEDDING=(function(){
     }
     if(!fridays.length)return;
     var fb=_fbInit();
+    /* 2026-11-01 修正重大bug：原本直接拿本機記憶體裡可能已經過期的db
+       整包rows陣列蓋回雲端（fb.ref(...+'/rows').set(rec.rows)）。這個
+       計時器每5分鐘就跑一次，只要這台裝置的本機資料比雲端舊一點點
+       （例如老師剛在另一台裝置／另一個分頁改過日期、填過備註，這台
+       還沒同步到最新），跑到的時候就會把老師剛改好的真實日期、備註
+       整個蓋掉、打回還沒填的樣子——這正是老師反應「寢具表改好的日期
+       備註都不見了，只剩下系統自動填的禮拜五」的真正原因。
+       改成：有雲端連線的話，每個班級都先各自重新讀一次雲端最新資料，
+       只對「真的還空著沒填」的格子寫入那一格（scoped write），完全
+       不去動任何老師已經填過的日期、備註，也不覆蓋整個rows陣列。
+       沒有雲端連線（離線）才退回原本只動本機db的寫法，反正離線時
+       本來就沒有雲端資料可以蓋掉，不會有這個風險。 */
+    if(fb){
+      BEDDING_CLASSES.forEach(function(c){
+        var k=c.id+'_'+ty+'_'+tm;
+        fb.ref('xiaobuddyClean/bedding/records/'+k).once('value',function(snap){
+          var remote=snap.val();
+          if(!remote){
+            var freshRows=emptyRowsForClass(c.id);
+            freshRows.forEach(function(row){
+              fridays.forEach(function(dateStr){
+                var idx=row.d.indexOf('');
+                if(idx!==-1)row.d[idx]=dateStr;
+              });
+            });
+            fb.ref('xiaobuddyClean/bedding/records/'+k).set({rows:freshRows,sigs:['','','','','']});
+            return;
+          }
+          var rows=remote.rows||emptyRowsForClass(c.id);
+          rows.forEach(function(row,ri){
+            fridays.forEach(function(dateStr){
+              if(row.d.indexOf(dateStr)!==-1)return; /* 這個禮拜五已經填過，不重複填 */
+              var idx=row.d.indexOf('');
+              if(idx===-1)return;
+              row.d[idx]=dateStr;
+              fb.ref('xiaobuddyClean/bedding/records/'+k+'/rows/'+ri+'/d/'+idx).set(dateStr);
+            });
+          });
+        });
+      });
+      return;
+    }
     BEDDING_CLASSES.forEach(function(c){
       var k=c.id+'_'+ty+'_'+tm;
       if(!db.records[k])db.records[k]={rows:emptyRowsForClass(c.id),sigs:['','','','','']};
       var rec=db.records[k];
-      var changed=false;
       rec.rows.forEach(function(row){
         fridays.forEach(function(dateStr){
-          if(row.d.indexOf(dateStr)!==-1)return; /* 這個禮拜五已經填過，不重複填 */
+          if(row.d.indexOf(dateStr)!==-1)return;
           var idx=row.d.indexOf('');
-          if(idx!==-1){row.d[idx]=dateStr;changed=true;}
+          if(idx!==-1)row.d[idx]=dateStr;
         });
       });
-      if(changed&&fb){
-        fb.ref('xiaobuddyClean/bedding/records/'+k+'/rows').set(rec.rows);
-      }
     });
     save();
   }
@@ -25005,7 +25043,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261030163045--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101095144--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
