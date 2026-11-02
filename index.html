@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102160228';
+  var BUILD='20261102160918';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11770,6 +11770,23 @@ var PAYROLL=(function(){
     if(bd&&parseInt(bd[1],10)===(new Date().getMonth()+1))extra+=1000;
     return extra;
   }
+  /* 2026-11-02：有些人固定全部領現金，不是匯款（例如邦比諾的林素珍）——
+     這跟上面的「固定加發」不一樣，是整筆薪轉薪資都要算進現金欄位，
+     薪轉欄位預設變成0。同樣是「還沒手動填過才套用」的現算預設，不寫
+     進資料庫，手動改過就不會再被蓋掉。依公司分開列，因為不同公司可能
+     有名字相同但身分不同的人。 */
+  var CASH_ONLY_NAMES={xbd:[],bambino:['林素珍']};
+  function _isCashOnly(name){
+    return (CASH_ONLY_NAMES[CURRENT_COMPANY]||[]).indexOf(name)>=0;
+  }
+  /* 薪轉／現金兩個欄位的預設值統一從這裡算，renderPerson 的輸入框
+     預設值、printSummary 總表的欄位都呼叫這個，確保兩邊邏輯一致不會
+     算出不同的數字。 */
+  function _defaultSplit(name,rec,c){
+    var extra=_defaultCashExtra(name,rec);
+    if(_isCashOnly(name))return{transferCash:0,cashAmount:c.transferAmt+extra};
+    return{transferCash:c.transferAmt,cashAmount:extra};
+  }
   /* 2026-10-27：行政人員說以後新老師直接在薪資這裡加，不想再去適齡
      適性那邊新增一次——這份名單存雲端（依公司隔離，跟其他薪資資料
      一樣），只影響薪資頁面自己的人員名單，不會同步到班級名冊/排班表/
@@ -12452,8 +12469,9 @@ var PAYROLL=(function(){
     h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
     h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">實際發放：匯款／現金拆分（預設薪轉＝薪轉薪資、現金＝0，可手動調整）</div>';
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap;">';
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:c.transferAmt)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額'+(rec.cashAmount===undefined&&_defaultCashExtra(curName,rec)>0?'（已自動加發固定'+_defaultCashExtra(curName,rec)+'元）':'')+'</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:(_defaultCashExtra(curName,rec)||''))+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    var _dsplit=_defaultSplit(curName,rec,c);
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額'+(rec.cashAmount===undefined&&_dsplit.cashAmount>0?'（已自動套用預設'+_dsplit.cashAmount+'元）':'')+'</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:(_dsplit.cashAmount||''))+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
     h+='</div></div>';
     h+='<div id="payrollSummaryBox"></div>';
     h+='<div id="payrollAnnualBox"></div>';
@@ -12930,8 +12948,9 @@ var PAYROLL=(function(){
       var otTotal=(c.otAmt||0)+(c.ot2Amt||0)+(rec.lateDutyOtAmt||0);
       var leaveByType={};
       c.leaveDetail.forEach(function(d){leaveByType[d.type]=d.amt;});
-      var transferCash=rec.transferCash!==undefined?rec.transferCash:c.transferAmt;
-      var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:_defaultCashExtra(nm,rec);
+      var _dsplit=_defaultSplit(nm,rec,c);
+      var transferCash=rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash;
+      var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:_dsplit.cashAmount;
       h+='<tr><td>'+(i+1)+'</td><td>'+esc(nm)+'</td>';
       h+='<td>'+(rec.baseSalary?Number(rec.baseSalary).toLocaleString():'')+'</td>';
       h+='<td>'+(rec.dutyAllow?Number(rec.dutyAllow).toLocaleString():'')+'</td>';
@@ -25207,7 +25226,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102160228--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102160918--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
