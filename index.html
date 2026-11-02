@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102183612';
+  var BUILD='20261102220400';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5600,6 +5600,8 @@ function printSummaryB(cls) {
     <input class="asr-mi" id="inpTBedCls" type="text" placeholder="第幾班（選填，例如：跑跑一班；會自動建立寢具表班級）">
     <input class="asr-mi" id="inpTStartDate" type="text" placeholder="到職日（選填，格式115/08/01；新增老師時會自動加進本月薪資表）">
     <input class="asr-mi" id="inpTEmail" type="email" placeholder="登入Email（選填，填了這位老師打開網站才會看到自己的提醒卡片）">
+    <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">本期掃地區域（選填，抽籤分配，未完成當月清潔表單會出現在這位老師的提醒卡片）</div>
+    <select class="asr-msel" id="inpTSweep"><option value="">（未指定）</option></select>
     <div style="font-size:.72rem;color:#888;margin:8px 0 4px;">身分（請假交接單會依這個分類）</div>
     <select class="asr-msel" id="inpTRole">
       <option value="teacher" selected>托育人員</option>
@@ -6757,6 +6759,23 @@ var ASR = (function() {
     var isBaby=document.querySelector('input[name="inpTCertType"]:checked').value==='baby';
     document.getElementById('inpTCertNo').style.display=isBaby?'':'none';
   }
+  /* 掃地區域選單：直接讀現有「清潔表單」的區域清單（CLEAN_FORMS，跟
+     SPACES 後台同步），不用另外維護一份名單——後台新增/刪除清潔區域，
+     這裡的選項也會跟著變動，不用兩邊分開改。 */
+  function _fillSweepAreaOptions(selected){
+    var sel=document.getElementById('inpTSweep');
+    if(!sel)return;
+    sel.innerHTML='';
+    var blank=document.createElement('option');
+    blank.value='';blank.textContent='（未指定）';
+    sel.appendChild(blank);
+    (typeof CLEAN_FORMS!=='undefined'?CLEAN_FORMS:[]).forEach(function(fm){
+      var opt=document.createElement('option');
+      opt.value=fm.id;opt.textContent=fm.label;
+      if(fm.id===selected)opt.selected=true;
+      sel.appendChild(opt);
+    });
+  }
   /* 點「編輯」：把這位老師現在的資料帶進新增老師那個 modal，切成編輯模式，
      存檔時改呼叫 ROSTER.updateTeacher 而不是新增一筆。 */
   function openEditTeacher(tid){
@@ -6771,6 +6790,7 @@ var ASR = (function() {
     document.getElementById('inpTBedCls').value=t.bedCls||'';
     document.getElementById('inpTStartDate').value='';
     document.getElementById('inpTEmail').value=t.email||'';
+    _fillSweepAreaOptions(t.sweepArea||'');
     document.getElementById('inpTRole').value=t.role||'teacher';
     var isBaby=t.certType==='baby';
     document.querySelector('input[name="inpTCertType"][value="'+(isBaby?'baby':'edu')+'"]').checked=true;
@@ -6787,6 +6807,8 @@ var ASR = (function() {
     var startDate=startDateEl?(startDateEl.value||'').trim():'';
     var emailEl=document.getElementById('inpTEmail');
     var email=emailEl?(emailEl.value||'').trim().toLowerCase():'';
+    var sweepEl=document.getElementById('inpTSweep');
+    var sweepArea=sweepEl?(sweepEl.value||''):'';
     var role=document.getElementById('inpTRole').value;
     var certType=document.querySelector('input[name="inpTCertType"]:checked').value;
     var certNo=(document.getElementById('inpTCertNo').value||'').trim();
@@ -6795,12 +6817,13 @@ var ASR = (function() {
       var tid=_editingTeacherId;
       var _oldT=asrDB.teachers.filter(function(t){return t.id===tid;})[0]||{};
       var _oldName=_oldT.name,_oldRole=_oldT.role;
-      var patch={name:n,cls:c,bedCls:bedCls||null,email:email||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
+      var patch={name:n,cls:c,bedCls:bedCls||null,email:email||null,sweepArea:sweepArea||null,role:role,certType:certType,certNo:(certType==='baby'&&certNo)?certNo:null};
       asrDB.teachers=asrDB.teachers.map(function(t){
         if(t.id!==tid)return t;
         var merged={id:t.id,name:n,cls:c};
         if(bedCls)merged.bedCls=bedCls;
         if(email)merged.email=email;
+        if(sweepArea)merged.sweepArea=sweepArea;
         merged.role=role;
         merged.certType=certType;
         if(certType==='baby'&&certNo)merged.certNo=certNo;
@@ -6817,6 +6840,7 @@ var ASR = (function() {
     var newTeacher={id:'t'+Date.now(),name:n,cls:c};
     if(bedCls)newTeacher.bedCls=bedCls;
     if(email)newTeacher.email=email;
+    if(sweepArea)newTeacher.sweepArea=sweepArea;
     newTeacher.role=role;
     newTeacher.certType=certType;
     if(certType==='baby'&&certNo)newTeacher.certNo=certNo;
@@ -7407,6 +7431,7 @@ var ASR = (function() {
       document.getElementById('inpTN').value='';document.getElementById('inpTC').selectedIndex=2;document.getElementById('inpTBedCls').value='';
       document.getElementById('inpTStartDate').value='';
       document.getElementById('inpTEmail').value='';
+      _fillSweepAreaOptions('');
       document.getElementById('inpTRole').value='teacher';
       document.querySelector('input[name="inpTCertType"][value="edu"]').checked=true;
       document.getElementById('inpTCertNo').value='';document.getElementById('inpTCertNo').style.display='none';
@@ -25275,7 +25300,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102183612--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102220400--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -26869,6 +26894,18 @@ var MYREMINDER=(function(){
         var env=CLEAN.checkMonth(y,m)||[];
         var myEnv=clsLabel?env.filter(function(x){return x.area.indexOf(clsLabel)===0;}):[];
         if(myEnv.length)items.push({icon:'🧹',text:clsLabel+'清潔表單：有 '+myEnv.length+' 天沒勾齊或沒簽名',go:'clean'});
+        /* 2026-11-02：抽籤分配的掃地區域（跟自己班級無關，例如樓梯間、
+           廁所），存在老師資料的 sweepArea（存的是 CLEAN_FORMS 的 id），
+           這裡額外查一次這個區域有沒有漏勾，用 label 精準比對（不是
+           前綴比對——掃地區域不像班級名稱會有「寶寶班座位區」這種
+           變化，直接比對整個區域名稱就好）。 */
+        if(t.sweepArea&&typeof CLEAN_FORMS!=='undefined'){
+          var sweepFm=CLEAN_FORMS.filter(function(fm){return fm.id===t.sweepArea;})[0];
+          if(sweepFm){
+            var mySweep=env.filter(function(x){return x.area===sweepFm.label;});
+            if(mySweep.length)items.push({icon:'🧹',text:'掃地區域「'+sweepFm.label+'」：有 '+mySweep.length+' 天沒勾齊或沒簽名',go:'clean'});
+          }
+        }
       }
     }catch(e){}
     try{
