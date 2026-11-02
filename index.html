@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102165759';
+  var BUILD='20261102183612';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11878,7 +11878,6 @@ var PAYROLL=(function(){
     ['投保與底薪',[['insuredAmount','投保金額','num'],['baseSalary','底薪','num']]],
     ['加班（填分鐘，系統自動算錢）',[['otHours','加班時數（分鐘）','minutes'],['ot2Hours','逾時加班時數（分鐘）','minutes'],['lateDutyOtTime','晚值加班時間（紀錄用，文字自己填）','text'],['lateDutyOtAmt','晚值加班費（自己填金額）','num']]],
     ['津貼',[['dutyAllow','職務津貼','num'],['adminAllow','行政津貼','num'],['welfareAllow','福利津貼','num'],['examScore','學期考核','num'],['bonus','獎金','num']]],
-    ['值班津貼',[['earlyDuty','早值津貼','num'],['lateDuty','晚值津貼','num']]],
     ['年終',[['yearEndBonus','年終獎金','num']]],
     ['保費／其他扣款',[['laborIns','勞保費','num'],['healthIns','健保費','num'],['depIns','眷屬保費','num'],['depInsCount','眷屬加保人數（純記錄，不影響金額計算）','num'],['depInsChargeCount','眷屬保費實際扣款人數（有些滿65歲等情況會加保但不扣錢，人數可能跟上面不同）','num'],['lateMinutes','遲到分鐘數（當月累計，扣15分鐘緩衝後自動算錢）','num'],['otherDeduct','其他扣款','num']]],
     ['其他',[['parentalText','育嬰假區間','text'],['leaveCumText','累積至上月請假','textarea'],['note','備註','textarea']]]
@@ -11953,7 +11952,7 @@ var PAYROLL=(function(){
         }
       }
     }
-    var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.earlyDuty||0)+(rec.lateDuty||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
+    var totalAmt=fixedSalary+(rec.examScore||0)+(rec.bonus||0)+(rec.yearEndBonus||0)+otAmt+ot2Amt+(rec.lateDutyOtAmt||0);
     var deductAmt=(rec.laborIns||0)+(rec.healthIns||0)+(rec.depIns||0)+lateAutoAmt+leaveDeduct+(rec.otherDeduct||0)+startDateDeduct;
     var transferAmt=totalAmt-deductAmt;
     return {fixedSalary:fixedSalary,hourly:hourly,otAmt:otAmt,ot2Amt:ot2Amt,leaveHours:leaveHours,leaveDeduct:leaveDeduct,leaveDetail:leaveDetail,lateMin:lateMin,lateBillableMin:lateBillableMin,lateAutoAmt:lateAutoAmt,startDaysBefore:startDaysBefore,startDateDeduct:startDateDeduct,totalAmt:totalAmt,deductAmt:deductAmt,transferAmt:transferAmt};
@@ -12624,8 +12623,6 @@ var PAYROLL=(function(){
       ['福利津貼',rec.welfareAllow],
       ['學期考核',rec.examScore],
       ['獎金',rec.bonus],
-      ['早值津貼',rec.earlyDuty],
-      ['晚值津貼',rec.lateDuty],
       ['年終獎金',rec.yearEndBonus]
     ];
     if(rec.otHours)rows.push(['加班費（'+Math.round(rec.otHours*60)+'分鐘）',c.otAmt]);
@@ -12929,7 +12926,7 @@ var PAYROLL=(function(){
 
   /* ════ 總表：整個月所有人擠在一張表（照Excel習慣的格式），一眼看完
      全部人的薪資組成跟實領金額，不用一個一個人分開看。欄位固定在前面
-     （底薪/津貼/加班/晚職/總計/保費/遲到），中間的請假扣薪欄位是
+     （底薪/津貼/加班/總計/保費/遲到），中間的請假扣薪欄位是
      「這個月實際有人請過的假別」才會開欄（跟Excel一樣，沒人請某種假
      就不用空出一整欄），最後固定接薪資/薪轉/現金/備註。 */
   function _summaryLeaveCols(p,names){
@@ -12969,7 +12966,7 @@ var PAYROLL=(function(){
     var h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+' 總表</title><style>'+_summaryCss()+'</style></head><body>';
     h+='<h1>'+esc(_companyName())+'　'+esc(p.label||'')+'薪資表</h1>';
     h+='<table><thead><tr>';
-    h+='<th>編號</th><th>姓名</th><th>底薪</th><th>職務</th><th>行政</th><th>福利</th><th>加班</th><th>晚職</th><th>總計</th>';
+    h+='<th>編號</th><th>姓名</th><th>底薪</th><th>職務</th><th>行政</th><th>福利</th><th>加班</th><th>總計</th>';
     h+='<th>自付勞保</th><th>自付健保</th><th>眷屬加保</th>';
     leaveCols.forEach(function(t){h+='<th>'+esc(t)+'</th>';});
     h+='<th>遲到</th><th>薪資</th><th>薪轉</th><th>現金</th><th>備註</th>';
@@ -12977,7 +12974,7 @@ var PAYROLL=(function(){
     /* 總表最下面加一列加總，方便直接看這個月薪資總支出是多少（下一步
        要把這個數字帶進總帳用），逐欄累加，請假扣薪那幾個動態欄位也要
        一起加總，不能漏掉。 */
-    var sums={baseSalary:0,dutyAllow:0,adminAllow:0,welfareAllow:0,otTotal:0,lateDuty:0,totalAmt:0,
+    var sums={baseSalary:0,dutyAllow:0,adminAllow:0,welfareAllow:0,otTotal:0,totalAmt:0,
       laborIns:0,healthIns:0,depIns:0,lateAutoAmt:0,transferAmt:0,transferCash:0,cashAmount:0};
     var leaveSums={};leaveCols.forEach(function(t){leaveSums[t]=0;});
     names.forEach(function(nm,i){
@@ -12990,7 +12987,7 @@ var PAYROLL=(function(){
       var transferCash=rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash;
       var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:_dsplit.cashAmount;
       sums.baseSalary+=rec.baseSalary||0;sums.dutyAllow+=rec.dutyAllow||0;sums.adminAllow+=rec.adminAllow||0;
-      sums.welfareAllow+=rec.welfareAllow||0;sums.otTotal+=otTotal;sums.lateDuty+=rec.lateDuty||0;
+      sums.welfareAllow+=rec.welfareAllow||0;sums.otTotal+=otTotal;
       sums.totalAmt+=c.totalAmt;sums.laborIns+=rec.laborIns||0;sums.healthIns+=rec.healthIns||0;
       sums.depIns+=rec.depIns||0;sums.lateAutoAmt+=c.lateAutoAmt||0;sums.transferAmt+=c.transferAmt;
       sums.transferCash+=Number(transferCash)||0;sums.cashAmount+=Number(cashAmount)||0;
@@ -13001,7 +12998,6 @@ var PAYROLL=(function(){
       h+='<td>'+(rec.adminAllow?Number(rec.adminAllow).toLocaleString():'')+'</td>';
       h+='<td>'+(rec.welfareAllow?Number(rec.welfareAllow).toLocaleString():'')+'</td>';
       h+='<td>'+(otTotal?otTotal.toLocaleString():'')+'</td>';
-      h+='<td>'+(rec.lateDuty?Number(rec.lateDuty).toLocaleString():'')+'</td>';
       h+='<td style="font-weight:800;">'+c.totalAmt.toLocaleString()+'</td>';
       h+='<td>'+(rec.laborIns?Number(rec.laborIns).toLocaleString():'')+'</td>';
       h+='<td>'+(rec.healthIns?Number(rec.healthIns).toLocaleString():'')+'</td>';
@@ -13016,7 +13012,7 @@ var PAYROLL=(function(){
     });
     h+='<tr style="background:#f5eee0;font-weight:800;"><td></td><td>合計</td>';
     h+='<td>'+sums.baseSalary.toLocaleString()+'</td><td>'+sums.dutyAllow.toLocaleString()+'</td><td>'+sums.adminAllow.toLocaleString()+'</td><td>'+sums.welfareAllow.toLocaleString()+'</td>';
-    h+='<td>'+sums.otTotal.toLocaleString()+'</td><td>'+sums.lateDuty.toLocaleString()+'</td><td>'+sums.totalAmt.toLocaleString()+'</td>';
+    h+='<td>'+sums.otTotal.toLocaleString()+'</td><td>'+sums.totalAmt.toLocaleString()+'</td>';
     h+='<td>'+sums.laborIns.toLocaleString()+'</td><td>'+sums.healthIns.toLocaleString()+'</td><td>'+sums.depIns.toLocaleString()+'</td>';
     leaveCols.forEach(function(t){h+='<td>'+leaveSums[t].toLocaleString()+'</td>';});
     h+='<td>'+sums.lateAutoAmt.toLocaleString()+'</td><td>'+sums.transferAmt.toLocaleString()+'</td><td>'+sums.transferCash.toLocaleString()+'</td><td>'+sums.cashAmount.toLocaleString()+'</td><td></td>';
@@ -25279,7 +25275,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102165759--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102183612--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
