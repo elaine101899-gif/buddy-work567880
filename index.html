@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102155026';
+  var BUILD='20261102160228';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11733,9 +11733,43 @@ var PAYROLL=(function(){
   /* 2026-10-30：林素珍已經從小布迪離職，從xbd名單移除；她現在還是
      邦比諾的廚工，bambino名單保留不動。 */
   var EXTRA_STAFF={
-    xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷'],
+    xbd:['金佩樺','黃苡綸','洪逸惠','郭于綺','徐郁婷','黃郁婷','林夷涓','袁海平','吳慶婉'],
     bambino:['黃鈺雯','林素珍']
   };
+  /* 2026-11-02：林夷涓／袁海平／吳慶婉固定每月底薪30000、沒有其他
+     加給/保費/請假這些要計算的項目——不是班級老師（所以跟上面一樣
+     用EXTRA_STAFF補進人員名單），只是薪水固定不變。薪轉／現金的發放
+     方式也是固定的（林夷涓、吳慶婉是匯款；袁海平是現金），新增這個人
+     到某個月份時，如果是第一次（之前完全沒有這個人的任何資料）才套用
+     這組預設，之後這個人既有資料（不管是薪資本身還是薪轉/現金怎麼發）
+     都照「複製上個月資料」那一套邏輯繼續往下月帶，不會每個月被重設。
+     之後要改金額，行政人員說會自己從後台改，所以這裡只負責「第一次
+     自動建立」，不負責之後每個月强制覆蓋。 */
+  var FIXED_PRESET_XBD={
+    '林夷涓':{baseSalary:30000,transferCash:30000,cashAmount:0},
+    '袁海平':{baseSalary:30000,transferCash:0,cashAmount:30000},
+    '吳慶婉':{baseSalary:30000,transferCash:30000,cashAmount:0}
+  };
+  /* 2026-11-02 行政人員另外交代兩條固定加發現金的規則，不是存進資料
+     （存進去之後月月複製只會原封不動照抄過去，這兩條反而是「每個月
+     都要重新判斷一次」的規則，不適合存檔）——所以設計成「現金欄位
+     還沒手動填過的話，顯示時才現算」這種跟其他欄位（薪轉/延托/退費
+     那些）同一套「預設不存檔，有人手動改過才算數」的邏輯：
+     1. 林筠蓉每個月固定加發現金500元。
+     2. 當月壽星加發現金1000元——這裡刻意不是用「這份薪資表所在月份」
+        （label解析出來的roc.m）去判斷，是用「現在實際是幾月」
+        （2026-11-02 行政人員特別交代：11月在算10月薪水，生日禮金是
+        看現在11月生日的人，不是看10月份），因為現金禮是在「真的發
+        薪水、發禮金給本人的那個月」才有意義，跟薪資表記錄的是哪個
+        月份的出勤算錢是兩回事。只在小布迪適用，邦比諾沒有這兩條。 */
+  function _defaultCashExtra(name,rec){
+    if(CURRENT_COMPANY!=='xbd')return 0;
+    var extra=0;
+    if(name==='林筠蓉')extra+=500;
+    var bd=rec&&rec.birthday?String(rec.birthday).match(/^(\d{1,2})/):null;
+    if(bd&&parseInt(bd[1],10)===(new Date().getMonth()+1))extra+=1000;
+    return extra;
+  }
   /* 2026-10-27：行政人員說以後新老師直接在薪資這裡加，不想再去適齡
      適性那邊新增一次——這份名單存雲端（依公司隔離，跟其他薪資資料
      一樣），只影響薪資頁面自己的人員名單，不會同步到班級名冊/排班表/
@@ -11989,7 +12023,18 @@ var PAYROLL=(function(){
     }
     var p=db[pid];
     if(!p.people)p.people={};
-    st.missing.forEach(function(nm){if(!p.people[nm])p.people[nm]=_prevRecordFor(nm,pid)||{};});
+    st.missing.forEach(function(nm){
+      if(p.people[nm])return;
+      var prev=_prevRecordFor(nm,pid);
+      /* 固定底薪/薪轉現金的那三位，只有「之前完全沒有過這個人的資料」
+         才套用預設——有舊資料就照舊資料複製過來（表示已經有人手動
+         調整過，不要用預設把調整蓋掉）。 */
+      if(!prev&&CURRENT_COMPANY==='xbd'&&FIXED_PRESET_XBD[nm]){
+        p.people[nm]=JSON.parse(JSON.stringify(FIXED_PRESET_XBD[nm]));
+      }else{
+        p.people[nm]=prev||{};
+      }
+    });
     _save2(pid);
     renderList();
   }
@@ -12408,7 +12453,7 @@ var PAYROLL=(function(){
     h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">實際發放：匯款／現金拆分（預設薪轉＝薪轉薪資、現金＝0，可手動調整）</div>';
     h+='<div style="display:flex;gap:10px;flex-wrap:wrap;">';
     h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:c.transferAmt)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:'')+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額'+(rec.cashAmount===undefined&&_defaultCashExtra(curName,rec)>0?'（已自動加發固定'+_defaultCashExtra(curName,rec)+'元）':'')+'</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:(_defaultCashExtra(curName,rec)||''))+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
     h+='</div></div>';
     h+='<div id="payrollSummaryBox"></div>';
     h+='<div id="payrollAnnualBox"></div>';
@@ -12886,7 +12931,7 @@ var PAYROLL=(function(){
       var leaveByType={};
       c.leaveDetail.forEach(function(d){leaveByType[d.type]=d.amt;});
       var transferCash=rec.transferCash!==undefined?rec.transferCash:c.transferAmt;
-      var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:0;
+      var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:_defaultCashExtra(nm,rec);
       h+='<tr><td>'+(i+1)+'</td><td>'+esc(nm)+'</td>';
       h+='<td>'+(rec.baseSalary?Number(rec.baseSalary).toLocaleString():'')+'</td>';
       h+='<td>'+(rec.dutyAllow?Number(rec.dutyAllow).toLocaleString():'')+'</td>';
@@ -25162,7 +25207,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102155026--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102160228--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
