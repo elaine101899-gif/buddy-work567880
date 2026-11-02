@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261101105837';
+  var BUILD='20261102140448';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23443,6 +23443,15 @@ var CHILDFEE=(function(){
     if(startMo<1){startMo=12;startRoc--;}
     return startRoc+'/'+startMo+'/27 ～ '+endRoc+'/'+endMo+'/26';
   }
+  /* 2026-11 確認：請假退費不直接退現金，改成從「下一期」月費直接扣抵——
+     上一期(9/27-10/26)請假產生的退費金額，要出現在這一期(10/27-11/26)
+     的帳單上，不是出現在它自己發生的那一期帳單上。所以凡是月費單要去抓
+     CHILDLEAVE請假退費資料的地方，都要抓「上一期」而不是「這一期」自己。 */
+  function _priorPeriod(endRoc,endMo){
+    var pm=endMo-1,pr=endRoc;
+    if(pm<1){pm=12;pr--;}
+    return{roc:pr,mo:pm};
+  }
   function _autoYr(){return (new Date()>=new Date(2026,7,1))?'115':'114';}
   /* 給任何一個民國日期(civil Date物件)，算出它屬於哪一期收費期間(27號～次月26號) */
   function _periodForDate(dateObj){
@@ -23601,11 +23610,12 @@ var CHILDFEE=(function(){
     /* 退費明細：讓組長核對「退費」那個欄位的數字到底是怎麼算出來的
        （哪幾天、什麼假別、退不退、退多少），不用只看一個總金額數字。 */
     var refundEntries=[];
-    try{if(typeof CHILDLEAVE!=='undefined')refundEntries=CHILDLEAVE.refundEntriesForChild(_endY,_endM,k.id)||[];}catch(e){}
+    var _rfPrior=_priorPeriod(_endY,_endM);
+    try{if(typeof CHILDLEAVE!=='undefined')refundEntries=CHILDLEAVE.refundEntriesForChild(_rfPrior.roc,_rfPrior.mo,k.id)||[];}catch(e){}
     h+='<div style="margin-top:10px;padding-top:10px;border-top:1px dashed #ddd;">';
-    h+='<div style="font-size:.78rem;font-weight:700;color:#9a6a1a;margin-bottom:6px;">🧾 退費明細（這一期請假紀錄，供核對）</div>';
+    h+='<div style="font-size:.78rem;font-weight:700;color:#9a6a1a;margin-bottom:6px;">🧾 退費明細（上一期請假紀錄，供核對）</div>';
     if(!refundEntries.length){
-      h+='<div style="color:#bbb;font-size:.78rem;">這一期沒有請假紀錄</div>';
+      h+='<div style="color:#bbb;font-size:.78rem;">上一期沒有請假紀錄</div>';
     } else {
       h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;">';
       refundEntries.forEach(function(e){
@@ -23627,7 +23637,7 @@ var CHILDFEE=(function(){
     var groups=getKidsByCls();
     var extendTotals=null,refundTotals=null;
     try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendTotals=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);}}catch(e){}
-    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();refundTotals=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);}}catch(e){}
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _rPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_rPrior.roc,_rPrior.mo);}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
     h+='<div class="df-lbl" style="margin:0;">📅 收費期間</div>';
@@ -23639,7 +23649,7 @@ var CHILDFEE=(function(){
     h+='</select>';
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_endY,_endM)+'）</span>';
     h+='</div>';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費／退費(請假) 兩欄第一次看這一期時會自動帶入系統算好的金額，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費會自動帶入這一期算好的金額；退費(請假)會自動帶入「上一期」('+periodLabel(_priorPeriod(_endY,_endM).roc,_priorPeriod(_endY,_endM).mo)+')算好的請假退費金額，直接從這一期月費扣抵、不用另外退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#d9822c;" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 未繳名單</button>';
@@ -23677,7 +23687,7 @@ var CHILDFEE=(function(){
       try{if(typeof EXTENDCARE!=='undefined'){var et=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);if(et&&et[cid]!==undefined)rec.extendFee=et[cid];}}catch(e){}
     }
     if(rec.refund===undefined&&field!=='refund'){
-      try{if(typeof CHILDLEAVE!=='undefined'){var rt=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);if(rt&&rt[cid]!==undefined)rec.refund=rt[cid];}}catch(e){}
+      try{if(typeof CHILDLEAVE!=='undefined'){var _sfPrior=_priorPeriod(_endY,_endM);var rt=CHILDLEAVE.refundTotalsForPeriod(_sfPrior.roc,_sfPrior.mo);if(rt&&rt[cid]!==undefined)rec.refund=rt[cid];}}catch(e){}
     }
     if(found)_applyFeeDefaults(rec,found,_endM);
     if(field==='payMethod'||field==='payDate'||field==='last5'||field==='receiptNo'||field==='note')rec[field]=val;
@@ -23733,7 +23743,7 @@ var CHILDFEE=(function(){
     var wdTotal=0;
     wds.forEach(function(w){wdTotal+=(parseFloat(w.amount)||0);});
     var leaveRefundByType={};
-    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_incEndY,_incEndM)||{};}}catch(e){}
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();var _ibPrior=_priorPeriod(_incEndY,_incEndM);leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_ibPrior.roc,_ibPrior.mo)||{};}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
     h+='<div class="df-lbl" style="margin:0;">📅 收費期間</div>';
@@ -23905,7 +23915,7 @@ var CHILDFEE=(function(){
     var wdTotal=0;
     wds.forEach(function(w){wdTotal+=(parseFloat(w.amount)||0);});
     var leaveRefundByType={};
-    try{if(typeof CHILDLEAVE!=='undefined')leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_incEndY,_incEndM)||{};}catch(e){}
+    try{if(typeof CHILDLEAVE!=='undefined'){var _ib2Prior=_priorPeriod(_incEndY,_incEndM);leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_ib2Prior.roc,_ib2Prior.mo)||{};}}catch(e){}
     var leaveRefundTotal=0;
     Object.keys(leaveRefundByType).forEach(function(t){leaveRefundTotal+=leaveRefundByType[t].amount;});
 
@@ -24016,7 +24026,7 @@ var CHILDFEE=(function(){
        不管繳了沒有、全班每個人都算得出這期應繳金額。 */
     var extendTotals=null,refundTotals=null;
     try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendTotals=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);}}catch(e){}
-    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();refundTotals=CHILDLEAVE.refundTotalsForPeriod(_endY,_endM);}}catch(e){}
+    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _psPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_psPrior.roc,_psPrior.mo);}}catch(e){}
     var billed=[];
     CLSORDER.forEach(function(cls){
       groups[cls].forEach(function(k){
@@ -24054,7 +24064,7 @@ var CHILDFEE=(function(){
         subHTML+='<div class="subdet"><b>延托明細：</b>'+extStr+'</div>';
       }
       var refundEntries=[];
-      try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();refundEntries=CHILDLEAVE.refundEntriesForChild(_endY,_endM,b.id)||[];}}catch(e){}
+      try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();var _peP=_priorPeriod(_endY,_endM);refundEntries=CHILDLEAVE.refundEntriesForChild(_peP.roc,_peP.mo,b.id)||[];}}catch(e){}
       var refundGroups=_groupConsecutiveRefunds(refundEntries);
       if(refundGroups.length){
         var refStr=refundGroups.map(function(g){return g.text+'　'+g.amount.toLocaleString()+'元';}).join('、');
@@ -25054,7 +25064,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261101105837--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102140448--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
