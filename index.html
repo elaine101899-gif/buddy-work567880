@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102140448';
+  var BUILD='20261102141142';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23649,7 +23649,7 @@ var CHILDFEE=(function(){
     h+='</select>';
     h+='<span style="color:#aaa;font-size:.8rem;">（即 '+periodLabel(_endY,_endM)+'）</span>';
     h+='</div>';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費會自動帶入這一期算好的金額；退費(請假)會自動帶入「上一期」('+periodLabel(_priorPeriod(_endY,_endM).roc,_priorPeriod(_endY,_endM).mo)+')算好的請假退費金額，直接從這一期月費扣抵、不用另外退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費會自動帶入這一期算好的金額；退費(請假)會自動帶入「上一期」算好的請假退費金額，直接從這一期月費扣抵、不用另外退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#d9822c;" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 未繳名單</button>';
@@ -25064,7 +25064,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102140448--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102141142--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
