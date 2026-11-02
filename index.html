@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102162019';
+  var BUILD='20261102162421';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12942,7 +12942,14 @@ var PAYROLL=(function(){
   }
   function printSummary(){
     var p=db[curPid];if(!p||!p.people)return;
-    var names=Object.keys(p.people).sort();
+    /* 固定底薪那三位（林夷涓/袁海平/吳慶婉）不是班級老師，行政人員
+       希望總表排版時固定放在最下面，跟其他依姓名排序的老師分開，
+       不要混在字母/筆畫順序裡面。 */
+    var names=Object.keys(p.people).sort(function(a,b){
+      var fa=!!FIXED_PRESET_XBD[a],fb=!!FIXED_PRESET_XBD[b];
+      if(fa!==fb)return fa?1:-1;
+      return a<b?-1:(a>b?1:0);
+    });
     if(!names.length){alert('這個月還沒有人，先新增人員。');return;}
     var leaveCols=_summaryLeaveCols(p,names);
     var h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+' 總表</title><style>'+_summaryCss()+'</style></head><body>';
@@ -25256,7 +25263,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102162019--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102162421--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
