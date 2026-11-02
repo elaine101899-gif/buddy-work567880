@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102163640';
+  var BUILD='20261102164521';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2134,7 +2134,13 @@ var ROSTER=(function(){
      就是原本「現在的名單」；傳過去的日期，就能還原「那一天」的名單長什麼樣子
      （寢具/日誌/電訪表查詢舊月份資料時要用）。不會動到 window._asrPreload，
      單純算出結果回傳，呼叫端決定要不要拿去覆蓋目前顯示的名單。 */
-  function _computeRoster(yr,cloud,asOfDate,skipLifecycle){
+  /* mode: 不填＝完整套用入園/離園日期篩選（rosterAsOf）；
+     'all'＝兩種都不篩（rosterAll，給後台幼兒管理用，需要看到包含已離園
+     在內的「全部」名單方便編輯歷史資料）；
+     'billable'＝只跳過「入園日還沒到」這一條，但還是套用「已經離園」
+     這一條（rosterBillable，給月費單這種「要提前跟還沒入園的新生收費，
+     但已經離園的孩子不該再出現」的場景用）。 */
+  function _computeRoster(yr,cloud,asOfDate,mode){
     var b=base[yr];
     if(!b)return null;
     var removedT=(cloud&&cloud.removedTeachers)||{};
@@ -2201,13 +2207,13 @@ var ROSTER=(function(){
        孩子在換公司/重新整理後會從 asrDB.children 整個消失（不是單純畫面上
        隱藏），管理者會以為沒新增成功而重複新增。日期篩選只套用在真正要給
        日誌/寢具/電訪表/請假交接單這些「今天的課堂名單」使用的地方。 */
-    if(!skipLifecycle){
+    if(mode!=='all'){
       var lifecycle=(cloud&&cloud.lifecycle)||{};
       Object.keys(children).forEach(function(tid){
         children[tid]=children[tid].filter(function(c){
           var lc=lifecycle[c.id];
           if(!lc)return true;
-          if(lc.enrollDate&&asOfDate<lc.enrollDate)return false;
+          if(mode!=='billable'&&lc.enrollDate&&asOfDate<lc.enrollDate)return false;
           if(lc.leaveDate&&asOfDate>=lc.leaveDate)return false;
           return true;
         });
@@ -2247,7 +2253,14 @@ var ROSTER=(function(){
   /* 給後台幼兒管理畫面用：不套用入園/離園日期篩選的完整名單，
      每個新增過的孩子都看得到，不會因為入園日還沒到就從畫面上消失。 */
   function rosterAll(yr){
-    return _computeRoster(yr,lastCloud[yr],_todayISO(),true);
+    return _computeRoster(yr,lastCloud[yr],_todayISO(),'all');
+  }
+  /* 給月費單這種「要收費」的名單用：還沒入園的新生要提前收費，所以
+     不套用「入園日還沒到」這條（這點跟 rosterAll 一樣），但已經離園的
+     孩子月費單不該再出現（這點不能跟著 rosterAll 一起跳過，不然已經
+     離園的孩子會一直留在月費單名單裡）。 */
+  function rosterBillable(yr){
+    return _computeRoster(yr,lastCloud[yr],_todayISO(),'billable');
   }
   function _attach(yr){
     /* 用「公司+年份」當 key：換公司時要對另一家公司的路徑重新掛一個監聽器，
@@ -2429,7 +2442,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -23601,15 +23614,17 @@ var CHILDFEE=(function(){
   /* 2026-10-30 修正：原本直接讀建置當下寫死的 preload 名單，後來新增
      的孩子（例如11/2才入托、但現在就先繳了11月月費的新生）永遠不會
      出現在月費單名單裡，因為這份快照從部署那一刻起就不會再更新。改成
-     優先用 ROSTER.rosterAll()（真正即時同步雲端、且不套用入園/離園
-     日期篩選的完整名單——月費單本來就常常要先收未來才入園那個月的費
-     用，不能因為入園日還沒到就看不到這個孩子），讀不到才退回用舊的
+     優先用 ROSTER.rosterBillable()（真正即時同步雲端、跳過「入園日
+     還沒到」這條篩選——月費單本來就常常要先收未來才入園那個月的費
+     用，不能因為入園日還沒到就看不到這個孩子，但「已經離園」這條還是
+     要篩，不然離園的孩子會一直賴在月費單名單裡，2026-11-02 確認過
+     的bug：洪羽星已離園卻又出現在月費單），讀不到才退回用舊的
      preload 當保底。 */
   function getKidsByCls(){
     var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
     var teachers,children;
-    if(typeof ROSTER!=='undefined'&&ROSTER.rosterAll){
-      var r=ROSTER.rosterAll(autoYr)||{teachers:[],children:{}};
+    if(typeof ROSTER!=='undefined'&&ROSTER.rosterBillable){
+      var r=ROSTER.rosterBillable(autoYr)||{teachers:[],children:{}};
       teachers=r.teachers||[];
       children=r.children||{};
     } else {
@@ -25263,7 +25278,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102163640--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102164521--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
