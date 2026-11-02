@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102160918';
+  var BUILD='20261102162019';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12172,7 +12172,18 @@ var PAYROLL=(function(){
   function addPerson(name){
     var p=db[curPid];if(!p)return;
     if(!p.people)p.people={};
-    if(!p.people[name])p.people[name]=_prevRecordFor(name,curPid)||{};
+    if(!p.people[name]){
+      /* 跟 quickCreateCurrentMonth 同一套規則：固定底薪那三位只有
+         「之前完全沒有過這個人的資料」才套用預設，不管是從「建立本月
+         薪資表」一次補齊、還是像這裡用「＋新增人員」下拉選單手動加，
+         都要套同一套邏輯，不然用不同入口加人會有不同結果。 */
+      var prev=_prevRecordFor(name,curPid);
+      if(!prev&&CURRENT_COMPANY==='xbd'&&FIXED_PRESET_XBD[name]){
+        p.people[name]=JSON.parse(JSON.stringify(FIXED_PRESET_XBD[name]));
+      }else{
+        p.people[name]=prev||{};
+      }
+    }
     _save();
     renderDetail();
   }
@@ -12942,6 +12953,12 @@ var PAYROLL=(function(){
     leaveCols.forEach(function(t){h+='<th>'+esc(t)+'</th>';});
     h+='<th>遲到</th><th>薪資</th><th>薪轉</th><th>現金</th><th>備註</th>';
     h+='</tr></thead><tbody>';
+    /* 總表最下面加一列加總，方便直接看這個月薪資總支出是多少（下一步
+       要把這個數字帶進總帳用），逐欄累加，請假扣薪那幾個動態欄位也要
+       一起加總，不能漏掉。 */
+    var sums={baseSalary:0,dutyAllow:0,adminAllow:0,welfareAllow:0,otTotal:0,lateDuty:0,totalAmt:0,
+      laborIns:0,healthIns:0,depIns:0,lateAutoAmt:0,transferAmt:0,transferCash:0,cashAmount:0};
+    var leaveSums={};leaveCols.forEach(function(t){leaveSums[t]=0;});
     names.forEach(function(nm,i){
       var rec=p.people[nm];
       var c=_calc(p,nm,rec);
@@ -12951,6 +12968,12 @@ var PAYROLL=(function(){
       var _dsplit=_defaultSplit(nm,rec,c);
       var transferCash=rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash;
       var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:_dsplit.cashAmount;
+      sums.baseSalary+=rec.baseSalary||0;sums.dutyAllow+=rec.dutyAllow||0;sums.adminAllow+=rec.adminAllow||0;
+      sums.welfareAllow+=rec.welfareAllow||0;sums.otTotal+=otTotal;sums.lateDuty+=rec.lateDuty||0;
+      sums.totalAmt+=c.totalAmt;sums.laborIns+=rec.laborIns||0;sums.healthIns+=rec.healthIns||0;
+      sums.depIns+=rec.depIns||0;sums.lateAutoAmt+=c.lateAutoAmt||0;sums.transferAmt+=c.transferAmt;
+      sums.transferCash+=Number(transferCash)||0;sums.cashAmount+=Number(cashAmount)||0;
+      leaveCols.forEach(function(t){leaveSums[t]+=leaveByType[t]||0;});
       h+='<tr><td>'+(i+1)+'</td><td>'+esc(nm)+'</td>';
       h+='<td>'+(rec.baseSalary?Number(rec.baseSalary).toLocaleString():'')+'</td>';
       h+='<td>'+(rec.dutyAllow?Number(rec.dutyAllow).toLocaleString():'')+'</td>';
@@ -12970,6 +12993,13 @@ var PAYROLL=(function(){
       h+='<td style="text-align:left;white-space:normal;max-width:120px;">'+esc(rec.note||'')+'</td>';
       h+='</tr>';
     });
+    h+='<tr style="background:#f5eee0;font-weight:800;"><td></td><td>合計</td>';
+    h+='<td>'+sums.baseSalary.toLocaleString()+'</td><td>'+sums.dutyAllow.toLocaleString()+'</td><td>'+sums.adminAllow.toLocaleString()+'</td><td>'+sums.welfareAllow.toLocaleString()+'</td>';
+    h+='<td>'+sums.otTotal.toLocaleString()+'</td><td>'+sums.lateDuty.toLocaleString()+'</td><td>'+sums.totalAmt.toLocaleString()+'</td>';
+    h+='<td>'+sums.laborIns.toLocaleString()+'</td><td>'+sums.healthIns.toLocaleString()+'</td><td>'+sums.depIns.toLocaleString()+'</td>';
+    leaveCols.forEach(function(t){h+='<td>'+leaveSums[t].toLocaleString()+'</td>';});
+    h+='<td>'+sums.lateAutoAmt.toLocaleString()+'</td><td>'+sums.transferAmt.toLocaleString()+'</td><td>'+sums.transferCash.toLocaleString()+'</td><td>'+sums.cashAmount.toLocaleString()+'</td><td></td>';
+    h+='</tr>';
     h+='</tbody></table></body></html>';
     _doPrint(h);
   }
@@ -25226,7 +25256,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102160918--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102162019--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
