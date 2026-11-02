@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102162421';
+  var BUILD='20261102163640';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23833,7 +23833,7 @@ var CHILDFEE=(function(){
     var pk=periodKey(_endY,_endM);
     var groups=getKidsByCls();
     var extendTotals=null,refundTotals=null;
-    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendTotals=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);}}catch(e){}
+    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();var _etPrior=_priorPeriod(_endY,_endM);extendTotals=EXTENDCARE.feeTotalsForPeriod(_etPrior.roc,_etPrior.mo);}}catch(e){}
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _rPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_rPrior.roc,_rPrior.mo);}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
@@ -23845,7 +23845,7 @@ var CHILDFEE=(function(){
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_endM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
     h+='</div>';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費會自動帶入這一期算好的金額；退費(請假)會自動帶入「上一期」算好的請假退費金額，直接從這一期月費扣抵、不用另外退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
+    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費、退費(請假)兩欄都會自動帶入「上一期」算好的金額，直接從這一期月費加收／扣抵，不用另外收現金或退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>';
     h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#d9822c;" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 未繳名單</button>';
@@ -23880,7 +23880,7 @@ var CHILDFEE=(function(){
     /* 使用者真的開始編輯這筆了，這時候才把延托費/退費的即時試算金額、月費/餐費/註冊費/保險的
        預設金額鎖進這筆帳單（如果欄位本來就還沒填過），避免之後資料再變動，帳單金額偷偷跟著變 */
     if(rec.extendFee===undefined&&field!=='extendFee'){
-      try{if(typeof EXTENDCARE!=='undefined'){var et=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);if(et&&et[cid]!==undefined)rec.extendFee=et[cid];}}catch(e){}
+      try{if(typeof EXTENDCARE!=='undefined'){var _etfPrior=_priorPeriod(_endY,_endM);var et=EXTENDCARE.feeTotalsForPeriod(_etfPrior.roc,_etfPrior.mo);if(et&&et[cid]!==undefined)rec.extendFee=et[cid];}}catch(e){}
     }
     if(rec.refund===undefined&&field!=='refund'){
       try{if(typeof CHILDLEAVE!=='undefined'){var _sfPrior=_priorPeriod(_endY,_endM);var rt=CHILDLEAVE.refundTotalsForPeriod(_sfPrior.roc,_sfPrior.mo);if(rt&&rt[cid]!==undefined)rec.refund=rt[cid];}}catch(e){}
@@ -24220,7 +24220,7 @@ var CHILDFEE=(function(){
        幼兒卡片同一套算法（_peekRec+延托/退費自動帶入+_applyFeeDefaults），
        不管繳了沒有、全班每個人都算得出這期應繳金額。 */
     var extendTotals=null,refundTotals=null;
-    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendTotals=EXTENDCARE.feeTotalsForPeriod(_endY,_endM);}}catch(e){}
+    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();var _etsPrior=_priorPeriod(_endY,_endM);extendTotals=EXTENDCARE.feeTotalsForPeriod(_etsPrior.roc,_etsPrior.mo);}}catch(e){}
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _psPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_psPrior.roc,_psPrior.mo);}}catch(e){}
     var billed=[];
     CLSORDER.forEach(function(cls){
@@ -24243,7 +24243,7 @@ var CHILDFEE=(function(){
        是分開存的資料），這裡抓這一期、每個小孩各自的明細一次備用，
        不用每個小孩都重算一次整期全班的資料。 */
     var extendByChild={};
-    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();extendByChild=EXTENDCARE.entriesForPeriod(_endY,_endM)||{};}}catch(e){}
+    try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();var _ebPrior=_priorPeriod(_endY,_endM);extendByChild=EXTENDCARE.entriesForPeriod(_ebPrior.roc,_ebPrior.mo)||{};}}catch(e){}
     var pages='';
     billed.forEach(function(b){
       var itemsHTML='';
@@ -25263,7 +25263,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102162421--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102163640--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
