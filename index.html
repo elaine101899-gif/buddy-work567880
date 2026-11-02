@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102144128';
+  var BUILD='20261102155026';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11900,6 +11900,17 @@ var PAYROLL=(function(){
   function _lwrap(){return document.getElementById('payrollListWrap');}
   function _dwrap(){return document.getElementById('payrollDetailWrap');}
   function _pwrap(){return document.getElementById('payrollPersonWrap');}
+  /* 「當月請假天數」是現抓 TEACHERLEAVE 的資料（見 renderPerson 裡面
+     ensureLoaded+leaveHoursForMonth），但 TEACHERLEAVE 自己的 Firebase
+     監聽是非同步的——如果使用者直接點開薪資的個人頁面，這時候
+     TEACHERLEAVE 本機快取可能還是舊的或空的（例如這台裝置很久沒開過
+     每日回報），畫面會先顯示「沒有請假」，等 TEACHERLEAVE 的雲端資料
+     真的到了也不會自動重畫，要手動切換頁面才看得到正確天數（確認
+     bug：徐華家10/7請病假4小時，薪資頁面沒帶入）。讓 TEACHERLEAVE
+     資料一到就呼叫這個，跟 DIARY/CHILDLEAVE/EXTENDCARE 用同一套模式。 */
+  function refreshIfOpen(){
+    if(curStep==='person'&&_pwrap())renderPerson();
+  }
 
   function attachFb(){
     if(_fbAttachedCompany===CURRENT_COMPANY)return;
@@ -12065,6 +12076,7 @@ var PAYROLL=(function(){
     h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
     h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
     h+='<button onclick="PAYROLL.printAllCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一人一張A4）</button>';
+    h+='<button onclick="PAYROLL.printSummary()" style="padding:10px 14px;background:#9a6a1a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 總表</button>';
     h+='</div>';
     if(!names.length){
       h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有人，上面選單新增人員</div>';
@@ -12305,6 +12317,7 @@ var PAYROLL=(function(){
     var p=db[curPid];
     if(!p||!p.people||!p.people[curName]){backToDetail();return;}
     var rec=p.people[curName];
+    var c=_calc(p,curName,rec);
     var w=_pwrap();if(!w)return;
     var titleEl=document.getElementById('payrollPersonTitle');
     if(titleEl)titleEl.textContent=curName+'（'+(p.label||'')+'）';
@@ -12384,6 +12397,19 @@ var PAYROLL=(function(){
       h+=_rhRow('病假＋生理假＋安胎假',_rhSick,30);
       h+='</div>';
     }
+    /* 薪轉／現金拆分：薪轉薪資是系統算好的實領總額，但實際發放常常要
+       拆成「匯款」跟「現金」兩部分（例如有人借支公司款項，每月從薪轉
+       金額裡再扣還款，不是直接改總額，備註欄位另外寫清楚還了多少）。
+       這兩個欄位沒填過的話，薪轉金額先用系統算好的「薪轉薪資」當預設
+       值顯示（方便大多數沒有特殊狀況的人不用自己再打一次），一旦手動
+       改過就照改過的存，不會再被蓋回去——總表（printSummary）列印時
+       也是用這個邏輯取值。 */
+    h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
+    h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">實際發放：匯款／現金拆分（預設薪轉＝薪轉薪資、現金＝0，可手動調整）</div>';
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:c.transferAmt)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:'')+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    h+='</div></div>';
     h+='<div id="payrollSummaryBox"></div>';
     h+='<div id="payrollAnnualBox"></div>';
     FIELD_GROUPS.forEach(function(grp){
@@ -12814,7 +12840,77 @@ var PAYROLL=(function(){
     _doPrint(html);
   }
 
-  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addFromRoster:addFromRoster};
+  /* ════ 總表：整個月所有人擠在一張表（照Excel習慣的格式），一眼看完
+     全部人的薪資組成跟實領金額，不用一個一個人分開看。欄位固定在前面
+     （底薪/津貼/加班/晚職/總計/保費/遲到），中間的請假扣薪欄位是
+     「這個月實際有人請過的假別」才會開欄（跟Excel一樣，沒人請某種假
+     就不用空出一整欄），最後固定接薪資/薪轉/現金/備註。 */
+  function _summaryLeaveCols(p,names){
+    var seen={};
+    names.forEach(function(nm){
+      var rec=p.people[nm];
+      var c=_calc(p,nm,rec);
+      c.leaveDetail.forEach(function(d){seen[d.type]=true;});
+    });
+    return DEDUCT_LEAVE_TYPES.filter(function(t){return seen[t];});
+  }
+  function _summaryCss(){
+    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;margin:12mm;}'
+      +'h1{font-size:15pt;text-align:center;color:#a53a3a;margin:0 0 10px;}'
+      +'table{width:100%;border-collapse:collapse;font-size:8pt;}'
+      +'th,td{border:1px solid #ccc;padding:4px 5px;text-align:right;white-space:nowrap;}'
+      +'th{background:#f5eee0;font-weight:800;text-align:center;}'
+      +'td:nth-child(2){text-align:left;font-weight:700;}'
+      +'td:first-child{text-align:center;color:#888;}'
+      +'tr:nth-child(even) td{background:#fafafa;}'
+      +'.grp-fixed{color:#1a7a4f;}.grp-deduct{color:#c0392b;}'
+      +'@media print{@page{size:A3 landscape;margin:8mm;}}';
+  }
+  function printSummary(){
+    var p=db[curPid];if(!p||!p.people)return;
+    var names=Object.keys(p.people).sort();
+    if(!names.length){alert('這個月還沒有人，先新增人員。');return;}
+    var leaveCols=_summaryLeaveCols(p,names);
+    var h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(p.label||'薪資表')+' 總表</title><style>'+_summaryCss()+'</style></head><body>';
+    h+='<h1>'+esc(_companyName())+'　'+esc(p.label||'')+'薪資表</h1>';
+    h+='<table><thead><tr>';
+    h+='<th>編號</th><th>姓名</th><th>底薪</th><th>職務</th><th>行政</th><th>福利</th><th>加班</th><th>晚職</th><th>總計</th>';
+    h+='<th>自付勞保</th><th>自付健保</th><th>眷屬加保</th>';
+    leaveCols.forEach(function(t){h+='<th>'+esc(t)+'</th>';});
+    h+='<th>遲到</th><th>薪資</th><th>薪轉</th><th>現金</th><th>備註</th>';
+    h+='</tr></thead><tbody>';
+    names.forEach(function(nm,i){
+      var rec=p.people[nm];
+      var c=_calc(p,nm,rec);
+      var otTotal=(c.otAmt||0)+(c.ot2Amt||0)+(rec.lateDutyOtAmt||0);
+      var leaveByType={};
+      c.leaveDetail.forEach(function(d){leaveByType[d.type]=d.amt;});
+      var transferCash=rec.transferCash!==undefined?rec.transferCash:c.transferAmt;
+      var cashAmount=rec.cashAmount!==undefined?rec.cashAmount:0;
+      h+='<tr><td>'+(i+1)+'</td><td>'+esc(nm)+'</td>';
+      h+='<td>'+(rec.baseSalary?Number(rec.baseSalary).toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.dutyAllow?Number(rec.dutyAllow).toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.adminAllow?Number(rec.adminAllow).toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.welfareAllow?Number(rec.welfareAllow).toLocaleString():'')+'</td>';
+      h+='<td>'+(otTotal?otTotal.toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.lateDuty?Number(rec.lateDuty).toLocaleString():'')+'</td>';
+      h+='<td style="font-weight:800;">'+c.totalAmt.toLocaleString()+'</td>';
+      h+='<td>'+(rec.laborIns?Number(rec.laborIns).toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.healthIns?Number(rec.healthIns).toLocaleString():'')+'</td>';
+      h+='<td>'+(rec.depIns?Number(rec.depIns).toLocaleString():'')+'</td>';
+      leaveCols.forEach(function(t){h+='<td>'+(leaveByType[t]?leaveByType[t].toLocaleString():'')+'</td>';});
+      h+='<td>'+(c.lateAutoAmt?c.lateAutoAmt.toLocaleString():'')+'</td>';
+      h+='<td style="font-weight:800;">'+c.transferAmt.toLocaleString()+'</td>';
+      h+='<td>'+(transferCash?Number(transferCash).toLocaleString():'')+'</td>';
+      h+='<td>'+(cashAmount?Number(cashAmount).toLocaleString():'')+'</td>';
+      h+='<td style="text-align:left;white-space:normal;max-width:120px;">'+esc(rec.note||'')+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></body></html>';
+    _doPrint(h);
+  }
+
+  return{init:init,newPeriod:newPeriod,deletePeriod:deletePeriod,openPeriod:openPeriod,backToList:backToList,backToDetail:backToDetail,addPerson:addPerson,removePerson:removePerson,openPerson:openPerson,copyFromPrev:copyFromPrev,setField:setField,printPerson:printPerson,printAll:printAll,printStub:printStub,printAllStubs:printAllStubs,printCombo:printCombo,printAllCombo:printAllCombo,printSummary:printSummary,kgStatus:kgStatus,quickCreateCurrentMonth:quickCreateCurrentMonth,addFromRoster:addFromRoster,refreshIfOpen:refreshIfOpen};
 })();
 
 /* ════ 幼兒事故單 ════ */
@@ -24270,6 +24366,10 @@ var TEACHERLEAVE=(function(){
       db={today:(v&&v.today)||{},parental:(v&&v.parental)||{}};
       try{localStorage.setItem(_ckey('teacherleaveDB'),JSON.stringify(db));}catch(e){}
       render();
+      /* 薪資頁面「當月請假天數」是現抓這裡的資料，但那邊是同步呼叫、
+         不會等這裡的雲端監聽——資料到了之後主動補畫一次，見 PAYROLL
+         裡 refreshIfOpen 的說明。 */
+      if(typeof PAYROLL!=='undefined'&&PAYROLL.refreshIfOpen)PAYROLL.refreshIfOpen();
     });
   }
   function load(){
@@ -25062,7 +25162,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102144128--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102155026--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
