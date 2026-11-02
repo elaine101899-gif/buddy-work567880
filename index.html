@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102142346';
+  var BUILD='20261102144128';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24041,7 +24041,7 @@ var CHILDFEE=(function(){
       if(a.cls!==b.cls)return CLSORDER.indexOf(a.cls)-CLSORDER.indexOf(b.cls);
       return a.name<b.name?-1:(a.name>b.name?1:0);
     });
-    var periodStr=periodLabel(_endY,_endM);
+    var periodStr=_endY+'年'+_endM+'月份';
     /* 延托／退費明細都是用請假/延托登記的獨立模組算出來的（跟月費單本身
        是分開存的資料），這裡抓這一期、每個小孩各自的明細一次備用，
        不用每個小孩都重算一次整期全班的資料。 */
@@ -24069,7 +24069,7 @@ var CHILDFEE=(function(){
         subHTML+='<div class="subdet"><b>退費明細：</b>'+refStr+'</div>';
       }
       pages+='<div class="slip">';
-      pages+='<div class="hd">'+_companyName()+'　月費單明細　'+periodStr+'</div>';
+      pages+='<div class="hd">'+_companyName()+'　'+periodStr+'月費單明細</div>';
       pages+='<div class="meta"><b>'+b.name+'</b><span>'+(CLSLABEL[b.cls]||'')+'</span></div>';
       pages+='<div class="elist">'+itemsHTML+'</div>';
       pages+=subHTML;
@@ -25062,7 +25062,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102142346--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102144128--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
