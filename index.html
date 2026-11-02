@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261102164521';
+  var BUILD='20261102165759';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -12949,7 +12949,8 @@ var PAYROLL=(function(){
       +'th{background:#f5eee0;font-weight:800;text-align:center;}'
       +'td:nth-child(2){text-align:left;font-weight:700;}'
       +'td:first-child{text-align:center;color:#888;}'
-      +'tr:nth-child(even) td{background:#fafafa;}'
+      +'tbody tr:nth-child(odd) td{background:#eee;}'
+      +'tbody tr:nth-child(even) td{background:#fff;}'
       +'.grp-fixed{color:#1a7a4f;}.grp-deduct{color:#c0392b;}'
       +'@media print{@page{size:A3 landscape;margin:8mm;}}';
   }
@@ -25278,7 +25279,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102164521--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261102165759--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
