@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261103101832';
+  var BUILD='20261103123711';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -190,45 +190,63 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
 
 /* ── 選擇公司頁：可愛入口卡 ── */
 .comp-cards-wrap{padding:6px 20px 36px;max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+/* 2026-11 登機證樣式改版：卡片分左(75%，公司資訊)右(25%，GATE票根)
+   兩段，中間用白色圓點虛線分隔，虛線上下各挖一個跟頁面底色一樣的
+   圓形缺口，做出撕票的感覺。 */
+.comp-cards-lbl{text-align:center;color:#aaa;font-size:.78rem;letter-spacing:4px;margin:4px 0 16px;}
 .comp-card{
-  position:relative;border-radius:30px 24px 32px 22px;padding:20px 18px;cursor:pointer;
-  display:flex;align-items:center;gap:16px;overflow:hidden;
-  box-shadow:0 4px 0 rgba(51,48,42,.1);
-  border:2.5px solid #33302a;
+  position:relative;border-radius:20px;padding:0;cursor:pointer;
+  display:flex;align-items:stretch;overflow:hidden;
+  box-shadow:0 4px 14px rgba(0,0,0,.08);
+  border:none;
   transform:scale(1);
   transition:transform .22s cubic-bezier(.34,1.56,.64,1),box-shadow .22s;
   animation:compCardIn .5s cubic-bezier(.34,1.56,.64,1) both;
   -webkit-tap-highlight-color:transparent;
 }
-.comp-card::after{
-  content:'';position:absolute;top:-4px;left:20px;width:52px;height:16px;z-index:0;pointer-events:none;
-  border:1px solid rgba(255,255,255,.5);
-  background:repeating-linear-gradient(135deg,rgba(255,255,255,.6) 0 7px,rgba(230,140,150,.5) 7px 14px);
-  transform:rotate(-7deg);
-}
-.comp-card-logo,.comp-card-body,.comp-card-arr{position:relative;z-index:1;}
-.comp-card:active{transform:scale(.96);}
+.comp-card:active{transform:scale(.97);}
 /* :hover 只在滑鼠裝置生效，避免觸控螢幕第一下點擊被吃掉變成「先觸發 hover、
    要點兩次才真的進得去」的經典 iOS Safari 問題 */
-@media (hover:hover){.comp-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.16);transform:translateY(-2px);}}
-.comp-card.comp-xbd{background:linear-gradient(135deg,#eef9ea 0%,#c9ecc6 100%);}
-.comp-card.comp-bam{background:linear-gradient(135deg,#fffaeb 0%,#ffe9a8 100%);}
+@media (hover:hover){.comp-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.14);transform:translateY(-2px);}}
 .comp-card:nth-child(2){animation-delay:.12s;}
-.comp-card-logo{
-  width:74px;height:74px;border-radius:50%;background:white;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;overflow:hidden;
-  box-shadow:0 4px 14px rgba(0,0,0,.14);
-  animation:compLogoFloat 2.8s ease-in-out infinite;
+.comp-card-main{
+  flex:0 0 75%;min-width:0;display:flex;align-items:center;gap:12px;
+  padding:20px 16px;position:relative;
+  border-right:3px dotted #fff;
 }
-.comp-card-logo img{width:56px;height:56px;object-fit:contain;}
+.comp-card-main::before,.comp-card-main::after{
+  content:'';position:absolute;right:-18px;width:36px;height:36px;border-radius:50%;
+  background:#fdf8ee;z-index:2;pointer-events:none;
+}
+.comp-card-main::before{top:-18px;}
+.comp-card-main::after{bottom:-18px;}
+.comp-card-logo{
+  width:60px;height:60px;border-radius:50%;background:white;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  box-shadow:0 4px 10px rgba(0,0,0,.12);
+}
+.comp-card-logo img{width:44px;height:44px;object-fit:contain;}
 .comp-card-body{flex:1;min-width:0;}
-.comp-card-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.66rem;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;opacity:.7;margin-bottom:3px;}
-.comp-card-title{font-family:'Noto Sans TC',sans-serif;font-size:1.22rem;font-weight:900;color:#2d3057;margin-bottom:3px;letter-spacing:1px;}
-.comp-card-desc{font-size:.76rem;color:#6a6a78;}
-.comp-card-arr{font-size:1.5rem;color:rgba(0,0,0,.2);flex-shrink:0;transition:transform .2s;}
-@media (hover:hover){.comp-card:hover .comp-card-arr{transform:translateX(4px);}}
-.comp-xbd .comp-card-eyebrow,.comp-xbd .comp-card-arr{color:#24875f;}
-.comp-bam .comp-card-eyebrow,.comp-bam .comp-card-arr{color:#c99a12;}
+.comp-card-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.64rem;font-weight:800;letter-spacing:1.3px;text-transform:uppercase;margin-bottom:3px;}
+.comp-card-title{font-family:'Noto Sans TC',sans-serif;font-size:1.06rem;font-weight:900;color:#2d3057;margin-bottom:3px;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.comp-card-desc{font-size:.72rem;color:#6a6a78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.comp-card-gate{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:#fff;padding:10px 6px;
+}
+.comp-gate-lbl{font-size:.62rem;font-weight:800;letter-spacing:2px;opacity:.85;}
+.comp-gate-letter{font-size:56px;font-weight:900;line-height:1;}
+.comp-gate-go{font-size:.74rem;opacity:.9;margin-top:2px;white-space:nowrap;}
+.comp-xbd .comp-card-main{background:#D3EFE6;}
+.comp-xbd .comp-card-eyebrow{color:#3E8E8A;}
+.comp-xbd .comp-card-gate{background:#3E8E8A;}
+.comp-bam .comp-card-main{background:#FBE9A9;}
+.comp-bam .comp-card-eyebrow{color:#B3862A;}
+.comp-bam .comp-card-gate{background:#D9A53A;}
+@media (max-width:360px){
+  .comp-card-title{font-size:.92rem;}
+  .comp-gate-letter{font-size:46px;}
+}
 @keyframes compCardIn{from{opacity:0;transform:translateY(18px) scale(.94);}to{opacity:1;transform:translateY(0) scale(1);}}
 @keyframes compLogoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-4px);}}
 
@@ -2602,24 +2620,37 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="hero-name">邦迪小宇宙</div>
     <div class="hero-sub">選一個入口，開始今天的冒險</div>
   </div>
+  <div class="comp-cards-lbl">選擇你的目的地</div>
   <div class="comp-cards-wrap">
     <div class="comp-card comp-xbd" onclick="pickCompany('xbd')">
-      <div class="comp-card-logo"><img id="compLogoXbd" alt=""></div>
-      <div class="comp-card-body">
-        <div class="comp-card-eyebrow">Center A</div>
-        <div class="comp-card-title">小布迪音樂藝術托嬰中心</div>
-        <div class="comp-card-desc">進入小布迪的系統</div>
+      <div class="comp-card-main">
+        <div class="comp-card-logo"><img id="compLogoXbd" alt=""></div>
+        <div class="comp-card-body">
+          <div class="comp-card-eyebrow">Planet A</div>
+          <div class="comp-card-title">小布迪音樂藝術托嬰中心</div>
+          <div class="comp-card-desc">前往小布迪星球</div>
+        </div>
       </div>
-      <div class="comp-card-arr">&#x203A;</div>
+      <div class="comp-card-gate">
+        <div class="comp-gate-lbl">GATE</div>
+        <div class="comp-gate-letter">A</div>
+        <div class="comp-gate-go">登機 &#x203A;</div>
+      </div>
     </div>
     <div class="comp-card comp-bam" onclick="pickCompany('bambino')">
-      <div class="comp-card-logo"><img id="compLogoBam" alt=""></div>
-      <div class="comp-card-body">
-        <div class="comp-card-eyebrow">Center B</div>
-        <div class="comp-card-title">邦比諾音樂托嬰中心</div>
-        <div class="comp-card-desc">進入邦比諾的系統</div>
+      <div class="comp-card-main">
+        <div class="comp-card-logo"><img id="compLogoBam" alt=""></div>
+        <div class="comp-card-body">
+          <div class="comp-card-eyebrow">Planet B</div>
+          <div class="comp-card-title">邦比諾音樂托嬰中心</div>
+          <div class="comp-card-desc">前往邦比諾星球</div>
+        </div>
       </div>
-      <div class="comp-card-arr">&#x203A;</div>
+      <div class="comp-card-gate">
+        <div class="comp-gate-lbl">GATE</div>
+        <div class="comp-gate-letter">B</div>
+        <div class="comp-gate-go">登機 &#x203A;</div>
+      </div>
     </div>
   </div>
 </div>
@@ -25355,7 +25386,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103101832--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103123711--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
