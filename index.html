@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261103074341';
+  var BUILD='20261103081758';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2650,7 +2650,7 @@ function _rosterKidsAsOf(cls,dateStr){
     </script>
   </div>
   <div id="myReminderCard" style="display:none;margin:0 12px 10px;background:#fff6e0;border:2px solid #f0c97a;border-radius:16px;padding:12px 14px;"></div>
-  <div class="cards-wrap">
+  <div class="cards-wrap" id="oldHomeCards">
     <div class="cards-lbl">今天要做什麼？</div>
     <div class="hcard c-pur" id="kgHomeCard" style="display:none;">
       <div class="hcard-in">
@@ -25345,7 +25345,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103074341--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103081758--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
