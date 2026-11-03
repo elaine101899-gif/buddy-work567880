@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261103123711';
+  var BUILD='20261103125543';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -38,7 +38,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
   background:linear-gradient(160deg,#a9d8ef 0%,#cde8f6 100%);
   padding:40px 24px 36px;text-align:center;
   position:relative;overflow:hidden;
-  margin:12px 12px 0;
+  margin:12px auto 0;
+  width:calc(100% - 24px);
+  max-width:640px;
   border:3px solid #33302a;
   border-radius:30px 26px 32px 24px;
   box-shadow:0 5px 0 rgba(51,48,42,.12);
@@ -25386,7 +25388,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103123711--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103125543--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
