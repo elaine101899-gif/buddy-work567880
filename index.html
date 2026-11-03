@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261103081758';
+  var BUILD='20261103100140';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -88,6 +88,20 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
   background-size:100% 100%;
   background-repeat:no-repeat;
 }
+/* 2026-11 邦迪小宇宙（公司選擇頁）橫幅改版：拿掉土星emoji圓圈、
+   小人塗鴉、太陽、原本的藍色漸層底，改用整張插畫當背景（cover，
+   圓角維持原本 .hero 的設定不用再寫一次）。中間只留文字，標題白色、
+   副標淡藍紫色，跟小布迪首頁那組一樣都只套用在各自的 pg，互不影響，
+   下面的公司卡片／連結／🔑按鈕完全沒動。 */
+#pg-company .hero{
+  background-color:#262b5c;
+  background-image:url(images/portal_banner.png);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+}
+#pg-company .hero-name{color:#fff;}
+#pg-company .hero-sub{color:#CFD6F0;}
 
 /* ── HOME CARDS ── */
 .cards-wrap{padding:26px 16px 32px;max-width:640px;margin:0 auto;}
@@ -2579,18 +2593,11 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ COMPANY SELECT ═══ -->
 <div class="pg on" id="pg-company">
   <div class="hero">
-    <svg class="hero-deco hero-sun-deco" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="22" fill="rgba(255,255,255,.3)"/><g stroke="rgba(255,255,255,.24)" stroke-width="5" stroke-linecap="round"><line x1="50" y1="5" x2="50" y2="18"/><line x1="50" y1="82" x2="50" y2="95"/><line x1="5" y1="50" x2="18" y2="50"/><line x1="82" y1="50" x2="95" y2="50"/><line x1="18" y1="18" x2="27" y2="27"/><line x1="73" y1="73" x2="82" y2="82"/><line x1="82" y1="18" x2="73" y2="27"/><line x1="27" y1="73" x2="18" y2="82"/></g></svg>
     <svg class="hero-deco hero-tree-deco" viewBox="0 0 100 100" aria-hidden="true"><rect x="46" y="55" width="8" height="35" rx="3" fill="rgba(255,255,255,.2)"/><circle cx="50" cy="42" r="28" fill="rgba(255,255,255,.16)"/><circle cx="30" cy="55" r="19" fill="rgba(255,255,255,.13)"/><circle cx="70" cy="55" r="19" fill="rgba(255,255,255,.13)"/></svg>
-    <svg class="hero-deco hero-girl-deco" viewBox="0 0 100 140" aria-hidden="true" stroke="#f0b93a" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="26" r="16"/><circle cx="30" cy="12" r="7"/><circle cx="70" cy="12" r="7"/><circle cx="42" cy="24" r="2" fill="#f0b93a" stroke="none"/><circle cx="58" cy="24" r="2" fill="#f0b93a" stroke="none"/><path d="M42 32 Q50 37 58 32"/><path d="M36 46 L20 26 M64 46 L80 26"/><path d="M36 46 L22 92 L78 92 L64 46 Z"/><path d="M40 92 L36 122 M60 92 L64 122"/></svg>
-    <svg class="hero-deco hero-boy-deco" viewBox="0 0 100 140" aria-hidden="true" stroke="#e05252" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="30" r="16"/><path d="M38 16 L35 4 M46 13 L45 1 M54 13 L55 1 M62 16 L65 4"/><circle cx="43" cy="28" r="2" fill="#e05252" stroke="none"/><circle cx="57" cy="28" r="2" fill="#e05252" stroke="none"/><path d="M43 36 Q50 40 57 36"/><rect x="28" y="48" width="44" height="42" rx="12"/><path d="M28 56 L10 72 M72 56 L90 72"/><path d="M40 90 L35 128 M60 90 L65 128"/></svg>
-    <svg class="hero-deco hero-cat-deco" viewBox="0 0 140 60" aria-hidden="true" stroke="#5ead6b" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M25 40 Q33 18 45 38 Q57 58 69 36 Q81 16 93 36 Q105 56 117 34"/><circle cx="25" cy="40" r="9" fill="#5ead6b" stroke="none"/><circle cx="22" cy="37" r="1.6" fill="#33302a" stroke="none"/><path d="M21 30 Q17 22 11 24 M29 30 Q33 22 39 24" stroke-width="3"/></svg>
     <div class="hero-tape hero-tape-l"></div>
     <div class="hero-tape hero-tape-r"></div>
-    <div class="hero-logo-wrap">
-      <div style="font-size:44px;line-height:104px;">🪐</div>
-    </div>
     <div class="hero-name">邦迪小宇宙</div>
-    <div class="hero-sub">✨ 選一個入口，開始今天的冒險 ✨</div>
+    <div class="hero-sub">選一個入口，開始今天的冒險</div>
   </div>
   <div class="comp-cards-wrap">
     <div class="comp-card comp-xbd" onclick="pickCompany('xbd')">
@@ -25345,7 +25352,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103081758--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261103100140--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
