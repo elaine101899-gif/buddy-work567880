@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261104094002';
+  var BUILD='20261104095956';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -156,38 +156,72 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
    .hcard/.c-xxx 命名的卡片（寫在這裡的規則用 #oldHomeCards 當前綴，
    選擇器優先權比原本那組純 class 規則高，自然覆蓋過去，不用動或刪
    原本那組，清潔表單那邊完全不受影響）。 ── */
-#oldHomeCards{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-#oldHomeCards .cards-lbl{grid-column:1/-1;}
-#oldHomeCards .hcard{
+#oldHomeCards,#billingCardsWrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#oldHomeCards .cards-lbl,#billingCardsWrap .cards-lbl{grid-column:1/-1;}
+#oldHomeCards .hcard,#billingCardsWrap .hcard{
   background:#fff;border-radius:16px;border:1px solid #e7e4dd;
   box-shadow:none;margin-bottom:0;overflow:hidden;cursor:pointer;
   min-width:0;max-width:100%;
   -webkit-tap-highlight-color:transparent;
 }
-#oldHomeCards .hcard::after{display:none;}
-#oldHomeCards .hcard-in{display:flex;flex-direction:column;min-height:0;min-width:0;}
-#oldHomeCards .hcard-bar{display:none;}
-#oldHomeCards .hcard-img{width:100%;height:92px;padding:0;flex-shrink:0;}
-#oldHomeCards .hcard-img img,#oldHomeCards .hcard-img svg{width:56px;height:56px;}
-#oldHomeCards .hcard-body{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:9px 11px 26px;position:relative;}
-#oldHomeCards .hcard-lbl{font-size:.6rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-title{font-size:.92rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-desc{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-arr{
+#oldHomeCards .hcard::after,#billingCardsWrap .hcard::after{display:none;}
+#oldHomeCards .hcard-in,#billingCardsWrap .hcard-in{display:flex;flex-direction:column;min-height:0;min-width:0;}
+#oldHomeCards .hcard-bar,#billingCardsWrap .hcard-bar{display:none;}
+#oldHomeCards .hcard-img,#billingCardsWrap .hcard-img{width:100%;height:92px;padding:0;flex-shrink:0;}
+#oldHomeCards .hcard-img img,#oldHomeCards .hcard-img svg,#billingCardsWrap .hcard-img img,#billingCardsWrap .hcard-img svg{width:56px;height:56px;}
+#oldHomeCards .hcard-body,#billingCardsWrap .hcard-body{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:9px 11px 26px;position:relative;}
+#oldHomeCards .hcard-lbl,#billingCardsWrap .hcard-lbl{font-size:.6rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-title,#billingCardsWrap .hcard-title{font-size:.92rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-arr,#billingCardsWrap .hcard-arr{
   position:absolute;right:9px;bottom:9px;width:22px;height:22px;margin-right:0;
   border-radius:999px;background:#f3f1ec;display:flex;align-items:center;justify-content:center;
   font-size:.85rem;color:#aaa;
 }
-#oldHomeCards .c-teal .hcard-img{background:#E3F2EA;} #oldHomeCards .c-teal .hcard-lbl{color:#3E8E6A;}
-#oldHomeCards .c-ora  .hcard-img{background:#FCEFD9;} #oldHomeCards .c-ora  .hcard-lbl{color:#B9822A;}
-#oldHomeCards .c-pur  .hcard-img{background:#EEE6F7;} #oldHomeCards .c-pur  .hcard-lbl{color:#7B55A0;}
-#oldHomeCards .c-amb  .hcard-img{background:#FBE6DD;} #oldHomeCards .c-amb  .hcard-lbl{color:#C2603E;}
-#oldHomeCards .c-sky  .hcard-img{background:#E2ECF9;} #oldHomeCards .c-sky  .hcard-lbl{color:#3E6BB0;}
-#oldHomeCards .c-grn  .hcard-img{background:#E3F2EA;} #oldHomeCards .c-grn  .hcard-lbl{color:#3E8E6A;}
-#oldHomeCards .c-ros  .hcard-img{background:#FBE3EA;} #oldHomeCards .c-ros  .hcard-lbl{color:#B8507A;}
+#oldHomeCards .c-teal .hcard-img,#billingCardsWrap .c-teal .hcard-img{background:#E3F2EA;} #oldHomeCards .c-teal .hcard-lbl,#billingCardsWrap .c-teal .hcard-lbl{color:#3E8E6A;}
+#oldHomeCards .c-ora  .hcard-img,#billingCardsWrap .c-ora  .hcard-img{background:#FCEFD9;} #oldHomeCards .c-ora  .hcard-lbl,#billingCardsWrap .c-ora  .hcard-lbl{color:#B9822A;}
+#oldHomeCards .c-pur  .hcard-img,#billingCardsWrap .c-pur  .hcard-img{background:#EEE6F7;} #oldHomeCards .c-pur  .hcard-lbl,#billingCardsWrap .c-pur  .hcard-lbl{color:#7B55A0;}
+#oldHomeCards .c-amb  .hcard-img,#billingCardsWrap .c-amb  .hcard-img{background:#FBE6DD;} #oldHomeCards .c-amb  .hcard-lbl,#billingCardsWrap .c-amb  .hcard-lbl{color:#C2603E;}
+#oldHomeCards .c-sky  .hcard-img,#billingCardsWrap .c-sky  .hcard-img{background:#E2ECF9;} #oldHomeCards .c-sky  .hcard-lbl,#billingCardsWrap .c-sky  .hcard-lbl{color:#3E6BB0;}
+#oldHomeCards .c-grn  .hcard-img,#billingCardsWrap .c-grn  .hcard-img{background:#E3F2EA;} #oldHomeCards .c-grn  .hcard-lbl,#billingCardsWrap .c-grn  .hcard-lbl{color:#3E8E6A;}
+#oldHomeCards .c-ros  .hcard-img,#billingCardsWrap .c-ros  .hcard-img{background:#FBE3EA;} #oldHomeCards .c-ros  .hcard-lbl,#billingCardsWrap .c-ros  .hcard-lbl{color:#B8507A;}
 @media (max-width:420px){
-  #oldHomeCards .hcard-title{font-size:.86rem;}
-  #oldHomeCards .hcard-desc{font-size:.66rem;}
+  #oldHomeCards .hcard-title,#billingCardsWrap .hcard-title{font-size:.86rem;}
+  #oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc{font-size:.66rem;}
+}
+
+/* ── 2026-11 行政首頁改版：淡藍圓角卡片標題列＋兩欄格狀卡片（沿用上面
+   #billingCardsWrap 共用的 .hcard 樣式），只套用在 #pg-billing，跟
+   其他頁面的 .bbar／.hero 完全獨立，互不影響。 ── */
+.admin-hero{
+  background:#E2ECF9;border-radius:20px;
+  margin:10px 10px 0;padding:14px 18px 20px;
+  position:relative;overflow:hidden;
+}
+.admin-back-btn{
+  background:#fff;border:none;color:#33302a;padding:8px 18px;border-radius:999px;
+  font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+.admin-hero-deco{
+  position:absolute;top:10px;right:14px;width:130px;height:auto;
+  pointer-events:none;
+}
+.admin-hero-eyebrow{
+  font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.74rem;font-weight:800;
+  letter-spacing:2px;color:#3E6BB0;margin-top:20px;
+}
+.admin-hero-title{
+  font-size:1.9rem;font-weight:900;color:#1d2433;margin-top:2px;letter-spacing:1px;
+  font-family:'Noto Sans TC',sans-serif;
+}
+.admin-sub-lbl{font-size:.8rem;color:#888;padding:20px 16px 14px;}
+/* 行政卡片的情境插圖比首頁卡片大張，上半部色塊也要跟著加高 */
+#billingCardsWrap .hcard-img{height:118px;}
+#billingCardsWrap .hcard-img img{width:84px;height:84px;}
+@media (max-width:380px){
+  .admin-hero-deco{width:100px;}
+  .admin-hero-title{font-size:1.6rem;}
 }
 
 /* ── 選擇公司頁：可愛入口卡 ── */
@@ -2125,12 +2159,12 @@ function _computeRole(email){
    會計 hub 裡的「總帳」卡片只有 owner 看得到。每次判斷出角色、或每次進
    行政/會計頁面時都呼叫一次，確保卡片顯示狀態跟目前角色一致。 */
 function _applyRoleUI(){
-  /* 這幾張卡片本來就是用 display:flex 排版（icon+文字+箭頭一列），
-     重新顯示時要明確設回 'flex'，不能單純清空 style.display 讓它
-     掉回 div 預設的 block，不然 icon/文字會變成直的、版面會跑掉。 */
+  /* 這幾張卡片現在是 #billingCardsWrap 格狀排版裡的 .hcard（block，
+     本身不是 flex），顯示時把 style.display 清空讓它退回 CSS 預設
+     即可，不能寫死 'flex'，不然會變成一條橫的、把兩欄格狀版面撐壞。 */
   ['billingCardAccounting','billingCardTeacherLeave','billingCardChildLeave','billingCardSchedule'].forEach(function(id){
     var el=document.getElementById(id);
-    if(el)el.style.display=(CURRENT_ROLE==='teacher')?'none':'flex';
+    if(el)el.style.display=(CURRENT_ROLE==='teacher')?'none':'';
   });
   var ledgerCard=document.getElementById('accountingCardLedger');
   if(ledgerCard)ledgerCard.style.display=(CURRENT_ROLE==='owner')?'flex':'none';
@@ -4015,42 +4049,78 @@ function _rosterKidsAsOf(cls,dateStr){
 <!-- ═══ 延托幼兒 ═══ -->
 <!-- ═══ 收費 HUB ═══ -->
 <div class="pg" id="pg-billing">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">行政</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('home')">&#x2190; 首頁</button>
+    <img class="admin-hero-deco" src="images/admin_header_deco.png" alt="">
+    <div class="admin-hero-eyebrow">ADMIN</div>
+    <div class="admin-hero-title">行政</div>
   </div>
-  <div style="padding:20px 16px;">
-    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div onclick="GO('extendcare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90d9;">
-        <span style="font-size:1.8rem;">&#x1F9F8;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#1565c0;">延托幼兒</div><div style="font-size:.78rem;color:#888;margin-top:2px;">延托起訖時段記錄，全機同步</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+  <div class="admin-sub-lbl">今天要處理什麼？</div>
+  <div id="billingCardsWrap">
+    <div class="hcard c-sky" onclick="GO('extendcare')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_extended.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">EXTENDED CARE</div>
+          <div class="hcard-title">延托幼兒</div>
+          <div class="hcard-desc">延托時段・全機同步</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div id="billingCardChildLeave" onclick="GO('childleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
-        <span style="font-size:1.8rem;">&#x1F915;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">幼兒請假記錄</div><div style="font-size:.78rem;color:#888;margin-top:2px;">記錄請假天數與假別，供退費試算</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-ora" id="billingCardChildLeave" onclick="GO('childleave')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_leave.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">LEAVE</div>
+          <div class="hcard-title">幼兒請假記錄</div>
+          <div class="hcard-desc">請假天數・退費試算</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div id="billingCardTeacherLeave" onclick="GO('teacherleave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
-        <span style="font-size:1.8rem;">&#x1F4CB;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">每日回報</div><div style="font-size:.78rem;color:#888;margin-top:2px;">老師請假追蹤、育嬰留停名單，一鍵產生LINE回報文字</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-teal" id="billingCardTeacherLeave" onclick="GO('teacherleave')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_report.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">DAILY REPORT</div>
+          <div class="hcard-title">每日回報</div>
+          <div class="hcard-desc">請假追蹤・一鍵 LINE</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div onclick="GO('statsheet')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #8a7ae0;">
-        <span style="font-size:1.8rem;">&#x1F4CA;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#5a4aa8;">統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">物品統計表、衛生統計表，每月總數量與拿取紀錄</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-pur" onclick="GO('statsheet')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_stats.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">STATISTICS</div>
+          <div class="hcard-title">統計表</div>
+          <div class="hcard-desc">物品・衛生統計</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div id="billingCardAccounting" onclick="GO('accounting')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #cf6b6b;">
-        <span style="font-size:1.8rem;">&#x1F512;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">會計</div><div style="font-size:.78rem;color:#888;margin-top:2px;">月費單、零用金</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-amb" id="billingCardAccounting" onclick="GO('accounting')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_accounting.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">ACCOUNTING</div>
+          <div class="hcard-title">會計</div>
+          <div class="hcard-desc">月費單・零用金</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div id="billingCardSchedule" onclick="GO('schedule')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #2b90b0;">
-        <span style="font-size:1.8rem;">&#x1F4C5;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#1a6a80;">排班表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每日班別人員安排，僅行政/owner可見</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-ros" id="billingCardSchedule" onclick="GO('schedule')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/admin_schedule.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">SCHEDULE</div>
+          <div class="hcard-title">排班表</div>
+          <div class="hcard-desc">每日班別・僅行政可見</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
     </div>
   </div>
@@ -25391,7 +25461,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104094002--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104095956--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
