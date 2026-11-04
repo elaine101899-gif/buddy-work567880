@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261104102437';
+  var BUILD='20261104111331';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1734,6 +1734,101 @@ body.adm .sync-setup{display:block;}
 .pick-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.05rem;color:#fff;flex-shrink:0;}
 .pick-name{font-size:.76rem;font-weight:700;color:var(--navy);line-height:1.3;word-break:break-all;}
 .cln-dsel{width:54px;border:1.5px solid var(--border);border-radius:6px;padding:6px 2px;font-size:.95rem;font-weight:700;text-align:center;box-sizing:border-box;background:#fff;color:var(--navy);}
+
+/* ══ 2026-11 教學課程改版（純樣式）：只改外觀，HTML/JS/onclick/id、列印輸出
+   都不受影響（整段包在 @media screen 裡）。要復原刪掉這整段即可。 ══ */
+@media screen {
+/* ── 主題總覽頁（#pg-teach）── */
+#pg-teach .bbar{position:relative;top:auto;flex-wrap:wrap;align-items:flex-start;background:#E3F2EA;border:none;border-radius:20px;box-shadow:none;margin:10px 10px 0;padding:14px 150px 20px 18px;min-height:128px;}
+#pg-teach .bbar::before{display:none;}
+#pg-teach .bbar::after{content:'';display:block;position:absolute;top:10px;right:10px;left:auto;width:140px;height:96px;border:none;transform:none;background:url(images/teach_header_deco.png) right center/contain no-repeat;}
+#pg-teach .bbar .bbtn{border:none;padding:8px 18px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+#pg-teach .bbar .btitle{flex:0 0 100%;text-align:left;text-shadow:none;color:#1d2433;margin-top:16px;white-space:normal;overflow:visible;text-overflow:clip;font-size:1.9rem;line-height:1.3;letter-spacing:1px;}
+#pg-teach .bbar .btitle::before{display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.74rem;font-weight:800;letter-spacing:2px;color:#3E8E6A;content:'TEACHING PLAN';}
+@media (max-width:380px){
+  #pg-teach .bbar{padding-right:118px;}
+  #pg-teach .bbar::after{width:110px;}
+  #pg-teach .bbar .btitle{font-size:1.6rem;}
+}
+#pg-teach .yr-tabs{margin:14px 10px 0;padding:4px;gap:0;background:#EFE8DA;border-radius:999px;}
+#pg-teach .yr-tab{flex:1 1 0;text-align:center;padding:9px 6px;border:none;border-radius:999px;background:transparent;box-shadow:none;transform:none;color:#7A7064;font-size:.86rem;font-weight:800;}
+#pg-teach .yr-tab::before{display:none;}
+#pg-teach .yr-tab.on{background:#3E8E6A;color:#fff;box-shadow:0 2px 6px rgba(62,142,106,.3);transform:none;}
+#pg-teach .yr-pnl{padding:14px 10px 30px;}
+#pg-teach .yr-info{display:inline-block;background:#fff;border:none;padding:5px 12px;margin-bottom:12px;font-size:.72rem;color:#6B6470;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+#pg-teach .t6{gap:10px;counter-reset:theme;}
+#pg-teach .tcard{counter-increment:theme;--tc:#FCEFD9;--ta:#B9822A;background-color:var(--tc);background-repeat:no-repeat;background-position:right 2px bottom -14px;background-size:60px auto;border:none;border-radius:18px;padding:14px 14px 14px;min-height:132px;display:flex;flex-direction:column;}
+#pg-teach .tcard::after{content:'0' counter(theme);position:absolute;top:6px;right:12px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:1.9rem;font-weight:800;color:var(--ta);opacity:.25;pointer-events:none;}
+#pg-teach .tcard:nth-child(6n+1){--tc:#FCEFD9;--ta:#B9822A;background-image:url(images/theme_peek_1.png);}
+#pg-teach .tcard:nth-child(6n+2){--tc:#E2ECF9;--ta:#3E6BB0;background-image:url(images/theme_peek_2.png);}
+#pg-teach .tcard:nth-child(6n+3){--tc:#EEE6F7;--ta:#7B55A0;background-image:url(images/theme_peek_3.png);}
+#pg-teach .tcard:nth-child(6n+4){--tc:#E3F2EA;--ta:#3E8E6A;background-image:url(images/theme_peek_4.png);}
+#pg-teach .tcard:nth-child(6n+5){--tc:#FBE6DD;--ta:#C2603E;background-image:url(images/theme_peek_5.png);}
+#pg-teach .tcard:nth-child(6n+6){--tc:#FBE3EA;--ta:#B8507A;background-image:url(images/theme_peek_6.png);}
+#pg-teach .tcard .tno{color:var(--ta);font-size:.7rem;letter-spacing:1.5px;margin-bottom:6px;}
+#pg-teach .tcard .tname{color:#1d2433;font-size:1.02rem;line-height:1.35;padding-right:6px;}
+#pg-teach .tcard .tsub{color:#6B6470;}
+#pg-teach .tcard .tchips{margin-top:auto;padding-top:10px;padding-right:52px;gap:5px;}
+#pg-teach .tcard .chip{border:none;font-size:.66rem;padding:3px 9px;}
+#pg-teach .tcard .chip-p{background:#fff;color:#6B6470;}
+#pg-teach .tcard .chip-w{background:var(--ta);color:#fff;}
+#pg-teach .tcard .chip-a{background:#3E8E6A;color:#fff;}
+#pg-teach .tcard .chip-d{background:#fff;color:#3E8E6A;}
+#pg-teach .tcard.cur{box-shadow:0 0 0 2.5px #3E8E6A inset;background-color:var(--tc);}
+#pg-teach .tcard.cur::after{display:none;}
+#pg-teach .tbadge{background:#3E8E6A;top:10px;right:10px;font-size:.6rem;padding:3px 8px;}
+#pg-teach .tcard.plan{opacity:1;background:transparent;background-image:none;box-shadow:none;border:2px dashed #D9CFBE;align-items:center;justify-content:center;text-align:center;}
+#pg-teach .tcard.plan::after{display:none;}
+#pg-teach .tcard.plan .tno{color:#B8AE9E;}
+#pg-teach .tcard.plan .tname{color:#B8AE9E;font-size:.9rem;padding:0;}
+#pg-teach .tcard.plan .tname::before{content:'+';display:block;width:34px;height:34px;line-height:32px;margin:0 auto 6px;border-radius:50%;background:#F1EBDF;color:#B8AE9E;font-size:1.3rem;font-weight:400;}
+#pg-teach .tcard.plan .tchips{display:none;}
+
+/* ── 週計畫頁（#pg-week／#pg-week5／#pg-weekB 共用）── */
+#pg-week,#pg-week5,#pg-weekB{--teal:#3E8E6A;--teal-lt:#E3F2EA;--baby-bg:#F8EEE3;--baby-bd:#A87C55;--baby-tx:#8A6440;--crawl-bg:#EEF3E3;--crawl-bd:#6A8343;--crawl-tx:#56702F;--run-bg:#E6EDF5;--run-bd:#56769A;--run-tx:#44607F;}
+#pg-week .site-header,#pg-week5 .site-header,#pg-weekB .site-header{display:none;}
+#pg-week .bbar,#pg-week5 .bbar,#pg-weekB .bbar{position:relative;top:auto;background:#E3F2EA;border:none;border-radius:20px;box-shadow:none;margin:10px 10px 0;padding:14px 18px;}
+#pg-week .bbar::before,#pg-week5 .bbar::before,#pg-weekB .bbar::before,#pg-week .bbar::after,#pg-week5 .bbar::after,#pg-weekB .bbar::after{display:none;}
+#pg-week .bbar .bbtn,#pg-week5 .bbar .bbtn,#pg-weekB .bbar .bbtn{border:none;padding:8px 18px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+#pg-week .bbar .btitle,#pg-week5 .bbar .btitle,#pg-weekB .bbar .btitle{text-align:left;text-shadow:none;color:#1d2433;font-size:1.15rem;letter-spacing:.5px;}
+#pg-week .bbar .btitle::before,#pg-week5 .bbar .btitle::before,#pg-weekB .bbar .btitle::before{display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1.5px;color:#3E8E6A;content:'THEME PLAN';}
+#pg-week .sticky-nav,#pg-week5 .sticky-nav,#pg-weekB .sticky-nav{background:transparent;border-bottom:none;box-shadow:none;}
+#pg-week .week-nav,#pg-week5 .week-nav,#pg-weekB .week-nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:none;padding:10px 14px 4px;gap:6px;scrollbar-width:none;}
+#pg-week .week-nav::-webkit-scrollbar,#pg-week5 .week-nav::-webkit-scrollbar,#pg-weekB .week-nav::-webkit-scrollbar{display:none;}
+#pg-week .week-btn,#pg-week5 .week-btn,#pg-weekB .week-btn{flex-shrink:0;width:34px;height:34px;padding:0;border-radius:50%;background:#fff;border:1.5px solid #E2D9C8;color:#7A7064;font-size:.82rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+#pg-week .week-btn.active,#pg-week5 .week-btn.active,#pg-weekB .week-btn.active{background:#3E8E6A;border-color:#3E8E6A;color:#fff;box-shadow:0 2px 6px rgba(62,142,106,.3);}
+#pg-week .class-filter-bar,#pg-week5 .class-filter-bar,#pg-weekB .class-filter-bar{justify-content:flex-start;padding:4px 14px 6px;gap:6px;}
+#pg-week .class-filter-bar span,#pg-week5 .class-filter-bar span,#pg-weekB .class-filter-bar span{display:none;}
+#pg-week .cls-btn,#pg-week5 .cls-btn,#pg-weekB .cls-btn{background:#fff;border-width:1.5px;padding:5px 14px 5px 8px;font-size:.8rem;font-weight:800;display:inline-flex;align-items:center;gap:5px;}
+#pg-week .cls-btn.all,#pg-week5 .cls-btn.all,#pg-weekB .cls-btn.all{padding:5px 14px;}
+#pg-week .cls-btn.all.active,#pg-week5 .cls-btn.all.active,#pg-weekB .cls-btn.all.active{background:#3E8E6A;border-color:#3E8E6A;color:#fff;}
+#pg-week .cls-btn.baby::before,#pg-week5 .cls-btn.baby::before,#pg-weekB .cls-btn.baby::before{content:'';width:18px;height:18px;border-radius:50%;background:url(images/cls_baby.png) center/cover;flex-shrink:0;}
+#pg-week .cls-btn.crawl::before,#pg-week5 .cls-btn.crawl::before,#pg-weekB .cls-btn.crawl::before{content:'';width:18px;height:18px;border-radius:50%;background:url(images/cls_crawl.png) center/cover;flex-shrink:0;}
+#pg-week .cls-btn.run::before,#pg-week5 .cls-btn.run::before,#pg-weekB .cls-btn.run::before{content:'';width:18px;height:18px;border-radius:50%;background:url(images/cls_run.png) center/cover;flex-shrink:0;}
+#pg-week .cls-btn.baby.active,#pg-week5 .cls-btn.baby.active,#pg-weekB .cls-btn.baby.active{background:var(--baby-bg);color:var(--baby-tx);}
+#pg-week .cls-btn.crawl.active,#pg-week5 .cls-btn.crawl.active,#pg-weekB .cls-btn.crawl.active{background:var(--crawl-bg);color:var(--crawl-tx);}
+#pg-week .cls-btn.run.active,#pg-week5 .cls-btn.run.active,#pg-weekB .cls-btn.run.active{background:var(--run-bg);color:var(--run-tx);}
+#pg-week .summary-print-bar,#pg-week5 .summary-print-bar,#pg-weekB .summary-print-bar{border-top:none;justify-content:flex-start;padding:2px 14px 10px;gap:6px;}
+#pg-week .summary-print-bar span,#pg-week5 .summary-print-bar span,#pg-weekB .summary-print-bar span{display:none;}
+#pg-week .sp-btn,#pg-week5 .sp-btn,#pg-weekB .sp-btn{border:none;font-weight:800;padding:5px 12px;position:relative;padding-left:26px;}
+#pg-week .sp-btn::before,#pg-week5 .sp-btn::before,#pg-weekB .sp-btn::before{content:'\1F5A8';position:absolute;left:10px;font-size:.78rem;}
+#pg-week .sp-btn.baby-btn,#pg-week5 .sp-btn.baby-btn,#pg-weekB .sp-btn.baby-btn{background:#F8EEE3;color:#8A6440;}
+#pg-week .sp-btn.crawl-btn,#pg-week5 .sp-btn.crawl-btn,#pg-weekB .sp-btn.crawl-btn{background:#EEF3E3;color:#56702F;}
+#pg-week .sp-btn.run-btn,#pg-week5 .sp-btn.run-btn,#pg-weekB .sp-btn.run-btn{background:#E6EDF5;color:#44607F;}
+#pg-week .week-header,#pg-week5 .week-header,#pg-weekB .week-header{background:transparent;border:none;box-shadow:none;margin:6px 10px 14px;padding:0 4px;}
+#pg-week .week-badge,#pg-week5 .week-badge,#pg-weekB .week-badge{border-radius:16px;width:60px;height:60px;min-width:60px;padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#pg-week .week-info .week-song-ln,#pg-week5 .week-info .week-song-ln,#pg-weekB .week-info .week-song-ln{display:inline-flex;align-items:center;gap:6px;background:#E3F2EA;border-radius:999px;padding:4px 12px;}
+#pg-week .week-song-play,#pg-week5 .week-song-play,#pg-weekB .week-song-play{background:#3E8E6A !important;color:#fff !important;border:none !important;width:18px;height:18px;border-radius:50%;display:inline-flex !important;align-items:center;justify-content:center;font-size:.55rem !important;padding:0 !important;}
+#pg-week .class-head-img,#pg-week5 .class-head-img,#pg-weekB .class-head-img{width:26px;height:26px;border-radius:50%;object-fit:cover;}
+#pg-week .class-card .activity,#pg-week5 .class-card .activity,#pg-weekB .class-card .activity{background:#fff;border-left-width:4px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+#pg-week .class-card.baby .activity,#pg-week5 .class-card.baby .activity,#pg-weekB .class-card.baby .activity{border-color:var(--baby-bd);}
+#pg-week .class-card.crawl .activity,#pg-week5 .class-card.crawl .activity,#pg-weekB .class-card.crawl .activity{border-color:var(--crawl-bd);}
+#pg-week .class-card.run .activity,#pg-week5 .class-card.run .activity,#pg-weekB .class-card.run .activity{border-color:var(--run-bd);}
+#pg-week .act-date,#pg-week5 .act-date,#pg-weekB .act-date{display:inline-block;background:#F1EBDF;color:#7A7064;border-radius:999px;padding:2px 10px;font-size:.66rem;margin-bottom:0;margin-right:6px;}
+#pg-week .act-domain,#pg-week5 .act-domain,#pg-weekB .act-domain{display:inline-block;color:var(--navy);opacity:.55;text-transform:none;letter-spacing:0;}
+#pg-week .act-indicator,#pg-week5 .act-indicator,#pg-weekB .act-indicator{background:#fff;border:1px solid var(--border);}
+}
+/* ══ 教學課程改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -25465,7 +25560,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104102437--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104111331--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
