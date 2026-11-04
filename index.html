@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261104095956';
+  var BUILD='20261104102437';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -216,6 +216,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
   font-family:'Noto Sans TC',sans-serif;
 }
 .admin-sub-lbl{font-size:.8rem;color:#888;padding:20px 16px 14px;}
+/* 首頁的卡片格狀外面包了一層 .cards-wrap 才有左右留白，#billingCardsWrap
+   是直接擺在頁面裡、沒有那層包裝，要自己補上左右內距，不然卡片會貼齊
+   螢幕邊緣。 */
+#billingCardsWrap{padding:0 16px 32px;max-width:640px;margin:0 auto;box-sizing:border-box;}
 /* 行政卡片的情境插圖比首頁卡片大張，上半部色塊也要跟著加高 */
 #billingCardsWrap .hcard-img{height:118px;}
 #billingCardsWrap .hcard-img img{width:84px;height:84px;}
@@ -25461,7 +25465,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104095956--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104102437--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
