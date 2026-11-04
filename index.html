@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261104111331';
+  var BUILD='20261104120504';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1791,7 +1791,7 @@ body.adm .sync-setup{display:block;}
 #pg-week .bbar::before,#pg-week5 .bbar::before,#pg-weekB .bbar::before,#pg-week .bbar::after,#pg-week5 .bbar::after,#pg-weekB .bbar::after{display:none;}
 #pg-week .bbar .bbtn,#pg-week5 .bbar .bbtn,#pg-weekB .bbar .bbtn{border:none;padding:8px 18px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
 #pg-week .bbar .btitle,#pg-week5 .bbar .btitle,#pg-weekB .bbar .btitle{text-align:left;text-shadow:none;color:#1d2433;font-size:1.15rem;letter-spacing:.5px;}
-#pg-week .bbar .btitle::before,#pg-week5 .bbar .btitle::before,#pg-weekB .bbar .btitle::before{display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1.5px;color:#3E8E6A;content:'THEME PLAN';}
+#pg-week .bbar .btitle::before,#pg-week5 .bbar .btitle::before,#pg-weekB .bbar .btitle::before{display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1.5px;color:#3E8E6A;content:attr(data-eyebrow);}
 #pg-week .sticky-nav,#pg-week5 .sticky-nav,#pg-weekB .sticky-nav{background:transparent;border-bottom:none;box-shadow:none;}
 #pg-week .week-nav,#pg-week5 .week-nav,#pg-weekB .week-nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:none;padding:10px 14px 4px;gap:6px;scrollbar-width:none;}
 #pg-week .week-nav::-webkit-scrollbar,#pg-week5 .week-nav::-webkit-scrollbar,#pg-weekB .week-nav::-webkit-scrollbar{display:none;}
@@ -1825,7 +1825,15 @@ body.adm .sync-setup{display:block;}
 #pg-week .class-card.crawl .activity,#pg-week5 .class-card.crawl .activity,#pg-weekB .class-card.crawl .activity{border-color:var(--crawl-bd);}
 #pg-week .class-card.run .activity,#pg-week5 .class-card.run .activity,#pg-weekB .class-card.run .activity{border-color:var(--run-bd);}
 #pg-week .act-date,#pg-week5 .act-date,#pg-weekB .act-date{display:inline-block;background:#F1EBDF;color:#7A7064;border-radius:999px;padding:2px 10px;font-size:.66rem;margin-bottom:0;margin-right:6px;}
-#pg-week .act-domain,#pg-week5 .act-domain,#pg-weekB .act-domain{display:inline-block;color:var(--navy);opacity:.55;text-transform:none;letter-spacing:0;}
+#pg-week .act-domain,#pg-week5 .act-domain,#pg-weekB .act-domain{display:inline-block;text-transform:none;letter-spacing:0;font-weight:700;border-radius:999px;padding:2px 10px;}
+/* 不同課程領域用不同顏色的領域標籤（沿用既有的 --lang/--soc/--body/--cog/--life/--grow 色票） */
+#pg-week .act-lang .act-domain,#pg-week5 .act-lang .act-domain,#pg-weekB .act-lang .act-domain{background:var(--lang-bg);color:var(--lang-bd);}
+#pg-week .act-soc .act-domain,#pg-week5 .act-soc .act-domain,#pg-weekB .act-soc .act-domain{background:var(--soc-bg);color:var(--soc-bd);}
+#pg-week .act-body .act-domain,#pg-week5 .act-body .act-domain,#pg-weekB .act-body .act-domain{background:var(--body-bg);color:var(--body-bd);}
+#pg-week .act-cog .act-domain,#pg-week5 .act-cog .act-domain,#pg-weekB .act-cog .act-domain{background:var(--cog-bg);color:var(--cog-bd);}
+#pg-week .act-life .act-domain,#pg-week5 .act-life .act-domain,#pg-weekB .act-life .act-domain{background:var(--life-bg);color:var(--life-bd);}
+#pg-week .act-grow .act-domain,#pg-week5 .act-grow .act-domain,#pg-weekB .act-grow .act-domain{background:var(--grow-bg);color:var(--grow-bd);}
+#pg-week .act-holiday .act-domain,#pg-week5 .act-holiday .act-domain,#pg-weekB .act-holiday .act-domain{background:#fff3e0;color:#e08a0c;}
 #pg-week .act-indicator,#pg-week5 .act-indicator,#pg-weekB .act-indicator{background:#fff;border:1px solid var(--border);}
 }
 /* ══ 教學課程改版結束 ══ */
@@ -4685,7 +4693,7 @@ function _rosterKidsAsOf(cls,dateStr){
 <div class="pg" id="pg-week">
   <div class="bbar">
     <button class="bbtn" onclick="GO('teach')">&#x2190; 教學課程</button>
-    <span class="btitle">115年 第六主題 &#x2014; 小丑魚和貝貝</span>
+    <span class="btitle" data-eyebrow="THEME 06 &#xB7; 115 年度月計劃表">小丑魚和貝貝</span>
   </div>
 <header class="site-header">
   <div class="logo-wrap">
@@ -4790,7 +4798,10 @@ function renderWeekB() {
   _weekBRenderedTh = _thNoB;
   var thData = allThemes['115'][_thNoB] || {name:"待規劃",weeks:[],acts:{}};
   var btitleEl = document.querySelector('#pg-weekB .btitle');
-  if (btitleEl) btitleEl.textContent = '第'+['','一','二','三','四','五','六'][_thNoB]+'主題 — '+thData.name;
+  if (btitleEl) {
+    btitleEl.textContent = thData.name;
+    btitleEl.setAttribute('data-eyebrow','THEME 0'+_thNoB+' · 115 年度月計劃表');
+  }
 
   /* ── 1. 複製 site-header，更新學期資訊 ── */
   var existingHdr = document.querySelector('#pg-weekB .site-header');
@@ -5741,7 +5752,7 @@ function printSummaryB(cls) {
 <div class="pg" id="pg-week5">
   <div class="bbar">
     <button class="bbtn" onclick="GO('teach')">&#x2190; 教學課程</button>
-    <span class="btitle">115年 第五主題 &#x2014; 我的娃娃不見了</span>
+    <span class="btitle" data-eyebrow="THEME 05 &#xB7; 115 年度月計劃表">我的娃娃不見了</span>
   </div>
 <div class="sticky-nav">
   <nav class="week-nav" id="weekNav5">
@@ -25560,7 +25571,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104111331--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104120504--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
