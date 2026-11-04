@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261104093352';
+  var BUILD='20261104094002';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4547,9 +4547,9 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div class="summary-print-bar">
     <span>&#x1F5A8; 列印總表：</span>
-    <button class="sp-btn baby-btn" onclick="printSummary('baby')">&#x1F476; 寶寶班</button>
-    <button class="sp-btn crawl-btn" onclick="printSummary('crawl')">&#x1F9B8; 爬爬班</button>
-    <button class="sp-btn run-btn" onclick="printSummary('run')">&#x1F3C3; 跑跑班</button>
+    <button class="sp-btn baby-btn" onclick="printSummary('baby')"><img src="images/cls_baby.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 寶寶班</button>
+    <button class="sp-btn crawl-btn" onclick="printSummary('crawl')"><img src="images/cls_crawl.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 爬爬班</button>
+    <button class="sp-btn run-btn" onclick="printSummary('run')"><img src="images/cls_run.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 跑跑班</button>
   </div>
 </div>
 
@@ -4652,9 +4652,9 @@ function renderWeekB() {
   var printBar = document.createElement('div');
   printBar.className = 'summary-print-bar';
   printBar.innerHTML = '<span>&#x1F5A8; 列印總表：</span>'
-    +'<button class="sp-btn baby-btn" onclick="printSummaryB(\'baby\')">&#x1F476; 寶寶班</button>'
-    +'<button class="sp-btn crawl-btn" onclick="printSummaryB(\'crawl\')">&#x1F9B8; 爬爬班</button>'
-    +'<button class="sp-btn run-btn" onclick="printSummaryB(\'run\')">&#x1F3C3; 跑跑班</button>';
+    +'<button class="sp-btn baby-btn" onclick="printSummaryB(\'baby\')"><img src="images/cls_baby.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 寶寶班</button>'
+    +'<button class="sp-btn crawl-btn" onclick="printSummaryB(\'crawl\')"><img src="images/cls_crawl.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 爬爬班</button>'
+    +'<button class="sp-btn run-btn" onclick="printSummaryB(\'run\')"><img src="images/cls_run.png" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:3px;"> 跑跑班</button>';
   document.querySelector('#pg-weekB .sticky-nav').appendChild(printBar);
 
   var nav = document.getElementById('weekNavB');
@@ -25391,7 +25391,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104093352--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261104094002--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
