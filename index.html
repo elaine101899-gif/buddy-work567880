@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105191940';
+  var BUILD='20261105224706';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2019,6 +2019,18 @@ body.adm .sync-setup{display:block;}
 #pg-teacherleave .tl-sub-card{border-radius:16px;border:1px solid #ECE6DA;box-shadow:none;}
 @media (max-width:380px){#pg-teacherleave .admin-hero-deco{width:78px;top:50px;}}
 /* ══ 幼兒請假記錄／每日回報改版結束 ══ */
+
+/* ══ 2026-11 物品統計表／衛生統計表改版：原本品項是橫向表格欄位，品項
+   一多（衛生統計表拆成21項後更明顯）手機上要左右滑才看得到。改成每個
+   品項各自一張小卡片、格狀排版直向往下捲動，不用再左右滑。 ══ */
+.stat-item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.stat-item-card{background:#F7F5EF;border:1px solid #ECE6DA;border-radius:12px;padding:8px 6px;text-align:center;}
+.stat-item-lbl{font-size:.64rem;color:#6b5f4a;font-weight:700;line-height:1.25;margin-bottom:6px;min-height:2.3em;display:flex;align-items:center;justify-content:center;}
+.stat-item-inp{width:100%;box-sizing:border-box;border:1.5px solid #ECE6DA;border-radius:8px;padding:5px 2px;text-align:center;font-size:.84rem;background:#fff;font-family:'Noto Sans TC',sans-serif;}
+.stat-tx-card{background:#fff;border:1px solid #ECE6DA;border-radius:16px;padding:12px;margin-bottom:12px;}
+.stat-tx-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+@media (max-width:380px){.stat-item-grid{grid-template-columns:repeat(2,1fr);}}
+/* ══ 物品統計表／衛生統計表改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -20553,38 +20565,56 @@ var SPACES=(function(){
    每月一筆記錄：一、每月總數量（每個品項一格） 二、當月用品拿取紀錄（可自由新增/刪除列，
    每列有日期、各品項拿取數量、拿取者/簽名）。列印固定輸出成一張橫式A4。 */
 var ITEMSTAT_ITEMS=['床單','床墊','書包','餐具袋','三色碗','資料夾(內務袋)','透明夾鏈袋','壓舌棒','幼兒健康輕便夾','適性果凍夾'];
-var HYGIENESTAT_ITEMS=['垃圾袋(特大/大/中)','垃圾袋(小/便)','漂白水/酒精','洗衣精','洗手乳/洗碗精','擦手紙','衛生紙','食品手套/乳膠手套','手套(S/M/L)','抹布','擦玻璃布','玻璃清潔劑','廁所清潔劑'];
+/* 2026-11 把原本幾個「斜線合併寫在同一格」的細項拆開成獨立品項
+   （例如 垃圾袋(特大/大/中) 拆成 特大/大/中 三個獨立品項），這樣每個
+   品項才能各自輸入數字、才有辦法加總結算，不會卡在同一格裡要自己
+   手動拆解文字（例如「特大5/大4」）。 */
+var HYGIENESTAT_ITEMS=['垃圾袋(特大)','垃圾袋(大)','垃圾袋(中)','垃圾袋(小)','垃圾袋(便)','漂白水','酒精','洗衣精','洗手乳','洗碗精','擦手紙','衛生紙','食品手套','乳膠手套','手套(S)','手套(M)','手套(L)','抹布','擦玻璃布','玻璃清潔劑','廁所清潔劑'];
 
+/* 2026-11 改版：原本列印是橫式、品項當欄位，品項一多（衛生統計表13欄）
+   手機上要左右滑才看得到、也不好用。改成直式 A4，每月總數量用「品項/
+   數量」兩欄直的表格列出；新增/拿取紀錄則是每筆紀錄只列出「真的有填
+   數字」的品項（用 rowspan 把類型/日期/拿取者合併成一欄），不會因為
+   品項變多而整張表爆寬。 */
 function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
-  var nCol=items.length;
-  var fs=nCol>=13?10:11;
-  var totalsHead='<tr><th>品項</th>';
-  items.forEach(function(it){totalsHead+='<th>'+it+'</th>';});
-  totalsHead+='</tr>';
-  var totalsBody='<tr><td style="font-weight:700;">數量</td>';
-  items.forEach(function(it,idx){totalsBody+='<td>'+(totals[idx]||'')+'</td>';});
-  totalsBody+='</tr>';
-  var rowsHead='<tr><th style="width:48px;">類型</th><th style="width:66px;">日期</th>';
-  items.forEach(function(it){rowsHead+='<th>'+it+'</th>';});
-  rowsHead+='<th style="width:84px;">拿取者／簽名</th></tr>';
+  var totalsBody='';
+  items.forEach(function(it){
+    totalsBody+='<tr><td class="it">'+it+'</td><td>'+(totals[it]!=null?totals[it]:'')+'</td></tr>';
+  });
   var rowsBody='';
   if(!rowsArr.length){
-    rowsBody='<tr><td colspan="'+(nCol+3)+'" style="color:#999;">（本月尚無紀錄）</td></tr>';
+    rowsBody='<tr><td colspan="5" style="color:#999;">（本月尚無紀錄）</td></tr>';
   } else {
     rowsArr.forEach(function(r){
       var isAdd=r.type==='add';
-      rowsBody+='<tr><td style="font-weight:700;color:'+(isAdd?'#1f7a54':'#c0392b')+';">'+(isAdd?'＋新增':'－拿取')+'</td><td>'+(r.date||'')+'</td>';
-      items.forEach(function(it,idx){rowsBody+='<td>'+((r.vals&&r.vals[idx])||'')+'</td>';});
-      rowsBody+='<td>'+(r.takerSig?'<img class="sig" src="'+r.takerSig+'">':(r.taker||''))+'</td></tr>';
+      var typeTxt=isAdd?'＋新增':'－拿取';
+      var typeColor=isAdd?'#1f7a54':'#c0392b';
+      var takerCell=r.takerSig?('<img class="sig" src="'+r.takerSig+'">'):(r.taker||'');
+      var entries=items.filter(function(it){return r.vals&&r.vals[it]!=null&&r.vals[it]!=='';});
+      if(!entries.length){
+        rowsBody+='<tr><td style="font-weight:700;color:'+typeColor+';">'+typeTxt+'</td><td>'+(r.date||'')+'</td><td colspan="3" style="color:#999;">（未填品項）</td></tr>';
+      } else {
+        entries.forEach(function(it,i){
+          rowsBody+='<tr>';
+          if(i===0){
+            rowsBody+='<td style="font-weight:700;color:'+typeColor+';" rowspan="'+entries.length+'">'+typeTxt+'</td>';
+            rowsBody+='<td rowspan="'+entries.length+'">'+(r.date||'')+'</td>';
+          }
+          rowsBody+='<td class="it">'+it+'</td><td>'+r.vals[it]+'</td>';
+          if(i===0)rowsBody+='<td rowspan="'+entries.length+'">'+takerCell+'</td>';
+          rowsBody+='</tr>';
+        });
+      }
     });
   }
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+title+'</title>'+
     '<style>html,body{margin:0;padding:0;}'+
     'body{font-family:"Noto Sans TC",sans-serif;padding:8px 10px;color:#1a2b4a;}'+
-    '@page{size:A4 landscape;margin:7mm;}'+
+    '@page{size:A4 portrait;margin:10mm;}'+
     'h3{margin:12px 0 5px;font-size:14px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
-    'table{width:100%;border-collapse:collapse;font-size:'+fs+'px;table-layout:fixed;margin-bottom:5px;}'+
-    'th,td{border:1px solid #555;padding:6px 4px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
+    'table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:5px;}'+
+    'th,td{border:1px solid #555;padding:5px 6px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
+    'td.it{text-align:left;font-weight:700;}'+
     'th{background:#eef2fb;}img.sig{max-width:60px;max-height:24px;object-fit:contain;display:block;margin:0 auto;}'+
     '.hdr-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:5px;}'+
     '.hdr-row img{height:44px;width:auto;}'+
@@ -20596,10 +20626,10 @@ function _statSheetPrintHTML(title,items,person,y,m,totals,rowsArr){
     '</style></head><body><div class="wrap-ss">'+
     '<div class="hdr-row"><img src="'+(_companyLogoSrc()||_CLEAN_LOGO)+'"><div class="hdr-txt"><div class="t1">'+_companyFullName()+'</div><div class="t2">'+title+'</div></div></div>'+
     '<div class="meta-row"><span>'+y+' 年　'+m+' 月</span><span>盤點人員：'+(person||'＿＿＿＿＿')+'</span></div>'+
-    '<h3>一、每月總數量</h3><table><thead>'+totalsHead+'</thead><tbody>'+totalsBody+'</tbody></table>'+
-    '<h3>二、當月用品新增／拿取紀錄</h3><table><thead>'+rowsHead+'</thead><tbody>'+rowsBody+'</tbody></table>'+
+    '<h3>一、每月總數量</h3><table><thead><tr><th>品項</th><th>數量</th></tr></thead><tbody>'+totalsBody+'</tbody></table>'+
+    '<h3>二、當月用品新增／拿取紀錄</h3><table><thead><tr><th>類型</th><th>日期</th><th>品項</th><th>數量</th><th>拿取者／簽名</th></tr></thead><tbody>'+rowsBody+'</tbody></table>'+
     '</div><script>window.onload=function(){'+
-    'try{var wrap=document.querySelector(".wrap-ss");var capPx=(210-14)*96/25.4;var natural=wrap.scrollHeight;'+
+    'try{var wrap=document.querySelector(".wrap-ss");var capPx=(297-20)*96/25.4;var natural=wrap.scrollHeight;'+
     'if(natural>capPx){wrap.style.zoom=(capPx/natural*0.98).toFixed(3);}}catch(e){}'+
     'window.print();'+
     '}<\/script></body></html>';
@@ -20645,6 +20675,22 @@ function _buildStatSheetModule(cfg){
     try{localStorage.setItem(_ckey(storeKey),JSON.stringify(db));}catch(e){}
   }
 
+  /* 2026-11 改版：原本品項是橫向表格的欄位，品項一多（衛生統計表拆開後有21
+     項）手機上要一直往右滑才看得到、也沒辦法個別加總。改成直式：每個品項
+     自己一張小卡片（標籤＋一個輸入框），用格狀排版由上往下捲動就好，完全
+     不用左右滑。新增／拿取紀錄也是同樣道理，每一筆紀錄變成一張卡片，上面
+     是類型／日期／簽名，下面是同一套品項小卡片格狀排版。 */
+  function _itemGridHTML(valFor,onchangeFn){
+    var h='<div class="stat-item-grid">';
+    items.forEach(function(it){
+      var v=valFor(it);
+      var itEsc=it.replace(/'/g,"\\'");
+      h+='<div class="stat-item-card"><div class="stat-item-lbl">'+it+'</div>';
+      h+='<input type="text" class="stat-item-inp" value="'+((v!=null?v:'')+'').replace(/"/g,'&quot;')+'" onchange="'+onchangeFn(itEsc)+'"></div>';
+    });
+    h+='</div>';
+    return h;
+  }
   function render(){
     var wrap=document.getElementById(wrapId);
     if(!wrap)return;
@@ -20659,44 +20705,35 @@ function _buildStatSheetModule(cfg){
     h+='<button class="cln-sig-btn" style="padding:9px 14px;" onclick="'+cfg.modVar+'.print()">&#x1F5A8;&#xFE0F; 列印</button>';
     h+='</div>';
     h+='<div class="df-sec"><div class="df-lbl">盤點人員</div><input type="text" class="df-inp" id="'+fbKey+'-person" value="'+(rec.person||'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setPerson(this.value)" placeholder="請輸入盤點人員姓名"></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
+    h+='<div class="df-sec">';
     h+='<div class="df-lbl">一、每月總數量</div>';
-    h+='<table class="cln-table"><thead><tr>';
-    items.forEach(function(it){h+='<th>'+it+'</th>';});
-    h+='</tr></thead><tbody><tr>';
-    items.forEach(function(it,idx){
-      h+='<td><input type="text" class="cln-num" style="width:56px;" value="'+((rec.totals[idx]!=null?rec.totals[idx]:'')+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setTotal('+idx+',this.value)"></td>';
-    });
-    h+='</tr></tbody></table></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">二、當月新增／拿取紀錄<button class="cln-sig-btn" style="float:right;" onclick="'+cfg.modVar+'.addRow()">&#xFF0B; 新增一列</button><button class="cln-sig-btn" style="float:right;margin-right:8px;background:#8a7ae0;" onclick="'+cfg.modVar+'.carryForward()">&#x1F4E6; 結算並帶入下月總數量</button></div>';
-    h+='<div style="font-size:.7rem;color:#888;margin:-4px 0 8px;">點每列最左邊的「拿取／新增」可以切換；「結算並帶入下月總數量」會用目前的每月總數量加上本月全部新增、減掉全部拿取，自動填入下個月的「一、每月總數量」</div>';
-    h+='<table class="cln-table"><thead><tr><th>類型</th><th>日期</th>';
-    items.forEach(function(it){h+='<th>'+it+'</th>';});
-    h+='<th>拿取者／簽名</th><th></th></tr></thead><tbody>';
+    h+=_itemGridHTML(function(it){return rec.totals[it];},function(itEsc){return cfg.modVar+".setTotal('"+itEsc+"',this.value)";});
+    h+='</div>';
+    h+='<div class="df-sec">';
+    h+='<div class="df-lbl">二、當月新增／拿取紀錄<button class="cln-sig-btn" style="float:right;" onclick="'+cfg.modVar+'.addRow()">&#xFF0B; 新增一筆</button><button class="cln-sig-btn" style="float:right;margin-right:8px;background:#8a7ae0;" onclick="'+cfg.modVar+'.carryForward()">&#x1F4E6; 結算並帶入下月總數量</button></div>';
+    h+='<div style="font-size:.7rem;color:#888;margin:-4px 0 10px;">點每筆最上面的「拿取／新增」可以切換；「結算並帶入下月總數量」會用目前的每月總數量加上本月全部新增、減掉全部拿取，自動填入下個月的「一、每月總數量」</div>';
     if(!rows.length){
-      h+='<tr><td colspan="'+(items.length+4)+'" style="color:#aaa;">尚無紀錄，請按上方「新增一列」</td></tr>';
+      h+='<div style="color:#aaa;text-align:center;padding:20px 0;">尚無紀錄，請按上方「新增一筆」</div>';
     } else {
       rows.forEach(function(r){
         var isAdd=r.type==='add';
-        h+='<tr><td><button class="cln-sig-btn" style="padding:4px 6px;font-size:.66rem;white-space:nowrap;background:'+(isAdd?'#3d8a5a':'#c08a3a')+';" onclick="'+cfg.modVar+'.toggleRowType(\''+r.id+'\')" title="點擊切換拿取／新增">'+(isAdd?'＋新增':'－拿取')+'</button></td>';
-        h+='<td><input type="text" class="cln-num" style="width:58px;" placeholder="MM/DD" value="'+((r.date||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
-        items.forEach(function(it,idx){
-          var v=(r.vals&&r.vals[idx]!=null)?r.vals[idx]:'';
-          h+='<td><input type="text" class="cln-num" style="width:46px;" value="'+(v+'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowVal(\''+r.id+'\','+idx+',this.value)"></td>';
-        });
-        h+='<td>';
+        h+='<div class="stat-tx-card">';
+        h+='<div class="stat-tx-hd">';
+        h+='<button class="cln-sig-btn" style="padding:5px 10px;font-size:.72rem;white-space:nowrap;background:'+(isAdd?'#3d8a5a':'#c08a3a')+';color:#fff;" onclick="'+cfg.modVar+'.toggleRowType(\''+r.id+'\')" title="點擊切換拿取／新增">'+(isAdd?'＋新增':'－拿取')+'</button>';
+        h+='<input type="text" class="df-inp" style="width:78px;" placeholder="MM/DD" value="'+((r.date||'')).replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setRowField(\''+r.id+'\',\'date\',this.value)">';
         if(r.takerSig){
           h+='<img src="'+r.takerSig+'" class="cln-sig-img" onclick="'+cfg.modVar+'.openRowSig(\''+r.id+'\')" title="點擊重新簽名">';
-          if(r.taker)h+='<div style="font-size:.6rem;color:#888;margin-top:1px;">'+r.taker+'</div>';
+          if(r.taker)h+='<span style="font-size:.7rem;color:#888;">'+r.taker+'</span>';
         } else {
-          h+='<button class="cln-sig-btn" style="padding:4px 7px;font-size:.68rem;" onclick="'+cfg.modVar+'.openRowSig(\''+r.id+'\')">&#x270D;&#xFE0F; 簽名</button>';
+          h+='<button class="cln-sig-btn" style="padding:5px 9px;font-size:.7rem;" onclick="'+cfg.modVar+'.openRowSig(\''+r.id+'\')">&#x270D;&#xFE0F; 簽名</button>';
         }
-        h+='</td>';
-        h+='<td><button onclick="'+cfg.modVar+'.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+        h+='<button onclick="'+cfg.modVar+'.delRow(\''+r.id+'\')" style="margin-left:auto;background:none;border:none;color:#c0392b;font-size:1.05rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button>';
+        h+='</div>';
+        h+=_itemGridHTML(function(it){return r.vals&&r.vals[it];},function(itEsc){return cfg.modVar+".setRowVal('"+r.id+"','"+itEsc+"',this.value)";});
+        h+='</div>';
       });
     }
-    h+='</tbody></table></div>';
+    h+='</div>';
     wrap.innerHTML=h;
   }
 
@@ -20713,12 +20750,12 @@ function _buildStatSheetModule(cfg){
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/person').set(v);
   }
-  function setTotal(idx,v){
+  function setTotal(itemName,v){
     var rec=getRec();
-    rec.totals[idx]=v;
+    rec.totals[itemName]=v;
     save();
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/totals/'+idx).set(v);
+    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/totals/'+itemName).set(v);
   }
   function addRow(){
     var rec=getRec();
@@ -20747,19 +20784,19 @@ function _buildStatSheetModule(cfg){
     var rec=getRec();
     var rows=sortedRows(rec);
     var next={};
-    items.forEach(function(it,idx){
-      var base=parseFloat(rec.totals[idx])||0;
+    items.forEach(function(it){
+      var base=parseFloat(rec.totals[it])||0;
       var delta=0;
       rows.forEach(function(r){
-        var v=parseFloat(r.vals&&r.vals[idx]);
+        var v=parseFloat(r.vals&&r.vals[it]);
         if(!v)return;
         delta+=(r.type==='add')?v:-v;
       });
-      next[idx]=String(base+delta);
+      next[it]=String(base+delta);
     });
     var nm=curM+1,ny=curY;
     if(nm>12){nm=1;ny++;}
-    var preview=items.map(function(it,idx){return it+'：'+next[idx];}).join('\n');
+    var preview=items.map(function(it){return it+'：'+next[it];}).join('\n');
     if(!confirm('確定要把結算後的數量帶入「'+ny+'年'+nm+'月」的每月總數量嗎？\n（會覆蓋該月目前已填寫的每月總數量）\n\n'+preview))return;
     var nextKey=ny+'_'+nm;
     if(!db[nextKey])db[nextKey]={person:'',totals:{},rows:{}};
@@ -20789,14 +20826,14 @@ function _buildStatSheetModule(cfg){
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/'+field).set(v);
   }
-  function setRowVal(id,idx,v){
+  function setRowVal(id,itemName,v){
     var rec=getRec();
     if(!rec.rows[id])return;
     if(!rec.rows[id].vals)rec.rows[id].vals={};
-    rec.rows[id].vals[idx]=v;
+    rec.rows[id].vals[itemName]=v;
     save();
     var fb=_fbInit();
-    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/vals/'+idx).set(v);
+    if(fb)fb.ref('xiaobuddyClean/statsheet/'+fbKey+'/'+key()+'/rows/'+id+'/vals/'+itemName).set(v);
   }
   function openRowSig(id){
     var rec=getRec();
