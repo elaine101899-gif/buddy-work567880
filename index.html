@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105183200';
+  var BUILD='20261105191940';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1980,6 +1980,45 @@ body.adm .sync-setup{display:block;}
 .ec-kid-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
 @media (max-width:380px){.ec-legend{font-size:.72rem;gap:8px;}}
 /* ══ 延托幼兒改版結束 ══ */
+
+/* ══ 2026-11 幼兒請假記錄／每日回報改版（純樣式）：跟延托幼兒同一套
+   .admin-hero 結構，底色／強調色改用各自在行政首頁卡片上的顏色
+   （幼兒請假記錄跟著 c-ora 橘色、每日回報跟著 c-teal 綠色），共用
+   .hub-grid4（跟 .ec-kid-grid 規則相同、取通用名字給其他頁面重複使用）
+   和 .hub-date-inp/.hub-count-pill 這幾個泛用小樣式。 ══ */
+.hub-grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+.hub-date-inp{background:#F5F0E6;border:none!important;border-radius:999px;padding:8px 14px;}
+.hub-count-pill{
+  margin-left:auto;background:#FCEFD9;color:#B9822A;padding:5px 14px;
+  border-radius:999px;font-size:.78rem;font-weight:800;
+}
+.hub-hero-btn{
+  margin-left:auto;background:#fff;border:none;padding:8px 18px;
+  border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+/* ── 幼兒請假記錄 ── */
+#pg-childleave .admin-hero{background:#FCEFD9;margin-bottom:2px;}
+#pg-childleave .admin-hero>div:first-child{display:flex;align-items:center;position:relative;z-index:2;}
+#pg-childleave .admin-hero-eyebrow{color:#B9822A;}
+#pg-childleave .admin-hero-deco{top:46px;right:6px;width:92px;}
+#pg-childleave .hub-hero-btn{color:#B9822A;}
+#pg-childleave .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-childleave .cl-cls-count{
+  background:#F5F0E6;color:#8a7a5a;padding:3px 10px;border-radius:999px;
+  font-size:.72rem;font-weight:800;
+}
+@media (max-width:380px){#pg-childleave .admin-hero-deco{width:78px;top:50px;}}
+/* ── 每日回報 ── */
+#pg-teacherleave .admin-hero{background:#E3F2EA;margin-bottom:2px;}
+#pg-teacherleave .admin-hero>div:first-child{display:flex;align-items:center;position:relative;z-index:2;}
+#pg-teacherleave .admin-hero-eyebrow{color:#3E8E6A;}
+#pg-teacherleave .admin-hero-deco{top:46px;right:6px;width:92px;}
+#pg-teacherleave .hub-hero-btn{color:#3E8E6A;font-size:.72rem;padding:8px 14px;}
+#pg-teacherleave .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-teacherleave .tl-sub-card{border-radius:16px;border:1px solid #ECE6DA;box-shadow:none;}
+@media (max-width:380px){#pg-teacherleave .admin-hero-deco{width:78px;top:50px;}}
+/* ══ 幼兒請假記錄／每日回報改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -4070,10 +4109,14 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 每日回報（老師請假追蹤＋育嬰留停＋一鍵產生回報文字） ═══ -->
 <div class="pg" id="pg-teacherleave">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">每日回報</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="TEACHERLEAVE.openReport()">&#x1F4CB; 產生今日回報文字</button>
+  <div class="admin-hero">
+    <div>
+      <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+      <button class="hub-hero-btn" onclick="TEACHERLEAVE.openReport()">產生今日回報文字</button>
+    </div>
+    <img class="admin-hero-deco" src="images/admin_report.png" alt="">
+    <div class="admin-hero-eyebrow">DAILY REPORT</div>
+    <div class="admin-hero-title">每日回報</div>
   </div>
   <div style="padding:14px 16px 40px;" id="tl-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4669,10 +4712,14 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 幼兒請假記錄 ═══ -->
 <div class="pg" id="pg-childleave">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">幼兒請假記錄</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="GO('childleave-summary')">&#x1F4CA; 請假總表</button>
+  <div class="admin-hero">
+    <div>
+      <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+      <button class="hub-hero-btn" onclick="GO('childleave-summary')">請假總表</button>
+    </div>
+    <img class="admin-hero-deco" src="images/admin_leave.png" alt="">
+    <div class="admin-hero-eyebrow">LEAVE</div>
+    <div class="admin-hero-title">幼兒請假記錄</div>
   </div>
   <div style="padding:14px 16px 40px;" id="cl-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -23578,6 +23625,9 @@ var CHILDLEAVE=(function(){
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
+  var CLSPLAIN={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
+  var CLSTXCOLOR={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
   var TYPES=['事假','病假','腸病毒','住院','停托','腸-停課','颱風假','豪雨假','RSV','流感','新冠'];
   var TYPE_COLOR={'事假':'#c08a3a','病假':'#c0524a','腸病毒':'#a0392f','住院':'#8a3aa0','停托':'#7a7a8a','腸-停課':'#a0392f','颱風假':'#2b6ca3','豪雨假':'#2b6ca3','RSV':'#2f8a6a','流感':'#2f8a6a','新冠':'#2f8a6a'};
   /* 退費規則（2026-10 確認）：
@@ -23670,10 +23720,10 @@ var CHILDLEAVE=(function(){
     var clCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].type;}).length;
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
-    h+='<input type="date" class="df-inp" style="width:auto;" id="clViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="CHILDLEAVE.viewDate(this.value)">';
+    h+='<div class="df-lbl" style="margin:0;">查詢日期</div>';
+    h+='<input type="date" class="df-inp hub-date-inp" style="width:auto;" id="clViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="CHILDLEAVE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="CHILDLEAVE.backToday()">回到今天</button>';
-    h+='<span style="margin-left:auto;font-weight:800;color:#9a6a1a;font-size:.88rem;">當天共 '+clCount+' 人請假</span>';
+    h+='<span class="hub-count-pill">當天共 '+clCount+' 人請假</span>';
     h+='</div>';
     var hint=isToday?'今天可以直接點小孩登記請假。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+hint+'</div>';
@@ -23691,20 +23741,21 @@ var CHILDLEAVE=(function(){
       if(!canEdit)kids=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].type;});
       if(!kids.length)return;
       any=true;
-      h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
-      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+      var leaveCt=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].type;}).length;
+      h+='<div class="df-sec"><div class="df-lbl"><span style="display:inline-flex;align-items:center;gap:6px;color:'+CLSTXCOLOR[cls]+';"><img src="'+CLSICON[cls]+'" style="width:22px;height:22px;" alt="">'+CLSPLAIN[cls]+'</span><span class="cl-cls-count">'+leaveCt+'/'+kids.length+'</span></div>';
+      h+='<div class="hub-grid4">';
       kids.forEach(function(k){
         var rec=dayRec[k.id]||{};
-        var bg='#f7f7fa',border='#ddd',txt='#888',tag='未請假';
+        var bg='#fff',border='#E2D9C8',txt='#888',dot='#C9C2B8',tag='未請假';
         if(rec.type){
           var c=TYPE_COLOR[rec.type]||'#888';
-          bg='#fdf6ec';border=c;txt=c;tag=rec.type+(rec.note?'：'+rec.note:'');
+          bg='#fdf6ec';border=c;txt=c;dot=c;tag=rec.type+(rec.note?'：'+rec.note:'');
         }
         var nameEsc=k.name.replace(/'/g,"\\'");
         var clickAttr=canEdit?' onclick="CHILDLEAVE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;':' style="cursor:default;';
-        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
-        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
-        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='<div'+clickAttr+'border-radius:14px;padding:8px 2px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.74rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+k.name+'</div>';
+        h+='<div style="font-size:.6rem;color:'+txt+';margin-top:3px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;"><i class="ec-dot" style="background:'+dot+';flex-shrink:0;"></i><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+tag+'</span></div>';
         h+='</div>';
       });
       h+='</div></div>';
@@ -25021,13 +25072,13 @@ var TEACHERLEAVE=(function(){
     if(!canEdit)teachers=teachers.filter(function(n){return todayRec[n]&&todayRec[n].onLeave;});
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
-    h+='<input type="date" class="df-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
+    h+='<div class="df-lbl" style="margin:0;">查詢日期</div>';
+    h+='<input type="date" class="df-inp hub-date-inp" style="width:auto;" value="'+iso+'" onchange="TEACHERLEAVE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.backToday()">回到今天</button>';
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
-    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openSubReport()">🔄 產生交接人回報文字</button>';
-    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openCompletion()">📊 完成度總表</button>';
+    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openSubReport()">產生交接人回報文字</button>';
+    h+='<button class="cln-sig-btn" onclick="TEACHERLEAVE.openCompletion()">完成度總表</button>';
     h+='</div>';
     var hint=isToday?'點老師名字可以登記請假（不會自動從體溫管理帶入）。':(isAdm?'🔓 後台模式：可以新增/修改過去日期的請假紀錄。':'過去的日期只能查看，要新增或修改請先解鎖後台。');
     h+='<div style="font-size:.8rem;color:#888;margin:10px 0;">'+hint+' 已經在育嬰留停名單裡的老師不會出現在這裡。</div>';
@@ -25039,17 +25090,17 @@ var TEACHERLEAVE=(function(){
          好幾個欄位，手機上要橫向捲動才看得到後面的，太長了。改成跟幼兒請假
          記錄一樣：老師只是個可以點的小卡片，點下去才跳出視窗填詳細內容，
          請假中的卡片會直接顯示假別，一眼就看得到誰請假、請什麼假。 */
-      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:18px;">';
+      h+='<div class="hub-grid4" style="margin-bottom:18px;">';
       teachers.forEach(function(name){
         var t=todayRec[name]||{};
         var onLeave=!!t.onLeave;
-        var bg=onLeave?'#fdf6ec':'#f7f7fa',border=onLeave?'#e0a05a':'#ddd',txt=onLeave?'#a5680a':'#888';
+        var bg=onLeave?'#fdf6ec':'#fff',border=onLeave?'#e0a05a':'#E2D9C8',txt=onLeave?'#a5680a':'#888',dot=onLeave?'#e0a05a':'#C9C2B8';
         var tag=onLeave?((t.leaveType||'請假')+(t.note?'：'+t.note:'')):'未請假';
         var nameEsc=name.replace(/'/g,"\\'");
         var clickAttr=canEdit?' onclick="TEACHERLEAVE.openEdit(\''+nameEsc+'\')" style="cursor:pointer;':' style="cursor:default;';
-        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
-        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+name+'</div>';
-        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='<div'+clickAttr+'border-radius:14px;padding:8px 2px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.74rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+name+'</div>';
+        h+='<div style="font-size:.6rem;color:'+txt+';margin-top:3px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;"><i class="ec-dot" style="background:'+dot+';flex-shrink:0;"></i><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+tag+'</span></div>';
         h+='</div>';
       });
       h+='</div>';
@@ -25061,7 +25112,7 @@ var TEACHERLEAVE=(function(){
     if(!plist.length){
       h+='<div style="color:#aaa;text-align:center;padding:20px 0;">尚未登記育嬰留停名單</div>';
     } else {
-      h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
+      h+='<div class="tl-sub-card" style="background:#fff;padding:6px 14px;">';
       plist.forEach(function(p,i){
         var active=p.start&&p.end&&p.start<=iso&&p.end>=iso;
         h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 0;'+(i<plist.length-1?'border-bottom:1px solid #eee;':'')+'cursor:pointer;" onclick="TEACHERLEAVE.openParental(\''+p.id+'\')">';
