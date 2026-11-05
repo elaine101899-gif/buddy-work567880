@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105084204';
+  var BUILD='20261105105409';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -9634,6 +9634,18 @@ var LEAVE=(function(){
   var _FB_PATH='xiaobuddyLeave';
   var _lFbRef=null;
   var _lFbCache={};
+  /* pushFb 是 fire-and-forget（不等前一次網路寫入完成就可以發下一次），
+     如果使用者短時間內連續改好幾個欄位（例如請假起訖日期、假別一次填完），
+     會同時送出好幾筆 .set() 覆蓋式寫入——由於網路延遲不保證先送先到，
+     較早送出、內容較不完整的那一筆有可能比較晚才真正寫進 Firebase，
+     結果把使用者剛填好、比較完整的那筆蓋掉，變成欄位「存了又消失」。
+     用這個 debounce 把同一張單的推送延後、合併，真正發出去的永遠是
+     使用者停手那一刻讀到的最新內容，不會有兩筆寫入互相競爭蓋掉對方。 */
+  var _pushFbTimers={};
+  function _cancelPendingPush(tid,fid){
+    var key=tid+'_'+fid;
+    if(_pushFbTimers[key]){clearTimeout(_pushFbTimers[key]);delete _pushFbTimers[key];}
+  }
   /* 這張假單目前畫面上用的是「哪一天」的名單——render 跟 collectChildren 要用同一個
      日期，不然兩邊算出來的 kids 陣列順序對不上，欄位會存到錯的小孩身上。 */
   var _lRenderAsOf=null;
@@ -9926,6 +9938,7 @@ var LEAVE=(function(){
   /* ── 刪除假單 ── */
   function deleteForm(fid){
     if(!confirm('確定要刪除這份假單嗎？此操作無法復原。'))return;
+    _cancelPendingPush(lTid,fid);
     try{
       var all=getAll();
       if(all[lTid]&&all[lTid][fid]){
@@ -9982,36 +9995,36 @@ var LEAVE=(function(){
     h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="lHdrName" class="df-inp" value="'+(hdr.name||teacher.name||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">班級</div><input type="text" id="lHdrCls" class="df-inp" value="'+(hdr.cls||clsLabel(cls)).replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="lHdrName" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.name||teacher.name||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">班級</div><input type="text" id="lHdrCls" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.cls||clsLabel(cls)).replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）<span style="font-weight:400;color:#999;">（下面幼兒名單會依這天的名單顯示）</span></div><div style="display:flex;gap:6px;">';
     h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;" onchange="LEAVE.saveForm()" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
+    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">打掃區域</div><input type="text" id="lHdrClean" class="df-inp" value="'+(hdr.clean||'').replace(/"/g,'&quot;')+'"></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="lHdrLeaveType" class="df-inp">';
+    h+='<div class="lf-field"><div class="lf-flbl">打掃區域</div><input type="text" id="lHdrClean" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.clean||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">假別</div><select id="lHdrLeaveType" class="df-inp" onchange="LEAVE.saveForm()">';
     ['事假','病假','生理假','特休','婚假','喪假','產假','安胎假','陪產假','家庭照顧假','其他'].forEach(function(lt){
       h+='<option value="'+lt+'"'+(hdr.leaveType===lt?' selected':'')+'>'+lt+'</option>';
     });
     h+='</select></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">代理人</div><input type="text" id="lHdrSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'lHdrCertEdu\',\'lHdrCertBaby\',\'lHdrCertNo\')" value="'+(hdr.sub||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">代理人</div><input type="text" id="lHdrSub" class="df-inp" onchange="_applyTeacherCertAutofill(this.value,\'lHdrCertEdu\',\'lHdrCertBaby\',\'lHdrCertNo\');LEAVE.saveForm()" value="'+(hdr.sub||'').replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">代理人資格</div>';
-    h+='<div class="lf-ck-row"><label><input type="checkbox" id="lHdrCertEdu" '+(hdr.certEdu?'checked':'')+'>相關科系畢</label>';
-    h+='<label><input type="checkbox" id="lHdrCertBaby" '+(hdr.certBaby?'checked':'')+'>保母證號</label></div>';
-    h+='<input type="text" id="lHdrCertNo" class="df-inp" style="margin-top:6px;" placeholder="請填寫保母證號" value="'+(hdr.certNo||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-ck-row"><label><input type="checkbox" id="lHdrCertEdu" onchange="LEAVE.saveForm()" '+(hdr.certEdu?'checked':'')+'>相關科系畢</label>';
+    h+='<label><input type="checkbox" id="lHdrCertBaby" onchange="LEAVE.saveForm()" '+(hdr.certBaby?'checked':'')+'>保母證號</label></div>';
+    h+='<input type="text" id="lHdrCertNo" class="df-inp" style="margin-top:6px;" onchange="LEAVE.saveForm()" placeholder="請填寫保母證號" value="'+(hdr.certNo||'').replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div><input type="text" id="lHdrDir" class="df-inp" value="'+(hdr.dir||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div><input type="text" id="lHdrDir" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.dir||'').replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
     h+='</div>';
 
@@ -10034,7 +10047,7 @@ var LEAVE=(function(){
 
     /* ── 代理人代班事後交接 ── */
     h+='<div class="df-sec"><div class="df-lbl">📝 代理人代班事後交接</div>';
-    h+='<textarea id="lPostHandover" class="df-ta" style="min-height:150px;" placeholder="請填寫代班後的交接事項…">'+(saved.postHandover||'')+'</textarea></div>';
+    h+='<textarea id="lPostHandover" class="df-ta" style="min-height:150px;" onchange="LEAVE.saveForm()" placeholder="請填寫代班後的交接事項…">'+(saved.postHandover||'')+'</textarea></div>';
 
     /* ── 簽名 ── */
     h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
@@ -10191,7 +10204,14 @@ var LEAVE=(function(){
       createdAt:existing.createdAt||Date.now()
     };
     saveLocal(lTid,lFid,data);
-    pushFb(lTid,lFid,data);
+    (function(tid,fid,d){
+      var key=tid+'_'+fid;
+      if(_pushFbTimers[key])clearTimeout(_pushFbTimers[key]);
+      _pushFbTimers[key]=setTimeout(function(){
+        delete _pushFbTimers[key];
+        pushFb(tid,fid,d);
+      },500);
+    })(lTid,lFid,data);
     var btn=document.querySelector('.lf-save-btn');
     if(btn){var old=btn.textContent;btn.textContent='✓ 已儲存';setTimeout(function(){btn.textContent=old;},1500);}
   }
@@ -10424,7 +10444,7 @@ var LEAVE=(function(){
           var existing=forms[lFid]||{};
           d.createdAt=existing.createdAt||Date.now();
           saveLocal(lTid,lFid,d);
-          pushFb(lTid,lFid,d);
+          _cancelPendingPush(lTid,lFid);pushFb(lTid,lFid,d);
           renderBody();
           alert('✅ 資料載入成功，請確認內容後再儲存！');
         }catch(err){alert('❌ 載入失敗，請確認是正確的假單備份檔案');}
@@ -10443,7 +10463,7 @@ var LEAVE=(function(){
         try{_applyTeacherCertAutofill(name,'lHdrCertEdu','lHdrCertBaby','lHdrCertNo');}catch(e){}
       }
       var merged=Object.assign({},d,{header:collectHdr(),children:collectChildren(),postHandover:v('lPostHandover')});
-      saveLocal(lTid,lFid,merged);pushFb(lTid,lFid,merged);renderBody();
+      saveLocal(lTid,lFid,merged);_cancelPendingPush(lTid,lFid);pushFb(lTid,lFid,merged);renderBody();
     });
   }
 
@@ -25571,7 +25591,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105084204--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105105409--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
