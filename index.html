@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105143908';
+  var BUILD='20261105181200';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1946,6 +1946,39 @@ body.adm .sync-setup{display:block;}
 #pg-diary .kg-entry-btn{background:#EEE6F7;color:#7B55A0;}
 }
 /* ══ 教保日誌改版結束 ══ */
+
+/* ══ 2026-11 延托幼兒改版（純樣式）：沿用 .admin-hero/.admin-back-btn/
+   .admin-hero-eyebrow/.admin-hero-title 共用結構（跟行政頁同一套藍色
+   卡片，顏色剛好一致，不用另開一組 class），只新增 .ec-fee-btn 和
+   以下幾個延托專用小樣式；.df-sec/.df-lbl/.df-inp 等共用 class 用
+   #pg-extendcare 前綴限定範圍，不影響其他頁面。 ══ */
+#pg-extendcare .admin-hero{margin-bottom:2px;}
+#pg-extendcare .admin-hero>div:first-child{display:flex;align-items:center;position:relative;z-index:2;}
+#pg-extendcare .admin-hero-deco{top:46px;right:6px;width:92px;}
+@media (max-width:380px){#pg-extendcare .admin-hero-deco{width:78px;top:50px;}}
+.ec-fee-btn{
+  margin-left:auto;background:#fff;border:none;color:#3E6BB0;padding:8px 18px;
+  border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+#pg-extendcare .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+.ec-date-inp{background:#F5F0E6;border:none!important;border-radius:999px;padding:8px 14px;}
+.ec-count-pill{
+  margin-left:auto;background:#FCEFD9;color:#B9822A;padding:5px 14px;
+  border-radius:999px;font-size:.78rem;font-weight:800;
+}
+.ec-legend{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  font-size:.78rem;color:#888;margin:0 12px 14px;
+}
+.ec-legend-item{display:inline-flex;align-items:center;gap:5px;color:#666;}
+.ec-dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+#pg-extendcare .ec-cls-count{
+  background:#F5F0E6;color:#8a7a5a;padding:3px 10px;border-radius:999px;
+  font-size:.72rem;font-weight:800;
+}
+@media (max-width:380px){.ec-legend{font-size:.72rem;gap:8px;}}
+/* ══ 延托幼兒改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -4610,10 +4643,14 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
 </div>
 <div class="pg" id="pg-extendcare">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">延托幼兒</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="GO('extendcare-fee')">&#x1F4B0; 延托費總表</button>
+  <div class="admin-hero">
+    <div>
+      <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+      <button class="ec-fee-btn" onclick="GO('extendcare-fee')">延托費總表</button>
+    </div>
+    <img class="admin-hero-deco" src="images/admin_extended.png" alt="">
+    <div class="admin-hero-eyebrow">EXTENDED CARE</div>
+    <div class="admin-hero-title">延托幼兒</div>
   </div>
   <div style="padding:14px 16px 40px;" id="ec-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -23010,6 +23047,9 @@ var EXTENDCARE=(function(){
   var _fbRef=null;
   var CLSLABEL={baby:'🍼 寶寶班',crawl:'🧸 爬爬班',run:'👟 跑跑班'};
   var CLSORDER=['baby','crawl','run'];
+  var CLSPLAIN={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
+  var CLSTXCOLOR={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
   /* 延托分級：A=17:30-18:00算98元，超過18:00多收147元；B=17:15-17:45算98元，超過17:45多收147元
      小布迪：依家長確認的名單勾選結果整理，未列入的小孩維持原本固定98元計算(不分級)。
      邦比諾：只有陳瑞恩、林敬翰、洪羽星、洪羽太是A級(17:30起)，其餘幼兒一律是B級(17:15起)預設值。 */
@@ -23111,14 +23151,19 @@ var EXTENDCARE=(function(){
     var ecCount=Object.keys(dayRec).filter(function(cid){return dayRec[cid]&&dayRec[cid].status;}).length;
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 查詢日期</div>';
-    h+='<input type="date" class="df-inp" style="width:auto;" id="ecViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="EXTENDCARE.viewDate(this.value)">';
+    h+='<div class="df-lbl" style="margin:0;">查詢日期</div>';
+    h+='<input type="date" class="df-inp ec-date-inp" style="width:auto;" id="ecViewDate" value="'+keyToDateInputVal(curViewKey)+'" onchange="EXTENDCARE.viewDate(this.value)">';
     if(!isToday)h+='<button class="cln-sig-btn" onclick="EXTENDCARE.backToday()">回到今天</button>';
-    h+='<span style="margin-left:auto;font-weight:800;color:#a5680a;font-size:.88rem;">當天共 '+ecCount+' 人次延托</span>';
+    h+='<span class="ec-count-pill">當天共 '+ecCount+' 人次延托</span>';
     h+='</div>';
 
     var hint=isToday?'點一下開始延托，再點一下記錄離園':(isAdm?'🔓 後台模式：點一下可以補登或修改這一天的紀錄':'歷史紀錄僅供查詢，不能修改');
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">'+hint+'</div>';
+    h+='<div class="ec-legend">';
+    h+='<span>'+hint+'</span>';
+    h+='<span class="ec-legend-item"><i class="ec-dot" style="background:#C9C2B8;"></i>未延托</span>';
+    h+='<span class="ec-legend-item"><i class="ec-dot" style="background:#3E6BB0;"></i>延托中</span>';
+    h+='<span class="ec-legend-item"><i class="ec-dot" style="background:#3E8E6A;"></i>已離園</span>';
+    h+='</div>';
     var any=false;
     CLSORDER.forEach(function(cls){
       var kids=groups[cls];
@@ -23126,23 +23171,24 @@ var EXTENDCARE=(function(){
       if(!isToday&&!isAdm)kids=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].status;});
       if(!kids.length)return;
       any=true;
-      h+='<div class="df-sec"><div class="df-lbl">'+CLSLABEL[cls]+'</div>';
+      var doneCt=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].status;}).length;
+      h+='<div class="df-sec"><div class="df-lbl"><span style="display:inline-flex;align-items:center;gap:6px;color:'+CLSTXCOLOR[cls]+';"><img src="'+CLSICON[cls]+'" style="width:22px;height:22px;" alt="">'+CLSPLAIN[cls]+'</span><span class="ec-cls-count">'+doneCt+'/'+kids.length+'</span></div>';
       h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
       kids.forEach(function(k){
         var rec=dayRec[k.id]||{};
         var status=rec.status||'';
-        var bg='#f7f7fa',border='#ddd',txt='#888',tag='未延托';
-        if(status==='active'){bg='#fff6e0';border='#e8a030';txt='#a5680a';tag='延托中 '+(rec.start||'');}
-        else if(status==='done'){bg='#e8f7f0';border='#36b27e';txt='#1f7a54';tag=(rec.start||'')+' ～ '+(rec.end||'');}
+        var bg='#fff',border='#E2D9C8',bw='1.5px',txt='#888',dot='#C9C2B8',tag='未延托';
+        if(status==='active'){bg='#E2ECF9';border='#3E6BB0';bw='2px';txt='#3E6BB0';dot='#3E6BB0';tag='延托中 '+(rec.start||'');}
+        else if(status==='done'){bg='#EEF7F0';border='#BFE3C9';txt='#3E8E6A';dot='#3E8E6A';tag=(rec.start||'')+' ～ '+(rec.end||'');}
         var nameEsc=k.name.replace(/'/g,"\\'");
         var canClick=isToday||isAdm;
         var clickAttr;
         if(isToday)clickAttr=' onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
         else if(isAdm)clickAttr=' onclick="EXTENDCARE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
         else clickAttr=' style="cursor:default;';
-        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:12px;background:'+bg+';border:1.5px solid '+border+';text-align:center;">';
+        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:18px;background:'+bg+';border:'+bw+' solid '+border+';text-align:center;">';
         h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
-        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;">'+tag+'</div>';
+        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;"><i class="ec-dot" style="background:'+dot+';"></i>'+tag+'</div>';
         h+='</div>';
       });
       h+='</div></div>';
