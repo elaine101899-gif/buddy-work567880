@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105141124';
+  var BUILD='20261105143908';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1860,6 +1860,92 @@ body.adm .sync-setup{display:block;}
 #pg-week .act-indicator,#pg-week5 .act-indicator,#pg-weekB .act-indicator{background:#fff;border:1px solid var(--border);}
 }
 /* ══ 教學課程改版結束 ══ */
+
+/* ══ 2026-11 教保日誌改版（純樣式）：只改外觀，HTML結構微調只為了掛
+   新的視覺元素（圖示圓圈/膠囊/emoji方塊），onclick、資料、列印/下載/
+   審核功能都沒有動。要復原刪掉這整段即可。 ══ */
+@media screen {
+/* ── 列表頁（主畫面）標題列：淡紫圓角卡＋插畫裝飾 ── */
+#pg-diary .bbar{
+  position:relative;top:auto;flex-wrap:wrap;align-items:flex-start;
+  background:#EEE6F7;border:none;border-radius:20px;box-shadow:none;
+  margin:10px 10px 0;padding:14px 18px 20px;overflow:hidden;
+}
+#pg-diary .bbar::before{display:none;}
+#pg-diary .bbar::after{
+  content:'';display:block;position:absolute;top:10px;right:14px;width:110px;height:90px;
+  border:none;transform:none;pointer-events:none;
+  background:url(images/diary_header_deco.png) center/contain no-repeat;
+}
+#pg-diary .bbar .bbtn{border:none;padding:8px 18px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+#pg-diary .bbar .btitle{
+  flex:0 0 100%;text-align:left;text-shadow:none;color:#1d2433;margin-top:20px;
+  font-size:1.9rem;font-weight:900;letter-spacing:1px;
+}
+#pg-diary .bbar .btitle::before{
+  display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;
+  font-size:.74rem;font-weight:800;letter-spacing:2px;color:#7B55A0;content:'DAILY JOURNAL';
+}
+/* ── 單日編輯頁：同一個 .bbar 切換成緊湊列（靠 #pg-diary.diary-form-mode
+   這個標記區分，showMain()/showFormView() 各自加減這個 class） ── */
+#pg-diary.diary-form-mode .bbar{
+  flex-wrap:nowrap;align-items:center;padding:12px 16px;min-height:0;
+}
+#pg-diary.diary-form-mode .bbar::after{display:none;}
+#pg-diary.diary-form-mode .bbar .btitle{
+  flex:1;margin-top:0;font-size:1rem;font-weight:800;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;
+}
+#pg-diary.diary-form-mode .bbar .btitle::before{display:none;}
+.diary-title-cls{display:inline-flex;align-items:center;gap:6px;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.diary-title-cls img{width:22px;height:22px;border-radius:50%;flex-shrink:0;}
+.diary-title-date{background:#fff;color:#7B55A0;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.8rem;white-space:nowrap;flex-shrink:0;}
+@media (max-width:380px){
+  #pg-diary .bbar .btitle{font-size:1.6rem;}
+}
+/* ── 年度／主題／週次選單 ── */
+#pg-diary #diaryMain>div:first-child{background:transparent;border-bottom:none;padding:14px 12px 4px;}
+#pg-diary .asr-yrth-sel{background:#fff;border:1.5px solid #E2D9C8;border-radius:999px;padding:7px 14px;font-size:.8rem;color:#2d3057;font-weight:700;}
+/* ── 每天一張卡片 ── */
+#pg-diary .diary-dl-card{border-radius:18px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-diary .diary-dl-card-hd{background:transparent;border-bottom:none;padding:14px 16px 4px;}
+#pg-diary .diary-dl-dow{font-weight:800;font-size:1rem;color:#2d3057;}
+#pg-diary .diary-dl-date{
+  display:inline-block;background:#EEE6F7;color:#7B55A0;border-radius:999px;
+  padding:2px 10px;font-size:.72rem;font-weight:700;margin-left:6px;
+}
+/* ── 各班活動列：大地色底＋白色圖示圓圈＋白底膠囊＋白色箭頭圓 ── */
+.diary-row{display:flex;align-items:center;gap:10px;width:100%;border:none !important;border-radius:14px;padding:10px 12px;}
+.diary-row-icon{width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.diary-row-icon img{width:24px;height:24px;border-radius:50%;display:block;}
+.diary-row-body{flex:1;min-width:0;}
+.diary-row-pill{display:inline-block;background:rgba(255,255,255,.75);border-radius:999px;padding:1px 9px;font-size:.64rem;font-weight:700;margin-bottom:4px;}
+.diary-row-name{display:block;font-size:.85rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.diary-row-arr{width:22px;height:22px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.85rem;color:#999;}
+
+/* ── 單日編輯頁：活動摘要卡 ── */
+#pg-diary .diary-summary{padding:16px 16px 14px;margin-bottom:14px;border-radius:20px;border:none !important;}
+#pg-diary .diary-summary-meta{font-size:.72rem;opacity:.8;margin-bottom:6px;}
+#pg-diary .diary-summary-title{font-size:1.1rem;font-weight:900;margin-bottom:8px;}
+#pg-diary .diary-summary-dom{color:#fff;padding:3px 11px;border-radius:999px;font-size:.7rem;font-weight:800;}
+#pg-diary .diary-summary-ind{background:#fff;padding:3px 11px;border-radius:999px;font-size:.7rem;font-weight:700;color:inherit;}
+/* ── 觀察學生／教學資源／活動引導重點 卡片 ── */
+#pg-diary .df-sec{border-radius:16px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-diary .df-lbl-ic{
+  display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:8px;background:#F5F0E6;font-size:.9rem;flex-shrink:0;margin-right:6px;
+}
+#pg-diary .df-sel,#pg-diary .df-inp,#pg-diary .df-ta{border-radius:14px;border:1.5px solid #ECE6DA;}
+#pg-diary .df-add-btn{border-radius:999px;border:none;background:#F5F0E6;color:#8a7a5a;font-weight:700;}
+#pg-diary .df-step-no{background:#3E8E6A;}
+#pg-diary .df-step-del{background:#F5F0E6;color:#999;border-radius:50%;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;}
+/* ── 底部按鈕列 ── */
+#pg-diary .df-bar{background:#fff;border-top:1px solid #ECE6DA;}
+#pg-diary .df-save-btn{background:#3E8E6A;}
+#pg-diary .df-dl-btn{background:#F5F0E6;color:#6b5f4a;}
+#pg-diary .kg-entry-btn{background:#EEE6F7;color:#7B55A0;}
+}
+/* ══ 教保日誌改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -6038,9 +6124,9 @@ function printSummaryB(cls) {
   <div id="diaryForm" style="display:none;padding:12px 12px 80px;"></div>
   <!-- 表單底部按鈕（固定） -->
   <div id="diaryBar" style="display:none;" class="df-bar">
-    <button class="df-save-btn" onclick="DIARY.saveForm()">&#x1F4BE; 儲存</button>
-    <button class="df-dl-btn" onclick="DIARY.printEntry()">&#x1F5A8;&#xFE0F; 列印</button>
-    <button class="df-dl-btn" onclick="DIARY.downloadEntry()">&#x1F4E5; 下載日誌</button>
+    <button class="df-save-btn" onclick="DIARY.saveForm()">儲存</button>
+    <button class="df-dl-btn" onclick="DIARY.printEntry()">列印</button>
+    <button class="df-dl-btn" onclick="DIARY.downloadEntry()">下載日誌</button>
   </div>
 </div>
 
@@ -8467,9 +8553,9 @@ var DIARY=(function(){
 
   var CLSLABEL={run:'跑跑班',crawl:'爬爬班',baby:'寶寶班'};
   var CLSICON={run:'images/cls_run.png',crawl:'images/cls_crawl.png',baby:'images/cls_baby.png'};
-  var CLSCOLOR={run:'#e5eaf5',crawl:'#e8f0e5',baby:'#fdeae5'};
-  var CLSTXCOLOR={run:'#3a4888',crawl:'#3d7030',baby:'#b85040'};
-  var CLSBDCOLOR={run:'#7a8ac8',crawl:'#7aaa6a',baby:'#e88c7a'};
+  var CLSCOLOR={run:'#E6EDF5',crawl:'#EEF3E3',baby:'#F8EEE3'};
+  var CLSTXCOLOR={run:'#4D6C90',crawl:'#6A8343',baby:'#A87C55'};
+  var CLSBDCOLOR={run:'#4D6C90',crawl:'#6A8343',baby:'#A87C55'};
   var CLSAGE={run:'13–36M',crawl:'9–15M',baby:'0–8M'};
   var DC_MAP={'社會情緒':'#d46a8a','語言溝通':'#6a9ad4','身體動作發展':'#5ab870','認知探索':'#c8a830','生活自理':'#9870c8','成長紀錄':'#4aaac0','國定假日':'#e04040','生活花絮':'#5a9a5a'};
 
@@ -8995,14 +9081,16 @@ var DIARY=(function(){
     document.getElementById('diaryMain').style.display='';
     document.getElementById('diaryForm').style.display='none';
     document.getElementById('diaryBar').style.display='none';
+    var pg=document.getElementById('pg-diary');if(pg)pg.classList.remove('diary-form-mode');
     var btn=document.getElementById('diaryBackBtn');
     if(btn){btn.onclick=function(){GO('home');};btn.textContent='← 首頁';}
-    document.getElementById('diaryTitle').textContent='📓 教保日誌';
+    document.getElementById('diaryTitle').textContent='教保日誌';
   }
   function showFormView(){
     document.getElementById('diaryMain').style.display='none';
     document.getElementById('diaryForm').style.display='';
     document.getElementById('diaryBar').style.display='flex';
+    var pg=document.getElementById('pg-diary');if(pg)pg.classList.add('diary-form-mode');
     var btn=document.getElementById('diaryBackBtn');
     if(btn){btn.onclick=function(){DIARY.backToList();};btn.textContent='← 返回';}
   }
@@ -9027,7 +9115,7 @@ var DIARY=(function(){
     days.forEach(function(d){
       var i=d.no-1;
       h+='<div class="diary-dl-card">';
-      h+='<div class="diary-dl-card-hd"><div><span class="diary-dl-dow">星期'+d.dow+'</span><span class="diary-dl-date">　'+d.ymd+'</span></div></div>';
+      h+='<div class="diary-dl-card-hd"><div><span class="diary-dl-dow">星期'+d.dow+'</span><span class="diary-dl-date">　'+d.ymd.replace('年','/').replace('月','/').replace('日','').replace(/^\d+\//,'')+'</span></div></div>';
       h+='<div style="padding:10px 12px;display:flex;flex-direction:column;gap:7px;">';
       clsMap.forEach(function(cm){
         var act=acts[cm.cls]&&acts[cm.cls][i];
@@ -9047,9 +9135,10 @@ var DIARY=(function(){
         }
         var key=dbKey(dYr,dTh,dWk,d.no,cm.cls);
         var done=!!diaryDB.entries[key];
-        h+='<button onclick="DIARY.openForm('+d.no+',\''+cm.cls+'\')" style="width:100%;background:'+cm.color+';color:'+cm.txColor+';border:none;border-left:4px solid '+cm.bdColor+';border-radius:8px;padding:8px 12px;text-align:left;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">';
-        h+='<div style="font-size:.68rem;opacity:.85;margin-bottom:2px;"><img src="'+CLSICON[cm.cls]+'" style="width:22px;height:22px;vertical-align:-6px;border-radius:50%;margin-right:4px;">'+cm.label+' '+cm.age+(done?' ✓ 已填':'')+'</div>';
-        h+='<div style="font-size:.82rem;font-weight:700;">'+act.name+'</div>';
+        h+='<button onclick="DIARY.openForm('+d.no+',\''+cm.cls+'\')" class="diary-row" style="width:100%;background:'+cm.color+';color:'+cm.txColor+';cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">';
+        h+='<span class="diary-row-icon"><img src="'+CLSICON[cm.cls]+'" alt=""></span>';
+        h+='<span class="diary-row-body"><span class="diary-row-pill">'+cm.label+' '+cm.age+(done?' ✓ 已填':'')+'</span><span class="diary-row-name">'+act.name+'</span></span>';
+        h+='<span class="diary-row-arr">&#x203A;</span>';
         h+='</button>';
       });
       h+='</div></div>';
@@ -9124,20 +9213,20 @@ var DIARY=(function(){
 
     var h='';
     /* 活動資訊卡 */
-    h+='<div style="background:'+clsColor+';color:'+clsTxColor+';padding:12px 14px;margin-bottom:12px;border-radius:10px;border-left:4px solid '+clsBdColor+';">';
-    h+='<div style="font-size:.7rem;opacity:.75;margin-bottom:4px;"><img src="'+CLSICON[cls]+'" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:4px;">'+CLSLABEL[cls]+' ('+CLSAGE[cls]+')　星期'+dayData.dow+'　'+dayData.ymd+'</div>';
-    h+='<div style="font-size:1rem;font-weight:800;margin-bottom:4px;">'+act.name+'</div>';
+    h+='<div class="diary-summary" style="background:'+clsColor+';color:'+clsTxColor+';">';
+    h+='<div class="diary-summary-meta"><img src="'+CLSICON[cls]+'" style="width:18px;height:18px;vertical-align:-4px;border-radius:50%;margin-right:4px;">'+CLSLABEL[cls]+' ('+CLSAGE[cls]+')　星期'+dayData.dow+'　'+dayData.ymd+'</div>';
+    h+='<div class="diary-summary-title">'+act.name+'</div>';
     if(act.dom||act.ind){
       h+='<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">';
-      if(act.dom)h+='<span style="background:rgba(0,0,0,.08);padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:700;">'+act.dom+'</span>';
-      if(act.ind)h+='<span style="font-size:.68rem;opacity:.75;">'+act.ind+'</span>';
+      if(act.dom)h+='<span class="diary-summary-dom" style="background:'+clsBdColor+';">'+act.dom+'</span>';
+      if(act.ind)h+='<span class="diary-summary-ind">'+act.ind+'</span>';
       h+='</div>';
     }
     if(act.desc)h+='<div class="diary-act-desc">'+act.desc+'</div>';
     h+='</div>';
 
     /* 觀察學生 */
-    h+='<div class="df-sec"><div class="df-lbl">👤 觀察學生</div>';
+    h+='<div class="df-sec"><div class="df-lbl"><span><span class="df-lbl-ic">👤</span>觀察學生</span></div>';
     h+='<select id="dFStudent" class="df-sel"><option value="">── 請選擇 ──</option>';
     students.forEach(function(s){h+='<option value="'+s.id+'"'+(saved.studentId===s.id?' selected':'')+'>'+s.name+'</option>';});
     h+='</select></div>';
@@ -9145,12 +9234,12 @@ var DIARY=(function(){
     if(!isGrowth){
       /* 教學資源 */
       var _hasTpl=!!(_def.res||(_def.steps&&_def.steps.length));
-      var _tplBtn=_hasTpl?'<button class="df-add-btn" style="margin-left:6px;background:#e8f7f4;color:#0d6e8a;border:1px solid #b0dce0;" onclick="DIARY.resetToTpl()">↩ 還原預設範本</button>':'';
-      h+='<div class="df-sec"><div class="df-lbl">📦 教學資源'+_tplBtn+'</div>';
+      var _tplBtn=_hasTpl?'<button class="df-add-btn" style="margin-left:6px;background:#F5F0E6;color:#8a7a5a;border:none;" onclick="DIARY.resetToTpl()">↩ 還原預設範本</button>':'';
+      h+='<div class="df-sec"><div class="df-lbl"><span><span class="df-lbl-ic">📦</span>教學資源</span>'+_tplBtn+'</div>';
       h+='<input type="text" id="dFResource" class="df-inp" placeholder="例：繪本、積木、樂器、感統教具…" value="'+resource.replace(/"/g,'&quot;')+'"></div>';
 
       /* 活動引導重點 */
-      h+='<div class="df-sec"><div class="df-lbl">📋 活動引導重點<button class="df-add-btn" onclick="DIARY.addStep()">＋ 新增步驟</button></div>';
+      h+='<div class="df-sec"><div class="df-lbl"><span><span class="df-lbl-ic">📋</span>活動引導重點</span><button class="df-add-btn" onclick="DIARY.addStep()">＋ 新增步驟</button></div>';
       h+='<div id="dFSteps">';
       steps.forEach(function(st,idx){h+=renderStep(idx,st);});
       h+='</div>';
@@ -9182,7 +9271,7 @@ var DIARY=(function(){
     h+='<textarea id="dFReflection" class="df-ta" placeholder="請填寫今日活動省思與觀察…">'+((saved.reflection||'').replace(/</g,'&lt;'))+'</textarea></div>';
 
     document.getElementById('diaryForm').innerHTML=h;
-    document.getElementById('diaryTitle').innerHTML='<img src="'+CLSICON[cls]+'" style="width:20px;height:20px;vertical-align:-5px;border-radius:50%;margin-right:4px;">'+CLSLABEL[cls]+'　'+dayData.ymd;
+    document.getElementById('diaryTitle').innerHTML='<span class="diary-title-cls"><img src="'+CLSICON[cls]+'" alt="">'+CLSLABEL[cls]+'</span><span class="diary-title-date">'+dayData.ymd.replace('年','/').replace('月','/').replace('日','')+'（'+dayData.dow+'）</span>';
     showFormView();
     setTimeout(function(){_dApplySlotCrops();},0);
   }
@@ -25650,7 +25739,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105141124--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105143908--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
@@ -27094,7 +27183,7 @@ var KINGDOM=(function(){
     var bar=$('diaryBar');
     if(bar){
       var b=document.createElement('button');
-      b.className='kg-entry-btn';b.type='button';b.textContent='🏰 審核';
+      b.className='kg-entry-btn';b.type='button';b.textContent='審核';
       b.addEventListener('click',open);
       bar.appendChild(b);_entryBtns.push(b);
     }
