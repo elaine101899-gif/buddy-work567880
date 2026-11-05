@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105120238';
+  var BUILD='20261105131616';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -13254,10 +13254,16 @@ var PAYROLL=(function(){
     return DEDUCT_LEAVE_TYPES.filter(function(t){return seen[t];});
   }
   function _summaryCss(){
-    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;margin:12mm;}'
-      +'h1{font-size:15pt;text-align:center;color:#a53a3a;margin:0 0 10px;}'
-      +'table{width:100%;border-collapse:collapse;font-size:8pt;}'
-      +'th,td{border:1px solid #ccc;padding:4px 5px;text-align:right;white-space:nowrap;}'
+    /* 紙張只有194mm寬、扣掉頁邊界大概剩178mm，欄位又多（19欄），一定要
+       table-layout:fixed 把表格鎖死在頁寬以內，不然瀏覽器會照每一欄內容
+       自然需要的寬度去排，內容一多整張表就比紙張寬、印出來被裁掉——
+       之前就是只改了@page尺寸、沒處理這裡，所以還是印出紙張外。
+       同時把白底的body外距拿掉（原本12mm+page本身8mm等於重複扣兩次
+       邊界），字級、留白也一併縮小，盡量把178mm的空間留給表格內容。 */
+    return '*{box-sizing:border-box;}body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;color:#222;margin:0;}'
+      +'h1{font-size:12pt;text-align:center;color:#a53a3a;margin:0 0 6px;}'
+      +'table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:6pt;}'
+      +'th,td{border:1px solid #ccc;padding:2px 2px;text-align:right;white-space:normal;word-break:break-all;overflow:hidden;line-height:1.25;}'
       +'th{background:#f5eee0;font-weight:800;text-align:center;}'
       +'td:nth-child(2){text-align:left;font-weight:700;}'
       +'td:first-child{text-align:center;color:#888;}'
@@ -25591,7 +25597,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105120238--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105131616--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
