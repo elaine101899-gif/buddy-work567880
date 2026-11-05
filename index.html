@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105181200';
+  var BUILD='20261105183200';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1977,6 +1977,7 @@ body.adm .sync-setup{display:block;}
   background:#F5F0E6;color:#8a7a5a;padding:3px 10px;border-radius:999px;
   font-size:.72rem;font-weight:800;
 }
+.ec-kid-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
 @media (max-width:380px){.ec-legend{font-size:.72rem;gap:8px;}}
 /* ══ 延托幼兒改版結束 ══ */
 
@@ -23173,22 +23174,22 @@ var EXTENDCARE=(function(){
       any=true;
       var doneCt=kids.filter(function(k){return dayRec[k.id]&&dayRec[k.id].status;}).length;
       h+='<div class="df-sec"><div class="df-lbl"><span style="display:inline-flex;align-items:center;gap:6px;color:'+CLSTXCOLOR[cls]+';"><img src="'+CLSICON[cls]+'" style="width:22px;height:22px;" alt="">'+CLSPLAIN[cls]+'</span><span class="ec-cls-count">'+doneCt+'/'+kids.length+'</span></div>';
-      h+='<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+      h+='<div class="ec-kid-grid">';
       kids.forEach(function(k){
         var rec=dayRec[k.id]||{};
         var status=rec.status||'';
         var bg='#fff',border='#E2D9C8',bw='1.5px',txt='#888',dot='#C9C2B8',tag='未延托';
-        if(status==='active'){bg='#E2ECF9';border='#3E6BB0';bw='2px';txt='#3E6BB0';dot='#3E6BB0';tag='延托中 '+(rec.start||'');}
-        else if(status==='done'){bg='#EEF7F0';border='#BFE3C9';txt='#3E8E6A';dot='#3E8E6A';tag=(rec.start||'')+' ～ '+(rec.end||'');}
+        if(status==='active'){bg='#E2ECF9';border='#3E6BB0';bw='2px';txt='#3E6BB0';dot='#3E6BB0';tag=rec.start||'';}
+        else if(status==='done'){bg='#EEF7F0';border='#BFE3C9';txt='#3E8E6A';dot='#3E8E6A';tag=rec.end||'';}
         var nameEsc=k.name.replace(/'/g,"\\'");
         var canClick=isToday||isAdm;
         var clickAttr;
         if(isToday)clickAttr=' onclick="EXTENDCARE.toggle(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
         else if(isAdm)clickAttr=' onclick="EXTENDCARE.openEdit(\''+k.id+'\',\''+nameEsc+'\')" style="cursor:pointer;';
         else clickAttr=' style="cursor:default;';
-        h+='<div'+clickAttr+'min-width:96px;padding:10px 12px;border-radius:18px;background:'+bg+';border:'+bw+' solid '+border+';text-align:center;">';
-        h+='<div style="font-weight:700;font-size:.86rem;color:#2d3057;">'+k.name+'</div>';
-        h+='<div style="font-size:.68rem;color:'+txt+';margin-top:3px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:4px;"><i class="ec-dot" style="background:'+dot+';"></i>'+tag+'</div>';
+        h+='<div'+clickAttr+'border-radius:14px;padding:8px 2px;background:'+bg+';border:'+bw+' solid '+border+';text-align:center;">';
+        h+='<div style="font-weight:700;font-size:.74rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+k.name+'</div>';
+        h+='<div style="font-size:.6rem;color:'+txt+';margin-top:3px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:3px;"><i class="ec-dot" style="background:'+dot+';flex-shrink:0;"></i>'+(tag||'&nbsp;')+'</div>';
         h+='</div>';
       });
       h+='</div></div>';
