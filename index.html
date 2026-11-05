@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105105409';
+  var BUILD='20261105120238';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -13264,7 +13264,7 @@ var PAYROLL=(function(){
       +'tbody tr:nth-child(odd) td{background:#eee;}'
       +'tbody tr:nth-child(even) td{background:#fff;}'
       +'.grp-fixed{color:#1a7a4f;}.grp-deduct{color:#c0392b;}'
-      +'@media print{@page{size:A3 landscape;margin:8mm;}}';
+      +'@media print{@page{size:194mm 267mm;margin:8mm;}}';
   }
   function printSummary(){
     var p=db[curPid];if(!p||!p.people)return;
@@ -20868,7 +20868,7 @@ function _pettyCashPrintHTML(p,t){
   sumHtml+='<tr style="font-weight:800;"><td>目前結餘</td><td>'+t.closing.toLocaleString()+'</td></tr>';
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+(p.label||'零用金明細')+'</title>'+
     '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
-    '@page{size:A4 portrait;margin:10mm;}'+
+    '@page{size:194mm 267mm;margin:10mm;}'+
     'h3{margin:12px 0 5px;font-size:12px;color:#1a2b4a;background:#eef2fb;padding:4px 9px;border-radius:4px;}'+
     'table{width:100%;border-collapse:collapse;font-size:10px;table-layout:fixed;margin-bottom:5px;}'+
     'th,td{border:1px solid #555;padding:4px 5px;text-align:center;overflow:hidden;word-break:break-all;line-height:1.3;}'+
@@ -21271,8 +21271,8 @@ var LEDGER=(function(){
    .tbl-wrap 做圓角卡片。.tbl-wrap 這個 class 只在列印頁自己的 <style>
    裡有定義，所以同一段 HTML 被畫面（cln-table 樣式）重複使用時完全不受
    影響，畫面長相不會跟著變。 */
-function _moneyReportCss(){
-  return '@page{size:A4 portrait;margin:12mm 12mm;}'+
+function _moneyReportCss(pageSize){
+  return '@page{size:'+(pageSize||'A4 portrait')+';margin:12mm 12mm;}'+
     '*{box-sizing:border-box;}'+
     'html,body{margin:0;padding:0;}'+
     'body{font-family:"PingFang TC","Hiragino Sans","Microsoft JhengHei",sans-serif;font-size:10pt;color:#2C2820;background:#fff;padding:0 2mm;}'+
@@ -21337,7 +21337,7 @@ function _ledgerPrintHTML(rows,t,p){
     });
   }
   var periodLabel=(p&&(p.label||p.startDate||p.endDate))?((p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?')):'';
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>零用金明細</title><style>'+_moneyReportCss()+'</style></head><body>';
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>零用金明細</title><style>'+_moneyReportCss('194mm 267mm')+'</style></head><body>';
   html+='<div class="hd1">'+companyLabel+' &middot; 零用金明細</div>';
   html+='<div class="hd2">'+(periodLabel||'')+'</div>';
   html+='<div class="sec">明細（共 '+rows.length+' 筆）</div>';
@@ -24442,7 +24442,7 @@ var CHILDFEE=(function(){
     var leaveRefundTotal=0;
     Object.keys(leaveRefundByType).forEach(function(t){leaveRefundTotal+=leaveRefundByType[t].amount;});
 
-    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+_moneyReportCss()+'</style></head><body>';
+    var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+_moneyReportCss('194mm 267mm')+'</style></head><body>';
     html+='<div class="hd1">'+_companyName()+' &middot; 月費單收支總表</div>';
     html+='<div class="hd2">收費期間：'+periodLabel(_incEndY,_incEndM)+'</div>';
 
@@ -25591,7 +25591,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105105409--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261105120238--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
