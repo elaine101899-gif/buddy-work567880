@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261106124942';
+  var BUILD='20261106132416';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -24828,8 +24828,8 @@ var CHILDFEE=(function(){
     Object.keys(leaveRefundByType).forEach(function(t){leaveRefundTotal+=leaveRefundByType[t].amount;});
 
     var html='<!doctype html><html><head><meta charset="utf-8"><title>月費單收支總表</title><style>'+_moneyReportCss('194mm 267mm')+'</style></head><body>';
-    html+='<div class="hd1">'+_companyName()+' &middot; 月費單收支總表</div>';
-    html+='<div class="hd2">收費期間：'+periodLabel(_incEndY,_incEndM)+'</div>';
+    html+='<div class="hd1">'+_companyName()+'　'+_incEndM+'月 &middot; 月費單收支總表</div>';
+    html+='<div class="hd2">退費期間：'+periodLabel(_incEndY,_incEndM)+'</div>';
 
     html+='<div class="sec">繳費明細（依繳費日期排序，共 '+billedList.length+' 筆）</div>';
     html+='<div class="tbl-wrap">';
