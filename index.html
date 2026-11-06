@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261106225227';
+  var BUILD='20261107074114';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2182,6 +2182,38 @@ body.adm .sync-setup{display:block;}
 .lv-teacher-name{font-weight:800;font-size:.84rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .lv-teacher-clslbl{font-size:.66rem;margin-top:2px;}
 /* ══ 請假交接單改版結束 ══ */
+
+/* ══ 2026-11 幼兒事故單／個案異常表改版（純樣式）：班別選單沿用
+   .admin-hero＋重複使用請假交接單那組 .lv-role-card／.lv-empty-pill
+   格狀卡片；紀錄列表另外取 .rec-* 這組新 class，兩種表單共用同一套
+   結構，只差標題底色跟班級色，不影響其他頁面。 ══ */
+#pg-incident .admin-hero{background:#FBE6DD;margin-bottom:2px;}
+#pg-incident .admin-hero-eyebrow{color:#C2603E;}
+#pg-enterovirus .admin-hero{background:#E3F2EA;margin-bottom:2px;}
+#pg-enterovirus .admin-hero-eyebrow{color:#3E8E6A;}
+.lv-empty-pill{background:#F5F0E6;color:#999;border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:700;flex-shrink:0;white-space:nowrap;}
+.rec-hero{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:20px;margin:10px 10px 0;}
+.rec-hero-mid{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;min-width:0;}
+.rec-hero-circle{width:34px;height:34px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.rec-hero-circle img{width:22px;height:22px;}
+.rec-hero-title{font-weight:800;font-size:1rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-hero-add{border:none;border-radius:999px;padding:9px 16px;font-size:.84rem;font-weight:800;cursor:pointer;color:#fff;flex-shrink:0;font-family:'Noto Sans TC',sans-serif;}
+.rec-item-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:14px 16px;margin-bottom:12px;}
+.rec-item-card.unread{border-color:#F2C4B4;}
+.rec-item-top{display:flex;align-items:flex-start;gap:12px;cursor:pointer;margin-bottom:10px;}
+.rec-item-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;flex-shrink:0;}
+.rec-item-body{flex:1;min-width:0;}
+.rec-item-name{font-weight:800;font-size:.98rem;color:#2d3057;}
+.rec-item-date{display:inline-block;background:#F5F0E6;color:#8a7a5a;font-size:.68rem;font-weight:700;padding:2px 10px;border-radius:999px;margin-top:4px;}
+.rec-item-desc{background:#FAF6EE;border-radius:12px;padding:8px 10px;font-size:.78rem;color:#6b5f4a;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.rec-item-status{flex-shrink:0;}
+.rec-item-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.rec-btn{border:none;border-radius:999px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.rec-btn-print{background:#F5F0E6;color:#6b5f4a;}
+.rec-btn-read-on{background:#EEF7F0;color:#3E8E6A;}
+.rec-btn-read-off{background:#F5F0E6;color:#999;}
+.rec-btn-del{margin-left:auto;background:#fff;color:#C2603E;border:1.5px solid #F3CFC2;padding:6px 12px;font-size:.72rem;}
+/* ══ 幼兒事故單／個案異常表改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -4469,18 +4501,22 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ INCIDENT REPORT ═══ -->
 <div class="pg" id="pg-incident">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">幼兒事故單</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <img class="admin-hero-deco" src="images/forms_incident.png" alt="">
+    <div class="admin-hero-eyebrow">INCIDENT</div>
+    <div class="admin-hero-title">幼兒事故單</div>
   </div>
   <div id="incidentWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ ENTEROVIRUS CASE FORM ═══ -->
 <div class="pg" id="pg-enterovirus">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">個案異常表</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <img class="admin-hero-deco" src="images/forms_case.png" alt="">
+    <div class="admin-hero-eyebrow">HEALTH CASE</div>
+    <div class="admin-hero-title">個案異常表</div>
   </div>
   <div id="enterovirusWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -13883,19 +13919,25 @@ var INCIDENT=(function(){
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
 
   /* ─── 首頁（班級選擇）─── */
+  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
+  var CLSTX={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
+  var CLSBG={baby:'#F8EEE3',crawl:'#EEF3E3',run:'#E6EDF5'};
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增事故單</div>';
+    h+='<div class="hub-sub-lbl" style="padding:0 0 14px;">要看哪一班？</div>';
     ['baby','crawl','run'].forEach(function(cls){
       var items=db[cls]||{};
       var total=Object.keys(items).length;
       var unread=Object.keys(items).filter(function(fid){return !items[fid].read;}).length;
-      h+='<button onclick="INCIDENT.openClass(\''+cls+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+clsBd(cls)+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
-      h+='<div><div style="font-weight:800;font-size:1rem;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</div>';
-      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+total+' 份事故單</div></div>';
-      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
-      else if(total>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
-      h+='</button>';
+      h+='<div class="lv-role-card" onclick="INCIDENT.openClass(\''+cls+'\')" style="'+(unread>0?'border-color:#F2C4B4;':'')+'">';
+      h+='<div class="lv-role-icon" style="background:'+CLSBG[cls]+';"><img src="'+CLSICON[cls]+'" alt=""></div>';
+      h+='<div class="lv-role-body"><div class="lv-role-title" style="color:'+CLSTX[cls]+';">'+clsLabel(cls)+'</div>';
+      h+='<div class="lv-role-desc">共 '+total+' 份事故單</div></div>';
+      if(unread>0)h+='<span class="lv-unread-pill">未閱 '+unread+'</span>';
+      else if(total>0)h+='<span class="lv-read-pill">全部已閱</span>';
+      else h+='<span class="lv-empty-pill">尚無紀錄</span>';
+      h+='<div class="lv-role-arr" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';">&#x203A;</div>';
+      h+='</div>';
     });
     h+='</div>';
     return h;
@@ -13906,34 +13948,34 @@ var INCIDENT=(function(){
     var cls=curCls;
     var items=db[cls]||{};
     var fids=Object.keys(items).sort(function(a,b){return (items[b].createdAt||0)-(items[a].createdAt||0);});
-    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
-    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
-    h+='<button onclick="INCIDENT.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
-    h+='<span style="font-weight:800;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</span>';
-    h+='<button onclick="INCIDENT.newForm()" style="padding:8px 16px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增</button>';
+    var h='<div class="rec-hero" style="background:'+CLSBG[cls]+';">';
+    h+='<button class="admin-back-btn" onclick="INCIDENT.backToHub()">&#x2190; 返回</button>';
+    h+='<div class="rec-hero-mid"><span class="rec-hero-circle"><img src="'+CLSICON[cls]+'" alt=""></span><span class="rec-hero-title">'+clsLabel(cls)+'・事故單</span></div>';
+    h+='<button class="rec-hero-add" style="background:'+CLSTX[cls]+';" onclick="INCIDENT.newForm()">＋ 新增</button>';
     h+='</div>';
+    h+='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     if(!fids.length){
-      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無事故單記錄<br><br><button onclick="INCIDENT.newForm()" style="padding:12px 24px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份事故單</button></div>';
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無事故單記錄<br><br><button onclick="INCIDENT.newForm()" style="padding:12px 24px;background:'+CLSTX[cls]+';color:#fff;border:none;border-radius:999px;font-size:.9rem;font-weight:800;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">＋ 新增第一份事故單</button></div>';
     } else {
       fids.forEach(function(fid){
         var d=items[fid];
         var dateStr=d.iAccDate||d.iDate||'（未填日期）';
         var childName=d.iChildName||'（未填名稱）';
         var isRead=!!d.read;
-        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+clsBd(cls)+';">';
-        h+='<div style="padding:14px;cursor:pointer;" onclick="INCIDENT.editForm(\''+fid+'\')">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
-        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+esc(childName)+'</div>';
-        h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">'+esc(dateStr)+'</div>';
-        if(d.iDesc){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:240px;">'+pe(d.iDesc).slice(0,50)+'</div>';}
+        h+='<div class="rec-item-card'+(isRead?'':' unread')+'">';
+        h+='<div class="rec-item-top" onclick="INCIDENT.editForm(\''+fid+'\')">';
+        h+='<span class="rec-item-circle" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';">'+esc(childName.charAt(0))+'</span>';
+        h+='<div class="rec-item-body"><div class="rec-item-name">'+esc(childName)+'</div>';
+        h+='<span class="rec-item-date">'+esc(dateStr)+'</span>';
+        if(d.iDesc){h+='<div class="rec-item-desc">'+pe(d.iDesc).slice(0,50)+'</div>';}
         h+='</div>';
-        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
-        h+='</div></div>';
-        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
-        h+='<button onclick="INCIDENT.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="INCIDENT.downloadFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
-        h+='<button onclick="INCIDENT.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
-        h+='<button onclick="INCIDENT.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='<span class="rec-item-status '+(isRead?'lv-read-pill':'lv-unread-pill')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div>';
+        h+='<div class="rec-item-btns">';
+        h+='<button class="rec-btn" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';" onclick="INCIDENT.editForm(\''+fid+'\')">編輯</button>';
+        h+='<button class="rec-btn rec-btn-print" onclick="INCIDENT.downloadFid(\''+fid+'\')">列印</button>';
+        h+='<button class="rec-btn '+(isRead?'rec-btn-read-off':'rec-btn-read-on')+'" onclick="INCIDENT.toggleRead(\''+fid+'\')">'+(isRead?'取消已閱':'標記已閱')+'</button>';
+        h+='<button class="rec-btn rec-btn-del" onclick="INCIDENT.deleteForm(\''+fid+'\')">刪除</button>';
         h+='</div></div>';
       });
     }
@@ -14484,19 +14526,25 @@ var ENTEROVIRUS=(function(){
   function _compressPhoto(src,cb){var img=new Image();img.onload=function(){var MAX=1200,w=img.naturalWidth,h=img.naturalHeight;var sc=Math.min(1,MAX/Math.max(w,h));var cw=Math.round(w*sc),ch=Math.round(h*sc);var cvs=document.createElement('canvas');cvs.width=cw;cvs.height=ch;cvs.getContext('2d').drawImage(img,0,0,cw,ch);cb(cvs.toDataURL('image/jpeg',0.75));};img.onerror=function(){cb(src);};img.src=src;}
 
   /* ─── 首頁（班級選擇）─── */
+  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
+  var CLSTX={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
+  var CLSBG={baby:'#F8EEE3',crawl:'#EEF3E3',run:'#E6EDF5'};
   function renderHub(){
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:16px;">選擇班別查看或新增個案異常表</div>';
+    h+='<div class="hub-sub-lbl" style="padding:0 0 14px;">要看哪一班？</div>';
     ['baby','crawl','run'].forEach(function(cls){
       var items=db[cls]||{};
       var total=Object.keys(items).length;
       var unread=Object.keys(items).filter(function(fid){return !items[fid].read;}).length;
-      h+='<button onclick="ENTEROVIRUS.openClass(\''+cls+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+clsBd(cls)+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
-      h+='<div><div style="font-weight:800;font-size:1rem;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</div>';
-      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+total+' 份個案異常表</div></div>';
-      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
-      else if(total>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
-      h+='</button>';
+      h+='<div class="lv-role-card" onclick="ENTEROVIRUS.openClass(\''+cls+'\')" style="'+(unread>0?'border-color:#F2C4B4;':'')+'">';
+      h+='<div class="lv-role-icon" style="background:'+CLSBG[cls]+';"><img src="'+CLSICON[cls]+'" alt=""></div>';
+      h+='<div class="lv-role-body"><div class="lv-role-title" style="color:'+CLSTX[cls]+';">'+clsLabel(cls)+'</div>';
+      h+='<div class="lv-role-desc">共 '+total+' 份個案異常表</div></div>';
+      if(unread>0)h+='<span class="lv-unread-pill">未閱 '+unread+'</span>';
+      else if(total>0)h+='<span class="lv-read-pill">全部已閱</span>';
+      else h+='<span class="lv-empty-pill">尚無紀錄</span>';
+      h+='<div class="lv-role-arr" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';">&#x203A;</div>';
+      h+='</div>';
     });
     h+='</div>';
     return h;
@@ -14507,34 +14555,34 @@ var ENTEROVIRUS=(function(){
     var cls=curCls;
     var items=db[cls]||{};
     var fids=Object.keys(items).sort(function(a,b){return (items[b].createdAt||0)-(items[a].createdAt||0);});
-    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
-    h+='<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">';
-    h+='<button onclick="ENTEROVIRUS.backToHub()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回</button>';
-    h+='<span style="font-weight:800;color:#2d3057;">'+clsIcon(cls)+' '+clsLabel(cls)+'</span>';
-    h+='<button onclick="ENTEROVIRUS.newForm()" style="padding:8px 16px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.85rem;font-weight:800;cursor:pointer;">＋ 新增</button>';
+    var h='<div class="rec-hero" style="background:'+CLSBG[cls]+';">';
+    h+='<button class="admin-back-btn" onclick="ENTEROVIRUS.backToHub()">&#x2190; 返回</button>';
+    h+='<div class="rec-hero-mid"><span class="rec-hero-circle"><img src="'+CLSICON[cls]+'" alt=""></span><span class="rec-hero-title">'+clsLabel(cls)+'・個案異常表</span></div>';
+    h+='<button class="rec-hero-add" style="background:'+CLSTX[cls]+';" onclick="ENTEROVIRUS.newForm()">＋ 新增</button>';
     h+='</div>';
+    h+='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     if(!fids.length){
-      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無個案異常表記錄<br><br><button onclick="ENTEROVIRUS.newForm()" style="padding:12px 24px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:.9rem;font-weight:800;cursor:pointer;">＋ 新增第一份</button></div>';
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無個案異常表記錄<br><br><button onclick="ENTEROVIRUS.newForm()" style="padding:12px 24px;background:'+CLSTX[cls]+';color:#fff;border:none;border-radius:999px;font-size:.9rem;font-weight:800;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">＋ 新增第一份</button></div>';
     } else {
       fids.forEach(function(fid){
         var d=items[fid];
         var dateStr=d.eOnsetDate||d.eDate||'（未填日期）';
         var childName=d.eChildName||'（未填名稱）';
         var isRead=!!d.read;
-        h+='<div style="background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px;overflow:hidden;border-left:5px solid '+clsBd(cls)+';">';
-        h+='<div style="padding:14px;cursor:pointer;" onclick="ENTEROVIRUS.editForm(\''+fid+'\')">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;">';
-        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+esc(childName)+'</div>';
-        h+='<div style="font-size:.78rem;color:#888;margin-top:3px;">發病日期：'+esc(dateStr)+'</div>';
-        if(d.eSymptomPart&&d.eSymptomPart.length){h+='<div style="font-size:.75rem;color:#666;margin-top:4px;">'+esc(d.eSymptomPart.join('、'))+'</div>';}
+        h+='<div class="rec-item-card'+(isRead?'':' unread')+'">';
+        h+='<div class="rec-item-top" onclick="ENTEROVIRUS.editForm(\''+fid+'\')">';
+        h+='<span class="rec-item-circle" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';">'+esc(childName.charAt(0))+'</span>';
+        h+='<div class="rec-item-body"><div class="rec-item-name">'+esc(childName)+'</div>';
+        h+='<span class="rec-item-date">發病 '+esc(dateStr)+'</span>';
+        if(d.eSymptomPart&&d.eSymptomPart.length){h+='<div class="rec-item-desc">'+esc(d.eSymptomPart.join('、'))+'</div>';}
         h+='</div>';
-        h+='<span style="flex-shrink:0;margin-left:8px;display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
-        h+='</div></div>';
-        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
-        h+='<button onclick="ENTEROVIRUS.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="ENTEROVIRUS.downloadFid(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
-        h+='<button onclick="ENTEROVIRUS.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
-        h+='<button onclick="ENTEROVIRUS.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='<span class="rec-item-status '+(isRead?'lv-read-pill':'lv-unread-pill')+'">'+(isRead?'已閱':'未閱')+'</span>';
+        h+='</div>';
+        h+='<div class="rec-item-btns">';
+        h+='<button class="rec-btn" style="background:'+CLSBG[cls]+';color:'+CLSTX[cls]+';" onclick="ENTEROVIRUS.editForm(\''+fid+'\')">編輯</button>';
+        h+='<button class="rec-btn rec-btn-print" onclick="ENTEROVIRUS.downloadFid(\''+fid+'\')">列印</button>';
+        h+='<button class="rec-btn '+(isRead?'rec-btn-read-off':'rec-btn-read-on')+'" onclick="ENTEROVIRUS.toggleRead(\''+fid+'\')">'+(isRead?'取消已閱':'標記已閱')+'</button>';
+        h+='<button class="rec-btn rec-btn-del" onclick="ENTEROVIRUS.deleteForm(\''+fid+'\')">刪除</button>';
         h+='</div></div>';
       });
     }
