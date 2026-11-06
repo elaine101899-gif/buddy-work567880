@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261106221613';
+  var BUILD='20261106225227';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2143,6 +2143,45 @@ body.adm .sync-setup{display:block;}
 .pc-tx-amt-lbl{font-size:.64rem;color:#999;margin-bottom:3px;}
 .pc-tx-running{font-weight:800;color:#3E8E6A;font-size:.9rem;padding-top:3px;}
 /* ══ 零用金明細頁修正結束 ══ */
+
+/* ══ 2026-11 請假交接單改版（純樣式）：身份選單沿用 .admin-hero，四種
+   身份內頁沿用 .stat-hero-sm，人員列表／老師格狀卡片都是新的小 class，
+   只套用在請假交接單相關頁面，不影響其他地方。顏色跟行政首頁卡片的
+   配色規則一致（托育綠/主管藍/機動橘/廚工玫瑰色）。 ══ */
+#pg-leave-menu .admin-hero{background:#EEE6F7;margin-bottom:2px;}
+#pg-leave-menu .admin-hero-eyebrow{color:#7B55A0;}
+#pg-leave .stat-hero-sm{background:#E3F2EA;}
+#pg-leave-boss .stat-hero-sm{background:#E2ECF9;}
+#pg-leave-flex .stat-hero-sm{background:#FCEFD9;}
+#pg-leave-cook .stat-hero-sm{background:#FBE6DD;}
+.lv-role-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:14px;margin-bottom:12px;cursor:pointer;}
+.lv-role-icon{width:56px;height:56px;border-radius:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.lv-role-icon img{width:44px;height:44px;object-fit:contain;}
+.lv-role-body{flex:1;min-width:0;}
+.lv-role-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.64rem;font-weight:800;letter-spacing:1.5px;margin-bottom:2px;}
+.lv-role-title{font-weight:800;font-size:1rem;color:#2d3057;}
+.lv-role-desc{font-size:.76rem;color:#888;margin-top:2px;}
+.lv-role-arr{width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+.lv-person-card{width:100%;margin-bottom:10px;padding:14px 16px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;font-family:'Noto Sans TC',sans-serif;}
+.lv-person-card.unread{border-color:#F2C4B4;}
+.lv-person-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem;flex-shrink:0;}
+.lv-person-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+.lv-person-name{font-weight:800;font-size:.95rem;color:#2d3057;}
+.lv-person-sub{font-size:.72rem;color:#999;margin-top:2px;}
+.lv-unread-pill{background:#C2603E;color:#fff;border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:700;flex-shrink:0;white-space:nowrap;}
+.lv-read-pill{background:#EEF7F0;color:#3E8E6A;border-radius:999px;padding:3px 10px;font-size:.74rem;font-weight:700;flex-shrink:0;white-space:nowrap;}
+.lv-person-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;color:#999;display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;}
+.lv-cls-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:16px;margin-bottom:14px;}
+.lv-cls-hd{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.95rem;margin-bottom:12px;}
+.lv-cls-hd img{width:24px;height:24px;}
+.lv-teacher-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lv-teacher-card{border-radius:14px;padding:10px 12px;text-align:left;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:'Noto Sans TC',sans-serif;}
+.lv-teacher-card .lv-unread-pill,.lv-teacher-card .lv-read-pill{font-size:.62rem;padding:1px 7px;}
+.lv-teacher-circle{width:32px;height:32px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.82rem;flex-shrink:0;}
+.lv-teacher-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+.lv-teacher-name{font-weight:800;font-size:.84rem;color:#2d3057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lv-teacher-clslbl{font-size:.66rem;margin-top:2px;}
+/* ══ 請假交接單改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -4332,42 +4371,59 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ LEAVE MENU ═══ -->
 <div class="pg" id="pg-leave-menu">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">請假交接單</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <img class="admin-hero-deco" src="images/forms_leave.png" alt="">
+    <div class="admin-hero-eyebrow">LEAVE HANDOVER</div>
+    <div class="admin-hero-title">請假交接單</div>
   </div>
-  <div style="padding:20px 16px;">
-    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇身份</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div onclick="GO('leave')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid var(--teal);">
-        <span style="font-size:1.8rem;">👩‍🏫</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#1a7080;">托育人員</div><div style="font-size:.78rem;color:#888;margin-top:2px;">幼兒交接事項填寫</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">›</span>
+  <div class="hub-sub-lbl">你是哪一種身份？</div>
+  <div style="padding:0 16px 32px;max-width:640px;margin:0 auto;box-sizing:border-box;">
+    <div class="lv-role-card" onclick="GO('leave')">
+      <div class="lv-role-icon" style="background:#E3F2EA;"><img src="images/leave_role_teacher.png" alt=""></div>
+      <div class="lv-role-body">
+        <div class="lv-role-eyebrow" style="color:#3E8E6A;">TEACHER</div>
+        <div class="lv-role-title">托育人員</div>
+        <div class="lv-role-desc">幼兒交接事項填寫</div>
       </div>
-      <div onclick="GO('leave-boss')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a8ac8;">
-        <span style="font-size:1.8rem;">🏛️</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#3a4888;">主管人員</div><div style="font-size:.78rem;color:#888;margin-top:2px;">主管職務代理交接</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">›</span>
+      <div class="lv-role-arr" style="background:#E3F2EA;color:#3E8E6A;">&#x203A;</div>
+    </div>
+    <div class="lv-role-card" onclick="GO('leave-boss')">
+      <div class="lv-role-icon" style="background:#E2ECF9;"><img src="images/leave_role_boss.png" alt=""></div>
+      <div class="lv-role-body">
+        <div class="lv-role-eyebrow" style="color:#3E6BB0;">MANAGER</div>
+        <div class="lv-role-title">主管人員</div>
+        <div class="lv-role-desc">主管職務代理交接</div>
       </div>
-      <div onclick="GO('leave-flex')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7aaa6a;">
-        <span style="font-size:1.8rem;">🔄</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#3d7030;">機動人員</div><div style="font-size:.78rem;color:#888;margin-top:2px;">機動職務代理交接</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">›</span>
+      <div class="lv-role-arr" style="background:#E2ECF9;color:#3E6BB0;">&#x203A;</div>
+    </div>
+    <div class="lv-role-card" onclick="GO('leave-flex')">
+      <div class="lv-role-icon" style="background:#FCEFD9;"><img src="images/leave_role_flex.png" alt=""></div>
+      <div class="lv-role-body">
+        <div class="lv-role-eyebrow" style="color:#B9822A;">FLEX</div>
+        <div class="lv-role-title">機動人員</div>
+        <div class="lv-role-desc">機動職務代理交接</div>
       </div>
-      <div onclick="GO('leave-cook')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e88c7a;">
-        <span style="font-size:1.8rem;">🍳</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#b85040;">廚工</div><div style="font-size:.78rem;color:#888;margin-top:2px;">廚房職務代理交接</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">›</span>
+      <div class="lv-role-arr" style="background:#FCEFD9;color:#B9822A;">&#x203A;</div>
+    </div>
+    <div class="lv-role-card" onclick="GO('leave-cook')">
+      <div class="lv-role-icon" style="background:#FBE6DD;"><img src="images/leave_role_cook.png" alt=""></div>
+      <div class="lv-role-body">
+        <div class="lv-role-eyebrow" style="color:#C2603E;">KITCHEN</div>
+        <div class="lv-role-title">廚工</div>
+        <div class="lv-role-desc">廚房職務代理交接</div>
       </div>
+      <div class="lv-role-arr" style="background:#FBE6DD;color:#C2603E;">&#x203A;</div>
     </div>
   </div>
 </div>
 
 <!-- ═══ LEAVE FORM（托育人員） ═══ -->
 <div class="pg" id="pg-leave">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('leave-menu')">&#x2190; 返回</button>
-    <span class="btitle">托育人員請假交接單</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('leave-menu')">&#x2190; 返回</button>
+    <div class="stat-hero-title">托育人員請假交接單</div>
+    <img class="stat-hero-icon" src="images/leave_role_teacher.png" alt="">
   </div>
   <div id="leaveWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -4383,27 +4439,30 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ LEAVE BOSS（主管人員） ═══ -->
 <div class="pg" id="pg-leave-boss">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEAVE_BOSS.exitTop()">&#x2190; 返回</button>
-    <span class="btitle">主管人員請假交接單</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEAVE_BOSS.exitTop()">&#x2190; 返回</button>
+    <div class="stat-hero-title">主管人員請假交接單</div>
+    <img class="stat-hero-icon" src="images/leave_role_boss.png" alt="">
   </div>
   <div id="leaveBossWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ LEAVE FLEX（機動人員） ═══ -->
 <div class="pg" id="pg-leave-flex">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEAVE_FLEX.exitTop()">&#x2190; 返回</button>
-    <span class="btitle">機動人員請假交接單</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEAVE_FLEX.exitTop()">&#x2190; 返回</button>
+    <div class="stat-hero-title">機動人員請假交接單</div>
+    <img class="stat-hero-icon" src="images/leave_role_flex.png" alt="">
   </div>
   <div id="leaveFlexWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ LEAVE COOK（廚工） ═══ -->
 <div class="pg" id="pg-leave-cook">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEAVE_COOK.exitTop()">&#x2190; 返回</button>
-    <span class="btitle">廚工請假交接單</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEAVE_COOK.exitTop()">&#x2190; 返回</button>
+    <div class="stat-hero-title">廚工請假交接單</div>
+    <img class="stat-hero-icon" src="images/leave_role_cook.png" alt="">
   </div>
   <div id="leaveCookWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -10193,27 +10252,28 @@ var LEAVE=(function(){
     var teachers=(pl.teachers||asrDB.teachers||[]).filter(function(t){return t.role!=='flex'&&t.role!=='boss';});
     var groups={baby:[],crawl:[],run:[]};
     teachers.forEach(function(t){if(groups[t.cls])groups[t.cls].push(t);else groups.run.push(t);});
-    var clsNames={baby:'🍼 寶寶班',crawl:'🐛 爬爬班',run:'🏃 跑跑班'};
+    var clsNames={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+    var clsIcon={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
+    var clsTx={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
+    var clsBgSoft={baby:'#F8EEE3',crawl:'#EEF3E3',run:'#E6EDF5'};
     var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
     h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">選擇老師查看或新增假單</div>';
     ['baby','crawl','run'].forEach(function(cls){
       if(!groups[cls].length)return;
-      h+='<div style="margin-bottom:18px;">';
-      h+='<div style="font-size:.78rem;font-weight:700;color:#666;margin-bottom:8px;">'+clsNames[cls]+'</div>';
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">';
+      h+='<div class="lv-cls-card">';
+      h+='<div class="lv-cls-hd" style="color:'+clsTx[cls]+';"><img src="'+clsIcon[cls]+'" alt="">'+clsNames[cls]+'</div>';
+      h+='<div class="lv-teacher-grid">';
       groups[cls].forEach(function(t){
         var tForms=getTeacherForms(t.id);
         var tFids=Object.keys(tForms);
         var tUnread=tFids.filter(function(fid){return !tForms[fid].read;}).length;
-        h+='<button onclick="LEAVE.openTeacher(\''+t.id+'\')" style="padding:14px;background:#fff;border:none;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:4px solid '+clsBd(cls)+';text-align:left;">';
-        h+='<div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+t.name+'</div>';
-        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">';
-        h+='<div style="font-size:.72rem;color:#888;">'+clsLabel(cls)+'</div>';
+        h+='<button onclick="LEAVE.openTeacher(\''+t.id+'\')" class="lv-teacher-card" style="background:'+clsBgSoft[cls]+';">';
+        h+='<span class="lv-teacher-circle" style="color:'+clsTx[cls]+';">'+t.name.charAt(0)+'</span>';
+        h+='<span class="lv-teacher-body"><span class="lv-teacher-name">'+t.name+'</span><span class="lv-teacher-clslbl" style="color:'+clsTx[cls]+';">'+clsLabel(cls)+'</span></span>';
         if(tFids.length>0){
-          if(tUnread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:700;">未閱 '+tUnread+'</div>';
-          else h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:10px;padding:2px 8px;font-size:.7rem;font-weight:700;">全部已閱</div>';
+          if(tUnread>0)h+='<span class="lv-unread-pill">未閱 '+tUnread+'</span>';
+          else h+='<span class="lv-read-pill">全部已閱</span>';
         }
-        h+='</div>';
         h+='</button>';
       });
       h+='</div></div>';
@@ -10991,6 +11051,7 @@ var LEAVE_BOSS=(function(){
     return out;
   }
   var curName='',curFid='',curStep='hub';
+  var TX='#3E6BB0',BGC='#E2ECF9',BDC='#3E6BB0';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){
@@ -11030,11 +11091,12 @@ var LEAVE_BOSS=(function(){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
-      h+='<button onclick="LEAVE_BOSS.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a8ac8;text-align:left;display:flex;align-items:center;justify-content:space-between;">';
-      h+='<div><div style="font-weight:800;font-size:1rem;color:#3a4888;">👤 '+name+'</div>';
-      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
-      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='<button onclick="LEAVE_BOSS.openPerson(\''+name+'\')" class="lv-person-card'+(unread>0?' unread':'')+'">';
+      h+='<span class="lv-person-circle" style="background:'+BGC+';color:'+TX+';">'+name.charAt(0)+'</span>';
+      h+='<span class="lv-person-body"><span class="lv-person-name">'+name+'</span><span class="lv-person-sub">共 '+count+' 份假單</span></span>';
+      if(unread>0)h+='<span class="lv-unread-pill">未閱 '+unread+'</span>';
+      else if(count>0)h+='<span class="lv-read-pill">全部已閱</span>';
+      h+='<span class="lv-person-arr">&#x203A;</span>';
       h+='</button>';
     });
     h+='</div>';
@@ -11404,7 +11466,7 @@ var LEAVE_FLEX=(function(){
     return out;
   }
   var curName='',curFid='',curStep='hub';
-  var TX='#3d7030',BGC='#e8f0e5',BDC='#7aaa6a';
+  var TX='#B9822A',BGC='#FCEFD9',BDC='#B9822A';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
@@ -11436,11 +11498,12 @@ var LEAVE_FLEX=(function(){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
-      h+='<button onclick="LEAVE_FLEX.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
-      h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
-      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
-      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='<button onclick="LEAVE_FLEX.openPerson(\''+name+'\')" class="lv-person-card'+(unread>0?' unread':'')+'">';
+      h+='<span class="lv-person-circle" style="background:'+BGC+';color:'+TX+';">'+name.charAt(0)+'</span>';
+      h+='<span class="lv-person-body"><span class="lv-person-name">'+name+'</span><span class="lv-person-sub">共 '+count+' 份假單</span></span>';
+      if(unread>0)h+='<span class="lv-unread-pill">未閱 '+unread+'</span>';
+      else if(count>0)h+='<span class="lv-read-pill">全部已閱</span>';
+      h+='<span class="lv-person-arr">&#x203A;</span>';
       h+='</button>';
     });
     h+='</div>';return h;
@@ -11653,12 +11716,16 @@ var LEAVE_FLEX=(function(){
 var LEAVE_COOK=(function(){
   var KEY='xiaoBudiLeaveCookV2';
   var FB_PATH='xiaobuddyLeaveCook';
-  var COOK_NAMES=['黃郁婷','林素珍'];
+  /* 2026-11 林素珍已從小布迪離職，從xbd名單移除（她現在還是邦比諾的
+     廚工，bambino名單保留不動）；她在xbd的舊假單資料繼續保留在資料庫
+     裡，只是不再出現在人員名單可以點選，跟薪資表 EXTRA_STAFF 那邊
+     2026-10-30 的處理方式一致。 */
+  var COOK_NAMES=['黃郁婷'];
   window._BAMBINO_COOK_NAMES=['林素珍'];
   function _names(){return (typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino')?window._BAMBINO_COOK_NAMES:COOK_NAMES;}
   var DEFAULT_MEAL='1. 早餐：5 杯米，格線 10\n2. 午餐：8 杯米，兩只手指頭\n3. 點心：3 杯米，格線 6\n4. 托育人員餐點部分';
   var curName='',curFid='',curStep='hub';
-  var TX='#b85040',BGC='#fdeae5',BDC='#e88c7a';
+  var TX='#C2603E',BGC='#FBE6DD',BDC='#C2603E';
 
   function getAll(){return _LSFB.readLocal(KEY,FB_PATH);}
   function setAll(d){try{localStorage.setItem(_ckey(KEY),JSON.stringify(d));}catch(e){} if(typeof _xbdDB!=='undefined')_xbdDB.set(_ckey(KEY),JSON.stringify(d));}
@@ -11690,11 +11757,12 @@ var LEAVE_COOK=(function(){
       var forms=getForms(name);
       var count=Object.keys(forms).length;
       var unread=Object.keys(forms).filter(function(fid){return !forms[fid].read;}).length;
-      h+='<button onclick="LEAVE_COOK.openPerson(\''+name+'\')" style="width:100%;margin-bottom:12px;padding:18px;background:#fff;border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid '+BDC+';text-align:left;display:flex;align-items:center;justify-content:space-between;">';
-      h+='<div><div style="font-weight:800;font-size:1rem;color:'+TX+';">👤 '+name+'</div>';
-      h+='<div style="font-size:.75rem;color:#888;margin-top:3px;">共 '+count+' 份假單</div></div>';
-      if(unread>0)h+='<div style="background:#e74c3c;color:#fff;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">未閱 '+unread+'</div>';
-      else if(count>0)h+='<div style="background:#e8f5e9;color:#2d8a60;border-radius:12px;padding:3px 10px;font-size:.78rem;font-weight:700;">全部已閱</div>';
+      h+='<button onclick="LEAVE_COOK.openPerson(\''+name+'\')" class="lv-person-card'+(unread>0?' unread':'')+'">';
+      h+='<span class="lv-person-circle" style="background:'+BGC+';color:'+TX+';">'+name.charAt(0)+'</span>';
+      h+='<span class="lv-person-body"><span class="lv-person-name">'+name+'</span><span class="lv-person-sub">共 '+count+' 份假單</span></span>';
+      if(unread>0)h+='<span class="lv-unread-pill">未閱 '+unread+'</span>';
+      else if(count>0)h+='<span class="lv-read-pill">全部已閱</span>';
+      h+='<span class="lv-person-arr">&#x203A;</span>';
       h+='</button>';
     });
     h+='</div>';return h;
@@ -25649,7 +25717,7 @@ var TEACHERLEAVE=(function(){
      （固定名單本來就是那幾個模組自己預設的身分名單，保留當備援）。 */
   function reviewForm(name){
     var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
-    var cookNames=isBambino?['林素珍']:['黃郁婷','林素珍'];
+    var cookNames=isBambino?['林素珍']:['黃郁婷'];
     var bossNames=isBambino?['黃鈺雯']:['金佩樺','黃苡綸','洪逸惠'];
     var flexNames=isBambino?[]:['郭于綺','徐郁婷'];
     if(cookNames.indexOf(name)>=0){
@@ -25682,7 +25750,7 @@ var TEACHERLEAVE=(function(){
      讀不到（可能單還沒寫）回傳 null，畫面上會顯示「尚未填寫」。 */
   function _resolveSub(name,isoDate){
     var isBambino=(typeof CURRENT_COMPANY!=='undefined'&&CURRENT_COMPANY==='bambino');
-    var cookNames=isBambino?['林素珍']:['黃郁婷','林素珍'];
+    var cookNames=isBambino?['林素珍']:['黃郁婷'];
     var bossNames=isBambino?['黃鈺雯']:['金佩樺','黃苡綸','洪逸惠'];
     var flexNames=isBambino?[]:['郭于綺','徐郁婷'];
     try{
