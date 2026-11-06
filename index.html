@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261106170524';
+  var BUILD='20261106214936';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2099,6 +2099,38 @@ body.adm .sync-setup{display:block;}
 .cf-unpaid-btn{background:#FCEFD9;color:#B9822A;border:none;border-radius:999px;padding:9px 6px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 .cf-print-btn{background:#EEE6F7;color:#7B55A0;border:none;border-radius:999px;padding:9px 6px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 /* ══ 會計選單／零用金／月費單改版結束 ══ */
+
+/* ══ 2026-11 排班表改版（純樣式）：列表頁沿用 .admin-hero 標題卡，
+   單月排班頁改用 .stat-hero-sm 精簡單行標題列（跟物品統計表等頁面
+   同一套）。班別色塊顏色、「班名＋時間」拆行顯示都是從既有的
+   c.label／c.key 純衍生出來的顯示效果，沒有改動實際儲存的資料或
+   新增/刪除/編輯/自動排班/列印等任何功能邏輯。 ══ */
+#pg-schedule .admin-hero{background:#FBE3EA;margin-bottom:2px;}
+#pg-schedule .admin-hero-eyebrow{color:#B8507A;}
+#pg-schedule-detail .stat-hero-sm{background:#FBE3EA;}
+.sch-add-btn{background:#B8507A;color:#fff;border:none;border-radius:999px;padding:13px 18px;font-size:.96rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;margin-bottom:10px;}
+.sch-auto-btn{background:#fff;color:#B8507A;border:1.5px dashed #E9B6C8;border-radius:999px;padding:11px 18px;font-size:.84rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;width:100%;margin-bottom:16px;}
+.sch-period-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.sch-period-mnum{width:48px;height:48px;border-radius:14px;background:#FBE3EA;color:#B8507A;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;flex-shrink:0;line-height:1.15;}
+.sch-period-mnum span{font-size:.56rem;font-weight:700;}
+.sch-period-body{flex:1;min-width:0;cursor:pointer;}
+.sch-period-title{font-weight:800;font-size:.95rem;color:#2d3057;}
+.sch-period-badge{display:inline-block;margin-top:4px;background:#F5F0E6;color:#8a7a5a;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;}
+.sch-period-actions{display:flex;gap:6px;flex-shrink:0;}
+.sch-edit-btn{background:#FBE3EA;color:#B8507A;border:none;border-radius:999px;padding:8px 14px;font-size:.76rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.sch-del-btn{background:#fff;color:#C2603E;border:1.5px solid #F3CFC2;border-radius:999px;padding:8px 14px;font-size:.76rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.sch-mode-btn{background:#fff;color:#B8507A;border:1.5px solid #E9B6C8;border-radius:999px;font-weight:700;font-family:'Noto Sans TC',sans-serif;}
+.sch-mode-btn.on{background:#B8507A;color:#fff;border-color:#B8507A;}
+.sch-print-btn{background:#3E8E6A;color:#fff;border:none;border-radius:999px;font-weight:700;font-family:'Noto Sans TC',sans-serif;}
+.sch-week-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:16px;margin-bottom:14px;}
+.sch-week-pill{display:inline-block;background:#B8507A;color:#fff;font-weight:800;padding:6px 16px;border-radius:999px;font-size:.9rem;margin-bottom:12px;}
+.sch-shift-row{border-radius:14px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.sch-shift-row:last-child{margin-bottom:0;}
+.sch-shift-lbl{font-weight:800;font-size:.84rem;flex-shrink:0;}
+.sch-shift-time{font-weight:400;font-size:.68rem;opacity:.8;margin-top:1px;}
+.sch-shift-names{font-weight:700;font-size:.84rem;text-align:right;}
+.sch-notes-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;margin-bottom:10px;font-size:.78rem;color:#666;line-height:1.7;}
+/* ══ 排班表改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -4536,9 +4568,11 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 排班表 ═══ -->
 <div class="pg" id="pg-schedule">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">排班表</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+    <img class="admin-hero-deco" src="images/admin_schedule.png" alt="">
+    <div class="admin-hero-eyebrow">SCHEDULE</div>
+    <div class="admin-hero-title">排班表</div>
   </div>
   <div style="padding:20px 16px 40px;" id="scheduleWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4546,9 +4580,9 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 排班表 編輯 ═══ -->
 <div class="pg" id="pg-schedule-detail">
-  <div class="bbar">
-    <button class="bbtn" onclick="SCHEDULE.backToList()">&#x2190; 排班表</button>
-    <span class="btitle" id="scheduleDetailTitle">排班表</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="SCHEDULE.backToList()">&#x2190; 排班表</button>
+    <div class="stat-hero-title" id="scheduleDetailTitle">排班表</div>
   </div>
   <div style="padding:20px 16px 40px;max-width:900px;margin:0 auto;" id="scheduleDetailWrap"></div>
 </div>
@@ -11954,24 +11988,28 @@ var SCHEDULE=(function(){
   function renderList(){
     var w=_wrap();if(!w)return;
     var ids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
-    var h='<button onclick="SCHEDULE.newPeriod()" style="width:100%;padding:14px;background:#2b90b0;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:10px;">＋ 新增排班表</button>';
+    var h='<button class="sch-add-btn" onclick="SCHEDULE.newPeriod()">＋ 新增排班表</button>';
     if(CURRENT_COMPANY==='xbd'){
-      h+='<button onclick="SCHEDULE.autoGenerateXBD()" style="width:100%;padding:12px;background:#fff;color:#2b90b0;border:1.5px dashed #2b90b0;border-radius:12px;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:16px;">🤖 自動排班（11月、12月）</button>';
+      h+='<button class="sch-auto-btn" onclick="SCHEDULE.autoGenerateXBD()">自動排班（11月、12月）</button>';
     }
     if(!ids.length){
       h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無排班表</div>';
     }else{
-      h+='<div style="display:flex;flex-direction:column;gap:10px;">';
       ids.forEach(function(pid){
         var p=db[pid]||{};
-        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #2b90b0;overflow:hidden;">';
-        h+='<div style="padding:14px 16px;cursor:pointer;" onclick="SCHEDULE.openPeriod(\''+pid+'\')"><div style="font-weight:800;font-size:.95rem;color:#1a6a80;">'+esc(p.label||'未命名')+'</div><div style="font-size:.78rem;color:#888;margin-top:3px;">共 '+((p.weeks||[]).length)+' 週排班</div></div>';
-        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
-        h+='<button onclick="SCHEDULE.openPeriod(\''+pid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#2b90b0;font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="SCHEDULE.deletePeriod(\''+pid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑 刪除</button>';
+        var mMatch=(p.label||'').match(/(\d{1,2})\s*月/);
+        var mNum=mMatch?mMatch[1]:'';
+        h+='<div class="sch-period-card">';
+        h+='<div class="sch-period-mnum">'+esc(mNum)+'<span>月</span></div>';
+        h+='<div class="sch-period-body" onclick="SCHEDULE.openPeriod(\''+pid+'\')">';
+        h+='<div class="sch-period-title">'+esc(p.label||'未命名')+'</div>';
+        h+='<span class="sch-period-badge">共 '+((p.weeks||[]).length)+' 週排班</span>';
+        h+='</div>';
+        h+='<div class="sch-period-actions">';
+        h+='<button class="sch-edit-btn" onclick="SCHEDULE.openPeriod(\''+pid+'\')">編輯</button>';
+        h+='<button class="sch-del-btn" onclick="SCHEDULE.deletePeriod(\''+pid+'\')">刪除</button>';
         h+='</div></div>';
       });
-      h+='</div>';
     }
     w.innerHTML=h;
   }
@@ -12022,35 +12060,55 @@ var SCHEDULE=(function(){
     var titleEl=document.getElementById('scheduleDetailTitle');
     if(titleEl)titleEl.textContent=p.label||'排班表';
     var h='<div style="display:flex;gap:8px;margin-bottom:14px;">';
-    h+='<button onclick="SCHEDULE.toggleMode()" style="flex:1;padding:10px;background:'+(curMode==='edit'?'#2b90b0':'#fff')+';color:'+(curMode==='edit'?'#fff':'#2b90b0')+';border:1.5px solid #2b90b0;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">'+(curMode==='edit'?'✏️ 編輯中（點此看檢視版）':'✏️ 切換到編輯模式')+'</button>';
-    h+='<button onclick="SCHEDULE.printPeriod()" style="padding:10px 16px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
+    h+='<button class="sch-mode-btn'+(curMode==='edit'?' on':'')+'" style="flex:1;padding:10px;" onclick="SCHEDULE.toggleMode()">'+(curMode==='edit'?'編輯中（點此看檢視版）':'切換到編輯模式')+'</button>';
+    h+='<button class="sch-print-btn" style="padding:10px 16px;" onclick="SCHEDULE.printPeriod()">列印</button>';
     h+='</div>';
     h+=(curMode==='view')?_renderView(p):_renderEdit(p);
     w.innerHTML=h;
   }
+  /* 2026-11 改版：班別色塊顏色、「班名」這行文字都是純粹從固定班別
+     （c0~c5）衍生出來的顯示效果，用來配色跟補一個簡短班名標題，不影響
+     c.label 本身儲存的文字（時間/說明），如果有人改過 c.label，時間
+     那一行還是照實際資料顯示，只有抓不到對應名稱時才會整段直接顯示
+     c.label 當標題。 */
+  var SHIFT_META={
+    c0:{name:'早班',bg:'#FCEFD9',tx:'#B9822A'},
+    c1:{name:'中班',bg:'#E3F2EA',tx:'#3E8E6A'},
+    c2:{name:'正常班',bg:'#E2ECF9',tx:'#3E6BB0'},
+    c3:{name:'倒垃圾',bg:'#F5F0E6',tx:'#6B6470'},
+    c4:{name:'晚3打掃',bg:'#EEE6F7',tx:'#7B55A0'},
+    c5:{name:'晚值',bg:'#FBE3EA',tx:'#B8507A'}
+  };
+  function _shiftTimeText(key,label){
+    label=label||'';
+    if(key==='c3')return label.replace(/^倒垃圾\s*/,'');
+    if(key==='c4')return label.replace(/^晚3打掃\s*/,'');
+    if(key==='c5'){var m=label.match(/\(([^)]+)\)/);return m?m[1]:label;}
+    return label;
+  }
   /* ── 檢視模式：一目了然，一週一張卡片，直向排列不用橫向捲動 ── */
   function _renderView(p){
     var cols=p.cols,weeks=p.weeks,notes=p.notes;
-    var h='<div style="font-size:1.05rem;font-weight:800;color:#2b5a9c;margin-bottom:12px;">'+esc(p.label||'排班表')+'</div>';
+    var h='';
     if(!weeks.length){
       h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有任何一週的資料，點上面「切換到編輯模式」新增。</div>';
     }
     weeks.forEach(function(wk){
-      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:10px;">';
-      h+='<div style="font-weight:800;font-size:.98rem;color:#2b90b0;margin-bottom:8px;border-bottom:1px solid #f0f0f0;padding-bottom:6px;">'+esc(wk.range||'（未填日期）')+'</div>';
-      h+='<div style="display:flex;flex-direction:column;gap:7px;">';
+      h+='<div class="sch-week-card">';
+      h+='<span class="sch-week-pill">'+esc(wk.range||'（未填日期）')+'</span>';
       cols.forEach(function(c){
         var names=(wk.shifts&&wk.shifts[c.key])||[];
         if(!names.length)return;
-        h+='<div style="display:flex;align-items:baseline;gap:8px;">';
-        h+='<span style="flex:0 0 92px;color:#888;font-size:.74rem;line-height:1.3;">'+esc(c.label)+'</span>';
-        h+='<span style="font-weight:700;font-size:.9rem;color:#333;">'+esc(names.join('、'))+'</span>';
+        var meta=SHIFT_META[c.key]||{bg:'#F5F0E6',tx:'#6B6470'};
+        h+='<div class="sch-shift-row" style="background:'+meta.bg+';">';
+        h+='<div class="sch-shift-lbl" style="color:'+meta.tx+';"><div>'+esc(meta.name||c.label)+'</div><div class="sch-shift-time">'+esc(_shiftTimeText(c.key,c.label))+'</div></div>';
+        h+='<div class="sch-shift-names" style="color:'+meta.tx+';">'+esc(names.join('、'))+'</div>';
         h+='</div>';
       });
-      h+='</div></div>';
+      h+='</div>';
     });
     if(weeks.length){
-      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:10px;font-size:.78rem;color:#666;line-height:1.7;">';
+      h+='<div class="sch-notes-card">';
       [notes.nightNurse,notes.trash,notes.eveningDuty].forEach(function(n){if(n)h+='<div style="margin-bottom:5px;">'+esc(n)+'</div>';});
       h+='</div>';
     }
