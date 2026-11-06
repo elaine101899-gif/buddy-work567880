@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261106214936';
+  var BUILD='20261106221613';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2131,6 +2131,18 @@ body.adm .sync-setup{display:block;}
 .sch-shift-names{font-weight:700;font-size:.84rem;text-align:right;}
 .sch-notes-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;margin-bottom:10px;font-size:.78rem;color:#666;line-height:1.7;}
 /* ══ 排班表改版結束 ══ */
+
+/* ══ 2026-11 零用金明細頁修正：期別設定原本用 flex-wrap 排一排日期
+   輸入框，手機上 type="date" 原生欄位寬度常常不受控、擠在一起會互相
+   重疊、超出邊界。改成固定的格狀排版，欄位永遠 100% 寬度不會亂跑。
+   收支明細表格改成跟物品統計表一樣的卡片式排版，不用再左右滑。 ══ */
+.pc-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.pc-meta-grid .full{grid-column:1/-1;}
+.pc-open-row{background:#F5F0E6;border-radius:12px;padding:8px 14px;font-size:.84rem;color:#6b5f4a;margin-bottom:10px;}
+.pc-tx-amts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.pc-tx-amt-lbl{font-size:.64rem;color:#999;margin-bottom:3px;}
+.pc-tx-running{font-weight:800;color:#3E8E6A;font-size:.9rem;padding-top:3px;}
+/* ══ 零用金明細頁修正結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -21174,38 +21186,46 @@ var PETTYCASH=(function(){
     document.getElementById('pcDetailTitle').textContent=p.label||'零用金明細';
     var t=periodTotals(p);
     var h='';
-    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
-    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setMeta(\'label\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="PETTYCASH.setMeta(\'startDate\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="PETTYCASH.setMeta(\'endDate\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">上期結餘</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="PETTYCASH.setMeta(\'openBalance\',this.value)"></div>';
-    h+='<button class="pc-print-btn" onclick="PETTYCASH.print()">列印</button>';
-    h+='<button class="pc-del-btn" onclick="PETTYCASH.deletePeriod(\''+curId+'\')">刪除此期</button>';
+    h+='<div class="df-sec">';
+    h+='<div class="df-lbl">期別名稱</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;margin-bottom:10px;" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setMeta(\'label\',this.value)">';
+    h+='<div class="pc-meta-grid">';
+    h+='<div><div class="df-lbl">開始日期</div><input type="date" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.startDate||'')+'" onchange="PETTYCASH.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div><div class="df-lbl">結束日期</div><input type="date" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.endDate||'')+'" onchange="PETTYCASH.setMeta(\'endDate\',this.value)"></div>';
+    h+='<div class="full"><div class="df-lbl">上期結餘</div><input type="number" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.openBalance||0)+'" onchange="PETTYCASH.setMeta(\'openBalance\',this.value)"></div>';
     h+='</div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">收支明細<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="PETTYCASH.addRow()">＋ 新增一列</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>金額</th><th></th></tr></thead><tbody>';
-    h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">上期結餘</td><td style="font-weight:700;">'+t.open.toLocaleString()+'</td><td></td></tr>';
+    h+='<div style="display:flex;gap:8px;margin-top:12px;">';
+    h+='<button class="pc-print-btn" style="flex:1;" onclick="PETTYCASH.print()">列印</button>';
+    h+='<button class="pc-del-btn" style="flex:1;" onclick="PETTYCASH.deletePeriod(\''+curId+'\')">刪除此期</button>';
+    h+='</div>';
+    h+='</div>';
+    h+='<div class="df-sec">';
+    h+='<div class="df-lbl">收支明細<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="PETTYCASH.addRow()">＋ 新增一筆</button></div>';
+    h+='<div class="pc-open-row">上期結餘　<b>'+t.open.toLocaleString()+'</b></div>';
     if(!t.rows.length){
-      h+='<tr><td colspan="7" style="color:#aaa;">尚無紀錄，請按上方「新增一列」</td></tr>';
+      h+='<div style="color:#aaa;text-align:center;padding:16px 0;">尚無紀錄，請按上方「新增一筆」</div>';
     } else {
       var running=t.open;
       t.rows.forEach(function(r){
         var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
         running+=inc-exp;
-        h+='<tr><td><input type="date" class="cln-num" style="width:118px;" value="'+(r.date||'')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
-        h+='<td><select class="cln-num" style="width:76px;" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'cat\',this.value)">';
-        h+='<option value="">–</option>';
+        h+='<div class="stat-tx-card">';
+        h+='<div class="stat-tx-hd">';
+        h+='<input type="date" class="df-inp" style="flex:1.5;min-width:0;padding-left:8px;padding-right:2px;" value="'+(r.date||'')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'date\',this.value)">';
+        h+='<select class="df-inp" style="flex:1;min-width:0;" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'cat\',this.value)">';
+        h+='<option value="">–科目–</option>';
         PETTYCASH_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
-        h+='</select></td>';
-        h+='<td><input type="text" class="cln-num" style="width:120px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)"></td>';
-        h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'income\',this.value)"></td>';
-        h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'expense\',this.value)"></td>';
-        h+='<td>'+running.toLocaleString()+'</td>';
-        h+='<td><button onclick="PETTYCASH.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+        h+='</select>';
+        h+='<button onclick="PETTYCASH.delRow(\''+r.id+'\')" style="flex-shrink:0;background:none;border:none;color:#C2603E;font-size:1.05rem;cursor:pointer;padding:4px;">&#x1F5D1;&#xFE0F;</button>';
+        h+='</div>';
+        h+='<input type="text" class="df-inp" placeholder="摘要" style="width:100%;box-sizing:border-box;margin-bottom:8px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)">';
+        h+='<div class="pc-tx-amts">';
+        h+='<div><div class="pc-tx-amt-lbl">收入</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'income\',this.value)"></div>';
+        h+='<div><div class="pc-tx-amt-lbl">支出</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'expense\',this.value)"></div>';
+        h+='<div><div class="pc-tx-amt-lbl">結餘</div><div class="pc-tx-running">'+running.toLocaleString()+'</div></div>';
+        h+='</div></div>';
       });
     }
-    h+='</tbody></table></div>';
+    h+='</div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
     h+='<div class="df-lbl">科目分類統計</div>';
     h+='<table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
