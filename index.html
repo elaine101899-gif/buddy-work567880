@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261105224706';
+  var BUILD='20261106124942';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -156,38 +156,38 @@ body{font-family:'Noto Sans TC',sans-serif;background:#fdf8ee;min-height:100vh;}
    .hcard/.c-xxx 命名的卡片（寫在這裡的規則用 #oldHomeCards 當前綴，
    選擇器優先權比原本那組純 class 規則高，自然覆蓋過去，不用動或刪
    原本那組，清潔表單那邊完全不受影響）。 ── */
-#oldHomeCards,#billingCardsWrap,#formsCardsWrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-#oldHomeCards .cards-lbl,#billingCardsWrap .cards-lbl,#formsCardsWrap .cards-lbl{grid-column:1/-1;}
-#oldHomeCards .hcard,#billingCardsWrap .hcard,#formsCardsWrap .hcard{
+#oldHomeCards,#billingCardsWrap,#formsCardsWrap,#statsCardsWrap,#accountingCardsWrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#oldHomeCards .cards-lbl,#billingCardsWrap .cards-lbl,#formsCardsWrap .cards-lbl,#statsCardsWrap .cards-lbl,#accountingCardsWrap .cards-lbl{grid-column:1/-1;}
+#oldHomeCards .hcard,#billingCardsWrap .hcard,#formsCardsWrap .hcard,#statsCardsWrap .hcard,#accountingCardsWrap .hcard{
   background:#fff;border-radius:16px;border:1px solid #e7e4dd;
   box-shadow:none;margin-bottom:0;overflow:hidden;cursor:pointer;
   min-width:0;max-width:100%;
   -webkit-tap-highlight-color:transparent;
 }
-#oldHomeCards .hcard::after,#billingCardsWrap .hcard::after,#formsCardsWrap .hcard::after{display:none;}
-#oldHomeCards .hcard-in,#billingCardsWrap .hcard-in,#formsCardsWrap .hcard-in{display:flex;flex-direction:column;min-height:0;min-width:0;}
-#oldHomeCards .hcard-bar,#billingCardsWrap .hcard-bar,#formsCardsWrap .hcard-bar{display:none;}
-#oldHomeCards .hcard-img,#billingCardsWrap .hcard-img,#formsCardsWrap .hcard-img{width:100%;height:92px;padding:0;flex-shrink:0;}
-#oldHomeCards .hcard-img img,#oldHomeCards .hcard-img svg,#billingCardsWrap .hcard-img img,#formsCardsWrap .hcard-img img,#billingCardsWrap .hcard-img svg,#formsCardsWrap .hcard-img svg{width:56px;height:56px;}
-#oldHomeCards .hcard-body,#billingCardsWrap .hcard-body,#formsCardsWrap .hcard-body{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:9px 11px 26px;position:relative;}
-#oldHomeCards .hcard-lbl,#billingCardsWrap .hcard-lbl,#formsCardsWrap .hcard-lbl{font-size:.6rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-title,#billingCardsWrap .hcard-title,#formsCardsWrap .hcard-title{font-size:.92rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc,#formsCardsWrap .hcard-desc{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-#oldHomeCards .hcard-arr,#billingCardsWrap .hcard-arr,#formsCardsWrap .hcard-arr{
+#oldHomeCards .hcard::after,#billingCardsWrap .hcard::after,#formsCardsWrap .hcard::after,#statsCardsWrap .hcard::after,#accountingCardsWrap .hcard::after{display:none;}
+#oldHomeCards .hcard-in,#billingCardsWrap .hcard-in,#formsCardsWrap .hcard-in,#statsCardsWrap .hcard-in,#accountingCardsWrap .hcard-in{display:flex;flex-direction:column;min-height:0;min-width:0;}
+#oldHomeCards .hcard-bar,#billingCardsWrap .hcard-bar,#formsCardsWrap .hcard-bar,#statsCardsWrap .hcard-bar,#accountingCardsWrap .hcard-bar{display:none;}
+#oldHomeCards .hcard-img,#billingCardsWrap .hcard-img,#formsCardsWrap .hcard-img,#statsCardsWrap .hcard-img,#accountingCardsWrap .hcard-img{width:100%;height:92px;padding:0;flex-shrink:0;}
+#oldHomeCards .hcard-img img,#oldHomeCards .hcard-img svg,#billingCardsWrap .hcard-img img,#formsCardsWrap .hcard-img img,#statsCardsWrap .hcard-img img,#accountingCardsWrap .hcard-img img,#billingCardsWrap .hcard-img svg,#formsCardsWrap .hcard-img svg,#statsCardsWrap .hcard-img svg,#accountingCardsWrap .hcard-img svg{width:56px;height:56px;}
+#oldHomeCards .hcard-body,#billingCardsWrap .hcard-body,#formsCardsWrap .hcard-body,#statsCardsWrap .hcard-body,#accountingCardsWrap .hcard-body{flex:1;min-width:0;width:100%;box-sizing:border-box;padding:9px 11px 26px;position:relative;}
+#oldHomeCards .hcard-lbl,#billingCardsWrap .hcard-lbl,#formsCardsWrap .hcard-lbl,#statsCardsWrap .hcard-lbl,#accountingCardsWrap .hcard-lbl{font-size:.6rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-title,#billingCardsWrap .hcard-title,#formsCardsWrap .hcard-title,#statsCardsWrap .hcard-title,#accountingCardsWrap .hcard-title{font-size:.92rem;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc,#formsCardsWrap .hcard-desc,#statsCardsWrap .hcard-desc,#accountingCardsWrap .hcard-desc{font-size:.7rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#oldHomeCards .hcard-arr,#billingCardsWrap .hcard-arr,#formsCardsWrap .hcard-arr,#statsCardsWrap .hcard-arr,#accountingCardsWrap .hcard-arr{
   position:absolute;right:9px;bottom:9px;width:22px;height:22px;margin-right:0;
   border-radius:999px;background:#f3f1ec;display:flex;align-items:center;justify-content:center;
   font-size:.85rem;color:#aaa;
 }
-#oldHomeCards .c-teal .hcard-img,#billingCardsWrap .c-teal .hcard-img,#formsCardsWrap .c-teal .hcard-img{background:#E3F2EA;} #oldHomeCards .c-teal .hcard-lbl,#billingCardsWrap .c-teal .hcard-lbl,#formsCardsWrap .c-teal .hcard-lbl{color:#3E8E6A;}
-#oldHomeCards .c-ora  .hcard-img,#billingCardsWrap .c-ora  .hcard-img,#formsCardsWrap .c-ora  .hcard-img{background:#FCEFD9;} #oldHomeCards .c-ora  .hcard-lbl,#billingCardsWrap .c-ora  .hcard-lbl,#formsCardsWrap .c-ora  .hcard-lbl{color:#B9822A;}
-#oldHomeCards .c-pur  .hcard-img,#billingCardsWrap .c-pur  .hcard-img,#formsCardsWrap .c-pur  .hcard-img{background:#EEE6F7;} #oldHomeCards .c-pur  .hcard-lbl,#billingCardsWrap .c-pur  .hcard-lbl,#formsCardsWrap .c-pur  .hcard-lbl{color:#7B55A0;}
-#oldHomeCards .c-amb  .hcard-img,#billingCardsWrap .c-amb  .hcard-img,#formsCardsWrap .c-amb  .hcard-img{background:#FBE6DD;} #oldHomeCards .c-amb  .hcard-lbl,#billingCardsWrap .c-amb  .hcard-lbl,#formsCardsWrap .c-amb  .hcard-lbl{color:#C2603E;}
-#oldHomeCards .c-sky  .hcard-img,#billingCardsWrap .c-sky  .hcard-img,#formsCardsWrap .c-sky  .hcard-img{background:#E2ECF9;} #oldHomeCards .c-sky  .hcard-lbl,#billingCardsWrap .c-sky  .hcard-lbl,#formsCardsWrap .c-sky  .hcard-lbl{color:#3E6BB0;}
-#oldHomeCards .c-grn  .hcard-img,#billingCardsWrap .c-grn  .hcard-img,#formsCardsWrap .c-grn  .hcard-img{background:#E3F2EA;} #oldHomeCards .c-grn  .hcard-lbl,#billingCardsWrap .c-grn  .hcard-lbl,#formsCardsWrap .c-grn  .hcard-lbl{color:#3E8E6A;}
-#oldHomeCards .c-ros  .hcard-img,#billingCardsWrap .c-ros  .hcard-img,#formsCardsWrap .c-ros  .hcard-img{background:#FBE3EA;} #oldHomeCards .c-ros  .hcard-lbl,#billingCardsWrap .c-ros  .hcard-lbl,#formsCardsWrap .c-ros  .hcard-lbl{color:#B8507A;}
+#oldHomeCards .c-teal .hcard-img,#billingCardsWrap .c-teal .hcard-img,#formsCardsWrap .c-teal .hcard-img,#statsCardsWrap .c-teal .hcard-img,#accountingCardsWrap .c-teal .hcard-img{background:#E3F2EA;} #oldHomeCards .c-teal .hcard-lbl,#billingCardsWrap .c-teal .hcard-lbl,#formsCardsWrap .c-teal .hcard-lbl,#statsCardsWrap .c-teal .hcard-lbl,#accountingCardsWrap .c-teal .hcard-lbl{color:#3E8E6A;}
+#oldHomeCards .c-ora  .hcard-img,#billingCardsWrap .c-ora  .hcard-img,#formsCardsWrap .c-ora  .hcard-img,#statsCardsWrap .c-ora  .hcard-img,#accountingCardsWrap .c-ora  .hcard-img{background:#FCEFD9;} #oldHomeCards .c-ora  .hcard-lbl,#billingCardsWrap .c-ora  .hcard-lbl,#formsCardsWrap .c-ora  .hcard-lbl,#statsCardsWrap .c-ora  .hcard-lbl,#accountingCardsWrap .c-ora  .hcard-lbl{color:#B9822A;}
+#oldHomeCards .c-pur  .hcard-img,#billingCardsWrap .c-pur  .hcard-img,#formsCardsWrap .c-pur  .hcard-img,#statsCardsWrap .c-pur  .hcard-img,#accountingCardsWrap .c-pur  .hcard-img{background:#EEE6F7;} #oldHomeCards .c-pur  .hcard-lbl,#billingCardsWrap .c-pur  .hcard-lbl,#formsCardsWrap .c-pur  .hcard-lbl,#statsCardsWrap .c-pur  .hcard-lbl,#accountingCardsWrap .c-pur  .hcard-lbl{color:#7B55A0;}
+#oldHomeCards .c-amb  .hcard-img,#billingCardsWrap .c-amb  .hcard-img,#formsCardsWrap .c-amb  .hcard-img,#statsCardsWrap .c-amb  .hcard-img,#accountingCardsWrap .c-amb  .hcard-img{background:#FBE6DD;} #oldHomeCards .c-amb  .hcard-lbl,#billingCardsWrap .c-amb  .hcard-lbl,#formsCardsWrap .c-amb  .hcard-lbl,#statsCardsWrap .c-amb  .hcard-lbl,#accountingCardsWrap .c-amb  .hcard-lbl{color:#C2603E;}
+#oldHomeCards .c-sky  .hcard-img,#billingCardsWrap .c-sky  .hcard-img,#formsCardsWrap .c-sky  .hcard-img,#statsCardsWrap .c-sky  .hcard-img,#accountingCardsWrap .c-sky  .hcard-img{background:#E2ECF9;} #oldHomeCards .c-sky  .hcard-lbl,#billingCardsWrap .c-sky  .hcard-lbl,#formsCardsWrap .c-sky  .hcard-lbl,#statsCardsWrap .c-sky  .hcard-lbl,#accountingCardsWrap .c-sky  .hcard-lbl{color:#3E6BB0;}
+#oldHomeCards .c-grn  .hcard-img,#billingCardsWrap .c-grn  .hcard-img,#formsCardsWrap .c-grn  .hcard-img,#statsCardsWrap .c-grn  .hcard-img,#accountingCardsWrap .c-grn  .hcard-img{background:#E3F2EA;} #oldHomeCards .c-grn  .hcard-lbl,#billingCardsWrap .c-grn  .hcard-lbl,#formsCardsWrap .c-grn  .hcard-lbl,#statsCardsWrap .c-grn  .hcard-lbl,#accountingCardsWrap .c-grn  .hcard-lbl{color:#3E8E6A;}
+#oldHomeCards .c-ros  .hcard-img,#billingCardsWrap .c-ros  .hcard-img,#formsCardsWrap .c-ros  .hcard-img,#statsCardsWrap .c-ros  .hcard-img,#accountingCardsWrap .c-ros  .hcard-img{background:#FBE3EA;} #oldHomeCards .c-ros  .hcard-lbl,#billingCardsWrap .c-ros  .hcard-lbl,#formsCardsWrap .c-ros  .hcard-lbl,#statsCardsWrap .c-ros  .hcard-lbl,#accountingCardsWrap .c-ros  .hcard-lbl{color:#B8507A;}
 @media (max-width:420px){
-  #oldHomeCards .hcard-title,#billingCardsWrap .hcard-title,#formsCardsWrap .hcard-title{font-size:.86rem;}
-  #oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc,#formsCardsWrap .hcard-desc{font-size:.66rem;}
+  #oldHomeCards .hcard-title,#billingCardsWrap .hcard-title,#formsCardsWrap .hcard-title,#statsCardsWrap .hcard-title,#accountingCardsWrap .hcard-title{font-size:.86rem;}
+  #oldHomeCards .hcard-desc,#billingCardsWrap .hcard-desc,#formsCardsWrap .hcard-desc,#statsCardsWrap .hcard-desc,#accountingCardsWrap .hcard-desc{font-size:.66rem;}
 }
 
 /* ── 2026-11 行政首頁改版：淡藍圓角卡片標題列＋兩欄格狀卡片（沿用上面
@@ -2022,15 +2022,83 @@ body.adm .sync-setup{display:block;}
 
 /* ══ 2026-11 物品統計表／衛生統計表改版：原本品項是橫向表格欄位，品項
    一多（衛生統計表拆成21項後更明顯）手機上要左右滑才看得到。改成每個
-   品項各自一張小卡片、格狀排版直向往下捲動，不用再左右滑。 ══ */
-.stat-item-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
-.stat-item-card{background:#F7F5EF;border:1px solid #ECE6DA;border-radius:12px;padding:8px 6px;text-align:center;}
-.stat-item-lbl{font-size:.64rem;color:#6b5f4a;font-weight:700;line-height:1.25;margin-bottom:6px;min-height:2.3em;display:flex;align-items:center;justify-content:center;}
-.stat-item-inp{width:100%;box-sizing:border-box;border:1.5px solid #ECE6DA;border-radius:8px;padding:5px 2px;text-align:center;font-size:.84rem;background:#fff;font-family:'Noto Sans TC',sans-serif;}
+   品項各自一張橫條小卡片（名稱左、輸入框右），格狀排版直向往下捲動，
+   不用再左右滑；已經填數字的卡片會變成淡黃色，一眼就看得出填了哪些。 ══ */
+.stat-item-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+.stat-item-card{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;box-sizing:border-box;
+  background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:10px 12px;
+}
+.stat-item-card.filled{background:#FFF8EC;border-color:#E8BE84;}
+.stat-item-lbl{font-size:.78rem;color:#2d3057;font-weight:700;flex:1;min-width:0;line-height:1.3;}
+.stat-item-inp{
+  width:64px;flex-shrink:0;box-sizing:border-box;border:1.5px solid #ECE6DA;border-radius:10px;
+  padding:6px 2px;text-align:center;font-size:.86rem;background:#FAF6EE;font-family:'Noto Sans TC',sans-serif;
+}
 .stat-tx-card{background:#fff;border:1px solid #ECE6DA;border-radius:16px;padding:12px;margin-bottom:12px;}
 .stat-tx-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
-@media (max-width:380px){.stat-item-grid{grid-template-columns:repeat(2,1fr);}}
+.stat-sec-num{
+  display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  border-radius:7px;font-size:.8rem;font-weight:900;margin-right:6px;vertical-align:-4px;
+}
+.stat-sec-num.n1{background:#FCEFD9;color:#B9822A;}
+.stat-sec-num.n2{background:#EEE6F7;color:#7B55A0;}
+.stat-fill-pill{margin-left:auto;background:#F5F0E6;color:#8a7a5a;padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:800;}
+@media (max-width:360px){.stat-item-lbl{font-size:.74rem;} .stat-item-inp{width:56px;}}
+/* ── 精簡單行標題列（物品統計表／衛生統計表／零用金明細／月費單等
+   子頁面共用，跟 .admin-hero 的高大雙行樣式分開，各自取名避免互相
+   干擾） ── */
+.stat-hero-sm{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:20px;margin:10px 10px 0;}
+.stat-hero-sm .admin-back-btn{flex-shrink:0;}
+.stat-hero-title{flex:1;min-width:0;font-size:1.08rem;font-weight:900;color:#1d2433;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.stat-hero-icon{width:46px;height:46px;flex-shrink:0;}
+#pg-itemstat .stat-hero-sm{background:#FCEFD9;}
+#pg-hygienestat .stat-hero-sm{background:#E3F2EA;}
+#pg-itemstat .df-sec,#pg-hygienestat .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-itemstat .df-inp,#pg-hygienestat .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+#pg-itemstat .cln-sig-btn,#pg-hygienestat .cln-sig-btn{border-radius:999px;}
+/* ── 統計表選單：沿用 .admin-hero 淡色標題卡＋#statsCardsWrap 兩欄
+   插圖卡片（跟行政首頁／各式表單同一套版型） ── */
+#pg-statsheet .admin-hero{background:#EEE6F7;margin-bottom:2px;}
+#pg-statsheet .admin-hero-eyebrow{color:#7B55A0;}
+.hub-sub-lbl{font-size:1rem;font-weight:800;color:#2E2A3A;padding:20px 16px 14px;}
+#statsCardsWrap{padding:0 16px 32px;max-width:640px;margin:0 auto;box-sizing:border-box;}
+#statsCardsWrap .hcard-img{height:118px;}
+#statsCardsWrap .hcard-img img{width:84px;height:84px;}
 /* ══ 物品統計表／衛生統計表改版結束 ══ */
+
+/* ══ 2026-11 會計選單／零用金／月費單改版：會計選單沿用 .admin-hero＋
+   #accountingCardsWrap 兩欄插圖卡片（跟統計表選單同一套），零用金／
+   月費單的內部頁面沿用 .stat-hero-sm 精簡單行標題列、.df-sec 圓角卡片、
+   米色膠囊輸入框這幾個已經在統計表頁面建立好的共用樣式，只是換顏色。 ══ */
+#pg-accounting .admin-hero{background:#FBE6DD;margin-bottom:2px;}
+#pg-accounting .admin-hero-eyebrow{color:#C2603E;}
+/* ── 零用金 ── */
+#pg-pettycash .stat-hero-sm,#pg-pettycash-detail .stat-hero-sm{background:#FCEFD9;}
+#pg-pettycash .df-sec,#pg-pettycash-detail .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-pettycash .df-inp,#pg-pettycash-detail .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+#pg-pettycash-detail .cln-table{border-collapse:separate;border-spacing:0;}
+#pg-pettycash-detail .cln-table th{background:#FAF6EE;border:none;border-bottom:1.5px solid #ECE6DA;}
+#pg-pettycash-detail .cln-table td{border:none;border-bottom:1px solid #F0ECE2;}
+#pg-pettycash-detail .cln-table input,#pg-pettycash-detail .cln-table select{border-radius:8px;border:1.5px solid #E2D9C8;background:#FAF6EE;}
+.pc-period-card{
+  display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;
+  padding:14px 16px;margin-bottom:10px;cursor:pointer;
+}
+.pc-period-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#B9822A;font-size:1rem;flex-shrink:0;}
+.pc-add-btn{background:#3E8E6A;color:#fff;border:none;border-radius:999px;padding:11px 18px;font-size:.88rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.pc-print-btn{background:#3E8E6A;color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.pc-del-btn{background:#fff;color:#C2603E;border:1.5px solid #F3CFC2;border-radius:999px;padding:9px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+/* ── 月費單 ── */
+#pg-childfee .stat-hero-sm,#pg-childfee-income .stat-hero-sm{background:#E3F2EA;}
+#pg-childfee .hub-hero-btn,#pg-childfee-income .hub-hero-btn{color:#3E8E6A;}
+#pg-childfee .df-sec,#pg-childfee-income .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-childfee .df-inp,#pg-childfee-income .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+.cf-hint-box{background:#FCEFD9;border-radius:18px;padding:12px 14px;font-size:.78rem;color:#8a6a2a;margin-bottom:14px;line-height:1.5;}
+.cf-add-btn{background:#3E8E6A;color:#fff;border:none;border-radius:999px;padding:9px 6px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cf-unpaid-btn{background:#FCEFD9;color:#B9822A;border:none;border-radius:999px;padding:9px 6px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cf-print-btn{background:#EEE6F7;color:#7B55A0;border:none;border-radius:999px;padding:9px 6px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+/* ══ 會計選單／零用金／月費單改版結束 ══ */
 
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
@@ -2468,7 +2536,7 @@ function _applyRoleUI(){
     if(el)el.style.display=(CURRENT_ROLE==='teacher')?'none':'';
   });
   var ledgerCard=document.getElementById('accountingCardLedger');
-  if(ledgerCard)ledgerCard.style.display=(CURRENT_ROLE==='owner')?'flex':'none';
+  if(ledgerCard)ledgerCard.style.display=(CURRENT_ROLE==='owner')?'':'none';
   if(typeof KINGDOM!=='undefined'&&KINGDOM.applyRole)KINGDOM.applyRole();
 }
 /* 防呆：就算有人用舊書籤、瀏覽器上一頁等方式繞過卡片直接想跳頁，GO() 這裡
@@ -4486,45 +4554,63 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 會計 ═══ -->
 <div class="pg" id="pg-accounting">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">會計</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+    <img class="admin-hero-deco" src="images/admin_accounting.png" alt="">
+    <div class="admin-hero-eyebrow">ACCOUNTING</div>
+    <div class="admin-hero-title">會計</div>
   </div>
-  <div style="padding:20px 16px;">
-    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div onclick="GO('childfee')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #3d8a5a;">
-        <span style="font-size:1.8rem;">&#x1F4D2;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#2a6a3f;">月費單</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每位幼兒繳費紀錄，含收入與退托退費總表</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+  <div class="hub-sub-lbl">要處理哪一項？</div>
+  <div id="accountingCardsWrap">
+    <div class="hcard c-teal" onclick="GO('childfee')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/acct_fee.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">MONTHLY FEE</div>
+          <div class="hcard-title">月費單</div>
+          <div class="hcard-desc">繳費紀錄・退費總表</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div onclick="GO('pettycash')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9822c;">
-        <span style="font-size:1.8rem;">&#x1F4B0;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a5590a;">零用金</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每期收支明細、科目分類統計，自動結轉下期餘額</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-ora" onclick="GO('pettycash')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/acct_petty.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">PETTY CASH</div>
+          <div class="hcard-title">零用金</div>
+          <div class="hcard-desc">收支明細・自動結轉</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div id="accountingCardLedger" onclick="GO('ledger')" style="display:none;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #5a4aa8;">
-        <span style="font-size:1.8rem;">&#x1F4D1;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#3a2a78;">總帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">結合零用金明細的內部總帳</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-pur" id="accountingCardLedger" onclick="GO('ledger')" style="display:none;">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/acct_ledger.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">LEDGER</div>
+          <div class="hcard-title">總帳</div>
+          <div class="hcard-desc">內部總帳</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 <!-- ═══ 零用金 ═══ -->
 <div class="pg" id="pg-pettycash">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('accounting')">&#x2190; 會計</button>
-    <span class="btitle">零用金</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('accounting')">&#x2190; 會計</button>
+    <div class="stat-hero-title">零用金</div>
   </div>
   <div style="padding:14px 16px 40px;" id="pcHubWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <div class="pg" id="pg-pettycash-detail">
-  <div class="bbar">
-    <button class="bbtn" onclick="PETTYCASH.backToHub()">&#x2190; 零用金</button>
-    <span class="btitle" id="pcDetailTitle">零用金明細</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="PETTYCASH.backToHub()">&#x2190; 零用金</button>
+    <div class="stat-hero-title" id="pcDetailTitle">零用金明細</div>
   </div>
   <div style="padding:14px 16px 40px;" id="pcDetailWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4660,39 +4746,53 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 統計表 ═══ -->
 <div class="pg" id="pg-statsheet">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('billing')">&#x2190; 行政</button>
-    <span class="btitle">統計表</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('billing')">&#x2190; 行政</button>
+    <img class="admin-hero-deco" src="images/admin_stats.png" alt="">
+    <div class="admin-hero-eyebrow">STATISTICS</div>
+    <div class="admin-hero-title">統計表</div>
   </div>
-  <div style="padding:20px 16px;">
-    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div onclick="GO('itemstat')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e8a030;">
-        <span style="font-size:1.8rem;">&#x1F4E6;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a5680a;">物品統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">學校備品每月總數量與拿取紀錄</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+  <div class="hub-sub-lbl">要看哪一張統計？</div>
+  <div id="statsCardsWrap">
+    <div class="hcard c-ora" onclick="GO('itemstat')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/stat_item.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">SUPPLIES</div>
+          <div class="hcard-title">物品統計表</div>
+          <div class="hcard-desc">備品數量・拿取紀錄</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
-      <div onclick="GO('hygienestat')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #5bbf9e;">
-        <span style="font-size:1.8rem;">&#x1F9FC;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#2d9c6f;">衛生統計表</div><div style="font-size:.78rem;color:#888;margin-top:2px;">清潔用品每月總數量與拿取紀錄</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+    </div>
+    <div class="hcard c-teal" onclick="GO('hygienestat')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/stat_hygiene.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">HYGIENE</div>
+          <div class="hcard-title">衛生統計表</div>
+          <div class="hcard-desc">清潔用品・拿取紀錄</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 <div class="pg" id="pg-itemstat">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('statsheet')">&#x2190; 統計表</button>
-    <span class="btitle">物品統計表</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('statsheet')">&#x2190; 統計表</button>
+    <div class="stat-hero-title">物品統計表</div>
+    <img class="stat-hero-icon" src="images/stat_item.png" alt="">
   </div>
   <div style="padding:14px 16px 40px;" id="itemstatWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <div class="pg" id="pg-hygienestat">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('statsheet')">&#x2190; 統計表</button>
-    <span class="btitle">衛生統計表</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('statsheet')">&#x2190; 統計表</button>
+    <div class="stat-hero-title">衛生統計表</div>
+    <img class="stat-hero-icon" src="images/stat_hygiene.png" alt="">
   </div>
   <div style="padding:14px 16px 40px;" id="hygienestatWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4748,10 +4848,10 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 月費單 ═══ -->
 <div class="pg" id="pg-childfee">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('accounting')">&#x2190; 會計</button>
-    <span class="btitle">月費單</span>
-    <button class="bbtn" style="margin-left:auto;" onclick="GO('childfee-income')">&#x1F4CA; 收入及退費總表</button>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('accounting')">&#x2190; 會計</button>
+    <div class="stat-hero-title">月費單</div>
+    <button class="hub-hero-btn" onclick="GO('childfee-income')">收入及退費總表 &#x203A;</button>
   </div>
   <div style="padding:14px 16px 40px;" id="cf-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -4767,9 +4867,9 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
 </div>
 <div class="pg" id="pg-childfee-income">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('childfee')">&#x2190; 月費單</button>
-    <span class="btitle">收入及退費總表</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="GO('childfee')">&#x2190; 月費單</button>
+    <div class="stat-hero-title">收入及退費總表</div>
   </div>
   <div style="padding:14px 16px 40px;" id="cfinc-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -20684,8 +20784,9 @@ function _buildStatSheetModule(cfg){
     var h='<div class="stat-item-grid">';
     items.forEach(function(it){
       var v=valFor(it);
+      var filled=(v!=null&&v!=='');
       var itEsc=it.replace(/'/g,"\\'");
-      h+='<div class="stat-item-card"><div class="stat-item-lbl">'+it+'</div>';
+      h+='<div class="stat-item-card'+(filled?' filled':'')+'"><div class="stat-item-lbl">'+it+'</div>';
       h+='<input type="text" class="stat-item-inp" value="'+((v!=null?v:'')+'').replace(/"/g,'&quot;')+'" onchange="'+onchangeFn(itEsc)+'"></div>';
     });
     h+='</div>';
@@ -20696,21 +20797,22 @@ function _buildStatSheetModule(cfg){
     if(!wrap)return;
     var rec=getRec();
     var rows=sortedRows(rec);
+    var filledCt=items.filter(function(it){var v=rec.totals[it];return v!=null&&v!=='';}).length;
     var h='';
     h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;">';
     h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="'+fbKey+'-y" value="'+curY+'" onchange="'+cfg.modVar+'.changeYM()"></div>';
     h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="'+fbKey+'-m" onchange="'+cfg.modVar+'.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
     h+='</select></div>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;" onclick="'+cfg.modVar+'.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="pc-print-btn" onclick="'+cfg.modVar+'.print()">列印</button>';
     h+='</div>';
     h+='<div class="df-sec"><div class="df-lbl">盤點人員</div><input type="text" class="df-inp" id="'+fbKey+'-person" value="'+(rec.person||'').replace(/"/g,'&quot;')+'" onchange="'+cfg.modVar+'.setPerson(this.value)" placeholder="請輸入盤點人員姓名"></div>';
     h+='<div class="df-sec">';
-    h+='<div class="df-lbl">一、每月總數量</div>';
+    h+='<div class="df-lbl"><span class="stat-sec-num n1">1</span>每月總數量<span class="stat-fill-pill">已填 '+filledCt+' / '+items.length+'</span></div>';
     h+=_itemGridHTML(function(it){return rec.totals[it];},function(itEsc){return cfg.modVar+".setTotal('"+itEsc+"',this.value)";});
     h+='</div>';
     h+='<div class="df-sec">';
-    h+='<div class="df-lbl">二、當月新增／拿取紀錄<button class="cln-sig-btn" style="float:right;" onclick="'+cfg.modVar+'.addRow()">&#xFF0B; 新增一筆</button><button class="cln-sig-btn" style="float:right;margin-right:8px;background:#8a7ae0;" onclick="'+cfg.modVar+'.carryForward()">&#x1F4E6; 結算並帶入下月總數量</button></div>';
+    h+='<div class="df-lbl"><span class="stat-sec-num n2">2</span>當月新增／拿取紀錄<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="'+cfg.modVar+'.addRow()">＋ 新增一筆</button><button class="cf-print-btn" style="float:right;margin-right:8px;width:auto;padding:7px 14px;" onclick="'+cfg.modVar+'.carryForward()">結算並帶入</button></div>';
     h+='<div style="font-size:.7rem;color:#888;margin:-4px 0 10px;">點每筆最上面的「拿取／新增」可以切換；「結算並帶入下月總數量」會用目前的每月總數量加上本月全部新增、減掉全部拿取，自動填入下個月的「一、每月總數量」</div>';
     if(!rows.length){
       h+='<div style="color:#aaa;text-align:center;padding:20px 0;">尚無紀錄，請按上方「新增一筆」</div>';
@@ -20931,17 +21033,17 @@ var PETTYCASH=(function(){
     if(!wrap)return;
     var periods=sortedPeriods();
     var h='';
-    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="PETTYCASH.openNew()">&#xFF0B; 新增期別</button>';
+    h+='<button class="pc-add-btn" style="margin-bottom:14px;" onclick="PETTYCASH.openNew()">＋ 新增期別</button>';
     if(!periods.length){
       h+='<div style="color:#aaa;text-align:center;padding:30px 0;">尚未建立任何期別，請按上方「新增期別」</div>';
     } else {
       periods.forEach(function(p){
         var t=periodTotals(p);
-        h+='<div onclick="PETTYCASH.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #d9822c;">';
-        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#a5590a;">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div class="pc-period-card" onclick="PETTYCASH.openDetail(\''+p.id+'\')">';
+        h+='<div style="flex:1;min-width:0;"><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+(p.label||'（未命名期別）')+'</div>';
         h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
-        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">目前結餘</div><div style="font-weight:800;font-size:1.05rem;color:#2a6a3f;">'+t.closing.toLocaleString()+'</div></div>';
-        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">目前結餘</div><div style="font-weight:800;font-size:1.05rem;color:#3E8E6A;">'+t.closing.toLocaleString()+'</div></div>';
+        h+='<span class="pc-period-arr">&#x203A;</span>';
         h+='</div>';
       });
     }
@@ -21019,11 +21121,11 @@ var PETTYCASH=(function(){
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="PETTYCASH.setMeta(\'startDate\',this.value)"></div>';
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="PETTYCASH.setMeta(\'endDate\',this.value)"></div>';
     h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">上期結餘</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="PETTYCASH.setMeta(\'openBalance\',this.value)"></div>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;" onclick="PETTYCASH.print()">&#x1F5A8;&#xFE0F; 列印</button>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="PETTYCASH.deletePeriod(\''+curId+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='<button class="pc-print-btn" onclick="PETTYCASH.print()">列印</button>';
+    h+='<button class="pc-del-btn" onclick="PETTYCASH.deletePeriod(\''+curId+'\')">刪除此期</button>';
     h+='</div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">收支明細<button class="cln-sig-btn" style="float:right;" onclick="PETTYCASH.addRow()">&#xFF0B; 新增一列</button></div>';
+    h+='<div class="df-lbl">收支明細<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="PETTYCASH.addRow()">＋ 新增一列</button></div>';
     h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>金額</th><th></th></tr></thead><tbody>';
     h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">上期結餘</td><td style="font-weight:700;">'+t.open.toLocaleString()+'</td><td></td></tr>';
     if(!t.rows.length){
@@ -24448,7 +24550,7 @@ var CHILDFEE=(function(){
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _rPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_rPrior.roc,_rPrior.mo);}}catch(e){}
 
     var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 收費期間</div>';
+    h+='<div class="df-lbl" style="margin:0;">收費期間</div>';
     h+='<select class="df-inp" style="width:auto;" id="cfEndRoc" onchange="CHILDFEE.changeYM()">';
     [114,115,116].forEach(function(y){h+='<option value="'+y+'"'+(y===_endY?' selected':'')+'>'+y+' 年</option>';});
     h+='</select>';
@@ -24456,11 +24558,11 @@ var CHILDFEE=(function(){
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_endM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
     h+='</div>';
-    h+='<div style="font-size:.8rem;color:#888;margin-bottom:14px;">延托費、退費(請假)兩欄都會自動帶入「上一期」算好的金額，直接從這一期月費加收／扣抵，不用另外收現金或退現金。兩欄都是第一次看這一期時自動帶入，之後可以依實際情況手動調整，存檔後不會再被覆蓋。</div>';
+    h+='<div class="cf-hint-box">延托費、退費(請假)兩欄會自動帶入上一期算好的金額，<br>直接從這期月費加收／扣抵；存檔後不會再被覆蓋。</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
-    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;" onclick="CHILDFEE.openNewChild()">&#xFF0B; 新增幼兒</button>';
-    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#d9822c;" onclick="CHILDFEE.openUnpaid()">&#x1F50D; 未繳名單</button>';
-    h+='<button class="cln-sig-btn" style="flex:1;padding:8px 4px;text-align:center;background:#5a4aa8;" onclick="CHILDFEE.printSlips()">&#x1F4C4; 列印明細</button>';
+    h+='<button class="cf-add-btn" style="flex:1;text-align:center;" onclick="CHILDFEE.openNewChild()">＋ 新增幼兒</button>';
+    h+='<button class="cf-unpaid-btn" style="flex:1;text-align:center;" onclick="CHILDFEE.openUnpaid()">未繳名單</button>';
+    h+='<button class="cf-print-btn" style="flex:1;text-align:center;" onclick="CHILDFEE.printSlips()">列印明細</button>';
     h+='</div>';
 
     var kids=groups[_selCls]||[];
