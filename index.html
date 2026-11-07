@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261107095434';
+  var BUILD='20261107134344';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2311,6 +2311,144 @@ body.adm .sync-setup{display:block;}
 .rec-btn-del{margin-left:auto;background:#fff;color:#C2603E;border:1.5px solid #F3CFC2;padding:6px 12px;font-size:.72rem;}
 /* ══ 幼兒事故單／個案異常表改版結束 ══ */
 
+/* ══ 2026-11 總帳（零用金／結帳／薪資）改版（純樣式）：密碼驗證、
+   owner 權限、小布迪/邦比諾切換、自動帶入、計算、列印、複製上個月、
+   一鍵建立、新增、刪除等功能和其他程式碼都不受影響，只是把畫面上
+   既有的欄位／按鈕換個 class／顏色，跟前面幾輪統計表/會計/排班表/
+   請假交接單改版同一套做法。要復原刪掉這整段即可。 ══ */
+
+/* ── 密碼視窗（#pwGateOv，跟「組長編輯模式」那組 #pinOv 共用 .pin-ov/
+   .pin-box，所以全部用 #pwGateOv 前綴scope，不會動到組長登入那個） ── */
+#pwGateOv .pin-box{border-radius:28px;}
+#pwGateOv .pwgate-icon{width:60px;height:60px;object-fit:contain;display:block;margin:0 auto 10px;}
+#pwGateOv .pin-box h3{font-size:1rem;}
+#pwGateOv .pin-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;letter-spacing:6px;}
+#pwGateOv .pin-inp:focus{border-color:#7B55A0;}
+#pwGateOv .pwgate-btns{display:flex;gap:8px;margin-top:10px;}
+#pwGateOv .pwgate-btns .pin-ok{margin-top:0;flex:1;background:#7B55A0;border-radius:999px;}
+#pwGateOv .pwgate-btns .pin-cl{margin-top:0;flex:1;background:#F5F0E6;border:none;color:#8a7a5a;border-radius:999px;}
+
+/* ── 總帳選單（沿用 .admin-hero＋.hub-sub-lbl，跟其他選單頁同一套）── */
+#pg-ledger .admin-hero{background:#EEE6F7;margin-bottom:2px;}
+#pg-ledger .admin-hero-eyebrow{color:#7B55A0;}
+#pg-ledger .admin-hero-title{display:flex;align-items:center;gap:8px;}
+.ledger-hero-co{font-size:.64rem;font-weight:700;color:#7B55A0;background:#fff;border-radius:999px;padding:3px 10px;}
+.ledger-item{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;cursor:pointer;}
+.ledger-item-ico{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.ledger-item-ico img{width:30px;height:30px;object-fit:contain;}
+.ledger-ico-petty{background:#FCEFD9;}
+.ledger-ico-checkout{background:#E2ECF9;}
+.ledger-ico-payroll{background:#FBE3EA;}
+.ledger-item-body{flex:1;min-width:0;}
+.ledger-item-lbl{font-size:.62rem;font-weight:800;letter-spacing:1px;}
+.li-petty .ledger-item-lbl{color:#B9822A;}
+.li-checkout .ledger-item-lbl{color:#3E6BB0;}
+.li-payroll .ledger-item-lbl{color:#B8507A;}
+.ledger-item-name{font-weight:800;font-size:1rem;color:#2d3057;margin-top:1px;}
+.ledger-item-desc{font-size:.76rem;color:#8a8372;margin-top:2px;}
+.ledger-item-pwtag{background:#FBE3EA;color:#B8507A;font-size:.66rem;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;margin-right:8px;}
+.ledger-item-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#7B55A0;font-size:1rem;flex-shrink:0;}
+
+/* ── 共用：刪除按鈕／新增調整項目膠囊，總帳底下都共用這兩個 ── */
+.ldg-del-btn{background:#fff;color:#C2603E;border:1.5px solid #F2C4B4;border-radius:999px;padding:8px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.ldg-addrow-btn{background:#EEF7F0;color:#3E8E6A;border:none;border-radius:999px;padding:7px 14px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.ldg-newperiod-btn{border-radius:999px !important;background:#3E8E6A !important;}
+
+/* ── 零用金（總帳內，LEDGER 模組）── */
+#pg-ledger-cash .stat-hero-sm,#pg-ledger-cash-detail .stat-hero-sm{background:#FCEFD9;}
+.ldg-seg-wrap{display:flex;background:#EFE8DA;border-radius:999px;padding:4px;gap:4px;margin:0 12px 14px;}
+#pg-ledger-cash .ldg-seg-wrap .cln-sig-btn{flex:1;background:transparent;color:#8a7a5a;border-radius:999px;padding:8px 0;font-weight:700;}
+#pg-ledger-cash .ldg-seg-wrap .cln-sig-btn.ldg-seg-on{background:#B9822A;color:#fff;}
+.ldg-period-card{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;margin:0 12px 10px;cursor:pointer;}
+.ldg-period-body{flex:1;min-width:0;}
+.ldg-period-tag{display:inline-block;background:#FCEFD9;color:#B9822A;font-size:.64rem;font-weight:700;border-radius:999px;padding:2px 9px;margin-bottom:4px;}
+.ldg-period-title{font-weight:800;font-size:.95rem;color:#2d3057;}
+.ldg-period-dates{font-size:.76rem;color:#8a8372;margin-top:2px;}
+.ldg-period-bal{text-align:right;flex-shrink:0;}
+.ldg-period-bal-lbl{font-size:.66rem;color:#9a9388;}
+.ldg-period-bal-amt{font-weight:800;font-size:1.1rem;color:#3E8E6A;}
+.ldg-period-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#B9822A;font-size:1rem;flex-shrink:0;}
+#pg-ledger-cash-detail .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-ledger-cash-detail .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+#pg-ledger-cash-detail .cln-table{border-collapse:separate;border-spacing:0;}
+#pg-ledger-cash-detail .cln-table th{background:#FAF6EE;border:none;border-bottom:1.5px solid #ECE6DA;}
+#pg-ledger-cash-detail .cln-table td{border:none;border-bottom:1px solid #F0ECE2;}
+#pg-ledger-cash-detail .cln-table input,#pg-ledger-cash-detail .cln-table select,#pg-ledger-cash-detail .cln-num{border-radius:8px;border:1.5px solid #E2D9C8;background:#FAF6EE;}
+#pg-ledger-cash-detail .cln-sig-btn{border-radius:999px;}
+
+/* ── 結帳（CHECKOUT 模組）── */
+#pg-ledger-checkout .stat-hero-sm{background:#E2ECF9;}
+#pg-ledger-checkout .chk-back-btn{border-radius:999px;background:#E2ECF9;color:#3E6BB0;}
+.chk-period-card{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+.chk-period-body{flex:1;min-width:0;}
+.chk-period-tag{display:inline-block;background:#E2ECF9;color:#3E6BB0;font-size:.64rem;font-weight:700;border-radius:999px;padding:2px 9px;margin-bottom:4px;}
+.chk-period-title{font-weight:800;font-size:.95rem;color:#2d3057;}
+.chk-period-dates{font-size:.76rem;color:#8a8372;margin-top:2px;}
+.chk-period-bal{text-align:right;flex-shrink:0;}
+.chk-period-bal-lbl{font-size:.66rem;color:#9a9388;}
+.chk-period-bal-amt{font-weight:800;font-size:1.1rem;color:#3E6BB0;}
+.chk-period-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#3E6BB0;font-size:1rem;flex-shrink:0;}
+#pg-ledger-checkout .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;}
+#pg-ledger-checkout .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+#pg-ledger-checkout .ck-table{border-collapse:separate;border-spacing:0;}
+#pg-ledger-checkout .ck-table th{background:#FAF6EE;border:none;border-bottom:1.5px solid #ECE6DA;}
+#pg-ledger-checkout .ck-table td{border:none;border-bottom:1px solid #F0ECE2;}
+#pg-ledger-checkout .ck-table input,#pg-ledger-checkout .ck-table select{border-radius:8px;border:1.5px solid #E2D9C8;background:#FAF6EE;}
+.chk-sec-title{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:800;color:#2d3057;margin-bottom:8px;}
+.chk-sec-sq{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.chk-sec-sq.in{background:#BFE3C9;}
+.chk-sec-sq.out{background:#F3CFC2;}
+.chk-row{display:flex;align-items:center;gap:8px;background:#FAF6EE;border-radius:12px;padding:9px 12px;margin-bottom:6px;flex-wrap:wrap;}
+.chk-row-name{flex:1;min-width:70px;font-size:.84rem;color:#2d3057;font-weight:600;}
+.chk-row-amt{font-weight:800;font-size:.88rem;color:#2d3057;white-space:nowrap;}
+.chk-row-note{font-size:.66rem;color:#9a9388;background:#F5F0E6;border-radius:999px;padding:3px 9px;white-space:nowrap;}
+.chk-row-inp{width:90px;text-align:right;border:1.5px solid #E2D9C8;border-radius:999px;background:#fff;padding:6px 10px;font-size:.84rem;box-sizing:border-box;}
+.chk-row-noteinp{flex:1;min-width:90px;border:1.5px solid #E2D9C8;border-radius:999px;background:#fff;padding:6px 10px;font-size:.8rem;box-sizing:border-box;}
+.chk-cat-sel{min-width:84px;border:1.5px solid #E2D9C8;border-radius:999px;background:#fff;padding:6px 10px;font-size:.8rem;}
+.chk-row-del{background:none;border:none;color:#C2603E;font-size:1rem;cursor:pointer;flex-shrink:0;}
+.chk-row-tot{background:#F5F0E6;}
+
+/* ── 薪資（PAYROLL 模組）── */
+#pg-ledger-payroll .stat-hero-sm,#pg-ledger-payroll-detail .stat-hero-sm,#pg-ledger-payroll-person .stat-hero-sm{background:#FBE3EA;}
+.pay-missing-box{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;background:#FCEFD9;border-radius:16px;padding:12px 14px;margin-bottom:14px;}
+.pay-missing-i{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#E8A93A;color:#fff;font-size:.78rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.pay-missing-text{flex:1;min-width:140px;font-size:.84rem;color:#8a6414;font-weight:700;}
+.pay-quick-btn{width:100%;background:#E8A93A;color:#fff;border:none;border-radius:999px;padding:11px;font-size:.85rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.pay-add-period-btn{width:100%;background:#B8507A;color:#fff;border:none;border-radius:999px;padding:14px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;font-family:'Noto Sans TC',sans-serif;}
+.pay-period-card{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:14px 16px;margin-bottom:10px;}
+.pay-period-num{width:48px;height:48px;border-radius:14px;background:#FBE3EA;color:#B8507A;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;flex-shrink:0;line-height:1.15;}
+.pay-period-num span{font-size:.56rem;font-weight:700;}
+.pay-period-body{flex:1;min-width:0;cursor:pointer;}
+.pay-period-title{font-weight:800;font-size:.95rem;color:#2d3057;}
+.pay-period-cnt{display:inline-block;margin-top:4px;background:#F5F0E6;color:#8a7a5a;font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:999px;}
+.pay-period-btns{display:flex;gap:6px;flex-shrink:0;}
+.pay-period-edit{background:#FBE3EA;color:#B8507A;border:none;border-radius:999px;padding:8px 14px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.pay-detail-heading{font-size:1.05rem;font-weight:800;color:#B8507A;margin-bottom:12px;}
+.pay-toolbar,.pay-ptoolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.pay-add-sel{flex:1;min-width:140px;padding:10px 14px;border:1.5px solid #E9B6C8;border-radius:999px;font-size:.85rem;background:#fff;color:#2d3057;font-family:'Noto Sans TC',sans-serif;}
+.pay-btn-sheet,.pay-btn-stub,.pay-btn-combo,.pay-btn-summary,.pay-btn-copy{padding:10px 14px;border:none;border-radius:999px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Noto Sans TC',sans-serif;}
+.pay-btn-sheet{background:#F5F0E6;color:#6b5f4a;}
+.pay-btn-stub{background:#EEF7F0;color:#3E8E6A;}
+.pay-btn-combo{background:#FBE3EA;color:#B8507A;}
+.pay-btn-summary{background:#FCEFD9;color:#B9822A;}
+.pay-btn-copy{flex:1;min-width:140px;background:#fff;color:#B8507A;border:1.5px solid #E9B6C8 !important;}
+.pay-person-card{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #ECE6DA;border-radius:16px;padding:10px 14px;margin-bottom:8px;}
+.pay-person-avatar{width:36px;height:36px;border-radius:50%;background:#FBE3EA;color:#B8507A;font-weight:800;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.pay-person-name{flex:1;min-width:0;cursor:pointer;font-weight:700;color:#2d3057;}
+.pay-person-del{background:#fff;color:#C2603E;border:1.5px solid #F2C4B4;border-radius:999px;padding:6px 12px;font-size:.72rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;flex-shrink:0;}
+.pay-person-arr{width:24px;height:24px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#B8507A;font-size:1rem;flex-shrink:0;cursor:pointer;}
+.pay-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:20px;padding:14px 16px;margin-bottom:12px;}
+.pay-card-title{font-weight:800;font-size:.9rem;color:#555;}
+.pay-card-sub{font-size:.72rem;color:#9a9388;margin-top:2px;}
+.pay-leave-tag{background:#FAF6EE;color:#999;border-radius:999px;padding:4px 12px;font-size:.78rem;font-weight:700;}
+.pay-leave-tag.has{background:#FBE6DD;color:#C2603E;}
+.pay-rh-row{margin-bottom:10px;}
+.pay-rh-bar{height:6px;border-radius:999px;background:#F0ECE2;overflow:hidden;}
+.pay-rh-fill{height:100%;border-radius:999px;background:#3E8E6A;}
+.pay-inp{width:100%;padding:9px 14px;border:1.5px solid #E2D9C8;border-radius:999px;background:#FAF6EE;font-size:.9rem;box-sizing:border-box;font-family:'Noto Sans TC',sans-serif;}
+.pay-ta{width:100%;min-height:50px;padding:10px 14px;border:1.5px solid #E2D9C8;border-radius:14px;background:#FAF6EE;font-size:.84rem;box-sizing:border-box;font-family:inherit;}
+/* ══ 總帳改版結束 ══ */
+
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
 window._asrPreload114=window._asrPreload;</script>
@@ -3207,12 +3345,15 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <div class="pin-ov" id="pwGateOv" style="display:none">
   <div class="pin-box">
-    <h3>&#x1F512; <span id="pwGateTitle">需要密碼</span></h3>
+    <img class="pwgate-icon" src="images/ledger_lock.png" alt="">
+    <h3 id="pwGateTitle">需要密碼</h3>
     <p>請輸入密碼</p>
     <input type="password" class="pin-inp" id="pwGateI" maxlength="10" placeholder="&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;&#x2022;" onkeydown="if(event.key==='Enter')PWGATE.confirm();">
     <div class="pin-err" id="pwGateE" style="display:none;">密碼錯誤</div>
-    <button class="pin-ok" onclick="PWGATE.confirm()">確認進入</button>
-    <button class="pin-cl" onclick="PWGATE.cancel()">取消</button>
+    <div class="pwgate-btns">
+      <button class="pin-cl" onclick="PWGATE.cancel()">取消</button>
+      <button class="pin-ok" onclick="PWGATE.confirm()">確認進入</button>
+    </div>
   </div>
 </div>
 <div class="adm-bar" id="aBar">
@@ -4874,76 +5015,77 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- 這個頁面不放在任何選單／卡片上，只能用網址列輸入 #ledger 打開 -->
 <div class="pg" id="pg-ledger">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.back()">&#x2190; 返回</button>
-    <span class="btitle" id="ledgerTopTitle">總帳</span>
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="LEDGER.back()">&#x2190; 返回</button>
+    <img class="admin-hero-deco" src="images/acct_ledger.png" alt="">
+    <div class="admin-hero-eyebrow">LEDGER</div>
+    <div class="admin-hero-title">總帳<span class="ledger-hero-co" id="ledgerTopTitle">小布迪</span></div>
   </div>
-  <div style="padding:20px 16px;">
-    <div style="font-size:.8rem;color:#888;margin-bottom:14px;">請選擇項目</div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <div onclick="LEDGER.openCash()" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #5a4aa8;">
-        <span style="font-size:1.8rem;">&#x1F4B0;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#3a2a78;">零用金</div><div style="font-size:.78rem;color:#888;margin-top:2px;">自己身上這份零用金，結合公司零用金明細</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+  <div class="hub-sub-lbl">要處理哪一項？</div>
+  <div style="padding:0 16px 24px;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;">
+      <div class="ledger-item li-petty" onclick="LEDGER.openCash()">
+        <span class="ledger-item-ico ledger-ico-petty"><img src="images/acct_petty.png" alt=""></span>
+        <div class="ledger-item-body"><div class="ledger-item-lbl">PETTY CASH</div><div class="ledger-item-name">零用金</div><div class="ledger-item-desc">結合公司零用金明細</div></div>
+        <span class="ledger-item-arr">&#x203A;</span>
       </div>
-      <div onclick="LEDGER.openCheckout()" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #c08a3a;">
-        <span style="font-size:1.8rem;">&#x1F4CA;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#9a6a1a;">結帳</div><div style="font-size:.78rem;color:#888;margin-top:2px;">每月總結算：收入/零用金自動帶入，薪資房租等手動輸入</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      <div class="ledger-item li-checkout" onclick="LEDGER.openCheckout()">
+        <span class="ledger-item-ico ledger-ico-checkout"><img src="images/acct_ledger.png" alt=""></span>
+        <div class="ledger-item-body"><div class="ledger-item-lbl">CHECKOUT</div><div class="ledger-item-name">結帳</div><div class="ledger-item-desc">每月總結算・收入自動帶入</div></div>
+        <span class="ledger-item-arr">&#x203A;</span>
       </div>
-      <div onclick="GO('ledger-payroll')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #a53a3a;">
-        <span style="font-size:1.8rem;">&#x1F510;</span>
-        <div><div style="font-weight:800;font-size:1rem;color:#a53a3a;">薪資</div><div style="font-size:.78rem;color:#888;margin-top:2px;">僅 owner 可見，需另外輸入密碼</div></div>
-        <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
+      <div class="ledger-item li-payroll" onclick="GO('ledger-payroll')">
+        <span class="ledger-item-ico ledger-ico-payroll"><img src="images/ledger_salary.png" alt=""></span>
+        <div class="ledger-item-body"><div class="ledger-item-lbl">PAYROLL</div><div class="ledger-item-name">薪資</div><div class="ledger-item-desc">僅 owner 可見・需密碼</div></div>
+        <span class="ledger-item-pwtag">需密碼</span>
+        <span class="ledger-item-arr">&#x203A;</span>
       </div>
-    </div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-payroll">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
-    <span class="btitle">薪資</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <div class="stat-hero-title">薪資</div>
   </div>
   <div style="padding:14px 16px 40px;" id="payrollListWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-payroll-detail">
-  <div class="bbar">
-    <button class="bbtn" onclick="PAYROLL.backToList()">&#x2190; 薪資</button>
-    <span class="btitle" id="payrollDetailTitle">薪資表</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="PAYROLL.backToList()">&#x2190; 薪資</button>
+    <div class="stat-hero-title" id="payrollDetailTitle">薪資表</div>
   </div>
   <div style="padding:14px 16px 40px;" id="payrollDetailWrap"></div>
 </div>
 <div class="pg" id="pg-ledger-payroll-person">
-  <div class="bbar">
-    <button class="bbtn" onclick="PAYROLL.backToDetail()">&#x2190; 返回</button>
-    <span class="btitle" id="payrollPersonTitle">薪資明細</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="PAYROLL.backToDetail()">&#x2190; 返回</button>
+    <div class="stat-hero-title" id="payrollPersonTitle">薪資明細</div>
   </div>
   <div style="padding:14px 16px 40px;max-width:640px;margin:0 auto;" id="payrollPersonWrap"></div>
 </div>
 <div class="pg" id="pg-ledger-cash">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
-    <span class="btitle" id="ledgerCashTitle">零用金</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEDGER.backToTop()">&#x2190; 總帳</button>
+    <div class="stat-hero-title" id="ledgerCashTitle">零用金</div>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerHubWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-cash-detail">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEDGER.backToCashHub()">&#x2190; 零用金</button>
-    <span class="btitle" id="ledgerDetailTitle">總帳明細</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="LEDGER.backToCashHub()">&#x2190; 零用金</button>
+    <div class="stat-hero-title" id="ledgerDetailTitle">總帳明細</div>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-checkout">
-  <div class="bbar">
-    <button class="bbtn" onclick="CHECKOUT.backToHub();LEDGER.backToTop();">&#x2190; 總帳</button>
-    <span class="btitle" id="ledgerCheckoutTitle">結帳</span>
+  <div class="stat-hero-sm">
+    <button class="admin-back-btn" onclick="CHECKOUT.backToHub();LEDGER.backToTop();">&#x2190; 總帳</button>
+    <div class="stat-hero-title" id="ledgerCheckoutTitle">結帳</div>
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerCheckoutWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
@@ -13026,27 +13168,27 @@ var PAYROLL=(function(){
     var h='';
     var st=_currentMonthStatus();
     if(!st.exists||st.missing.length){
-      h+='<div style="background:#fff3cd;border:1.5px solid #e0b84a;border-radius:12px;padding:12px 14px;margin-bottom:14px;">';
-      h+='<div style="font-size:.84rem;color:#8a6414;font-weight:700;margin-bottom:8px;">'+(st.exists?('「'+esc(st.label)+'」還少 '+st.missing.length+' 位在職人員沒加進薪資表'):('「'+esc(st.label)+'」薪資表還沒建立'))+'</div>';
-      h+='<button onclick="PAYROLL.quickCreateCurrentMonth()" style="width:100%;padding:10px;background:#e0b84a;color:#fff;border:none;border-radius:10px;font-size:.85rem;font-weight:800;cursor:pointer;">⚡ 一鍵建立「'+esc(st.label)+'」並加入全部在職人員</button>';
+      h+='<div class="pay-missing-box">';
+      h+='<span class="pay-missing-i">!</span><div class="pay-missing-text">'+(st.exists?('「'+esc(st.label)+'」還少 '+st.missing.length+' 位在職人員沒加進薪資表'):('「'+esc(st.label)+'」薪資表還沒建立'))+'</div>';
+      h+='<button class="pay-quick-btn" onclick="PAYROLL.quickCreateCurrentMonth()">一鍵建立「'+esc(st.label)+'」並加入全部在職人員</button>';
       h+='</div>';
     }
-    h+='<button onclick="PAYROLL.newPeriod()" style="width:100%;padding:14px;background:#a53a3a;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增月份</button>';
+    h+='<button class="pay-add-period-btn" onclick="PAYROLL.newPeriod()">＋ 新增月份</button>';
     if(!ids.length){
       h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無薪資資料</div>';
     }else{
-      h+='<div style="display:flex;flex-direction:column;gap:10px;">';
       ids.forEach(function(pid){
         var p=db[pid]||{};
         var cnt=Object.keys(p.people||{}).length;
-        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #a53a3a;overflow:hidden;">';
-        h+='<div style="padding:14px 16px;cursor:pointer;" onclick="PAYROLL.openPeriod(\''+pid+'\')"><div style="font-weight:800;font-size:.95rem;color:#a53a3a;">'+esc(p.label||'未命名')+'</div><div style="font-size:.78rem;color:#888;margin-top:3px;">共 '+cnt+' 人</div></div>';
-        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
-        h+='<button onclick="PAYROLL.openPeriod(\''+pid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#a53a3a;font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="PAYROLL.deletePeriod(\''+pid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑 刪除</button>';
+        var mm=(p.label||'').match(/(\d{1,2})\s*月/);
+        h+='<div class="pay-period-card">';
+        h+='<div class="pay-period-num">'+(mm?mm[1]:'?')+'<span>月</span></div>';
+        h+='<div class="pay-period-body" onclick="PAYROLL.openPeriod(\''+pid+'\')"><div class="pay-period-title">'+esc(p.label||'未命名')+'</div><span class="pay-period-cnt">共 '+cnt+' 人</span></div>';
+        h+='<div class="pay-period-btns">';
+        h+='<button class="pay-period-edit" onclick="PAYROLL.openPeriod(\''+pid+'\')">編輯</button>';
+        h+='<button class="ldg-del-btn" onclick="PAYROLL.deletePeriod(\''+pid+'\')">刪除</button>';
         h+='</div></div>';
       });
-      h+='</div>';
     }
     w.innerHTML=h;
   }
@@ -13089,28 +13231,28 @@ var PAYROLL=(function(){
     if(titleEl)titleEl.textContent=p.label||'薪資表';
     var names=Object.keys(p.people).sort();
     var roster=_rosterNames();
-    var h='<div style="font-size:1.05rem;font-weight:800;color:#a53a3a;margin-bottom:12px;">'+esc(p.label||'薪資表')+'</div>';
-    h+='<div style="display:flex;gap:8px;margin-bottom:14px;">';
-    h+='<select onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';" style="flex:1;padding:10px;border:1.5px solid #a53a3a;border-radius:10px;font-size:.85rem;"><option value="">＋ 新增人員</option>';
+    var h='<div class="pay-detail-heading">'+esc(p.label||'薪資表')+'</div>';
+    h+='<div class="pay-toolbar">';
+    h+='<select class="pay-add-sel" onchange="if(this.value)PAYROLL.addPerson(this.value);this.value=\'\';"><option value="">＋ 新增人員</option>';
     roster.forEach(function(nm){if(names.indexOf(nm)<0)h+='<option value="'+escAttr(nm)+'">'+esc(nm)+'</option>';});
     h+='</select>';
-    h+='<button onclick="PAYROLL.printAll()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
-    h+='<button onclick="PAYROLL.printAllStubs()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
-    h+='<button onclick="PAYROLL.printAllCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一人一張A4）</button>';
-    h+='<button onclick="PAYROLL.printSummary()" style="padding:10px 14px;background:#9a6a1a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 總表</button>';
+    h+='<button class="pay-btn-sheet" onclick="PAYROLL.printAll()">薪資表</button>';
+    h+='<button class="pay-btn-stub" onclick="PAYROLL.printAllStubs()">薪資條</button>';
+    h+='<button class="pay-btn-combo" onclick="PAYROLL.printAllCombo()">合併（一人一張A4）</button>';
+    h+='<button class="pay-btn-summary" onclick="PAYROLL.printSummary()">總表</button>';
     h+='</div>';
     if(!names.length){
       h+='<div style="text-align:center;padding:30px;color:#aaa;font-size:.9rem;">還沒有人，上面選單新增人員</div>';
     }else{
-      h+='<div style="display:flex;flex-direction:column;gap:8px;">';
       names.forEach(function(nm){
-        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;overflow:hidden;">';
+        h+='<div class="pay-person-card">';
         var nmJs="'"+String(nm).replace(/\\/g,'\\\\').replace(/'/g,"\\'")+"'";
-        h+='<div onclick="PAYROLL.openPerson('+nmJs+')" style="flex:1;padding:14px 16px;cursor:pointer;font-weight:700;color:#333;">'+esc(nm)+'</div>';
-        h+='<button onclick="PAYROLL.removePerson('+nmJs+')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.9rem;cursor:pointer;">🗑</button>';
+        h+='<span class="pay-person-avatar">'+esc(nm.slice(-1))+'</span>';
+        h+='<div class="pay-person-name" onclick="PAYROLL.openPerson('+nmJs+')">'+esc(nm)+'</div>';
+        h+='<button class="pay-person-del" onclick="PAYROLL.removePerson('+nmJs+')">刪除</button>';
+        h+='<span class="pay-person-arr" onclick="PAYROLL.openPerson('+nmJs+')">&#x203A;</span>';
         h+='</div>';
       });
-      h+='</div>';
     }
     w.innerHTML=h;
   }
@@ -13353,27 +13495,27 @@ var PAYROLL=(function(){
     var w=_pwrap();if(!w)return;
     var titleEl=document.getElementById('payrollPersonTitle');
     if(titleEl)titleEl.textContent=curName+'（'+(p.label||'')+'）';
-    var h='<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">';
-    h+='<button onclick="PAYROLL.copyFromPrev()" style="flex:1;min-width:140px;padding:10px;background:#fff;color:#a53a3a;border:1.5px solid #a53a3a;border-radius:10px;font-size:.82rem;font-weight:700;cursor:pointer;">📋 複製上個月資料</button>';
-    h+='<button onclick="PAYROLL.printPerson()" style="padding:10px 14px;background:#555;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資表</button>';
-    h+='<button onclick="PAYROLL.printStub()" style="padding:10px 14px;background:#2d9c6f;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 薪資條</button>';
-    h+='<button onclick="PAYROLL.printCombo()" style="padding:10px 14px;background:#a53a3a;color:#fff;border:none;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;">🖨️ 合併（一張A4）</button>';
+    var h='<div class="pay-ptoolbar">';
+    h+='<button class="pay-btn-copy" onclick="PAYROLL.copyFromPrev()">複製上個月資料</button>';
+    h+='<button class="pay-btn-sheet" onclick="PAYROLL.printPerson()">薪資表</button>';
+    h+='<button class="pay-btn-stub" onclick="PAYROLL.printStub()">薪資條</button>';
+    h+='<button class="pay-btn-combo" onclick="PAYROLL.printCombo()">合併（一張A4）</button>';
     h+='</div>';
     /* 當月請假天數：直接從每日回報現算，唯讀顯示，不是這個人可以
        手動改的欄位——改法要去每日回報那邊改，這裡才會跟著變動。 */
-    h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-    h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">當月請假天數（自動帶入自每日回報，這裡不能改）</div>';
+    h+='<div class="pay-card">';
+    h+='<div class="pay-card-title">當月請假天數</div><div class="pay-card-sub">自動帶入自每日回報，這裡不能改</div>';
     var roc=_rocFromLabel(p.label);
     var leaveHoursMo={};
     if(roc&&typeof TEACHERLEAVE!=='undefined'){
       try{TEACHERLEAVE.ensureLoaded();leaveHoursMo=TEACHERLEAVE.leaveHoursForMonth(curName,roc.y,roc.m)||{};}catch(e){}
     }
     var hasAny=false;
-    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+    h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
     LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
       var hrs=leaveHoursMo[t]||0;
       if(hrs>0)hasAny=true;
-      h+='<span style="background:'+(hrs>0?'#fdecea':'#f5f5f5')+';color:'+(hrs>0?'#c0392b':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+_fmtDaysHours(hrs)+'</span>';
+      h+='<span class="pay-leave-tag'+(hrs>0?' has':'')+'">'+t+' '+_fmtDaysHours(hrs)+'</span>';
     });
     h+='</div>';
     if(!hasAny)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">這個月每日回報沒有登記過請假</div>';
@@ -13387,16 +13529,16 @@ var PAYROLL=(function(){
       var janIso=ceYear+'-01-01';
       var monthEndD=new Date(ceYear,roc.m,0);
       var monthEndIso=monthEndD.getFullYear()+'-'+String(monthEndD.getMonth()+1).padStart(2,'0')+'-'+String(monthEndD.getDate()).padStart(2,'0');
-      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:4px;">'+ceYear+'年累計請假天數（1/1～'+monthEndIso+'，自動帶入每日回報＋下方「累積至上月請假」文字欄位）</div>';
-      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+      h+='<div class="pay-card">';
+      h+='<div class="pay-card-title">'+ceYear+'年累計請假天數</div><div class="pay-card-sub">1/1～'+monthEndIso+'，自動帶入每日回報＋下方「累積至上月請假」文字欄位</div>';
+      h+='<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">';
       var hasAnyYear=false;
       LEAVE_TYPES_FOR_PAYROLL.forEach(function(t){
         var hrs=0;
         try{hrs=TEACHERLEAVE.leaveHoursInRange(curName,janIso,monthEndIso,t)||0;}catch(e){}
         hrs+=_leaveCumBaseHours(rec.leaveCumText,t);
         if(hrs>0)hasAnyYear=true;
-        h+='<span style="background:'+(hrs>0?'#fff3cd':'#f5f5f5')+';color:'+(hrs>0?'#8a6414':'#999')+';border-radius:8px;padding:4px 10px;font-size:.78rem;font-weight:700;">'+t+' '+_fmtDaysHours(hrs)+'</span>';
+        h+='<span class="pay-leave-tag'+(hrs>0?' has':'')+'">'+t+' '+_fmtDaysHours(hrs)+'</span>';
       });
       h+='</div>';
       if(!hasAnyYear)h+='<div style="font-size:.76rem;color:#aaa;margin-top:6px;">今年每日回報沒有登記過請假</div>';
@@ -13420,14 +13562,20 @@ var PAYROLL=(function(){
       var _rhSick=_rhHrs('病假')+_rhHrs('生理假')+_rhHrs('安胎假');
       function _rhRow(label,hrs,limitDays){
         var over=hrs>=limitDays*8;
-        return '<div style="font-size:'+(over?'1rem':'.86rem')+';font-weight:'+(over?'800':'700')+';color:'+(over?'#c0392b':'#333')+';margin-bottom:3px;">'+label+'：'+_fmtDaysHours(hrs)+'（上限'+limitDays+'天）'+(over?'　⚠️':'')+'</div>';
+        var pct=Math.min(100,Math.round(hrs/(limitDays*8)*100));
+        var r='<div class="pay-rh-row">';
+        r+='<div style="font-size:'+(over?'1rem':'.86rem')+';font-weight:'+(over?'800':'700')+';color:'+(over?'#c0392b':'#333')+';margin-bottom:5px;">'+label+'：'+_fmtDaysHours(hrs)+'（上限'+limitDays+'天）'+(over?'　⚠️':'')+'</div>';
+        r+='<div class="pay-rh-bar"><div class="pay-rh-fill" style="width:'+pct+'%;'+(over?'background:#c0392b;':'')+'"></div></div>';
+        r+='</div>';
+        return r;
       }
-      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:6px;">請假上限提醒（'+ceYear+'年1/1～12/31，純提醒，雇主同意仍可超過）</div>';
+      h+='<div class="pay-card">';
+      h+='<div class="pay-card-title">請假上限提醒</div><div class="pay-card-sub">'+ceYear+'年1/1～12/31，純提醒，雇主同意仍可超過</div>';
+      h+='<div style="margin-top:8px;">';
       h+=_rhRow('事假＋家庭照顧假',_rhPersonalFamily,14);
       h+=_rhRow('　家庭照顧假單獨',_rhFamily,7);
       h+=_rhRow('病假＋生理假＋安胎假',_rhSick,30);
-      h+='</div>';
+      h+='</div></div>';
     }
     /* 薪轉／現金拆分：薪轉薪資是系統算好的實領總額，但實際發放常常要
        拆成「匯款」跟「現金」兩部分（例如有人借支公司款項，每月從薪轉
@@ -13436,37 +13584,37 @@ var PAYROLL=(function(){
        值顯示（方便大多數沒有特殊狀況的人不用自己再打一次），一旦手動
        改過就照改過的存，不會再被蓋回去——總表（printSummary）列印時
        也是用這個邏輯取值。 */
-    h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-    h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">實際發放：匯款／現金拆分（預設薪轉＝薪轉薪資、現金＝0，可手動調整）</div>';
-    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="pay-card">';
+    h+='<div class="pay-card-title">實際發放：匯款／現金拆分</div><div class="pay-card-sub">預設薪轉＝薪轉薪資、現金＝0，可手動調整</div>';
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">';
     var _dsplit=_defaultSplit(curName,rec,c);
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額'+(rec.cashAmount===undefined&&_dsplit.cashAmount>0?'（已自動套用預設'+_dsplit.cashAmount+'元）':'')+'</div><input type="number" inputmode="decimal" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:(_dsplit.cashAmount||''))+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">薪轉金額</div><input type="number" inputmode="decimal" class="pay-inp" value="'+escAttr(rec.transferCash!==undefined?rec.transferCash:_dsplit.transferCash)+'" oninput="PAYROLL.setField(\'transferCash\',this.value===\'\'?\'\':parseFloat(this.value)||0)"></div>';
+    h+='<div style="flex:1;min-width:120px;"><div style="font-size:.76rem;color:#888;margin-bottom:3px;">現金金額'+(rec.cashAmount===undefined&&_dsplit.cashAmount>0?'（已自動套用預設'+_dsplit.cashAmount+'元）':'')+'</div><input type="number" inputmode="decimal" class="pay-inp" value="'+escAttr(rec.cashAmount!==undefined?rec.cashAmount:(_dsplit.cashAmount||''))+'" oninput="PAYROLL.setField(\'cashAmount\',this.value===\'\'?\'\':parseFloat(this.value)||0)"></div>';
     h+='</div></div>';
     h+='<div id="payrollSummaryBox"></div>';
     h+='<div id="payrollAnnualBox"></div>';
     FIELD_GROUPS.forEach(function(grp){
-      h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);padding:14px 16px;margin-bottom:12px;">';
-      h+='<div style="font-weight:800;font-size:.9rem;color:#555;margin-bottom:8px;">'+grp[0]+'</div>';
-      h+='<div style="display:flex;flex-direction:column;gap:8px;">';
+      h+='<div class="pay-card">';
+      h+='<div class="pay-card-title">'+grp[0]+'</div>';
+      h+='<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;">';
       grp[1].forEach(function(f){
         var key=f[0],label=f[1],type=f[2];
         var val=rec[key];
         h+='<div>';
         h+='<div style="font-size:.76rem;color:#888;margin-bottom:3px;">'+label+'</div>';
         if(type==='textarea'){
-          h+='<textarea oninput="PAYROLL.setField(\''+key+'\',this.value)" style="width:100%;min-height:50px;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.84rem;box-sizing:border-box;font-family:inherit;">'+esc(val||'')+'</textarea>';
+          h+='<textarea class="pay-ta" oninput="PAYROLL.setField(\''+key+'\',this.value)">'+esc(val||'')+'</textarea>';
         }else if(type==='minutes'){
           /* 內部還是存「小時」（算錢的公式不用動），只有這個輸入框本身
              用分鐘顯示/輸入——打幾分鐘比較直覺，不用自己換算成小時小數。 */
           var mins=(val==null||val==='')?'':Math.round(val*60);
-          h+='<input type="number" inputmode="numeric" value="'+escAttr(mins)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':(parseFloat(this.value)||0)/60)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+          h+='<input type="number" inputmode="numeric" class="pay-inp" value="'+escAttr(mins)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':(parseFloat(this.value)||0)/60)">';
         }else if(type==='num'){
-          h+='<input type="number" inputmode="decimal" value="'+escAttr(val==null?'':val)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':parseFloat(this.value)||0)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+          h+='<input type="number" inputmode="decimal" class="pay-inp" value="'+escAttr(val==null?'':val)+'" oninput="PAYROLL.setField(\''+key+'\',this.value===\'\'?\'\':parseFloat(this.value)||0)">';
         }else if(type==='bool'){
           h+='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" '+(val?'checked':'')+' onchange="PAYROLL.setField(\''+key+'\',this.checked)" style="width:18px;height:18px;">　<span style="font-size:.78rem;color:#666;">目前：'+(val?'是':'否')+'</span></label>';
         }else{
-          h+='<input value="'+escAttr(val||'')+'" oninput="PAYROLL.setField(\''+key+'\',this.value)" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:8px;font-size:.9rem;box-sizing:border-box;">';
+          h+='<input class="pay-inp" value="'+escAttr(val||'')+'" oninput="PAYROLL.setField(\''+key+'\',this.value)">';
         }
         h+='</div>';
       });
@@ -21588,7 +21736,9 @@ function _pettyCashPrintHTML(p,t){
    那一刻）都要呼叫這個函式重新標一次。 */
 function _updateLedgerTitles(){
   var label=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
-  var map={ledgerTopTitle:'總帳',ledgerCashTitle:'零用金',ledgerCheckoutTitle:'結帳'};
+  var topEl=document.getElementById('ledgerTopTitle');
+  if(topEl)topEl.textContent=label;
+  var map={ledgerCashTitle:'零用金',ledgerCheckoutTitle:'結帳'};
   Object.keys(map).forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.textContent=map[id]+'（'+label+'）';
@@ -21715,22 +21865,22 @@ var LEDGER=(function(){
     var list=sortedPeriods();
     var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
-    h+='<div class="df-sec" style="display:flex;gap:8px;flex-wrap:wrap;">';
+    h+='<div class="ldg-seg-wrap">';
     ['xbd','bambino'].forEach(function(cid){
       var on=CURRENT_COMPANY===cid||(!CURRENT_COMPANY&&cid==='xbd');
-      h+='<button class="cln-sig-btn" style="'+(on?'':'opacity:.45;')+'" onclick="LEDGER.switchCompany(\''+cid+'\')">'+COMPANIES[cid].short+(on?'（目前）':'')+'</button>';
+      h+='<button class="cln-sig-btn'+(on?' ldg-seg-on':'')+'" onclick="LEDGER.switchCompany(\''+cid+'\')">'+COMPANIES[cid].short+(on?'（目前）':'')+'</button>';
     });
     h+='</div>';
-    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="LEDGER.openNew()">&#xFF0B; 新增期別</button>';
+    h+='<button class="asr-add-btn ldg-newperiod-btn" style="margin-bottom:14px;" onclick="LEDGER.openNew()">&#xFF0B; 新增期別</button>';
     if(!list.length){
       h+='<div style="color:#aaa;text-align:center;padding:30px 0;">'+companyLabel+' 尚未建立任何期別，請按上方「新增期別」</div>';
     } else {
-      list.forEach(function(p){
-        h+='<div onclick="LEDGER.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #5a4aa8;">';
-        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#3a2a78;">'+(p.label||'（未命名期別）')+'</div>';
-        h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
-        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">目前餘額</div><div style="font-weight:800;font-size:1.05rem;color:#1565c0;">'+periodClosing(p).toLocaleString()+'</div></div>';
-        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+      list.forEach(function(p,idx){
+        h+='<div class="ldg-period-card" onclick="LEDGER.openDetail(\''+p.id+'\')">';
+        h+='<div class="ldg-period-body">'+(idx===0?'<span class="ldg-period-tag">本期</span>':'')+'<div class="ldg-period-title">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div class="ldg-period-dates">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
+        h+='<div class="ldg-period-bal"><div class="ldg-period-bal-lbl">目前餘額</div><div class="ldg-period-bal-amt">'+periodClosing(p).toLocaleString()+'</div></div>';
+        h+='<span class="ldg-period-arr">&#x203A;</span>';
         h+='</div>';
       });
     }
@@ -21808,11 +21958,11 @@ var LEDGER=(function(){
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="LEDGER.setMeta(\'startDate\',this.value)"></div>';
     h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="LEDGER.setMeta(\'endDate\',this.value)"></div>';
     h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">起始餘額</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="LEDGER.setMeta(\'openBalance\',this.value)"></div>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#1565c0;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#c0392b;" onclick="LEDGER.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#3E8E6A;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="ldg-del-btn" onclick="LEDGER.deletePeriod(\''+curPid+'\')">刪除此期</button>';
     h+='</div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="cln-sig-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
+    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="ldg-addrow-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
     h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>餘額</th><th></th></tr></thead><tbody>';
     h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">起始餘額</td><td style="font-weight:700;">'+open.toLocaleString()+'</td><td></td></tr>';
     if(!rows.length){
@@ -21996,7 +22146,7 @@ function _ledgerSummaryTablesHtml(t,open){
     /* 餘額只跟著自己新增的調整項目（manual）變動，零用金自動帶入的
        灰字明細只是參考、不是自己身上的現金進出，不能拿來扣餘額。 */
     var closing=open+(t.manualIncome||0)-(t.manualExpense||0);
-    h+='<tr class="tot-row" style="background:#fff6e0;"><td>目前餘額</td><td class="num" style="color:#1565c0;">'+closing.toLocaleString()+'</td></tr>';
+    h+='<tr class="tot-row" style="background:#EEF7F0;"><td>目前餘額</td><td class="num" style="color:#3E8E6A;">'+closing.toLocaleString()+'</td></tr>';
   }
   h+='</tbody></table></div>';
   h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 總支出只算左邊「餐費/設備…」這類日常科目；薪資/員工福利/退費/房租這四項是另外記的明細，不計入總支出。</div>';
@@ -22193,17 +22343,17 @@ var CHECKOUT=(function(){
     var list=sortedPeriods();
     var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
-    h+='<button class="asr-add-btn" style="margin-bottom:14px;" onclick="CHECKOUT.openNew()">&#xFF0B; 新增結帳期別</button>';
+    h+='<button class="asr-add-btn ldg-newperiod-btn" style="margin-bottom:14px;" onclick="CHECKOUT.openNew()">&#xFF0B; 新增結帳期別</button>';
     if(!list.length){
       h+='<div style="color:#aaa;text-align:center;padding:30px 0;">'+companyLabel+' 尚未建立任何結帳期別，請按上方「新增結帳期別」</div>';
     } else {
-      list.forEach(function(p){
+      list.forEach(function(p,idx){
         var c=calc(p);
-        h+='<div onclick="CHECKOUT.openDetail(\''+p.id+'\')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;border-left:5px solid #c08a3a;">';
-        h+='<div style="flex:1;"><div style="font-weight:800;font-size:.95rem;color:#8a5a1a;">'+(p.label||'（未命名期別）')+'</div>';
-        h+='<div style="font-size:.76rem;color:#888;margin-top:3px;">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
-        h+='<div style="text-align:right;"><div style="font-size:.7rem;color:#aaa;">總結</div><div style="font-weight:800;font-size:1.05rem;color:#1565c0;">'+c.grandTotal.toLocaleString()+'</div></div>';
-        h+='<span style="color:#ccc;font-size:1.2rem;">&#x203A;</span>';
+        h+='<div class="chk-period-card" onclick="CHECKOUT.openDetail(\''+p.id+'\')">';
+        h+='<div class="chk-period-body">'+(idx===0?'<span class="chk-period-tag">最新一期</span>':'')+'<div class="chk-period-title">'+(p.label||'（未命名期別）')+'</div>';
+        h+='<div class="chk-period-dates">'+(p.startDate||'?')+' ～ '+(p.endDate||'?')+'</div></div>';
+        h+='<div class="chk-period-bal"><div class="chk-period-bal-lbl">總結</div><div class="chk-period-bal-amt">'+c.grandTotal.toLocaleString()+'</div></div>';
+        h+='<span class="chk-period-arr">&#x203A;</span>';
         h+='</div>';
       });
     }
@@ -22217,7 +22367,7 @@ var CHECKOUT=(function(){
     var ledgerPeriods=(typeof LEDGER!=='undefined'&&LEDGER.listPeriodsForCheckout)?LEDGER.listPeriodsForCheckout():[];
     var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).short;
     var h='';
-    h+='<button class="cln-sig-btn" style="margin-bottom:12px;" onclick="CHECKOUT.backToHub()">&#x2039; 結帳期別列表</button>';
+    h+='<button class="cln-sig-btn chk-back-btn" style="margin-bottom:12px;" onclick="CHECKOUT.backToHub()">&#x2039; 結帳期別列表</button>';
     /* 期別名稱單獨一整排、開始/結束日期並排一排、按鈕再自己一排——
        三種東西性質不一樣，混在一起用 flex-wrap 擠，手機版會亂折行。 */
     h+='<div class="df-sec">';
@@ -22227,8 +22377,8 @@ var CHECKOUT=(function(){
     h+='<div style="flex:1;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="CHECKOUT.setMeta(\'endDate\',this.value)"></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:10px;">';
-    h+='<button class="cln-sig-btn" style="flex:1;padding:9px 0;background:#1565c0;" onclick="CHECKOUT.print()">&#x1F5A8;&#xFE0F; 列印</button>';
-    h+='<button class="cln-sig-btn" style="flex:1;padding:9px 0;background:#c0392b;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">&#x1F5D1;&#xFE0F; 刪除此期</button>';
+    h+='<button class="cln-sig-btn" style="flex:1;padding:9px 0;background:#3E8E6A;" onclick="CHECKOUT.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="ldg-del-btn" style="flex:1;" onclick="CHECKOUT.deletePeriod(\''+curPid+'\')">刪除此期</button>';
     h+='</div>';
     h+='</div>';
     h+='<div class="df-sec">';
@@ -22240,37 +22390,35 @@ var CHECKOUT=(function(){
     h+='</select></div>';
     h+='</div>';
     /* 收入 */
-    h+='<div class="df-sec"><div class="df-lbl">收入</div><table class="ck-table"><thead><tr><th>項目</th><th>金額</th><th>備註</th></tr></thead><tbody>';
-    h+='<tr><td>註冊費</td><td>'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>月費</td><td>'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>代辦費</td><td>'+c.agencyFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>延托費</td><td>'+c.extendFee.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>保險費</td><td>'+c.insurance.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>退費</td><td>-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;font-size:.7rem;">月費單自動帶入</td></tr>';
-    h+='<tr><td>優化補助</td><td><input type="text" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"></td><td><input type="text" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></td></tr>';
-    h+='<tr><td>利息</td><td><input type="text" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"></td><td><input type="text" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></td></tr>';
-    h+='<tr style="font-weight:800;background:#f7f7fa;"><td>收入總計</td><td colspan="2" style="color:#1565c0;">'+c.totalIncome.toLocaleString()+'</td></tr>';
-    h+='</tbody></table></div>';
+    h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq in"></span>收入</div>';
+    [['註冊費',c.regFee],['月費',c.monthFee],['代辦費',c.agencyFee],['延托費',c.extendFee],['保險費',c.insurance]].forEach(function(row){
+      h+='<div class="chk-row"><div class="chk-row-name">'+row[0]+'</div><div class="chk-row-amt">'+row[1].toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
+    });
+    h+='<div class="chk-row"><div class="chk-row-name">退費</div><div class="chk-row-amt">-'+c.refund.toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
+    h+='<div class="chk-row"><div class="chk-row-name">優化補助</div><input type="text" class="chk-row-inp" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></div>';
+    h+='<div class="chk-row"><div class="chk-row-name">利息</div><input type="text" class="chk-row-inp" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></div>';
+    h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
+    h+='</div>';
     /* 支出 */
-    h+='<div class="df-sec"><div class="df-lbl">支出<button class="cln-sig-btn" style="float:right;" onclick="CHECKOUT.addRow()">&#xFF0B; 新增支出項目</button></div>';
-    h+='<table class="ck-table"><thead><tr><th>類別</th><th>備註</th><th>金額</th><th></th></tr></thead><tbody>';
+    h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq out"></span>支出<button class="ldg-addrow-btn" style="margin-left:auto;" onclick="CHECKOUT.addRow()">&#xFF0B; 新增支出項目</button></div>';
     Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
       var r=p.entries[id]||{};
-      h+='<tr><td><select onchange="CHECKOUT.setRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
+      h+='<div class="chk-row"><select class="chk-cat-sel" onchange="CHECKOUT.setRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
       CHECKOUT_EXPENSE_CATS.forEach(function(cat){h+='<option value="'+cat+'"'+(r.cat===cat?' selected':'')+'>'+cat+'</option>';});
-      h+='</select></td>';
-      h+='<td><input type="text" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'note\',this.value)"></td>';
-      h+='<td><input type="text" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'amount\',this.value)"></td>';
-      h+='<td><button onclick="CHECKOUT.delRow(\''+id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+      h+='</select>';
+      h+='<input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setRowField(\''+id+'\',\'note\',this.value)">';
+      h+='<input type="text" class="chk-row-inp" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setRowField(\''+id+'\',\'amount\',this.value)">';
+      h+='<button class="chk-row-del" onclick="CHECKOUT.delRow(\''+id+'\')">&#x1F5D1;&#xFE0F;</button></div>';
     });
-    h+='<tr style="color:#999;"><td>零用金</td><td style="font-size:.7rem;">零用金期別自動帶入</td><td>'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
-    h+='<tr style="font-weight:800;background:#f7f7fa;"><td>支出總計</td><td colspan="2" style="color:#c0392b;">'+c.totalExpense.toLocaleString()+'</td><td></td></tr>';
+    h+='<div class="chk-row" style="color:#999;"><div class="chk-row-name">零用金</div><span class="chk-row-note">零用金期別自動帶入</span><div class="chk-row-amt">'+c.pettycashExpense.toLocaleString()+'</div></div>';
+    h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">支出總計</div><div class="chk-row-amt" style="color:#C2603E;">'+c.totalExpense.toLocaleString()+'</div></div>';
+    h+='</div>';
     h+='</tbody></table></div>';
     /* 本期結算 + A/B/C 帳 */
     h+='<div class="df-sec"><div class="df-lbl">本期結算</div><table class="ck-table"><tbody>';
     h+='<tr><td>收入總計</td><td>'+c.totalIncome.toLocaleString()+'</td></tr>';
     h+='<tr><td>支出總計</td><td>'+c.totalExpense.toLocaleString()+'</td></tr>';
-    h+='<tr style="font-weight:800;"><td>本期（損益）</td><td style="color:'+(c.netThis<0?'#c0392b':'#1565c0')+';">'+c.netThis.toLocaleString()+'</td></tr>';
+    h+='<tr style="font-weight:800;"><td>本期（損益）</td><td style="color:'+(c.netThis<0?'#C2603E':'#3E6BB0')+';">'+c.netThis.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
     h+='<div class="df-sec"><div class="df-lbl">A/B/C 帳資產</div><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
     h+='<tr><td>A帳</td><td><input type="text" value="'+((p.aAccount||'')+'')+'" onchange="CHECKOUT.setMeta(\'aAccount\',this.value)"></td></tr>';
@@ -22281,7 +22429,7 @@ var CHECKOUT=(function(){
     h+='<div class="df-sec"><table class="ck-table"><tbody>';
     h+='<tr><td>上期總結</td><td><input type="text" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
     h+='<tr><td>本期（損益）</td><td>'+c.netThis.toLocaleString()+'</td></tr>';
-    h+='<tr style="font-weight:800;background:#fff6e0;"><td>總結</td><td style="color:#1565c0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
+    h+='<tr style="font-weight:800;background:#E2ECF9;"><td>總結</td><td style="color:#3E6BB0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
     wrap.innerHTML=h;
   }
