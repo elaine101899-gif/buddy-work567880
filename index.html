@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261107080922';
+  var BUILD='20261107085833';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1515,6 +1515,98 @@ body.adm .asr-promote-btn{display:block !important;}
 .crp-btn{background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);border-radius:8px;padding:8px 16px;font-size:.88rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 .crp-btn-ok{background:#2d9c6f;border:none;padding:8px 22px;font-weight:700;}
 
+/* ══ 2026-11 適齡適性記錄改版（純樣式）：只改外觀，選老師/幼兒、週記錄、
+   上傳照片、傳給組長、列印、審核、儲存、匯出匯入等功能都不受影響（整段
+   包在 @media screen 裡）。要復原刪掉這整段即可。 ══ */
+@media screen {
+/* ── 名單／週記錄頁：標題列 ── */
+#pg-asr .bbar{position:relative;top:auto;background:#FCEFD9;border:none;border-radius:20px;box-shadow:none;margin:10px 10px 0;padding:14px 150px 20px 18px;min-height:110px;}
+#pg-asr .bbar::before{display:none;}
+#pg-asr .bbar::after{content:'';display:block;position:absolute;top:8px;right:8px;left:auto;width:132px;height:92px;border:none;transform:none;background:url(images/development.png) right center/contain no-repeat;}
+#pg-asr .bbar .bbtn{border:none;padding:8px 18px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+#pg-asr .bbar .btitle{text-align:left;text-shadow:none;color:#1d2433;margin-top:14px;font-size:1.5rem;letter-spacing:.5px;display:block;}
+#pg-asr .bbar .btitle::before{display:block;margin-bottom:2px;font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1.5px;color:#B9822A;content:attr(data-eyebrow);}
+@media (max-width:380px){
+  #pg-asr .bbar{padding-right:118px;}
+  #pg-asr .bbar::after{width:104px;}
+  #pg-asr .bbar .btitle{font-size:1.3rem;}
+}
+
+/* ── 年度／主題卡片 ── */
+.asr-yrth-bar{display:block;background:#fff;border:1px solid #ECE6DA;border-radius:16px;margin:12px 10px;padding:14px 16px;box-shadow:0 2px 10px rgba(0,0,0,.04);}
+.asr-yrth-row{display:flex;gap:10px;}
+.asr-yrth-col{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.asr-yrth-lbl{font-size:.68rem;color:#9a9388;font-weight:700;white-space:nowrap;}
+#pg-asr .asr-yrth-sel{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;padding:8px 14px;font-size:.82rem;color:#3a3530;font-weight:700;box-shadow:none;width:100%;}
+.asr-yrth-themebar{margin-top:10px;background:#FCEFD9;border-radius:999px;padding:7px 14px;display:flex;align-items:center;gap:6px;}
+.asr-yrth-tag{font-size:.68rem;font-weight:700;color:#B9822A;flex-shrink:0;}
+.asr-yrth-name{font-size:.82rem;font-weight:800;color:#1d2433;}
+
+/* ── 區塊標題（托育人員／幼兒名冊／週記錄）── */
+.asr-section-hd{border-bottom:none;align-items:flex-start;flex-wrap:wrap;gap:8px;}
+.asr-section-hd-week{border-bottom:none;}
+.asr-sec-title{display:flex;align-items:center;gap:10px;}
+.asr-sec-ico{width:36px;height:36px;border-radius:11px;background:#FCEFD9;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.asr-sec-ico-child{background:#F8EEE3;}
+.asr-sec-ico img{width:24px;height:24px;object-fit:contain;}
+.asr-sec-txt{display:flex;flex-direction:column;gap:1px;}
+.asr-sec-name{font-size:.86rem;font-weight:800;color:#2d3057;white-space:nowrap;}
+.asr-sec-sub{font-size:.68rem;color:#9a9388;font-weight:600;}
+.asr-section-hd-child{align-items:center;}
+.asr-hint-box{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px dashed #D9CFBE;border-radius:12px;padding:8px 12px;margin:-4px 0 12px;font-size:.7rem;color:#8a8372;}
+.asr-hint-i{flex-shrink:0;width:16px;height:16px;border-radius:50%;background:#E8A93A;color:#fff;font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;font-style:normal;}
+
+/* ── 老師／幼兒卡片 ── */
+.asr-person{border-radius:18px;border-color:#ECE6DA;}
+.asr-avatar{background:#FCEFD9;color:#B9822A;}
+.asr-person.sel{border-color:#E8A93A;border-width:2px;background:#FCEFD9;}
+.asr-person.sel .asr-avatar{background:#fff;}
+.asr-page{background:#fff;border-radius:999px;padding:2px 9px;display:inline-block;}
+.stat-ok,.stat-part,.stat-none{background:#fff;border:1px solid #ECE6DA;}
+.stat-ok{color:#3E8E6A;} .stat-part{color:#B9822A;} .stat-none{color:#aaa;}
+
+/* ── 週記錄卡片 ── */
+.asr-wk{border-radius:16px;border-color:#ECE6DA;}
+.asr-wk.done{border-color:#BFE3C9;background:#EEF7F0;}
+.asr-wk-no{color:#B9822A;}
+
+/* ── 匯出／匯入列 ── */
+.asr-data-bar{background:#fff;border-color:#ECE6DA;border-radius:14px;}
+.asr-data-btn{border-radius:999px;border-color:#E2D9C8;}
+
+/* ── 記錄編輯頁：工具列 ── */
+.asr-form-bbar{background:#FCEFD9;color:#1d2433;}
+.asr-form-bbar .afrb{background:#fff;border:none;color:#1d2433;border-radius:999px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+.asr-form-bbar .afrt{color:#1d2433;}
+.asr-form-bbar .afrp{border-radius:999px;}
+.asr-form-bbar .afrs{border-radius:999px;}
+
+/* ── 表單外框／表頭 ── */
+.asr-form-card{border-radius:22px;border:1px solid #ECE6DA;box-shadow:none;}
+.asr-fhd{background:#FCEFD9;}
+.asr-fhd-txt h3{color:#1d2433;}
+.asr-fhd-txt p{color:#6B6470;}
+.asr-fhd-ch strong{color:#1d2433;}
+.asr-fhd-ch span{color:#6B6470;}
+
+/* ── 班級／日期／記錄者、表格標題列、表格線 ── */
+.asr-fmeta{background:#F5F0E6;border-bottom-color:#F1EBDF;}
+.asr-fmeta-c{border-right-color:#F1EBDF;}
+.asr-col-hd{background:#F5F0E6;border-bottom-color:#F1EBDF;}
+.asr-col-hd div{color:#B9822A;}
+.asr-arow{border-bottom-color:#F1EBDF;}
+.asr-dom{background:#FAF7F0;border-right-color:#F1EBDF;}
+.asr-ainf{border-right-color:#F1EBDF;}
+.asr-aind,.asr-aind-inp{color:#B9822A;}
+.asr-bot{border-top-color:#F1EBDF;}
+.asr-bot-c{border-right-color:#F1EBDF;}
+
+/* ── 照片上傳格 ── */
+.pslot{border-radius:12px;border-color:#D9CFBE;background:#FAF6EE;}
+
+/* ── 活動省思／家長回饋 ── */
+.asr-ta{border-radius:12px;border:1.5px solid #D9CFBE;}
+}
 
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -6279,52 +6371,67 @@ function printSummaryB(cls) {
 
 <!-- ═══ ASR ═══ -->
 <div class="pg" id="pg-asr">
-  <div class="bbar">
+  <div class="bbar" data-eyebrow="DEVELOPMENT RECORD">
     <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
     <span class="btitle">適齡適性記錄</span>
   </div>
   <div class="asr-yrth-bar">
-    <span class="asr-yrth-lbl">年度</span>
-    <select class="asr-yrth-sel" id="selYrDrop" onchange="ASR.setYrTh()">
-      <option value="114">114年度</option>
-      <option value="115">115年度</option>
-      <option value="116">117年</option>
-    </select>
-    <span class="asr-yrth-lbl" style="margin-left:8px">主題</span>
-    <select class="asr-yrth-sel" id="selThDrop" onchange="ASR.setYrTh()">
-      <option value="1">第一主題</option>
-      <option value="2">第二主題</option>
-      <option value="3">第三主題</option>
-      <option value="4">第四主題</option>
-      <option value="5">第五主題</option>
-      <option value="6" selected>第六主題</option>
-    </select>
-    <span class="asr-yrth-name" id="thNameLbl">・ 小丑魚和貝貝</span>
+    <div class="asr-yrth-row">
+      <div class="asr-yrth-col">
+        <span class="asr-yrth-lbl">年度</span>
+        <select class="asr-yrth-sel" id="selYrDrop" onchange="ASR.setYrTh()">
+          <option value="114">114年度</option>
+          <option value="115">115年度</option>
+          <option value="116">117年</option>
+        </select>
+      </div>
+      <div class="asr-yrth-col">
+        <span class="asr-yrth-lbl">主題</span>
+        <select class="asr-yrth-sel" id="selThDrop" onchange="ASR.setYrTh()">
+          <option value="1">第一主題</option>
+          <option value="2">第二主題</option>
+          <option value="3">第三主題</option>
+          <option value="4">第四主題</option>
+          <option value="5">第五主題</option>
+          <option value="6" selected>第六主題</option>
+        </select>
+      </div>
+    </div>
+    <div class="asr-yrth-themebar">
+      <span class="asr-yrth-tag">本主題</span>
+      <span class="asr-yrth-name" id="thNameLbl">小丑魚和貝貝</span>
+    </div>
   </div>
   <div class="asr-wrap">
     <div class="asr-section-hd">
-      <span>&#x1F469;&#x200D;&#x1F3EB; 托育人員</span>
+      <div class="asr-sec-title">
+        <span class="asr-sec-ico asr-sec-ico-teacher"><img src="images/asr_icon_teacher.png" alt=""></span>
+        <div class="asr-sec-txt"><span class="asr-sec-name">托育人員</span><span class="asr-sec-sub">先選老師，再選幼兒</span></div>
+      </div>
       <button class="asr-add-btn" id="btnAddT">&#xFF0B; 新增老師</button>
       <button class="asr-add-btn" id="btnSyncRoster" style="background:#4a90c0" title="如果新增老師/幼兒後沒有出現，按這裡強制重新抓取最新名單">&#x1F504; 立即同步</button>
     </div>
     <div class="asr-grid" id="teacherGrid"><div style="color:#8a8a9a;font-size:.78rem">尚無老師，請點「新增老師」</div></div>
     <div id="childSec" style="display:none">
-      <div class="asr-section-hd">
-        <span id="childSecTitle">&#x1F476; 幼兒名冊</span>
-        <span style="font-size:.74rem;color:#999;">新生入托請到「收費 → 月費單」新增（會自動算比例月費）</span>
+      <div class="asr-section-hd asr-section-hd-child">
+        <div class="asr-sec-title">
+          <span class="asr-sec-ico asr-sec-ico-child"><img src="images/asr_icon_child.png" alt=""></span>
+          <span class="asr-sec-txt" id="childSecTitle"><span class="asr-sec-name">幼兒名冊</span></span>
+        </div>
         <button class="asr-add-btn" id="btnResetWeekPhotos" style="background:#c04a4a" title="清空這位老師全班某一週的照片、還原成最新課程內容（不會動到心得/家長回饋文字）">&#x1F5D1;&#xFE0F; 清空本週照片</button>
       </div>
+      <div class="asr-hint-box"><span class="asr-hint-i">i</span><span>新生入托請到「收費 → 月費單」新增，會自動算比例月費</span></div>
       <div class="asr-grid" id="childGrid"></div>
     </div>
     <div id="weekSec" style="display:none">
-      <div class="asr-section-hd">
-        <span id="weekSecTitle">&#x1F4C5; 週記錄</span>
+      <div class="asr-section-hd asr-section-hd-week">
+        <span id="weekSecTitle" class="asr-sec-name">週記錄</span>
       </div>
       <div class="asr-wk-grid" id="weekGrid"></div>
       <div class="asr-data-bar">
-        <span>&#x1F4BE; 關閉前請匯出備份</span>
-        <button class="asr-data-btn" id="btnExASR">&#x2B07; 匯出</button>
-        <button class="asr-data-btn" id="btnImASR">&#x2B06; 匯入</button>
+        <span>關閉前請匯出備份</span>
+        <button class="asr-data-btn" id="btnExASR">匯出</button>
+        <button class="asr-data-btn" id="btnImASR">匯入</button>
         <input type="file" id="asrImpF" accept=".json" style="display:none">
       </div>
     </div>
@@ -6335,9 +6442,9 @@ function printSummaryB(cls) {
   <div class="asr-form-bbar">
     <button class="afrb" onclick="ASR.cf()">&#x2190; 返回</button>
     <span class="afrt" id="asrFmTitle">適性發展活動</span>
-    <button class="afrshare" onclick="ASR.share()" style="background:#9870c8;border:none;color:white;padding:5px 11px;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">&#x1F4E4; 傳給組長</button>
-    <button class="afrp" onclick="ASR.pf()">&#x1F5A8; 列印</button>
-    <button class="afrs" id="asrFmSave">&#x2713; 儲存</button>
+    <button class="afrshare" onclick="ASR.share()" style="background:#9870c8;border:none;color:white;padding:5px 11px;border-radius:999px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;">傳給組長</button>
+    <button class="afrp" onclick="ASR.pf()">列印</button>
+    <button class="afrs" id="asrFmSave">儲存</button>
   </div>
   <div class="asr-form-card" id="asrFmCard"></div>
 </div>
@@ -7267,7 +7374,7 @@ var ASR = (function() {
     document.getElementById('weekSec').style.display='none';
     var teacher=null,i;
     for(i=0;i<asrDB.teachers.length;i++){if(asrDB.teachers[i].id===tid){teacher=asrDB.teachers[i];break;}}
-    if(teacher)document.getElementById('childSecTitle').innerHTML=(CLSICON[teacher.cls]?'<img src="'+CLSICON[teacher.cls]+'" style="width:20px;height:20px;vertical-align:-5px;border-radius:50%;margin-right:4px;">':'&#x1F476; ')+'幼兒名冊　'+teacher.name+'（'+(CLS[teacher.cls]||teacher.cls)+'）';
+    if(teacher)document.getElementById('childSecTitle').innerHTML='<span class="asr-sec-name">幼兒名冊</span><span class="asr-sec-sub">'+teacher.name+'・'+(CLS[teacher.cls]||teacher.cls)+'</span>';
     rdrC();
   }
   var _showLeftKids=false;
@@ -7302,7 +7409,7 @@ var ASR = (function() {
       var bc=done===wkData.weeks.length?'stat-ok':done>0?'stat-part':'stat-none';
       var bl=done===wkData.weeks.length?'全部完成':done>0?done+'/'+wkData.weeks.length+'週':'未填寫';
       h+='<div class="asr-person'+(isSel?' sel':'')+'" data-cid="'+c.id+'">';
-      h+='<div class="asr-avatar" style="background:#e8a030">'+c.name.slice(0,1)+'</div>';
+      h+='<div class="asr-avatar">'+c.name.slice(0,1)+'</div>';
       h+='<div class="asr-pname">'+c.name+'</div>';
       h+='<div class="asr-page">'+c.age+'</div>';
       h+='<span class="asr-stat '+bc+'">'+bl+'</span>';
@@ -7484,7 +7591,7 @@ var ASR = (function() {
     document.getElementById('weekSec').style.display='block';
     var cs=asrDB.children[selT]||[]; var child=null,i;
     for(i=0;i<cs.length;i++){if(cs[i].id===cid){child=cs[i];break;}}
-    if(child)document.getElementById('weekSecTitle').textContent='📅 '+child.name+' 的週記錄';
+    if(child)document.getElementById('weekSecTitle').textContent=child.name+' 的週記錄';
     rdrW();
     setTimeout(function(){var el=document.getElementById('weekSec');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});},100);
   }
@@ -7495,8 +7602,8 @@ var ASR = (function() {
     for(i=0;i<wkData.weeks.length;i++){
       var wk=wkData.weeks[i]; var done=!!(asrDB.reports[selYear+"_"+selTheme+"_"+selT+selC+wk.no]);
       var isCur=(wk.no===curWkNo);
-      h+='<div class="asr-wk'+(done?' done':'')+(isCur?' cur-wk':'')+'" data-wno="'+wk.no+'" style="'+(isCur?'border:2px solid #4a7c59;position:relative;':'')+'">';
-      if(isCur)h+='<div style="position:absolute;top:4px;right:6px;font-size:.6rem;background:#4a7c59;color:#fff;padding:1px 6px;border-radius:8px;">本週</div>';
+      h+='<div class="asr-wk'+(done?' done':'')+(isCur?' cur-wk':'')+'" data-wno="'+wk.no+'" style="'+(isCur?'border:2px solid #3E8E6A;position:relative;':'')+'">';
+      if(isCur)h+='<div style="position:absolute;top:4px;right:6px;font-size:.6rem;background:#3E8E6A;color:#fff;padding:1px 6px;border-radius:999px;">本週</div>';
       h+='<div class="asr-wk-no">第 '+wk.no+' 週</div>';
       h+='<div class="asr-wk-dt">'+wk.dates+'</div>';
       h+='<div class="asr-wk-th">'+wk.theme+'</div>';
@@ -7985,7 +8092,7 @@ var ASR = (function() {
     selYear=yr; selTheme=th;
     wkData=(allThemes[yr]&&allThemes[yr][th])?allThemes[yr][th]:{name:"待規劃",weeks:[],acts:{}};
     var lbl=document.getElementById("thNameLbl");
-    if(lbl) lbl.textContent=wkData.name?(" ・ "+wkData.name):"";
+    if(lbl) lbl.textContent=wkData.name||"";
     selT=null; selC=null;
     document.getElementById("childSec").style.display="none";
     document.getElementById("weekSec").style.display="none";
@@ -8010,7 +8117,7 @@ var ASR = (function() {
     var thDrop=document.getElementById("selThDrop");
     if(thDrop)thDrop.value=String(selTheme);
     var lbl=document.getElementById("thNameLbl");
-    if(lbl)lbl.textContent=wkData.name?(" ・ "+wkData.name):"";
+    if(lbl)lbl.textContent=wkData.name||"";
   }
   function updDom(sel){sel.style.color=DC[sel.value]||'#8a8a9a';}
   function cf(){document.getElementById('asrFmOv').classList.remove('on');}
@@ -27624,8 +27731,8 @@ var KINGDOM=(function(){
     var abar=document.querySelector('#asrFmOv .asr-form-bbar'),asave=$('asrFmSave');
     if(abar){
       var ab=document.createElement('button');
-      ab.type='button';ab.textContent='🏰 審核';
-      ab.style.cssText='background:#5a4fa8;border:none;color:#fff;padding:5px 11px;border-radius:8px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit;';
+      ab.type='button';ab.textContent='審核';
+      ab.style.cssText='background:#5a4fa8;border:none;color:#fff;padding:5px 11px;border-radius:999px;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit;';
       ab.addEventListener('click',openAsr);
       if(asave)abar.insertBefore(ab,asave);else abar.appendChild(ab);_entryBtns.push(ab);
     }
