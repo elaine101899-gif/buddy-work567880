@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261107074114';
+  var BUILD='20261107080922';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -1818,8 +1818,11 @@ body.adm .sync-setup{display:block;}
 #pg-week .sticky-nav,#pg-week5 .sticky-nav,#pg-weekB .sticky-nav{background:transparent;border-bottom:none;box-shadow:none;}
 #pg-week .week-nav,#pg-week5 .week-nav,#pg-weekB .week-nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;border-bottom:none;padding:10px 14px 4px;gap:6px;scrollbar-width:none;}
 #pg-week .week-nav::-webkit-scrollbar,#pg-week5 .week-nav::-webkit-scrollbar,#pg-weekB .week-nav::-webkit-scrollbar{display:none;}
-#pg-week .week-btn,#pg-week5 .week-btn,#pg-weekB .week-btn{flex-shrink:0;width:34px;height:34px;padding:0;border-radius:50%;background:#fff;border:1.5px solid #E2D9C8;color:#7A7064;font-size:.82rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+#pg-week .week-btn,#pg-week5 .week-btn,#pg-weekB .week-btn{flex-shrink:0;width:34px;height:34px;padding:0;border-radius:50%;background:#fff;border:1.5px solid #E2D9C8;color:#7A7064;font-size:0;font-weight:800;display:flex;align-items:center;justify-content:center;}
 #pg-week .week-btn.active,#pg-week5 .week-btn.active,#pg-weekB .week-btn.active{background:#3E8E6A;border-color:#3E8E6A;color:#fff;box-shadow:0 2px 6px rgba(62,142,106,.3);}
+#pg-week .week-btn::before{content:attr(data-week);font-size:.86rem;font-weight:800;}
+#pg-week5 .week-btn::before{content:attr(data-week5);font-size:.86rem;font-weight:800;}
+#pg-weekB .week-btn::before{content:attr(data-weekb);font-size:.86rem;font-weight:800;}
 #pg-week .class-filter-bar,#pg-week5 .class-filter-bar,#pg-weekB .class-filter-bar{justify-content:flex-start;padding:4px 14px 6px;gap:6px;}
 #pg-week .class-filter-bar span,#pg-week5 .class-filter-bar span,#pg-weekB .class-filter-bar span{display:none;}
 #pg-week .cls-btn,#pg-week5 .cls-btn,#pg-weekB .cls-btn{background:#fff;border-width:1.5px;padding:5px 14px 5px 8px;font-size:.8rem;font-weight:800;display:inline-flex;align-items:center;gap:5px;}
