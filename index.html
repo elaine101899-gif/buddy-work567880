@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261107134344';
+  var BUILD='20261111071834';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2449,6 +2449,113 @@ body.adm .sync-setup{display:block;}
 .pay-ta{width:100%;min-height:50px;padding:10px 14px;border:1.5px solid #E2D9C8;border-radius:14px;background:#FAF6EE;font-size:.84rem;box-sizing:border-box;font-family:inherit;}
 /* ══ 總帳改版結束 ══ */
 
+/* ══ 2026-11 清潔表單（環境清潔／班級寢具／環境溫濕度）改版（純樣式）：
+   功能、資料、儲存、簽名、下載本月表單、整批列印、設假日等程式邏輯都
+   不受影響，只是把畫面上既有的欄位／按鈕換個 class／顏色、原本橫向大
+   表格改成卡片直向排列（避免手機要左右滑），跟前面幾輪改版同一套做法。
+   要復原刪掉這整段即可。 ══ */
+#pg-clean{overflow-x:hidden;}
+#pg-clean .df-sec{border-radius:20px;border:1px solid #ECE6DA;box-shadow:none;max-width:100%;box-sizing:border-box;}
+#pg-clean .df-inp{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:999px;}
+#pg-clean .cln-sig-btn{border-radius:999px;}
+#pg-clean .asr-add-btn{border-radius:999px;}
+
+/* ── 共用標題列：返回膠囊＋淡灰路徑＋大標題，右上角可放插圖 ── */
+.cfm-bar{position:relative;border-radius:20px;margin:10px 10px 0;padding:12px 16px 14px;overflow:hidden;box-sizing:border-box;}
+.cfm-bar-top{display:flex;align-items:center;gap:8px;}
+.cfm-bar-path{font-size:.68rem;color:#9a9388;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cfm-bar-title{font-size:1.1rem;font-weight:900;color:#1d2433;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:78%;}
+.cfm-bar-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.68rem;font-weight:800;letter-spacing:1.5px;color:#B8507A;margin-top:12px;}
+.cfm-bar-deco{position:absolute;top:10px;right:14px;width:54px;height:54px;object-fit:contain;}
+.cfm-bar.c-hub{background:#FBE3EA;}
+.cfm-bar.c-env{background:#E2ECF9;}
+.cfm-bar.c-bed{background:#EEE6F7;}
+.cfm-bar.c-temp{background:#FCEFD9;}
+
+/* ── 清潔表單選單（3 張卡片）── */
+.cfm-sub-lbl{font-size:1rem;font-weight:800;color:#2E2A3A;padding:20px 16px 14px;}
+.cfm-menu-wrap{padding:0 16px 24px;max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:12px;box-sizing:border-box;}
+.cfm-menu-item{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;cursor:pointer;}
+.cfm-menu-ico{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;}
+.cfm-menu-ico img{width:30px;height:30px;object-fit:contain;}
+.cfm-menu-ico.c-env{background:#E2ECF9;}
+.cfm-menu-ico.c-bed{background:#EEE6F7;}
+.cfm-menu-ico.c-temp{background:#FCEFD9;}
+.cfm-menu-body{flex:1;min-width:0;}
+.cfm-menu-lbl{font-size:.62rem;font-weight:800;letter-spacing:1px;color:#B8507A;}
+.cfm-menu-name{font-weight:800;font-size:1rem;color:#2d3057;margin-top:1px;}
+.cfm-menu-desc{font-size:.76rem;color:#8a8372;margin-top:2px;}
+.cfm-menu-arr{width:26px;height:26px;border-radius:999px;background:#F5F0E6;display:flex;align-items:center;justify-content:center;color:#B8507A;font-size:1rem;flex-shrink:0;}
+
+/* ── 選擇清潔區域：兩欄淡色圓角按鈕 ── */
+.cfm-area-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cfm-area-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;border-radius:14px;padding:14px 12px;cursor:pointer;min-width:0;}
+.cfm-area-name{font-weight:800;font-size:.84rem;min-width:0;word-break:break-all;}
+.cfm-area-arr{width:22px;height:22px;border-radius:999px;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;}
+
+/* ── 下載本月表單（米色年月＋淡綠下載，同一張卡片）── */
+.cfm-dl-btn{background:#E3F2EA;color:#3E8E6A;border:none;border-radius:999px;padding:10px 16px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;flex-shrink:0;align-self:flex-end;}
+
+/* ── 環境清潔：每天一張卡片 ── */
+.cfm-daycard{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;padding:14px 16px;margin:0 12px 10px;}
+.cfm-daycard.off{display:flex;align-items:center;justify-content:space-between;background:#FBEDEB;border-color:#F3CFC2;padding:10px 16px;}
+.cfm-day-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.cfm-day-date{font-weight:800;font-size:.9rem;color:#2d3057;}
+.cfm-day-cnt{font-size:.72rem;font-weight:700;border-radius:999px;padding:3px 10px;}
+.cfm-day-cnt.full{background:#EEF7F0;color:#3E8E6A;}
+.cfm-day-cnt.partial{background:#FCEFD9;color:#B9822A;}
+.cfm-day-cnt.none{background:#F5F0E6;color:#9a9388;}
+.cfm-off-pill{background:#fff;color:#C2603E;font-size:.74rem;font-weight:700;border-radius:999px;padding:5px 14px;white-space:nowrap;}
+.cfm-item-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.cfm-item-btn{position:relative;display:flex;align-items:center;gap:6px;background:#FAF6EE;border:1.5px solid #ECE6DA;border-radius:999px;padding:7px 12px 7px 7px;cursor:pointer;flex:1 1 calc(25% - 6px);min-width:72px;box-sizing:border-box;}
+.cfm-item-inp{position:absolute;opacity:0;width:1px;height:1px;}
+.cfm-item-ico{width:18px;height:18px;border-radius:50%;border:2px solid #D9CFBE;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:#fff;font-weight:800;}
+.cfm-item-lbl{font-size:.74rem;font-weight:700;color:#6b5f4a;word-break:break-all;}
+.cfm-item-inp:checked ~ .cfm-item-ico{background:#3E8E6A;border-color:#3E8E6A;}
+.cfm-item-inp:checked ~ .cfm-item-ico::after{content:'\2713';}
+.cfm-item-inp:checked ~ .cfm-item-lbl{color:#3E8E6A;}
+.cfm-item-btn:has(.cfm-item-inp:checked){background:#EEF7F0;border-color:#BFE3C9;}
+.cfm-offtype-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.cfm-offtype-btn{background:none;border:none;color:#9a9388;font-size:.68rem;padding:3px 6px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cfm-sig-row{margin-top:10px;}
+.cfm-sig-btn{background:#EEF7F0;color:#3E8E6A;border:none;border-radius:999px;padding:7px 16px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cln-sig-img{max-width:100px;max-height:40px;border-radius:8px;cursor:pointer;}
+
+/* ── 冰箱溫度／教室溫濕度：一天一列 ── */
+.cfm-tmp-hd{display:flex;align-items:center;background:#FAF6EE;border-radius:12px;margin:0 12px 8px;padding:9px 14px;font-size:.72rem;font-weight:700;color:#8a7a5a;}
+.cfm-tmp-hd span{flex:1;}
+.cfm-tmp-hd span:first-child{flex:1.2;}
+.cfm-tmp-row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1.5px solid #ECE6DA;border-radius:14px;margin:0 12px 8px;padding:10px 14px;flex-wrap:wrap;gap:8px;}
+.cfm-tmp-row.off{background:#FBEDEB;border-color:#F3CFC2;}
+.cfm-tmp-date{font-weight:700;font-size:.82rem;color:#2d3057;display:flex;align-items:center;gap:8px;}
+.cfm-holiday-btn{background:none;border:none;color:#9a9388;font-size:.64rem;padding:2px 6px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cfm-tmp-vals{display:flex;gap:8px;flex-wrap:wrap;}
+.cfm-tmp-val select{border-radius:999px;border:1.5px solid #CBD9EE;background:#E2ECF9;color:#3E6BB0;font-size:.8rem;padding:5px 10px;font-weight:700;}
+.cfm-tmp-val.c1 select{border-color:#DCCBEE;background:#EEE6F7;color:#7B55A0;}
+.cfm-sig-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;margin:10px 12px 0;padding:14px 16px;}
+.cfm-sig-item{display:flex;align-items:center;gap:8px;}
+.cfm-sig-lbl{font-size:.74rem;font-weight:700;color:#8a7a5a;}
+
+/* ── 班級寢具：一個孩子一張卡片 ── */
+.cfm-bed-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;margin:0 12px 10px;padding:14px 16px;}
+.cfm-bed-hd{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cfm-bed-avatar{width:32px;height:32px;border-radius:50%;background:#EEE6F7;color:#7B55A0;font-weight:800;font-size:.84rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.cfm-bed-name{font-weight:800;font-size:.92rem;color:#2d3057;flex:1;min-width:0;}
+.cfm-bed-name-inp{flex:1;min-width:0;border:1.5px solid #E2D9C8;border-radius:999px;background:#FAF6EE;padding:6px 12px;font-size:.84rem;}
+.cfm-bed-cnt{font-size:.68rem;font-weight:700;background:#F5F0E6;color:#8a7a5a;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+.cfm-bed-del{background:none;border:none;color:#C2603E;font-size:.9rem;cursor:pointer;flex-shrink:0;}
+.cfm-bed-dates{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.cfm-bed-pill{display:flex;align-items:center;border-radius:999px;padding:6px 10px;flex:1 1 calc(25% - 6px);min-width:84px;box-sizing:border-box;justify-content:center;}
+.cfm-bed-pill.filled{background:#EEE6F7;}
+.cfm-bed-pill.empty{background:#fff;border:1.5px dashed #DCCBEE;}
+.cfm-bed-plus{color:#7B55A0;font-size:.74rem;font-weight:800;margin-right:2px;}
+.cfm-bed-dsel{border:none;background:transparent;font-size:.76rem;font-weight:700;color:#7B55A0;max-width:40px;}
+.cfm-bed-sep{color:#7B55A0;font-size:.76rem;}
+.cfm-bed-note-inp{width:100%;border:1.5px solid #E2D9C8;border-radius:999px;background:#FAF6EE;padding:7px 14px;font-size:.8rem;box-sizing:border-box;}
+.cfm-add-row-btn{display:block;width:calc(100% - 24px);margin:0 12px 14px;background:#fff;border:1.5px dashed #DCCBEE;color:#7B55A0;border-radius:999px;padding:10px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.cfm-lv-btn{border:none;border-radius:999px;padding:9px 16px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+/* ══ 清潔表單改版結束 ══ */
+
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
 window._asrPreload114=window._asrPreload;</script>
@@ -4762,54 +4869,39 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ CLEANING FORM ═══ -->
 <div class="pg" id="pg-clean">
-  <div class="bbar" id="cleanTopBbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">清潔表單</span>
+  <div class="cfm-bar c-hub" id="cleanTopBbar">
+    <div class="cfm-bar-top"><button class="admin-back-btn" onclick="GO('forms-menu')">&#x2190; 各式表單</button></div>
+    <img class="cfm-bar-deco" src="images/forms_clean.png" alt="">
+    <div class="cfm-bar-eyebrow">CLEANING</div>
+    <div class="cfm-bar-title">清潔表單</div>
   </div>
-  <div id="cleanHub" class="cards-wrap" style="padding:14px 12px;">
-    <div class="hcard c-blu" onclick="CLEAN.show('env')">
-      <div class="hcard-in"><div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F9F9;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Environment</div>
-          <div class="hcard-title">&#x1F9FC; 環境清潔</div>
-          <div class="hcard-desc">教室、廁所、戶外等區域清潔打勾<br>每日簽名</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
+  <div id="cleanHub">
+    <div class="cfm-sub-lbl">要填哪一張？</div>
+    <div class="cfm-menu-wrap">
+    <div class="cfm-menu-item" onclick="CLEAN.show('env')">
+      <span class="cfm-menu-ico c-env"><img src="images/forms_clean.png" alt=""></span>
+      <div class="cfm-menu-body"><div class="cfm-menu-lbl">ENVIRONMENT</div><div class="cfm-menu-name">環境清潔</div><div class="cfm-menu-desc">各區域每日打勾簽名</div></div>
+      <span class="cfm-menu-arr">&#x203A;</span>
     </div>
-    <div class="hcard c-pur" onclick="CLEAN.show('bedding')">
-      <div class="hcard-in"><div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F6CF;&#xFE0F;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Bedding</div>
-          <div class="hcard-title">&#x1F6CF;&#xFE0F; 班級寢具</div>
-          <div class="hcard-desc">各班幼兒寢具清潔紀錄</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
+    <div class="cfm-menu-item" onclick="CLEAN.show('bedding')">
+      <span class="cfm-menu-ico c-bed"><img src="images/clean_bedding.png" alt=""></span>
+      <div class="cfm-menu-body"><div class="cfm-menu-lbl">BEDDING</div><div class="cfm-menu-name">班級寢具</div><div class="cfm-menu-desc">各班幼兒寢具清潔紀錄</div></div>
+      <span class="cfm-menu-arr">&#x203A;</span>
     </div>
-    <div class="hcard c-ora" onclick="CLEAN.show('temp')">
-      <div class="hcard-in"><div class="hcard-bar"></div>
-        <div class="hcard-img"><span style="font-size:2.2rem">&#x1F321;&#xFE0F;</span></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">Temp / Humidity</div>
-          <div class="hcard-title">&#x1F321;&#xFE0F; 環境溫濕度</div>
-          <div class="hcard-desc">冰箱溫度、教室溫濕度每日紀錄</div>
-        </div>
-        <div class="hcard-arr">&#x203A;</div>
-      </div>
+    <div class="cfm-menu-item" onclick="CLEAN.show('temp')">
+      <span class="cfm-menu-ico c-temp"><img src="images/temperature.png" alt=""></span>
+      <div class="cfm-menu-body"><div class="cfm-menu-lbl">TEMP / HUMIDITY</div><div class="cfm-menu-name">環境溫濕度</div><div class="cfm-menu-desc">冰箱溫度・教室溫濕度</div></div>
+      <span class="cfm-menu-arr">&#x203A;</span>
+    </div>
     </div>
   </div>
   <div id="cleanSecEnv" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">環境清潔</span></div>
     <div id="cleanWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecBedding" style="display:none;">
     <div id="beddingWrap" style="padding:10px 12px 40px;"></div>
   </div>
   <div id="cleanSecTemp" style="display:none;">
-    <div class="bbar"><button class="bbtn" onclick="CLEAN.show('hub')">&#x2190; 清潔表單</button><span class="btitle">環境溫濕度</span></div>
     <div id="tempWrap" style="padding:10px 12px 40px;"></div>
   </div>
 </div>
@@ -19762,6 +19854,18 @@ function _pickGridHTML(items,onclickPrefix){
   h+='</div>';
   return h;
 }
+/* 清潔表單「選擇清潔區域」按鈕配色：純粹從區域名稱字面關鍵字衍生出顯示
+   顏色，不影響資料本身。找不到關鍵字的區域（私人區域以外的其他新區域）
+   依序輪流套用兩種備用色，保持好看又不用每新增一個空間就要手動配色。 */
+function _cleanAreaColor(label,idx){
+  if(label.indexOf('寶寶')>-1)return{bg:'#F8EEE3',tx:'#A87C55'};
+  if(label.indexOf('爬爬')>-1)return{bg:'#EEF3E3',tx:'#6A8343'};
+  if(label.indexOf('跑跑')>-1)return{bg:'#E6EDF5',tx:'#56769A'};
+  if(label.indexOf('廚房')>-1)return{bg:'#FBE6DD',tx:'#C2603E'};
+  if(label.indexOf('私人')>-1)return{bg:'#EEE6F7',tx:'#7B55A0'};
+  var cyc=[{bg:'#FCEFD9',tx:'#B9822A'},{bg:'#E3F2EA',tx:'#3E8E6A'}];
+  return cyc[idx%cyc.length];
+}
 /* ── 清潔表單：共用「六日／國定假日／颱風假／豪雨假」判斷與按鈕 ── */
 var OFF_TYPE_BTNS=[{type:'國定假日',lbl:'設國定假日'},{type:'颱風假',lbl:'設颱風假'},{type:'豪雨假',lbl:'設豪雨假'}];
 /* 國定假日（西元日期 YYYY-MM-DD）全站共用同一份清單：病假退費計算（CHILDLEAVE）、
@@ -19933,9 +20037,15 @@ var CLEAN=(function(){
 
   function renderAreaHub(wrap){
     var h='';
-    h+='<div class="df-sec"><div class="df-lbl">🧹 選擇清潔區域</div>';
+    h+='<div class="cfm-bar c-env"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="CLEAN.show(\'hub\')">&#x2190; 清潔表單</button><span class="cfm-bar-path">清潔表單 &rsaquo; 環境清潔</span></div><div class="cfm-bar-title">環境清潔</div></div>';
+    h+='<div class="df-sec"><div class="df-lbl">選擇清潔區域</div>';
     if(CLEAN_FORMS.length){
-      h+=_pickGridHTML(CLEAN_FORMS.map(function(fm){return{value:fm.id,label:fm.label};}),'CLEAN.selectForm');
+      h+='<div class="cfm-area-grid">';
+      CLEAN_FORMS.forEach(function(fm,fi){
+        var col=_cleanAreaColor(fm.label,fi);
+        h+='<div class="cfm-area-btn" style="background:'+col.bg+';color:'+col.tx+';" onclick="CLEAN.selectForm(\''+fm.id+'\')"><span class="cfm-area-name">'+fm.label+'</span><span class="cfm-area-arr">&#x203A;</span></div>';
+      });
+      h+='</div>';
     }else{
       h+='<div style="color:#8a8a9a;font-size:.82rem;margin:6px 0 4px;">尚無清潔區域，請在下方新增</div>';
     }
@@ -19992,39 +20102,46 @@ var CLEAN=(function(){
     var nd=daysInMonth(curY,curM);
     var rec=getRec();
     var h='';
-    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="CLEAN.backToAreaHub()">&#x2190; 選擇區域</button><span class="btitle">'+f.label+'</span></div>';
+    h+='<div class="cfm-bar c-env"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="CLEAN.backToAreaHub()">&#x2190; 選擇區域</button><span class="cfm-bar-path">清潔表單 &rsaquo; 環境清潔 &rsaquo; '+f.label+'</span></div><div class="cfm-bar-title">'+f.label+'</div></div>';
     h+='<div class="df-sec" style="display:flex;gap:10px;">';
     h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="cleanYInp" value="'+curY+'" onchange="CLEAN.changeYM()"></div>';
     h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="cleanMSel" onchange="CLEAN.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
-    h+='</select></div></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">'+f.label+' — '+curY+'年'+curM+'月<button class="cln-sig-btn" style="float:right;" onclick="CLEAN.download()">📥 下載本月表單</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>日期</th>';
-    f.items.forEach(function(it){h+='<th>'+it+'</th>';});
-    h+='<th>老師簽名</th></tr></thead><tbody>';
+    h+='</select></div>';
+    h+='<button class="cfm-dl-btn" onclick="CLEAN.download()">下載本月表單</button>';
+    h+='</div>';
     for(var d=1;d<=nd;d++){
       var dayRec=rec.days[d]||{};
       var wkd=_isWeekend(curY,curM,d);
       var offType=dayRec.offType||'';
       var offDay=wkd||!!offType;
-      h+='<tr'+(offDay?' style="background:#fdeaea;"':'')+'>';
-      h+='<td class="cln-day">'+d+'（'+_weekdayLabel(curY,curM,d)+'）'+_offTypeBtnsHTML(d,offType,'CLEAN.setOffType')+'</td>';
+      var dateLbl=d+'（'+_weekdayLabel(curY,curM,d)+'）';
       if(offDay){
-        h+='<td colspan="'+(f.items.length+1)+'" style="text-align:center;color:#cf6b6b;font-weight:700;">'+(wkd?'六日':offType)+'公休，不用填寫</td>';
-      } else {
+        var pillTxt=wkd?'六日公休':(offType+'公休');
+        var pillClick=(!wkd&&offType)?' onclick="CLEAN.setOffType('+d+',\''+offType+'\')"':'';
+        h+='<div class="cfm-daycard off"><div class="cfm-day-date">'+dateLbl+'</div><span class="cfm-off-pill"'+pillClick+'>'+pillTxt+'</span></div>';
+      }else{
+        var doneCnt=0;
+        f.items.forEach(function(it,i){if(dayRec['i'+i])doneCnt++;});
+        var cntCls=(doneCnt===f.items.length)?'full':(doneCnt>0?'partial':'none');
+        h+='<div class="cfm-daycard">';
+        h+='<div class="cfm-day-hd"><div class="cfm-day-date">'+dateLbl+'</div><span class="cfm-day-cnt '+cntCls+'">'+doneCnt+'/'+f.items.length+'</span></div>';
+        h+='<div class="cfm-item-grid">';
         f.items.forEach(function(it,i){
           var checked=dayRec['i'+i]?' checked':'';
-          h+='<td><input type="checkbox" class="cln-chk" data-day="'+d+'" data-idx="'+i+'"'+checked+' onchange="CLEAN.toggle(this)"></td>';
+          h+='<label class="cfm-item-btn"><input type="checkbox" class="cfm-item-inp" data-day="'+d+'" data-idx="'+i+'"'+checked+' onchange="CLEAN.toggle(this)"><span class="cfm-item-ico"></span><span class="cfm-item-lbl">'+it+'</span></label>';
         });
-        h+='<td>';
+        h+='</div>';
+        h+='<div class="cfm-offtype-row">';
+        OFF_TYPE_BTNS.forEach(function(b){h+='<button class="cfm-offtype-btn" onclick="CLEAN.setOffType('+d+',\''+b.type+'\')">'+b.lbl+'</button>';});
+        h+='</div>';
+        h+='<div class="cfm-sig-row">';
         if(dayRec.sig){h+='<img src="'+dayRec.sig+'" class="cln-sig-img" onclick="CLEAN.openSig('+d+')">';}
-        else{h+='<button class="cln-sig-btn" onclick="CLEAN.openSig('+d+')">✍️簽名</button>';}
-        h+='</td>';
+        else{h+='<button class="cfm-sig-btn" onclick="CLEAN.openSig('+d+')">簽名</button>';}
+        h+='</div>';
+        h+='</div>';
       }
-      h+='</tr>';
     }
-    h+='</tbody></table></div>';
     wrap.innerHTML=h;
   }
   function setOffType(day,type){
@@ -20095,11 +20212,12 @@ var CLEAN=(function(){
     if(secEnv)secEnv.style.display=(sec==='env')?'':'none';
     if(secBed)secBed.style.display=(sec==='bedding')?'':'none';
     if(secTmp)secTmp.style.display=(sec==='temp')?'':'none';
-    /* 班級寢具自己裡面（選擇班級／某班明細）已經各有一個返回按鈕，
-       最上面這層「← 各式表單　清潔表單」再疊一次會變成同時出現三層，
-       進到班級寢具的時候先把這層藏起來，只留班級寢具自己那一個。 */
+    /* 環境清潔／班級寢具／環境溫濕度裡面（選擇區域或項目／某區域明細）
+       已經各有自己一層標題列，最上面這層「← 各式表單　清潔表單」再疊
+       一次會變成同時出現兩三層，進到任何一個子區塊時都先把這層藏起來，
+       只留子區塊自己那一層。 */
     var topBar=document.getElementById('cleanTopBbar');
-    if(topBar)topBar.style.display=(sec==='bedding')?'none':'';
+    if(topBar)topBar.style.display=(sec==='hub')?'':'none';
     if(sec==='env'){curStep='hub';load();render();}
     if(sec==='bedding'&&typeof BEDDING!=='undefined')BEDDING.init();
     if(sec==='temp'&&typeof TEMP!=='undefined')TEMP.init();
@@ -20348,7 +20466,7 @@ var BEDDING=(function(){
 
   function renderClsHub(wrap){
     var h='';
-    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="CLEAN.show(\'hub\')">&#x2190; 清潔表單</button><span class="btitle">班級寢具</span></div>';
+    h+='<div class="cfm-bar c-bed"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="CLEAN.show(\'hub\')">&#x2190; 清潔表單</button><span class="cfm-bar-path">清潔表單 &rsaquo; 班級寢具</span></div><div class="cfm-bar-title">班級寢具</div></div>';
     h+='<div class="df-sec"><div class="df-lbl">🛏️ 選擇班級</div>';
     if(BEDDING_CLASSES.length){
       h+=_pickGridHTML(BEDDING_CLASSES.map(function(c){return{value:c.id,label:c.label};}),'BEDDING.selectCls');
@@ -20410,47 +20528,53 @@ var BEDDING=(function(){
       if(fb0)fb0.ref('xiaobuddyClean/bedding/records/'+key()+'/rows').set(rec.rows);
     }
     var h='';
-    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="BEDDING.backToClsHub()">&#x2190; 選擇班級</button><span class="btitle">'+findClsLabel()+'</span></div>';
+    h+='<div class="cfm-bar c-bed"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="BEDDING.backToClsHub()">&#x2190; 選擇班級</button><span class="cfm-bar-path">清潔表單 &rsaquo; 班級寢具 &rsaquo; '+findClsLabel()+'</span></div><div class="cfm-bar-title">'+findClsLabel()+'</div></div>';
     h+='<div class="df-sec" style="display:flex;gap:10px;">';
     h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="bedYInp" value="'+curY+'" onchange="BEDDING.changeYM()"></div>';
     h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="bedMSel" onchange="BEDDING.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
-    h+='</select></div></div>';
-    h+='<div class="df-sec"><div class="df-lbl">🖨 整批列印（同年段合併成一張）</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    BEDDING_LEVELS.forEach(function(lv){h+='<button class="cln-sig-btn" onclick="BEDDING.downloadLevel(\''+lv.id+'\')">'+lv.label+'</button>';});
+    h+='</select></div>';
+    h+='<button class="cfm-dl-btn" onclick="BEDDING.download()">下載本月表單</button>';
+    h+='</div>';
+    h+='<div class="df-sec"><div class="df-lbl">整批列印（同年段合併成一張）</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    var _bedLvCol={baby:{bg:'#F8EEE3',tx:'#A87C55'},crawl:{bg:'#EEF3E3',tx:'#6A8343'},run:{bg:'#E6EDF5',tx:'#56769A'}};
+    BEDDING_LEVELS.forEach(function(lv){var lc=_bedLvCol[lv.id]||{bg:'#F5F0E6',tx:'#6b5f4a'};h+='<button class="cfm-lv-btn" style="background:'+lc.bg+';color:'+lc.tx+';" onclick="BEDDING.downloadLevel(\''+lv.id+'\')">'+lv.label+'</button>';});
     h+='</div></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">'+findClsLabel()+' 寢具清潔紀錄 — '+curY+'年'+curM+'月<button class="cln-sig-btn" style="float:right;" onclick="BEDDING.download()">📥 下載本月表單</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>姓名</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>日期</th><th>備註</th><th></th></tr></thead><tbody>';
     rec.rows.forEach(function(row,ri){
-      h+='<tr>';
-      if(row.fromRoster){h+='<td>'+(row.name||'')+'</td>';}
-      else{h+='<td><input type="text" class="cln-txt" value="'+(row.name||'').replace(/"/g,'&quot;')+'" onchange="BEDDING.setCell('+ri+',\'name\',-1,this.value)"></td>';}
+      var cnt=row.d.filter(function(dv){return dv;}).length;
+      h+='<div class="cfm-bed-card">';
+      h+='<div class="cfm-bed-hd"><span class="cfm-bed-avatar">'+((row.name||'').charAt(0)||'？')+'</span>';
+      if(row.fromRoster){h+='<div class="cfm-bed-name">'+(row.name||'')+'</div>';}
+      else{h+='<input type="text" class="cfm-bed-name-inp" value="'+(row.name||'').replace(/"/g,'&quot;')+'" placeholder="姓名" onchange="BEDDING.setCell('+ri+',\'name\',-1,this.value)">';}
+      h+='<span class="cfm-bed-cnt">本月 '+cnt+' 次</span>';
+      if(!row.fromRoster)h+='<button class="cfm-bed-del" onclick="BEDDING.deleteRow('+ri+')" title="刪除此列">&#x1F5D1;&#xFE0F;</button>';
+      h+='</div>';
+      h+='<div class="cfm-bed-dates">';
       for(var di=0;di<5;di++){
         var dParts=(row.d[di]||'').split('/'); var dm=dParts[0]||'', dd=dParts[1]||'';
-        h+='<td style="white-space:nowrap;">';
-        h+='<select class="cln-dsel" onchange="BEDDING.setDatePart('+ri+','+di+',\'m\',this.value)"><option value="">–</option>';
+        var filled=!!row.d[di];
+        h+='<span class="cfm-bed-pill'+(filled?' filled':' empty')+'">';
+        if(!filled)h+='<span class="cfm-bed-plus">&#xFF0B;</span>';
+        h+='<select class="cfm-bed-dsel" onchange="BEDDING.setDatePart('+ri+','+di+',\'m\',this.value)"><option value="">–</option>';
         for(var mm=1;mm<=12;mm++)h+='<option value="'+mm+'"'+(String(mm)===dm?' selected':'')+'>'+mm+'</option>';
-        h+='</select> / ';
-        h+='<select class="cln-dsel" onchange="BEDDING.setDatePart('+ri+','+di+',\'d\',this.value)"><option value="">–</option>';
+        h+='</select><span class="cfm-bed-sep">/</span>';
+        h+='<select class="cfm-bed-dsel" onchange="BEDDING.setDatePart('+ri+','+di+',\'d\',this.value)"><option value="">–</option>';
         for(var ddv=1;ddv<=31;ddv++)h+='<option value="'+ddv+'"'+(String(ddv)===dd?' selected':'')+'>'+ddv+'</option>';
-        h+='</select></td>';
+        h+='</select></span>';
       }
-      h+='<td><input type="text" class="cln-txt cln-note" value="'+(row.note||'').replace(/"/g,'&quot;')+'" onchange="BEDDING.setCell('+ri+',\'note\',-1,this.value)"></td>';
-      h+='<td><button class="cln-del-btn" onclick="BEDDING.deleteRow('+ri+')" title="刪除此列">🗑️</button></td>';
-      h+='</tr>';
+      h+='</div>';
+      h+='<input type="text" class="cfm-bed-note-inp" value="'+(row.note||'').replace(/"/g,'&quot;')+'" placeholder="備註" onchange="BEDDING.setCell('+ri+',\'note\',-1,this.value)">';
+      h+='</div>';
     });
-    h+='<tr><td style="font-weight:700;color:var(--navy);">托育人員簽章</td>';
+    h+='<button class="cfm-add-row-btn" onclick="BEDDING.addRow()">＋ 新增一列</button>';
+    h+='<div class="cfm-sig-card"><div class="cfm-sig-lbl" style="margin-bottom:8px;">托育人員簽章</div><div style="display:flex;flex-wrap:wrap;gap:12px;">';
     for(var si=0;si<5;si++){
-      h+='<td>';
+      h+='<div class="cfm-sig-item">';
       if(rec.sigs[si]){h+='<img src="'+rec.sigs[si]+'" class="cln-sig-img" onclick="BEDDING.openSig('+si+')">';}
-      else{h+='<button class="cln-sig-btn" onclick="BEDDING.openSig('+si+')">✍️簽名</button>';}
-      h+='</td>';
+      else{h+='<button class="cfm-sig-btn" onclick="BEDDING.openSig('+si+')">簽名</button>';}
+      h+='</div>';
     }
-    h+='<td></td></tr>';
-    h+='</tbody></table>';
-    h+='<button class="cln-add-btn" onclick="BEDDING.addRow()">＋ 新增一列</button>';
-    h+='</div>';
+    h+='</div></div>';
     wrap.innerHTML=h;
   }
 
@@ -20641,6 +20765,10 @@ var TEMP=(function(){
     for(var v=min;v<=max;v+=step)a.push(String(v));
     return a;
   }
+  function _tempUnit(rowLbl){
+    if(rowLbl==='濕度')return '%';
+    return '℃';
+  }
   function valOptions(rowLbl){
     if(rowLbl==='溫度')return _rangeArr(24,28,1);
     if(rowLbl==='濕度')return _rangeArr(50,70,5);
@@ -20766,6 +20894,7 @@ var TEMP=(function(){
 
   function renderOptHub(wrap){
     var h='';
+    h+='<div class="cfm-bar c-temp"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="CLEAN.show(\'hub\')">&#x2190; 清潔表單</button><span class="cfm-bar-path">清潔表單 &rsaquo; 環境溫濕度</span></div><div class="cfm-bar-title">環境溫濕度</div></div>';
     h+='<div class="df-sec"><div class="df-lbl">🖨 列印</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
     h+='<button class="cln-sig-btn" onclick="TEMP.downloadMonth()">📊 月報表（全部項目合併一張）</button>';
     h+='</div></div>';
@@ -20825,49 +20954,41 @@ var TEMP=(function(){
     var nd=daysInMonth(curY,curM);
     var rec=getRec();
     var h='';
-    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="TEMP.backToOptHub()">&#x2190; 選擇項目</button><span class="btitle">'+k.label+(curRoom?'（'+curRoom+'）':'')+'</span></div>';
+    h+='<div class="cfm-bar c-temp"><div class="cfm-bar-top"><button class="admin-back-btn" onclick="TEMP.backToOptHub()">&#x2190; 選擇項目</button><span class="cfm-bar-path">清潔表單 &rsaquo; 環境溫濕度 &rsaquo; '+k.label+(curRoom?'（'+curRoom+'）':'')+'</span></div><div class="cfm-bar-title">'+k.label+(curRoom?'（'+curRoom+'）':'')+'</div></div>';
     h+='<div class="df-sec" style="display:flex;gap:10px;">';
     h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="tmpYInp" value="'+curY+'" onchange="TEMP.changeYM()"></div>';
     h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="tmpMSel" onchange="TEMP.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
-    h+='</select></div></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">'+k.label+(curRoom?'（'+curRoom+'）':'')+' — '+curY+'年'+curM+'月<button class="cln-sig-btn" style="float:right;" onclick="TEMP.download()">📥 下載本月表單</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>日期</th>';
-    for(var d=1;d<=nd;d++)h+='<th>'+d+'（'+_weekdayLabel(curY,curM,d)+'）</th>';
-    h+='</tr></thead><tbody>';
-    h+='<tr><td class="cln-day">假別</td>';
-    for(var d3=1;d3<=nd;d3++){
-      var wknd3=_isWeekend(curY,curM,d3);
-      var offT3=(rec.offType||{})[d3]||'';
-      if(wknd3){
-        h+='<td style="background:#cf6b6b;color:#fff;font-size:.6rem;">六日</td>';
-      } else {
-        var dispCh=offT3==='國定假日'?'國':offT3==='颱風假'?'颱':offT3==='豪雨假'?'豪':'-';
-        h+='<td><button class="cln-sig-btn" style="font-size:.62rem;padding:2px 3px;'+(offT3?'background:#cf6b6b;color:#fff;':'background:#eee;color:#888;')+'" onclick="TEMP.cycleOffType('+d3+')" title="點擊切換：無/國定假日/颱風假/豪雨假">'+dispCh+'</button></td>';
+    h+='</select></div>';
+    h+='<button class="cfm-dl-btn" onclick="TEMP.download()">下載本月表單</button>';
+    h+='</div>';
+    h+='<div class="cfm-tmp-hd"><span>日期</span>';
+    k.rows.forEach(function(rowLbl){h+='<span>'+rowLbl+' '+_tempUnit(rowLbl)+'</span>';});
+    h+='</div>';
+    for(var d=1;d<=nd;d++){
+      var wknd=_isWeekend(curY,curM,d);
+      var offT=(rec.offType||{})[d]||'';
+      var dateLbl=d+'（'+_weekdayLabel(curY,curM,d)+'）';
+      if(wknd){
+        h+='<div class="cfm-tmp-row off"><div class="cfm-tmp-date">'+dateLbl+'</div><span class="cfm-off-pill">六日</span></div>';
+      }else if(offT){
+        h+='<div class="cfm-tmp-row off"><div class="cfm-tmp-date">'+dateLbl+'</div><span class="cfm-off-pill" onclick="TEMP.cycleOffType('+d+')">'+offT+'</span></div>';
+      }else{
+        h+='<div class="cfm-tmp-row"><div class="cfm-tmp-date">'+dateLbl+'<button class="cfm-holiday-btn" onclick="TEMP.cycleOffType('+d+')" title="點擊切換：無/國定假日/颱風假/豪雨假">設假日</button></div>';
+        h+='<div class="cfm-tmp-vals">';
+        k.rows.forEach(function(rowLbl,ri){
+          var v=(rec.vals[d]&&rec.vals[d][ri])||'';
+          h+='<span class="cfm-tmp-val c'+(ri%2)+'">'+valSelect(rowLbl,v,'TEMP.setVal('+d+','+ri+',this.value)')+'</span>';
+        });
+        h+='</div></div>';
       }
     }
-    h+='</tr>';
-    k.rows.forEach(function(rowLbl,ri){
-      h+='<tr><td class="cln-day">'+rowLbl+'</td>';
-      for(var d2=1;d2<=nd;d2++){
-        var offT2=(rec.offType||{})[d2]||'';
-        if(_isWeekend(curY,curM,d2)||offT2){
-          h+='<td style="background:#fdeaea;color:#cf6b6b;">—</td>';
-        } else {
-          var v=(rec.vals[d2]&&rec.vals[d2][ri])||'';
-          h+='<td>'+valSelect(rowLbl,v,'TEMP.setVal('+d2+','+ri+',this.value)')+'</td>';
-        }
-      }
-      h+='</tr>';
-    });
-    h+='</tbody></table></div>';
-    h+='<div class="df-sec" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;">';
+    h+='<div class="cfm-sig-card">';
     k.sigLabels.forEach(function(lbl,si){
       var sigField='sig'+(si+1);
-      h+='<div style="display:flex;align-items:center;gap:8px;"><div class="df-lbl" style="margin:0;">'+lbl+'</div>';
+      h+='<div class="cfm-sig-item"><div class="cfm-sig-lbl">'+lbl+'</div>';
       if(rec[sigField]){h+='<img src="'+rec[sigField]+'" class="cln-sig-img" onclick="TEMP.openSig('+si+')">';}
-      else{h+='<button class="cln-sig-btn" onclick="TEMP.openSig('+si+')">✍️簽名</button>';}
+      else{h+='<button class="cfm-sig-btn" onclick="TEMP.openSig('+si+')">簽名</button>';}
       h+='</div>';
     });
     h+='</div>';
