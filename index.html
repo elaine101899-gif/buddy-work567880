@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111143218';
+  var BUILD='20261111143731';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22178,7 +22178,8 @@ var LEDGER=(function(){
     if(!p)return;
     var rows=combinedRows(p);
     var t=totals(rows);
-    var html=_ledgerPrintHTML(rows,t,p);
+    var open=parseFloat(p.openBalance)||0;
+    var html=_ledgerPrintHTML(rows,t,p,open);
     var w=window.open('','_blank');
     if(!w){alert('請允許瀏覽器彈出視窗以列印');return;}
     w.document.write(html);
@@ -22287,7 +22288,7 @@ function _ledgerSummaryTablesHtml(t,open){
   h+='</div>';
   return h;
 }
-function _ledgerPrintHTML(rows,t,p){
+function _ledgerPrintHTML(rows,t,p,open){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
   var rowsHtml='';
   if(!rows.length){
@@ -22312,7 +22313,7 @@ function _ledgerPrintHTML(rows,t,p){
   html+='<div class="sec">明細（共 '+rows.length+' 筆）</div>';
   html+='<div class="tbl-wrap"><table><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th class="num">收入</th><th class="num">支出</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></div>';
   html+='<div class="sec">科目分類統計</div>';
-  html+=_ledgerSummaryTablesHtml(t);
+  html+=_ledgerSummaryTablesHtml(t,open);
   html+='<script>window.onload=function(){setTimeout(function(){window.print();},150);}<\/script>';
   html+='</body></html>';
   return html;
