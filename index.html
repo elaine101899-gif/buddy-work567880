@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111203424';
+  var BUILD='20261111205030';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2241,7 +2241,7 @@ body.adm .sync-setup{display:block;}
    收支明細改成「一筆一行」的精簡清單（不是輸入框），點一下跳出小視窗
    （.pc-tx-row 開 #pcRowOv）編輯，畫面上一次能看到更多筆，也不用
    左右滑。 */
-#pg-pettycash-detail .pc-meta-grid .df-inp{font-size:.76rem;padding:7px 6px;}
+#pg-pettycash-detail .pc-meta-grid .df-inp,#pg-ledger-cash-detail .pc-meta-grid .df-inp{font-size:.76rem;padding:7px 6px;}
 .pc-tx-list{border:1px solid #ECE6DA;border-radius:14px;overflow:hidden;}
 .pc-tx-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #F0ECE2;cursor:pointer;background:#fff;}
 .pc-tx-row:last-child{border-bottom:none;}
@@ -22200,13 +22200,22 @@ var LEDGER=(function(){
     var t=totals(rows);
     var open=parseFloat(p.openBalance)||0;
     var h='';
-    h+='<div class="df-sec" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
-    h+='<div style="flex:2;min-width:160px;"><div class="df-lbl">期別名稱</div><input type="text" class="df-inp" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setMeta(\'label\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">開始日期</div><input type="date" class="df-inp" value="'+(p.startDate||'')+'" onchange="LEDGER.setMeta(\'startDate\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:120px;"><div class="df-lbl">結束日期</div><input type="date" class="df-inp" value="'+(p.endDate||'')+'" onchange="LEDGER.setMeta(\'endDate\',this.value)"></div>';
-    h+='<div style="flex:1;min-width:100px;"><div class="df-lbl">起始餘額</div><input type="number" class="df-inp" value="'+(p.openBalance||0)+'" onchange="LEDGER.setMeta(\'openBalance\',this.value)"></div>';
-    h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#3E8E6A;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
-    h+='<button class="ldg-del-btn" onclick="LEDGER.deletePeriod(\''+curPid+'\')">刪除此期</button>';
+    /* 2026-11-11：原本「期別名稱/開始日期/結束日期/起始餘額/列印/刪除」
+       全部塞在同一個 flex-wrap 排，手機上寬度不夠，日期欄位會跑出卡片
+       外或互相黏在一起。改成跟零用金明細頁一樣的排版：期別名稱單獨一
+       整排、開始/結束日期用 pc-meta-grid 並排、起始餘額單獨一整排，
+       按鈕再自己一排。 */
+    h+='<div class="df-sec">';
+    h+='<div class="df-lbl">期別名稱</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;margin-bottom:10px;" value="'+(p.label||'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setMeta(\'label\',this.value)">';
+    h+='<div class="pc-meta-grid">';
+    h+='<div><div class="df-lbl">開始日期</div><input type="date" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.startDate||'')+'" onchange="LEDGER.setMeta(\'startDate\',this.value)"></div>';
+    h+='<div><div class="df-lbl">結束日期</div><input type="date" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.endDate||'')+'" onchange="LEDGER.setMeta(\'endDate\',this.value)"></div>';
+    h+='<div class="full"><div class="df-lbl">起始餘額</div><input type="number" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+(p.openBalance||0)+'" onchange="LEDGER.setMeta(\'openBalance\',this.value)"></div>';
+    h+='</div>';
+    h+='<div style="display:flex;gap:8px;margin-top:12px;">';
+    h+='<button class="cln-sig-btn" style="flex:1;background:#3E8E6A;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
+    h+='<button class="ldg-del-btn" style="flex:1;" onclick="LEDGER.deletePeriod(\''+curPid+'\')">刪除此期</button>';
+    h+='</div>';
     h+='</div>';
     h+='<div class="df-sec">';
     h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="ldg-addrow-btn" style="float:right;" onclick="LEDGER.openRowOv()">&#xFF0B; 新增調整項目</button></div>';
@@ -22229,7 +22238,7 @@ var LEDGER=(function(){
         var dateShort=/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date.slice(5).replace('-','/'):(r.date||'未填日期');
         var ioHtml=inc?'<div class="pc-tx-row-io inc">+'+inc.toLocaleString()+'</div>':(exp?'<div class="pc-tx-row-io exp">-'+exp.toLocaleString()+'</div>':'<div class="pc-tx-row-io" style="color:#bbb;">0</div>');
         if(r.source==='pettycash'){
-          h+='<div class="pc-tx-row" style="color:#999;cursor:default;">';
+          h+='<div class="pc-tx-row" style="color:#999;cursor:default;background:#F5F2EC;">';
           h+='<div class="pc-tx-row-main">';
           h+='<div class="pc-tx-row-top"><span>'+dateShort+'</span>'+(r.cat?'<span class="pc-tx-row-cat">'+r.cat+'</span>':'')+'</div>';
           h+='<div class="pc-tx-row-note">'+((r.note||'（無摘要）')).replace(/</g,'&lt;')+'</div>';
