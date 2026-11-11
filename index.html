@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111202949';
+  var BUILD='20261111203424';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21782,9 +21782,13 @@ var PETTYCASH=(function(){
       h+='</div>';
     }
     h+='</div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
+    h+='<div class="df-sec">';
     h+='<div class="df-lbl">科目分類統計</div>';
-    h+='<table class="cln-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
+    /* 2026-11-11：.cln-table 共用樣式有 min-width:560px（給欄位多的表格用），
+       但這裡只有「項目／金額」兩欄，手機上會被硬撐出去要左右滑。這個
+       表格自己蓋掉 min-width，另外加 table-layout:fixed 讓兩欄照
+       容器寬度分配，不會再超版。 */
+    h+='<table class="cln-table" style="min-width:0;table-layout:fixed;"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
     h+='<tr><td>總收入</td><td>'+t.totalIncome.toLocaleString()+'</td></tr>';
     h+='<tr><td>上期結餘</td><td>'+t.open.toLocaleString()+'</td></tr>';
     h+='<tr><td>總支出</td><td>'+t.totalExpense.toLocaleString()+'</td></tr>';
