@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111201652';
+  var BUILD='20261111202949';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5209,6 +5209,26 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
   <div style="padding:14px 16px 40px;" id="ledgerWrap">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
+  </div>
+</div>
+<div class="asr-modal" id="ldgRowOv">
+  <div class="asr-mbox">
+    <h3>&#x1F4DD; 總帳調整項目</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">日期</div>
+    <input type="date" class="asr-mi" id="ldgRowDate">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">科目</div>
+    <select class="asr-msel" id="ldgRowCat"></select>
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">摘要</div>
+    <input type="text" class="asr-mi" id="ldgRowNote" placeholder="例如：轉帳">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">收入</div>
+    <input type="text" class="asr-mi" id="ldgRowIncome" placeholder="0">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">支出</div>
+    <input type="text" class="asr-mi" id="ldgRowExpense" placeholder="0">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="LEDGER.closeRowOv()">取消</button>
+      <button class="asr-mok" style="background:#e85a5a;" id="ldgRowDelBtn" onclick="LEDGER.deleteRowOv()">&#x1F5D1; 刪除這筆</button>
+      <button class="asr-mok" onclick="LEDGER.saveRowOv()">&#x2713; 儲存</button>
+    </div>
   </div>
 </div>
 <div class="pg" id="pg-ledger-checkout">
@@ -21978,6 +21998,7 @@ var LEDGER_MANUAL_CATS=PETTYCASH_CATS.concat(['薪資','月費收入','撥補零
 var LEDGER=(function(){
   var pcPeriods={},periods={};
   var curPid=null;
+  var _rowOvId=null;
   var _attachedCompany=null,_pcRef=null,_ledRef=null;
 
   /* 之前打開總帳都要先跟 Firebase 來回一趟才會看到數字，中間畫面是空的，
@@ -22183,12 +22204,16 @@ var LEDGER=(function(){
     h+='<button class="cln-sig-btn" style="padding:9px 14px;background:#3E8E6A;" onclick="LEDGER.print()">&#x1F5A8;&#xFE0F; 列印</button>';
     h+='<button class="ldg-del-btn" onclick="LEDGER.deletePeriod(\''+curPid+'\')">刪除此期</button>';
     h+='</div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="ldg-addrow-btn" style="float:right;" onclick="LEDGER.addRow()">&#xFF0B; 新增調整項目</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>月日</th><th>科目</th><th>摘要</th><th>收入</th><th>支出</th><th>餘額</th><th></th></tr></thead><tbody>';
-    h+='<tr style="background:#f7f7fa;"><td colspan="5" style="text-align:right;font-weight:700;">起始餘額</td><td style="font-weight:700;">'+open.toLocaleString()+'</td><td></td></tr>';
+    h+='<div class="df-sec">';
+    h+='<div class="df-lbl">總帳明細（灰字是零用金自動帶入，唯讀；要改請回零用金修改）<button class="ldg-addrow-btn" style="float:right;" onclick="LEDGER.openRowOv()">&#xFF0B; 新增調整項目</button></div>';
+    /* 2026-11-11：使用者要求總帳明細也比照零用金明細頁，改成「一筆一行」
+       的精簡清單＋小視窗編輯，不要再用左右滑的表格。灰字（零用金自動
+       帶入）那些是唯讀、不能點開編輯；只有自己新增的調整項目可以點開
+       小視窗改。 */
+    h+='<div class="pc-open-row">起始餘額　<b>'+open.toLocaleString()+'</b></div>';
+    h+='<div class="pc-tx-list">';
     if(!rows.length){
-      h+='<tr><td colspan="7" style="color:#aaa;">目前沒有任何明細</td></tr>';
+      h+='<div style="color:#aaa;text-align:center;padding:16px 0;">目前沒有任何明細</div>';
     } else {
       var running=open;
       rows.forEach(function(r){
@@ -22197,26 +22222,28 @@ var LEDGER=(function(){
            不能扣自己的餘額——只有自己在這裡新增的調整項目，才是真的從
            自己身上的錢進出，餘額才要跟著變動。 */
         if(r.source==='manual')running+=inc-exp;
+        var dateShort=/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date.slice(5).replace('-','/'):(r.date||'未填日期');
+        var ioHtml=inc?'<div class="pc-tx-row-io inc">+'+inc.toLocaleString()+'</div>':(exp?'<div class="pc-tx-row-io exp">-'+exp.toLocaleString()+'</div>':'<div class="pc-tx-row-io" style="color:#bbb;">0</div>');
         if(r.source==='pettycash'){
-          h+='<tr style="color:#999;">';
-          h+='<td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>';
-          h+='<td>'+(inc?inc.toLocaleString():'')+'</td><td>'+(exp?exp.toLocaleString():'')+'</td>';
-          h+='<td>'+running.toLocaleString()+'</td><td></td></tr>';
+          h+='<div class="pc-tx-row" style="color:#999;cursor:default;">';
+          h+='<div class="pc-tx-row-main">';
+          h+='<div class="pc-tx-row-top"><span>'+dateShort+'</span>'+(r.cat?'<span class="pc-tx-row-cat">'+r.cat+'</span>':'')+'</div>';
+          h+='<div class="pc-tx-row-note">'+((r.note||'（無摘要）')).replace(/</g,'&lt;')+'</div>';
+          h+='</div>';
+          h+='<div class="pc-tx-row-amts">'+ioHtml+'<div class="pc-tx-row-bal" style="color:#999;">'+running.toLocaleString()+'</div></div>';
+          h+='</div>';
         } else {
-          h+='<tr><td><input type="date" class="cln-num" style="width:118px;" value="'+(r.date||'')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'date\',this.value)"></td>';
-          h+='<td><select class="cln-num" style="width:76px;" onchange="LEDGER.setRowField(\''+r.id+'\',\'cat\',this.value)">';
-          h+='<option value="">–</option>';
-          LEDGER_MANUAL_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
-          h+='</select></td>';
-          h+='<td><input type="text" class="cln-num" style="width:120px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'note\',this.value)"></td>';
-          h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'income\',this.value)"></td>';
-          h+='<td><input type="text" class="cln-num" style="width:64px;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="LEDGER.setRowField(\''+r.id+'\',\'expense\',this.value)"></td>';
-          h+='<td>'+running.toLocaleString()+'</td>';
-          h+='<td><button onclick="LEDGER.delRow(\''+r.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button></td></tr>';
+          h+='<div class="pc-tx-row" onclick="LEDGER.openRowOv(\''+r.id+'\')">';
+          h+='<div class="pc-tx-row-main">';
+          h+='<div class="pc-tx-row-top"><span>'+dateShort+'</span>'+(r.cat?'<span class="pc-tx-row-cat">'+r.cat+'</span>':'')+'</div>';
+          h+='<div class="pc-tx-row-note">'+((r.note||'（無摘要）')).replace(/</g,'&lt;')+'</div>';
+          h+='</div>';
+          h+='<div class="pc-tx-row-amts">'+ioHtml+'<div class="pc-tx-row-bal">'+running.toLocaleString()+'</div></div>';
+          h+='</div>';
         }
       });
     }
-    h+='</tbody></table></div>';
+    h+='</div></div>';
     h+=_ledgerSummaryTablesHtml(t,open);
     wrap.innerHTML=h;
   }
@@ -22256,6 +22283,57 @@ var LEDGER=(function(){
     p.entries[id][field]=v;
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id+'/'+field).set(v);
+    render();
+  }
+  function openRowOv(id){
+    var p=periods[curPid];
+    if(!p)return;
+    _rowOvId=id||null;
+    var r=(id&&p.entries&&p.entries[id])?p.entries[id]:{date:'',cat:'',note:'',income:'',expense:''};
+    document.getElementById('ldgRowDate').value=r.date||'';
+    var sel=document.getElementById('ldgRowCat');
+    var sh='<option value="">–</option>';
+    LEDGER_MANUAL_CATS.forEach(function(c){sh+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
+    sel.innerHTML=sh;
+    document.getElementById('ldgRowNote').value=r.note||'';
+    document.getElementById('ldgRowIncome').value=r.income!=null?r.income:'';
+    document.getElementById('ldgRowExpense').value=r.expense!=null?r.expense:'';
+    document.getElementById('ldgRowDelBtn').style.display=id?'':'none';
+    document.getElementById('ldgRowOv').classList.add('on');
+  }
+  function closeRowOv(){
+    document.getElementById('ldgRowOv').classList.remove('on');
+    _rowOvId=null;
+  }
+  function saveRowOv(){
+    var p=periods[curPid];
+    if(!p)return;
+    if(!p.entries)p.entries={};
+    var id=_rowOvId;
+    if(!id){
+      id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      p.entries[id]={ts:Date.now()};
+    }
+    var r=p.entries[id];
+    r.date=document.getElementById('ldgRowDate').value;
+    r.cat=document.getElementById('ldgRowCat').value;
+    r.note=document.getElementById('ldgRowNote').value;
+    r.income=document.getElementById('ldgRowIncome').value;
+    r.expense=document.getElementById('ldgRowExpense').value;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id).set(r);
+    closeRowOv();
+    render();
+  }
+  function deleteRowOv(){
+    var id=_rowOvId;
+    if(!id)return;
+    if(!confirm('確定要刪除這筆調整項目嗎？'))return;
+    var p=periods[curPid];
+    if(p&&p.entries)delete p.entries[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/ledger/periods/'+curPid+'/entries/'+id).remove();
+    closeRowOv();
     render();
   }
   function switchCompany(cid){
@@ -22315,7 +22393,8 @@ var LEDGER=(function(){
   return{init:init,back:back,openCash:openCash,openCheckout:openCheckout,backToTop:backToTop,
     backToCashHub:backToCashHub,openNew:openNew,closeNew:closeNew,saveNew:saveNew,
     deletePeriod:deletePeriod,openDetail:openDetail,setMeta:setMeta,addRow:addRow,delRow:delRow,
-    setRowField:setRowField,switchCompany:switchCompany,print:doPrint,
+    setRowField:setRowField,openRowOv:openRowOv,closeRowOv:closeRowOv,saveRowOv:saveRowOv,
+    deleteRowOv:deleteRowOv,switchCompany:switchCompany,print:doPrint,
     listPeriodsForCheckout:listPeriodsForCheckout,getPeriodSummary:getPeriodSummary,kgStatus:kgStatus};
 })();
 /* 月費單／零用金／結帳 三個列印共用同一套「月費單」的感覺：PingFang 字體、
