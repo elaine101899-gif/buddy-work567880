@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111071834';
+  var BUILD='20261111120128';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21866,14 +21866,19 @@ function _updateLedgerTitles(){
   });
 }
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
-var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資'];
+var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資','撥補零用金'];
 /* 總帳→零用金自己新增調整項目的科目下拉選單，要比會計→零用金
-   （PETTYCASH_CATS，公司零用金的正式科目清單）多兩個選項：薪資、
-   月費收入。只加在這裡、不直接改 PETTYCASH_CATS，才不會連帶影響到
-   會計那邊公司零用金本來的科目清單。「薪資」比照「薪資支出」歸進
-   LEDGER_CATS_B（不計入總支出）；「月費收入」是收入類標籤，總支出
-   本來就只看支出欄位，不受影響。 */
-var LEDGER_MANUAL_CATS=PETTYCASH_CATS.concat(['薪資','月費收入']);
+   （PETTYCASH_CATS，公司零用金的正式科目清單）多幾個選項：薪資、
+   月費收入、撥補零用金。只加在這裡、不直接改 PETTYCASH_CATS，才不會
+   連帶影響到會計那邊公司零用金本來的科目清單。「薪資」比照「薪資支出」
+   歸進 LEDGER_CATS_B（不計入總支出）；「月費收入」是收入類標籤，總支出
+   本來就只看支出欄位，不受影響。
+   2026-11-11：「撥補零用金」是使用者自己掏錢補進公司零用金的款項
+   （只是為了讓零用金餘額跟實際現金對得起來，登記用），不是真的公司
+   支出，所以也歸進 LEDGER_CATS_B，不計入總支出——跟「薪資」同一個
+   道理：這筆錢確實會讓使用者自己身上的餘額減少（manualExpense 還是
+   會扣到），只是不該被算進「公司花了多少錢」這個總支出數字裡。 */
+var LEDGER_MANUAL_CATS=PETTYCASH_CATS.concat(['薪資','月費收入','撥補零用金']);
 var LEDGER=(function(){
   var pcPeriods={},periods={};
   var curPid=null;
@@ -22242,13 +22247,13 @@ function _moneyReportCss(pageSize){
 }
 /* open 有帶值（畫面上用）才會多印「上期結餘」「目前餘額」兩行；
    列印用（_ledgerPrintHTML 呼叫時不傳 open）維持不顯示任何餘額。 */
-/* 左邊表格（LEDGER_CATS_A）跟右邊表格裡的 LEDGER_CATS_B，其實是把全部
-   科目拆成兩組分開顯示（單純排版考量，一次列12個項目太長），兩組各自
-   最下面那行本來都寫「總結算」，看起來像兩個獨立的總數，但其實兩個
-   都只是「這一組科目的小計」，兩組小計加起來才等於右表的「總支出」
-   （13,689＋2,500＝16,189）。原本的「總結算」字樣很容易讓人誤會成
-   兩邊應該要對得起來、或應該等於總支出，改成「小計」講清楚這只是
-   這組科目的部分加總，不是總數。 */
+/* 左邊表格只是 LEDGER_CATS_A（日常科目）自己的小計，講清楚只是這組
+   科目的部分加總，不是總數。右邊表格最下面那行 2026-11-11 改回「總
+   結算」，但這次是貨真價實的總結算：總收入＋上期結餘－總支出－（薪資
+   支出／員工福利／退費／房租／薪資／撥補零用金這些不計入總支出的
+   明細逐項扣掉），算出來應該要等於下面的「目前餘額」（目前餘額是另外
+   用 manualIncome/manualExpense 算的，兩邊算法不同、但數字要對得起來
+   才對，對不起來表示某筆支出的科目分類沒分對）。 */
 function _ledgerSummaryTablesHtml(t,open){
   var h='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
   h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
@@ -22262,7 +22267,8 @@ function _ledgerSummaryTablesHtml(t,open){
   h+='<tr class="tot-row"><td>總支出</td><td class="num" style="color:#c0392b;">'+t.totalExpense.toLocaleString()+'</td></tr>';
   var sumB=0;
   LEDGER_CATS_B.forEach(function(c){var v=t.byCat[c]||0;sumB+=v;h+='<tr><td>'+c+'</td><td class="num">'+v.toLocaleString()+'</td></tr>';});
-  h+='<tr class="tot-row"><td>小計</td><td class="num">'+sumB.toLocaleString()+'</td></tr>';
+  var grandTotal=t.totalIncome+(open||0)-t.totalExpense-sumB;
+  h+='<tr class="tot-row"><td>總結算</td><td class="num">'+grandTotal.toLocaleString()+'</td></tr>';
   if(open!=null){
     /* 餘額只跟著自己新增的調整項目（manual）變動，零用金自動帶入的
        灰字明細只是參考、不是自己身上的現金進出，不能拿來扣餘額。 */
@@ -22270,7 +22276,7 @@ function _ledgerSummaryTablesHtml(t,open){
     h+='<tr class="tot-row" style="background:#EEF7F0;"><td>目前餘額</td><td class="num" style="color:#3E8E6A;">'+closing.toLocaleString()+'</td></tr>';
   }
   h+='</tbody></table></div>';
-  h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 總支出只算左邊「餐費/設備…」這類日常科目；薪資/員工福利/退費/房租這四項是另外記的明細，不計入總支出。</div>';
+  h+='<div style="width:100%;font-size:.72rem;color:#999;">※ 總支出只算左邊「餐費/設備…」這類日常科目；薪資支出/員工福利/退費/房租/薪資/撥補零用金這幾項是另外記的明細，不計入總支出。</div>';
   h+='</div>';
   return h;
 }
