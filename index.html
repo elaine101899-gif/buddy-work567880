@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111144510';
+  var BUILD='20261111171819';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22674,9 +22674,28 @@ function _checkoutPrintHTML(p,c){
   html+='</tbody></table></div>';
 
   html+='<div class="sec">支出</div><div class="tbl-wrap"><table><thead><tr><th>類別</th><th>備註</th><th class="num">金額</th></tr></thead><tbody>';
+  /* 2026-11-11：使用者要求列印版的支出要「按科目統整」，同科目的排在一起，
+     每個科目後面加一個小計——不是原本按新增時間排的流水帳。分組順序照
+     CHECKOUT_EXPENSE_CATS，沒在清單裡的科目（含空白）排最後。 */
+  var expByCat={},expCatOrder=[];
   Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
     var r=p.entries[id]||{};
-    html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td></tr>';
+    var cat=r.cat||'未分類';
+    if(!expByCat[cat]){expByCat[cat]=[];expCatOrder.push(cat);}
+    expByCat[cat].push(r);
+  });
+  expCatOrder.sort(function(a,b){
+    var ia=CHECKOUT_EXPENSE_CATS.indexOf(a),ib=CHECKOUT_EXPENSE_CATS.indexOf(b);
+    if(ia<0)ia=999;if(ib<0)ib=999;
+    return ia-ib;
+  });
+  expCatOrder.forEach(function(cat){
+    var catSum=0;
+    expByCat[cat].forEach(function(r){
+      var amt=parseFloat(r.amount)||0;catSum+=amt;
+      html+='<tr><td>'+cat+'</td><td>'+(r.note||'')+'</td><td class="num">'+amt.toLocaleString()+'</td></tr>';
+    });
+    html+='<tr style="background:#faf8f3;"><td colspan="2" style="text-align:right;font-weight:600;">'+cat+' 小計</td><td class="num" style="font-weight:600;">'+catSum.toLocaleString()+'</td></tr>';
   });
   html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td></tr>';
   html+='<tr class="tot-row"><td>支出總計</td><td></td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
