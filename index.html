@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111205030';
+  var BUILD='20261111211534';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20112,7 +20112,7 @@ var CLEAN=(function(){
       h+='<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
       CLEAN_FORMS.forEach(function(fm){
         h+='<div style="display:flex;align-items:center;justify-content:space-between;background:#f7f7fa;border-radius:8px;padding:8px 10px;">';
-        h+='<span style="font-size:.85rem;">'+fm.label+'</span>';
+        h+='<span style="font-size:.85rem;">'+fm.label+(fm.twoSign?'<span style="margin-left:6px;background:#EEE6F7;color:#7B55A0;padding:1px 8px;border-radius:999px;font-size:.68rem;font-weight:700;">雙人簽名</span>':'')+'</span>';
         h+='<button onclick="CLEAN.removeSpace(\''+fm.id+'\')" style="background:none;border:none;color:#c0392b;font-size:1rem;cursor:pointer;">&#x1F5D1;&#xFE0F;</button>';
         h+='</div>';
       });
@@ -20120,19 +20120,22 @@ var CLEAN=(function(){
     }
     h+='<input class="df-inp" id="cleanNewLabel" placeholder="新空間名稱，例如：三樓辦公室" style="margin-bottom:6px;">';
     h+='<input class="df-inp" id="cleanNewItems" placeholder="清潔項目，用逗號或頓號分隔，例如：地板、門窗、垃圾桶" style="margin-bottom:6px;">';
+    h+='<label style="display:flex;align-items:center;gap:6px;font-size:.82rem;color:#6b5f4a;margin-bottom:10px;"><input type="checkbox" id="cleanNewTwoSign"> 這個區域需要兩人簽名（例如戶外前後，各自負責一半要各自簽名）</label>';
     h+='<button class="asr-add-btn" onclick="CLEAN.addSpace()">&#xFF0B; 新增清潔區域</button>';
     h+='</div>';
     wrap.innerHTML=h;
   }
   function addSpace(){
     var labelEl=document.getElementById('cleanNewLabel'), itemsEl=document.getElementById('cleanNewItems');
+    var twoSignEl=document.getElementById('cleanNewTwoSign');
     var label=(labelEl&&labelEl.value||'').trim();
     if(!label){alert('請輸入空間名稱');return;}
     var itemsRaw=(itemsEl&&itemsEl.value||'').trim();
     /* 逗號、頓號都要能分隔——大家習慣用「、」列舉，之前只認半形/全形逗號，
        打「地板、桌椅、門窗」會整串變成一個打勾項目，不會拆成三個。 */
     var items=itemsRaw?itemsRaw.split(/[,，、]/).map(function(s){return s.trim();}).filter(Boolean):['地板','門窗','垃圾桶'];
-    SPACES.add('clean',{label:label,items:items},function(ok){
+    var twoSign=!!(twoSignEl&&twoSignEl.checked);
+    SPACES.add('clean',{label:label,items:items,twoSign:twoSign},function(ok){
       if(!ok)alert('新增失敗，請檢查網路後再試');
     });
     render();
@@ -20193,8 +20196,19 @@ var CLEAN=(function(){
         OFF_TYPE_BTNS.forEach(function(b){h+='<button class="cfm-offtype-btn" onclick="CLEAN.setOffType('+d+',\''+b.type+'\')">'+b.lbl+'</button>';});
         h+='</div>';
         h+='<div class="cfm-sig-row">';
-        if(dayRec.sig){h+='<img src="'+dayRec.sig+'" class="cln-sig-img" onclick="CLEAN.openSig('+d+')">';}
-        else{h+='<button class="cfm-sig-btn" onclick="CLEAN.openSig('+d+')">簽名</button>';}
+        if(f.twoSign){
+          /* 2026-11-11：戶外（前後）這類區域是兩個人分別負責一半，要各自
+             簽名才算完成，不能只簽一個人就當作整個區域都做完了。 */
+          h+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+          if(dayRec.sig){h+='<img src="'+dayRec.sig+'" class="cln-sig-img" onclick="CLEAN.openSig('+d+',1)">';}
+          else{h+='<button class="cfm-sig-btn" onclick="CLEAN.openSig('+d+',1)">簽名1</button>';}
+          if(dayRec.sig2){h+='<img src="'+dayRec.sig2+'" class="cln-sig-img" onclick="CLEAN.openSig('+d+',2)">';}
+          else{h+='<button class="cfm-sig-btn" onclick="CLEAN.openSig('+d+',2)">簽名2</button>';}
+          h+='</div>';
+        } else {
+          if(dayRec.sig){h+='<img src="'+dayRec.sig+'" class="cln-sig-img" onclick="CLEAN.openSig('+d+')">';}
+          else{h+='<button class="cfm-sig-btn" onclick="CLEAN.openSig('+d+')">簽名</button>';}
+        }
         h+='</div>';
         h+='</div>';
       }
@@ -20231,32 +20245,38 @@ var CLEAN=(function(){
     var f=findForm(); var nd=daysInMonth(curY,curM); var rec=getRec();
     var thead='<tr><th>日期</th>';
     f.items.forEach(function(it){thead+='<th>'+it+'</th>';});
-    thead+='<th>老師簽名</th></tr>';
+    thead+=f.twoSign?'<th>簽名1</th><th>簽名2</th></tr>':'<th>老師簽名</th></tr>';
+    var sigCols=f.twoSign?2:1;
     var rows='';
     for(var d=1;d<=nd;d++){
       var dayRec=rec.days[d]||{};
       var lbl=d+'（'+_weekdayLabel(curY,curM,d)+'）';
       if(_isWeekend(curY,curM,d)||dayRec.offType){
-        rows+='<tr><td>'+lbl+'</td><td colspan="'+(f.items.length+1)+'" style="color:#cf6b6b;">'+(_isWeekend(curY,curM,d)?'六日':dayRec.offType)+'公休</td></tr>';
+        rows+='<tr><td>'+lbl+'</td><td colspan="'+(f.items.length+sigCols)+'" style="color:#cf6b6b;">'+(_isWeekend(curY,curM,d)?'六日':dayRec.offType)+'公休</td></tr>';
       } else {
         rows+='<tr><td>'+lbl+'</td>';
         f.items.forEach(function(it,i){rows+='<td>'+(dayRec['i'+i]?'✓':'')+'</td>';});
-        rows+='<td>'+(dayRec.sig?'<img class="sig" src="'+dayRec.sig+'">':'')+'</td></tr>';
+        rows+='<td>'+(dayRec.sig?'<img class="sig" src="'+dayRec.sig+'">':'')+'</td>';
+        if(f.twoSign)rows+='<td>'+(dayRec.sig2?'<img class="sig" src="'+dayRec.sig2+'">':'')+'</td>';
+        rows+='</tr>';
       }
     }
     _cleanPrintOrDownload(_cleanBuildPrintHTML(f.label+' 環境清潔消毒紀錄表 '+curY+'年'+curM+'月',thead,rows));
   }
 
-  function openSig(day){
+  function openSig(day,slot){
+    var field=slot===2?'sig2':'sig';
     var rec=getRec();
-    var existing=rec.days[day]&&rec.days[day].sig;
-    _sigPad.open('第 '+day+' 日 — 老師簽名',existing,function(dataURL){
+    var f=findForm();
+    var title=f.twoSign?('第 '+day+' 日 — 簽名'+(slot===2?'2':'1')):('第 '+day+' 日 — 老師簽名');
+    var existing=rec.days[day]&&rec.days[day][field];
+    _sigPad.open(title,existing,function(dataURL){
       if(!rec.days[day])rec.days[day]={};
-      rec.days[day].sig=dataURL;
+      rec.days[day][field]=dataURL;
       save();
       render();
       var fb=_fbInit();
-      if(fb)fb.ref('xiaobuddyClean/clean/records/'+key()+'/days/'+day+'/sig').set(dataURL);
+      if(fb)fb.ref('xiaobuddyClean/clean/records/'+key()+'/days/'+day+'/'+field).set(dataURL);
     });
   }
 
@@ -20309,7 +20329,7 @@ var CLEAN=(function(){
         var dayRec=rec&&rec.days[d];
         if(dayRec&&dayRec.offType)continue;
         var missingItems=!dayRec||fm.items.some(function(it,i){return !dayRec['i'+i];});
-        var missingSig=!dayRec||!dayRec.sig;
+        var missingSig=!dayRec||!dayRec.sig||(fm.twoSign&&!dayRec.sig2);
         if(missingItems||missingSig)issues.push({area:fm.label,day:d,missingItems:missingItems,missingSig:missingSig});
       }
     });
@@ -21207,7 +21227,7 @@ var SPACES=(function(){
       CLEAN_FORMS.length=0;
       Object.keys(lists.clean).forEach(function(id){
         var v=lists.clean[id]||{};
-        CLEAN_FORMS.push({id:id,label:v.label||'（未命名）',items:(v.items&&v.items.length)?v.items:['地板','門窗','垃圾桶'],createdAt:v.createdAt||_idTs(id)});
+        CLEAN_FORMS.push({id:id,label:v.label||'（未命名）',items:(v.items&&v.items.length)?v.items:['地板','門窗','垃圾桶'],createdAt:v.createdAt||_idTs(id),twoSign:!!v.twoSign});
       });
       if(typeof CLEAN!=='undefined'&&CLEAN.resetForms)CLEAN.resetForms();
     } else if(kind==='bedding'){
