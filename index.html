@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111142149';
+  var BUILD='20261111143218';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22293,6 +22293,12 @@ function _ledgerPrintHTML(rows,t,p){
   if(!rows.length){
     rowsHtml='<tr><td colspan="5" style="text-align:center;color:#888;">（目前沒有任何明細）</td></tr>';
   } else {
+    /* 2026-11-11：使用者要求列印版明細要按科目排序（畫面上的清單仍維持原本
+       依日期排序，只有列印這份另外排一次，不動 combinedRows 的原始順序）。
+       同科目內部再按日期排，方便對帳。 */
+    rows=rows.slice().sort(function(a,b){
+      return (a.cat||'').localeCompare(b.cat||'','zh-Hant')||(a.date||'').localeCompare(b.date||'')||((a.ts||0)-(b.ts||0));
+    });
     rows.forEach(function(r){
       var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
       rowsHtml+='<tr><td>'+(r.date||'')+'</td><td>'+(r.cat||'')+'</td><td style="text-align:left;">'+(r.note||'')+'</td>'+
