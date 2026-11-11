@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111120128';
+  var BUILD='20261111124648';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21866,18 +21866,22 @@ function _updateLedgerTitles(){
   });
 }
 var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
-var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資','撥補零用金'];
+var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資'];
+/* 2026-11-11：「撥補零用金」是使用者自己掏錢補進公司零用金的款項
+   （只是為了讓零用金餘額跟實際現金對得起來，登記用），不是真的公司
+   支出，所以也要排除在總支出外——但跟 LEDGER_CATS_B 那五項不一樣：
+   使用者明確說這個科目不用出現在「總支出／總結算」那張明細表裡（連
+   當一個單獨列出的項目都不要），單純只是讓總支出的數字不要把這筆算
+   進去，所以獨立開一個 LEDGER_CATS_HIDDEN，只影響 totals() 裡
+   totalExpense 的排除判斷，不會出現在 _ledgerSummaryTablesHtml 的
+   任何一張表格、也不會被「總結算」那條算式扣到。 */
+var LEDGER_CATS_HIDDEN=['撥補零用金'];
 /* 總帳→零用金自己新增調整項目的科目下拉選單，要比會計→零用金
    （PETTYCASH_CATS，公司零用金的正式科目清單）多幾個選項：薪資、
    月費收入、撥補零用金。只加在這裡、不直接改 PETTYCASH_CATS，才不會
    連帶影響到會計那邊公司零用金本來的科目清單。「薪資」比照「薪資支出」
    歸進 LEDGER_CATS_B（不計入總支出）；「月費收入」是收入類標籤，總支出
-   本來就只看支出欄位，不受影響。
-   2026-11-11：「撥補零用金」是使用者自己掏錢補進公司零用金的款項
-   （只是為了讓零用金餘額跟實際現金對得起來，登記用），不是真的公司
-   支出，所以也歸進 LEDGER_CATS_B，不計入總支出——跟「薪資」同一個
-   道理：這筆錢確實會讓使用者自己身上的餘額減少（manualExpense 還是
-   會扣到），只是不該被算進「公司花了多少錢」這個總支出數字裡。 */
+   本來就只看支出欄位，不受影響。 */
 var LEDGER_MANUAL_CATS=PETTYCASH_CATS.concat(['薪資','月費收入','撥補零用金']);
 var LEDGER=(function(){
   var pcPeriods={},periods={};
@@ -21971,7 +21975,7 @@ var LEDGER=(function(){
          科目的明細還是會顯示在畫面上，只是不計入總支出這個加總。
          目前餘額的計算（manualIncome/manualExpense）不受影響，照樣算
          所有自己新增的調整項目，不分科目。 */
-      if(LEDGER_CATS_B.indexOf(r.cat)<0)totalExpense+=exp;
+      if(LEDGER_CATS_B.indexOf(r.cat)<0&&LEDGER_CATS_HIDDEN.indexOf(r.cat)<0)totalExpense+=exp;
       if(r.source==='manual'){manualIncome+=inc;manualExpense+=exp;}
       if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=exp;}
     });
@@ -22250,10 +22254,13 @@ function _moneyReportCss(pageSize){
 /* 左邊表格只是 LEDGER_CATS_A（日常科目）自己的小計，講清楚只是這組
    科目的部分加總，不是總數。右邊表格最下面那行 2026-11-11 改回「總
    結算」，但這次是貨真價實的總結算：總收入＋上期結餘－總支出－（薪資
-   支出／員工福利／退費／房租／薪資／撥補零用金這些不計入總支出的
+   支出／員工福利／退費／房租／薪資這些 LEDGER_CATS_B、不計入總支出的
    明細逐項扣掉），算出來應該要等於下面的「目前餘額」（目前餘額是另外
    用 manualIncome/manualExpense 算的，兩邊算法不同、但數字要對得起來
-   才對，對不起來表示某筆支出的科目分類沒分對）。 */
+   才對，對不起來表示某筆支出的科目分類沒分對）。「撥補零用金」
+   （LEDGER_CATS_HIDDEN）使用者明確說不要出現在這兩張表格裡，所以
+   沒有放進 LEDGER_CATS_B、也不會被這條「總結算」算式扣到——只在
+   totals() 裡把它排除在總支出外，純粹是為了讓總支出的數字正確。 */
 function _ledgerSummaryTablesHtml(t,open){
   var h='<div class="df-sec" style="display:flex;gap:16px;flex-wrap:wrap;">';
   h+='<div class="tbl-wrap" style="flex:1;min-width:220px;"><table class="ck-table"><thead><tr><th>項目</th><th>金額</th></tr></thead><tbody>';
