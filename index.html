@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111134139';
+  var BUILD='20261111142149';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22348,7 +22348,9 @@ var CHECKOUT=(function(){
   }
   function calc(p){
     var cf=(p.childfeePk&&typeof CHILDFEE!=='undefined')?CHILDFEE.incomeSumsForPeriod(p.childfeePk):{};
-    var regFee=parseFloat(cf.regFee)||0,monthFee=parseFloat(cf.monthFee)||0,
+    /* 2026-11-11：結帳頁的「月費」要包含餐費（月費單裡月費/餐費是分開存的兩個
+       欄位，但結帳這邊只看合併後的總額），月費單本身的欄位不動。 */
+    var regFee=parseFloat(cf.regFee)||0,monthFee=(parseFloat(cf.monthFee)||0)+(parseFloat(cf.mealFee)||0),
       agencyFee=parseFloat(cf.agencyFee)||0,extendFee=parseFloat(cf.extendFee)||0,
       insurance=parseFloat(cf.insurance)||0,refund=parseFloat(cf.refund)||0;
     var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
