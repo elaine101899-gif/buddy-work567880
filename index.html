@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111143731';
+  var BUILD='20261111144510';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22585,8 +22585,8 @@ var CHECKOUT=(function(){
       h+='<div class="chk-row"><select class="chk-cat-sel" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
       CHECKOUT_INCOME_CATS.forEach(function(cat){h+='<option value="'+cat+'"'+(r.cat===cat?' selected':'')+'>'+cat+'</option>';});
       h+='</select>';
-      h+='<input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'note\',this.value)">';
       h+='<input type="text" class="chk-row-inp" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'amount\',this.value)">';
+      h+='<input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'note\',this.value)">';
       h+='<button class="chk-row-del" onclick="CHECKOUT.delIncomeRow(\''+id+'\')">&#x1F5D1;&#xFE0F;</button></div>';
     });
     h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
