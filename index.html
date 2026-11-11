@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111171819';
+  var BUILD='20261111194609';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2232,12 +2232,20 @@ body.adm .sync-setup{display:block;}
    輸入框，手機上 type="date" 原生欄位寬度常常不受控、擠在一起會互相
    重疊、超出邊界。改成固定的格狀排版，欄位永遠 100% 寬度不會亂跑。
    收支明細表格改成跟物品統計表一樣的卡片式排版，不用再左右滑。 ══ */
-.pc-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;}
+.pc-meta-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px;}
 .pc-meta-grid .full{grid-column:1/-1;}
 .pc-open-row{background:#F5F0E6;border-radius:12px;padding:8px 14px;font-size:.84rem;color:#6b5f4a;margin-bottom:10px;}
-.pc-tx-amts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-.pc-tx-amt-lbl{font-size:.64rem;color:#999;margin-bottom:3px;}
-.pc-tx-running{font-weight:800;color:#3E8E6A;font-size:.9rem;padding-top:3px;}
+.pc-tx-amts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
+.pc-tx-amt-lbl{font-size:.6rem;color:#999;margin-bottom:2px;}
+.pc-tx-running{font-weight:800;color:#3E8E6A;font-size:.82rem;padding-top:1px;}
+/* 2026-11-11：開始/結束日期原本左右並排(1fr 1fr)，手機上 type="date"
+   原生欄位有自己的最小寬度，塞在一半寬度裡還是會被擠到重疊/跑版，
+   使用者反映「卡住了」。改成跟上期結餘一樣整排 100% 寬度，不會再擠。
+   另外收支明細卡片使用者反映太大、沒辦法一目瞭然，把 padding/字體/
+   間距都縮小一點，只套用在零用金明細頁（不影響物品統計共用的卡片）。 */
+#pg-pettycash-detail .stat-tx-card{padding:8px 10px;margin-bottom:8px;}
+#pg-pettycash-detail .stat-tx-hd{gap:6px;margin-bottom:6px;}
+#pg-pettycash-detail .stat-tx-card .df-inp{padding:5px 9px;font-size:.78rem;}
 /* ══ 零用金明細頁修正結束 ══ */
 
 /* ══ 2026-11 請假交接單改版（純樣式）：身份選單沿用 .admin-hero，四種
@@ -21715,7 +21723,7 @@ var PETTYCASH=(function(){
         h+='</select>';
         h+='<button onclick="PETTYCASH.delRow(\''+r.id+'\')" style="flex-shrink:0;background:none;border:none;color:#C2603E;font-size:1.05rem;cursor:pointer;padding:4px;">&#x1F5D1;&#xFE0F;</button>';
         h+='</div>';
-        h+='<input type="text" class="df-inp" placeholder="摘要" style="width:100%;box-sizing:border-box;margin-bottom:8px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)">';
+        h+='<input type="text" class="df-inp" placeholder="摘要" style="width:100%;box-sizing:border-box;margin-bottom:5px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)">';
         h+='<div class="pc-tx-amts">';
         h+='<div><div class="pc-tx-amt-lbl">收入</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'income\',this.value)"></div>';
         h+='<div><div class="pc-tx-amt-lbl">支出</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'expense\',this.value)"></div>';
