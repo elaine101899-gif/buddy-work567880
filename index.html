@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111124648';
+  var BUILD='20261111134139';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22317,6 +22317,7 @@ function _ledgerPrintHTML(rows,t,p){
    跟 A/B/C 帳資產結餘，「總結」自動承接上一期的總結當起始值。
    跟零用金一樣是「期別制」，兩間公司各自獨立一份期別清單。 */
 var CHECKOUT_EXPENSE_CATS=['薪資','員工福利','三保','房租','電信','水電','電費','設備','其他'];
+var CHECKOUT_INCOME_CATS=['政府補助','捐款','退稅','雜項收入','其他'];
 var CHECKOUT=(function(){
   var periods={};
   var curPid=null;
@@ -22352,7 +22353,14 @@ var CHECKOUT=(function(){
       insurance=parseFloat(cf.insurance)||0,refund=parseFloat(cf.refund)||0;
     var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
     var subsidyAmt=parseFloat(p.subsidyAmt)||0,interestAmt=parseFloat(p.interestAmt)||0;
-    var totalIncome=incomeAuto+subsidyAmt+interestAmt;
+    /* 2026-11-11：使用者要求收入這邊也能像支出一樣「新增項目」（例如政府
+       臨時補助、捐款這類不固定、每期不一定有的收入），存在 p.incomeEntries
+       （跟 p.entries／支出同一套結構：cat/note/amount），一定要記得加進
+       總收入，不然新增了卻沒被算進去就白新增了。 */
+    var incomeEntries=p.incomeEntries||{};
+    var manualIncomeExtra=0;
+    Object.keys(incomeEntries).forEach(function(id){manualIncomeExtra+=parseFloat((incomeEntries[id]||{}).amount)||0;});
+    var totalIncome=incomeAuto+subsidyAmt+interestAmt+manualIncomeExtra;
     var ledgerSum=(p.ledgerPid&&typeof LEDGER!=='undefined')?LEDGER.getPeriodSummary(p.ledgerPid):null;
     var pettycashExpense=ledgerSum?ledgerSum.totalExpense:0;
     var cAccount=ledgerSum?ledgerSum.closing:0;
@@ -22468,6 +22476,38 @@ var CHECKOUT=(function(){
     if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/entries/'+id+'/'+field).set(v);
     render();
   }
+  /* 收入這邊的「新增項目」，存在另一個欄位 incomeEntries（跟支出的
+     entries 是分開的兩包資料，不要共用同一個 id 空間），其餘邏輯
+     （新增/刪除/改欄位）跟支出那三個函式一模一樣，只是路徑換成
+     incomeEntries。 */
+  function addIncomeRow(){
+    var p=periods[curPid];
+    if(!p)return;
+    if(!p.incomeEntries)p.incomeEntries={};
+    var id='m'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var rec={cat:'',note:'',amount:'',ts:Date.now()};
+    p.incomeEntries[id]=rec;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/incomeEntries/'+id).set(rec);
+    render();
+  }
+  function delIncomeRow(id){
+    if(!confirm('確定要刪除這筆收入嗎？'))return;
+    var p=periods[curPid];
+    if(!p||!p.incomeEntries)return;
+    delete p.incomeEntries[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/incomeEntries/'+id).remove();
+    render();
+  }
+  function setIncomeRowField(id,field,v){
+    var p=periods[curPid];
+    if(!p||!p.incomeEntries||!p.incomeEntries[id])return;
+    p.incomeEntries[id][field]=v;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/incomeEntries/'+id+'/'+field).set(v);
+    render();
+  }
   function render(){
     var wrap=document.getElementById('ledgerCheckoutWrap');
     if(!wrap)return;
@@ -22524,13 +22564,22 @@ var CHECKOUT=(function(){
     h+='</select></div>';
     h+='</div>';
     /* 收入 */
-    h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq in"></span>收入</div>';
+    h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq in"></span>收入<button class="ldg-addrow-btn" style="margin-left:auto;" onclick="CHECKOUT.addIncomeRow()">&#xFF0B; 新增收入項目</button></div>';
     [['註冊費',c.regFee],['月費',c.monthFee],['代辦費',c.agencyFee],['延托費',c.extendFee],['保險費',c.insurance]].forEach(function(row){
       h+='<div class="chk-row"><div class="chk-row-name">'+row[0]+'</div><div class="chk-row-amt">'+row[1].toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
     });
     h+='<div class="chk-row"><div class="chk-row-name">退費</div><div class="chk-row-amt">-'+c.refund.toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
     h+='<div class="chk-row"><div class="chk-row-name">優化補助</div><input type="text" class="chk-row-inp" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></div>';
     h+='<div class="chk-row"><div class="chk-row-name">利息</div><input type="text" class="chk-row-inp" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></div>';
+    Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
+      var r=p.incomeEntries[id]||{};
+      h+='<div class="chk-row"><select class="chk-cat-sel" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
+      CHECKOUT_INCOME_CATS.forEach(function(cat){h+='<option value="'+cat+'"'+(r.cat===cat?' selected':'')+'>'+cat+'</option>';});
+      h+='</select>';
+      h+='<input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'note\',this.value)">';
+      h+='<input type="text" class="chk-row-inp" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'amount\',this.value)">';
+      h+='<button class="chk-row-del" onclick="CHECKOUT.delIncomeRow(\''+id+'\')">&#x1F5D1;&#xFE0F;</button></div>';
+    });
     h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
     h+='</div>';
     /* 支出 */
@@ -22587,6 +22636,7 @@ var CHECKOUT=(function(){
   }
   return{open:open,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
     openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,setRowField:setRowField,
+    addIncomeRow:addIncomeRow,delIncomeRow:delIncomeRow,setIncomeRowField:setIncomeRowField,
     print:doPrint,kgStatus:kgStatus};
 })();
 /* 結帳列印：跟月費單列印同一套感覺（PingFang字體、置中標題、金色表頭、
@@ -22607,6 +22657,10 @@ function _checkoutPrintHTML(p,c){
   html+='<tr><td>退費</td><td class="num">-'+c.refund.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
   html+='<tr><td>優化補助</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td>'+((p.subsidyNote||''))+'</td></tr>';
   html+='<tr><td>利息</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td>'+((p.interestNote||''))+'</td></tr>';
+  Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
+    var r=p.incomeEntries[id]||{};
+    html+='<tr><td>'+(r.cat||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td>'+(r.note||'')+'</td></tr>';
+  });
   html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td><td></td></tr>';
   html+='</tbody></table></div>';
 
