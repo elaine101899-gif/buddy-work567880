@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111194609';
+  var BUILD='20261111201652';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2232,20 +2232,29 @@ body.adm .sync-setup{display:block;}
    輸入框，手機上 type="date" 原生欄位寬度常常不受控、擠在一起會互相
    重疊、超出邊界。改成固定的格狀排版，欄位永遠 100% 寬度不會亂跑。
    收支明細表格改成跟物品統計表一樣的卡片式排版，不用再左右滑。 ══ */
-.pc-meta-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px;}
+.pc-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;}
 .pc-meta-grid .full{grid-column:1/-1;}
 .pc-open-row{background:#F5F0E6;border-radius:12px;padding:8px 14px;font-size:.84rem;color:#6b5f4a;margin-bottom:10px;}
-.pc-tx-amts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
-.pc-tx-amt-lbl{font-size:.6rem;color:#999;margin-bottom:2px;}
-.pc-tx-running{font-weight:800;color:#3E8E6A;font-size:.82rem;padding-top:1px;}
-/* 2026-11-11：開始/結束日期原本左右並排(1fr 1fr)，手機上 type="date"
-   原生欄位有自己的最小寬度，塞在一半寬度裡還是會被擠到重疊/跑版，
-   使用者反映「卡住了」。改成跟上期結餘一樣整排 100% 寬度，不會再擠。
-   另外收支明細卡片使用者反映太大、沒辦法一目瞭然，把 padding/字體/
-   間距都縮小一點，只套用在零用金明細頁（不影響物品統計共用的卡片）。 */
-#pg-pettycash-detail .stat-tx-card{padding:8px 10px;margin-bottom:8px;}
-#pg-pettycash-detail .stat-tx-hd{gap:6px;margin-bottom:6px;}
-#pg-pettycash-detail .stat-tx-card .df-inp{padding:5px 9px;font-size:.78rem;}
+/* 2026-11-11：開始/結束日期使用者還是想要左右並排（不要整排），但原生
+   type="date" 欄位有自己的最小寬度，塞太窄會互相擠到。改成縮小欄位的
+   字體跟內距，兩個欄位還是並排但不會再擠在一起。
+   收支明細改成「一筆一行」的精簡清單（不是輸入框），點一下跳出小視窗
+   （.pc-tx-row 開 #pcRowOv）編輯，畫面上一次能看到更多筆，也不用
+   左右滑。 */
+#pg-pettycash-detail .pc-meta-grid .df-inp{font-size:.76rem;padding:7px 6px;}
+.pc-tx-list{border:1px solid #ECE6DA;border-radius:14px;overflow:hidden;}
+.pc-tx-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid #F0ECE2;cursor:pointer;background:#fff;}
+.pc-tx-row:last-child{border-bottom:none;}
+.pc-tx-row:active{background:#FAF6EE;}
+.pc-tx-row-main{min-width:0;flex:1;}
+.pc-tx-row-top{font-size:.76rem;color:#6b5f4a;display:flex;gap:6px;align-items:center;margin-bottom:2px;}
+.pc-tx-row-cat{background:#F5F0E6;color:#8a7a5a;padding:1px 8px;border-radius:999px;font-size:.66rem;font-weight:700;}
+.pc-tx-row-note{font-size:.8rem;color:#333;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pc-tx-row-amts{text-align:right;flex-shrink:0;}
+.pc-tx-row-io{font-size:.78rem;font-weight:700;}
+.pc-tx-row-io.inc{color:#3E8E6A;}
+.pc-tx-row-io.exp{color:#C2603E;}
+.pc-tx-row-bal{font-weight:800;color:#3E8E6A;font-size:.78rem;margin-top:1px;}
 /* ══ 零用金明細頁修正結束 ══ */
 
 /* ══ 2026-11 請假交接單改版（純樣式）：身份選單沿用 .admin-hero，四種
@@ -5110,6 +5119,26 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="PETTYCASH.closeNew()">取消</button>
       <button class="asr-mok" onclick="PETTYCASH.saveNew()">建立</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="pcRowOv">
+  <div class="asr-mbox">
+    <h3>&#x1F4DD; 零用金明細</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;">日期</div>
+    <input type="date" class="asr-mi" id="pcRowDate">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">科目</div>
+    <select class="asr-msel" id="pcRowCat"></select>
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">摘要</div>
+    <input type="text" class="asr-mi" id="pcRowNote" placeholder="例如：拜拜餅乾">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">收入</div>
+    <input type="text" class="asr-mi" id="pcRowIncome" placeholder="0">
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">支出</div>
+    <input type="text" class="asr-mi" id="pcRowExpense" placeholder="0">
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="PETTYCASH.closeRowOv()">取消</button>
+      <button class="asr-mok" style="background:#e85a5a;" id="pcRowDelBtn" onclick="PETTYCASH.deleteRowOv()">&#x1F5D1; 刪除這筆</button>
+      <button class="asr-mok" onclick="PETTYCASH.saveRowOv()">&#x2713; 儲存</button>
     </div>
   </div>
 </div>
@@ -21557,6 +21586,7 @@ var PETTYCASH=(function(){
   var db={};
   var _fbAttachedCompany=null,_fbRef=null;
   var curId=null;
+  var _rowOvId=null;
   function pad2(n){return (n<10?'0':'')+n;}
 
   function sortedPeriods(){
@@ -21705,31 +21735,31 @@ var PETTYCASH=(function(){
     h+='</div>';
     h+='</div>';
     h+='<div class="df-sec">';
-    h+='<div class="df-lbl">收支明細<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="PETTYCASH.addRow()">＋ 新增一筆</button></div>';
+    h+='<div class="df-lbl">收支明細<button class="cf-add-btn" style="float:right;width:auto;padding:7px 14px;" onclick="PETTYCASH.openRowOv()">＋ 新增一筆</button></div>';
     h+='<div class="pc-open-row">上期結餘　<b>'+t.open.toLocaleString()+'</b></div>';
     if(!t.rows.length){
       h+='<div style="color:#aaa;text-align:center;padding:16px 0;">尚無紀錄，請按上方「新增一筆」</div>';
     } else {
+      /* 2026-11-11：使用者反映每筆記錄用整排輸入框太佔空間、沒辦法一目
+         瞭然，但純表格又會變成要左右滑。改成每筆只顯示一行精簡摘要
+         （日期/科目/摘要/收支/結餘），點一下跳出小視窗編輯，不用輸入
+         框塞在畫面上。 */
+      h+='<div class="pc-tx-list">';
       var running=t.open;
       t.rows.forEach(function(r){
         var inc=parseFloat(r.income)||0,exp=parseFloat(r.expense)||0;
         running+=inc-exp;
-        h+='<div class="stat-tx-card">';
-        h+='<div class="stat-tx-hd">';
-        h+='<input type="date" class="df-inp" style="flex:1.5;min-width:0;padding-left:8px;padding-right:2px;" value="'+(r.date||'')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'date\',this.value)">';
-        h+='<select class="df-inp" style="flex:1;min-width:0;" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'cat\',this.value)">';
-        h+='<option value="">–科目–</option>';
-        PETTYCASH_CATS.forEach(function(c){h+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
-        h+='</select>';
-        h+='<button onclick="PETTYCASH.delRow(\''+r.id+'\')" style="flex-shrink:0;background:none;border:none;color:#C2603E;font-size:1.05rem;cursor:pointer;padding:4px;">&#x1F5D1;&#xFE0F;</button>';
+        var dateShort=/^\d{4}-\d{2}-\d{2}$/.test(r.date||'')?r.date.slice(5).replace('-','/'):(r.date||'未填日期');
+        var ioHtml=inc?'<div class="pc-tx-row-io inc">+'+inc.toLocaleString()+'</div>':(exp?'<div class="pc-tx-row-io exp">-'+exp.toLocaleString()+'</div>':'<div class="pc-tx-row-io" style="color:#bbb;">0</div>');
+        h+='<div class="pc-tx-row" onclick="PETTYCASH.openRowOv(\''+r.id+'\')">';
+        h+='<div class="pc-tx-row-main">';
+        h+='<div class="pc-tx-row-top"><span>'+dateShort+'</span>'+(r.cat?'<span class="pc-tx-row-cat">'+r.cat+'</span>':'')+'</div>';
+        h+='<div class="pc-tx-row-note">'+((r.note||'（無摘要）')).replace(/</g,'&lt;')+'</div>';
         h+='</div>';
-        h+='<input type="text" class="df-inp" placeholder="摘要" style="width:100%;box-sizing:border-box;margin-bottom:5px;" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'note\',this.value)">';
-        h+='<div class="pc-tx-amts">';
-        h+='<div><div class="pc-tx-amt-lbl">收入</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.income!=null?r.income:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'income\',this.value)"></div>';
-        h+='<div><div class="pc-tx-amt-lbl">支出</div><input type="text" class="df-inp" style="width:100%;box-sizing:border-box;" value="'+((r.expense!=null?r.expense:'')+'').replace(/"/g,'&quot;')+'" onchange="PETTYCASH.setRowField(\''+r.id+'\',\'expense\',this.value)"></div>';
-        h+='<div><div class="pc-tx-amt-lbl">結餘</div><div class="pc-tx-running">'+running.toLocaleString()+'</div></div>';
-        h+='</div></div>';
+        h+='<div class="pc-tx-row-amts">'+ioHtml+'<div class="pc-tx-row-bal">'+running.toLocaleString()+'</div></div>';
+        h+='</div>';
       });
+      h+='</div>';
     }
     h+='</div>';
     h+='<div class="df-sec" style="overflow-x:auto;">';
@@ -21786,6 +21816,59 @@ var PETTYCASH=(function(){
     if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id+'/'+field).set(v);
     renderDetail();
   }
+  function openRowOv(id){
+    var p=db[curId];
+    if(!p)return;
+    _rowOvId=id||null;
+    var r=(id&&p.rows&&p.rows[id])?p.rows[id]:{date:'',cat:'',note:'',income:'',expense:''};
+    document.getElementById('pcRowDate').value=r.date||'';
+    var sel=document.getElementById('pcRowCat');
+    var sh='<option value="">–科目–</option>';
+    PETTYCASH_CATS.forEach(function(c){sh+='<option value="'+c+'"'+(r.cat===c?' selected':'')+'>'+c+'</option>';});
+    sel.innerHTML=sh;
+    document.getElementById('pcRowNote').value=r.note||'';
+    document.getElementById('pcRowIncome').value=r.income!=null?r.income:'';
+    document.getElementById('pcRowExpense').value=r.expense!=null?r.expense:'';
+    document.getElementById('pcRowDelBtn').style.display=id?'':'none';
+    document.getElementById('pcRowOv').classList.add('on');
+  }
+  function closeRowOv(){
+    document.getElementById('pcRowOv').classList.remove('on');
+    _rowOvId=null;
+  }
+  function saveRowOv(){
+    var p=db[curId];
+    if(!p)return;
+    if(!p.rows)p.rows={};
+    var id=_rowOvId;
+    if(!id){
+      id='r'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+      p.rows[id]={ts:Date.now()};
+    }
+    var r=p.rows[id];
+    r.date=document.getElementById('pcRowDate').value;
+    r.cat=document.getElementById('pcRowCat').value;
+    r.note=document.getElementById('pcRowNote').value;
+    r.income=document.getElementById('pcRowIncome').value;
+    r.expense=document.getElementById('pcRowExpense').value;
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id).set(r);
+    closeRowOv();
+    renderDetail();
+  }
+  function deleteRowOv(){
+    var id=_rowOvId;
+    if(!id)return;
+    if(!confirm('確定要刪除這一筆紀錄嗎？'))return;
+    var p=db[curId];
+    if(p&&p.rows)delete p.rows[id];
+    save();
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/pettycash/periods/'+curId+'/rows/'+id).remove();
+    closeRowOv();
+    renderDetail();
+  }
   function doPrint(){
     var p=db[curId];
     if(!p)return;
@@ -21800,7 +21883,8 @@ var PETTYCASH=(function(){
 
   return{init:init,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
     openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,
-    setRowField:setRowField,print:doPrint};
+    setRowField:setRowField,openRowOv:openRowOv,closeRowOv:closeRowOv,saveRowOv:saveRowOv,
+    deleteRowOv:deleteRowOv,print:doPrint};
 })();
 
 function _pettyCashPrintHTML(p,t){
