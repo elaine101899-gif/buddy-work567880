@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112124607';
+  var BUILD='20261112125622';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -21378,14 +21378,22 @@ var SPACES=(function(){
     } else if(kind==='bedding'){
       BEDDING_CLASSES.length=0;
       BEDDING_LEVELS.forEach(function(lv){lv.classIds=[];});
+      /* 2026-11-12：Object.keys() 的順序其實是 Firebase key 的順序（約略
+         等於新增先後），跟寶寶/爬爬/跑跑哪個班級沒有關係，畫面上才會看
+         起來亂排。改成先照 BEDDING_LEVELS（寶寶→爬爬→跑跑）分組，同一
+         個年齡層內再照班級名稱文字排序（「寶寶1班」<「寶寶2班」<
+         「寶寶3班」字面排序剛好符合數字順序）。 */
+      var _bedRows=[];
       Object.keys(lists.bedding).forEach(function(id){
         var v=lists.bedding[id]||{};
-        BEDDING_CLASSES.push({id:id,label:v.label||'（未命名）'});
         var lv=null;
         for(var i=0;i<BEDDING_LEVELS.length;i++)if(BEDDING_LEVELS[i].id===v.level)lv=BEDDING_LEVELS[i];
         if(!lv)lv=BEDDING_LEVELS[0];
         if(lv)lv.classIds.push(id);
+        _bedRows.push({id:id,label:v.label||'（未命名）',_lvIdx:BEDDING_LEVELS.indexOf(lv)});
       });
+      _bedRows.sort(function(a,b){return a._lvIdx-b._lvIdx||a.label.localeCompare(b.label,'zh-Hant');});
+      _bedRows.forEach(function(r){BEDDING_CLASSES.push({id:r.id,label:r.label});});
       if(typeof BEDDING!=='undefined'&&BEDDING.resetClasses)BEDDING.resetClasses();
     } else if(kind==='temp'){
       var roomKind=null;
