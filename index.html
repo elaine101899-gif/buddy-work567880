@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112221656';
+  var BUILD='20261113074333';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22772,6 +22772,13 @@ var CHECKOUT=(function(){
     var manualIncomeExtra=0;
     Object.keys(incomeEntries).forEach(function(id){manualIncomeExtra+=parseFloat((incomeEntries[id]||{}).amount)||0;});
     var totalIncome=incomeAuto+subsidyAmt+interestAmt+manualIncomeExtra;
+    /* 2026-11-12：使用者要求股東匯入款、公司間轉帳這類一次性、非常態的
+       進帳，不要算進「收入總計／本期（損益）」（這兩個數字要反映常態
+       營運的真實損益），但錢確實有進來，所以另外開一包 extraIncomeEntries，
+       加總後只算進最下面的「總結算」，不動 totalIncome/netThis。 */
+    var extraIncomeEntries=p.extraIncomeEntries||{};
+    var extraIncome=0;
+    Object.keys(extraIncomeEntries).forEach(function(id){extraIncome+=parseFloat((extraIncomeEntries[id]||{}).amount)||0;});
     var ledgerSum=(p.ledgerPid&&typeof LEDGER!=='undefined')?LEDGER.getPeriodSummary(p.ledgerPid):null;
     var pettycashExpense=ledgerSum?ledgerSum.totalExpense:0;
     var cAccount=ledgerSum?ledgerSum.closing:0;
@@ -22789,9 +22796,10 @@ var CHECKOUT=(function(){
     var aAccount=parseFloat(p.aAccount)||0,bAccount=parseFloat(p.bAccount)||0;
     var assetTotal=aAccount+bAccount+cAccount;
     var prevTotal=parseFloat(p.prevTotal)||0;
-    var grandTotal=prevTotal+netThis;
+    var grandTotal=prevTotal+netThis+extraIncome;
     return{regFee:regFee,monthFee:monthFee,agencyFee:agencyFee,extendFee:extendFee,insurance:insurance,refund:refund,
       incomeAuto:incomeAuto,subsidyAmt:subsidyAmt,interestAmt:interestAmt,totalIncome:totalIncome,
+      extraIncome:extraIncome,
       pettycashExpense:pettycashExpense,byCat:byCat,manualExpense:manualExpense,totalExpense:totalExpense,
       netThis:netThis,aAccount:aAccount,bAccount:bAccount,cAccount:cAccount,assetTotal:assetTotal,
       prevTotal:prevTotal,grandTotal:grandTotal};
@@ -22919,6 +22927,38 @@ var CHECKOUT=(function(){
     if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/incomeEntries/'+id+'/'+field).set(v);
     render();
   }
+  /* 2026-11-12：非常態收入（股東匯入款、公司間轉帳這類一次性進帳），
+     跟上面的 incomeEntries 是分開的一包資料（extraIncomeEntries），
+     新增/刪除/改欄位邏輯完全比照 incomeEntries，差別只在不會被算進
+     收入總計／本期（損益），只會加進最下面的總結算（見 calc()）。 */
+  function addExtraIncomeRow(){
+    var p=periods[curPid];
+    if(!p)return;
+    if(!p.extraIncomeEntries)p.extraIncomeEntries={};
+    var id='x'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+    var rec={note:'',amount:'',ts:Date.now()};
+    p.extraIncomeEntries[id]=rec;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/extraIncomeEntries/'+id).set(rec);
+    render();
+  }
+  function delExtraIncomeRow(id){
+    if(!confirm('確定要刪除這筆非常態收入嗎？'))return;
+    var p=periods[curPid];
+    if(!p||!p.extraIncomeEntries)return;
+    delete p.extraIncomeEntries[id];
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/extraIncomeEntries/'+id).remove();
+    render();
+  }
+  function setExtraIncomeRowField(id,field,v){
+    var p=periods[curPid];
+    if(!p||!p.extraIncomeEntries||!p.extraIncomeEntries[id])return;
+    p.extraIncomeEntries[id][field]=v;
+    var fb=_fbInit();
+    if(fb)fb.ref('xiaobuddyClean/checkout/periods/'+curPid+'/extraIncomeEntries/'+id+'/'+field).set(v);
+    render();
+  }
   function render(){
     var wrap=document.getElementById('ledgerCheckoutWrap');
     if(!wrap)return;
@@ -22993,6 +23033,19 @@ var CHECKOUT=(function(){
     });
     h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
     h+='</div>';
+    /* 非常態收入：股東匯入款、公司間轉帳這類一次性進帳，不算進上面的
+       收入總計／本期（損益），獨立一區讓使用者自己新增，只會算進最
+       下面的總結算。 */
+    h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq in"></span>非常態收入<button class="ldg-addrow-btn" style="margin-left:auto;" onclick="CHECKOUT.addExtraIncomeRow()">&#xFF0B; 新增非常態收入</button></div>';
+    h+='<div style="font-size:.72rem;color:#999;margin-bottom:6px;">股東匯入款、公司間轉帳這類不是常態營運的進帳，填在這裡不會算進上面的收入總計／本期（損益），只會加進最下面的總結算。</div>';
+    Object.keys(p.extraIncomeEntries||{}).sort(function(a,b){return((p.extraIncomeEntries[a]||{}).ts||0)-((p.extraIncomeEntries[b]||{}).ts||0);}).forEach(function(id){
+      var r=p.extraIncomeEntries[id]||{};
+      h+='<div class="chk-row"><input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setExtraIncomeRowField(\''+id+'\',\'note\',this.value)">';
+      h+='<input type="text" class="chk-row-inp" value="'+((r.amount!=null?r.amount:'')+'')+'" onchange="CHECKOUT.setExtraIncomeRowField(\''+id+'\',\'amount\',this.value)">';
+      h+='<button class="chk-row-del" onclick="CHECKOUT.delExtraIncomeRow(\''+id+'\')">&#x1F5D1;&#xFE0F;</button></div>';
+    });
+    h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">非常態收入小計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.extraIncome.toLocaleString()+'</div></div>';
+    h+='</div>';
     /* 支出 */
     h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq out"></span>支出<button class="ldg-addrow-btn" style="margin-left:auto;" onclick="CHECKOUT.addRow()">&#xFF0B; 新增支出項目</button></div>';
     Object.keys(p.entries||{}).sort(function(a,b){return((p.entries[a]||{}).ts||0)-((p.entries[b]||{}).ts||0);}).forEach(function(id){
@@ -23023,6 +23076,7 @@ var CHECKOUT=(function(){
     h+='<div class="df-sec"><table class="ck-table"><tbody>';
     h+='<tr><td>上期總結</td><td><input type="text" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
     h+='<tr><td>本期（損益）</td><td>'+c.netThis.toLocaleString()+'</td></tr>';
+    if(c.extraIncome)h+='<tr><td>非常態收入</td><td>'+c.extraIncome.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;background:#E2ECF9;"><td>總結</td><td style="color:#3E6BB0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
     wrap.innerHTML=h;
@@ -23048,6 +23102,7 @@ var CHECKOUT=(function(){
   return{open:open,openNew:openNew,closeNew:closeNew,saveNew:saveNew,deletePeriod:deletePeriod,
     openDetail:openDetail,backToHub:backToHub,setMeta:setMeta,addRow:addRow,delRow:delRow,setRowField:setRowField,
     addIncomeRow:addIncomeRow,delIncomeRow:delIncomeRow,setIncomeRowField:setIncomeRowField,
+    addExtraIncomeRow:addExtraIncomeRow,delExtraIncomeRow:delExtraIncomeRow,setExtraIncomeRowField:setExtraIncomeRowField,
     print:doPrint,kgStatus:kgStatus};
 })();
 /* 結帳列印：跟月費單列印同一套感覺（PingFang字體、置中標題、金色表頭、
@@ -23081,6 +23136,16 @@ function _checkoutPrintHTML(p,c){
   });
   html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td><td></td></tr>';
   html+='</tbody></table></div>';
+  var extraIncomeEntries=p.extraIncomeEntries||{};
+  if(Object.keys(extraIncomeEntries).length){
+    html+='<div class="sec" style="margin-top:3mm;">非常態收入　<span style="font-weight:400;color:#999;font-size:.9em;">（不計入收入總計）</span></div><div class="tbl-wrap"><table><thead><tr><th>備註</th><th class="num">金額</th></tr></thead><tbody>';
+    Object.keys(extraIncomeEntries).sort(function(a,b){return((extraIncomeEntries[a]||{}).ts||0)-((extraIncomeEntries[b]||{}).ts||0);}).forEach(function(id){
+      var r=extraIncomeEntries[id]||{};
+      html+='<tr><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td></tr>';
+    });
+    html+='<tr class="tot-row"><td>非常態收入小計</td><td class="num">'+c.extraIncome.toLocaleString()+'</td></tr>';
+    html+='</tbody></table></div>';
+  }
   html+='</div>';
 
   html+='<div class="ck-col">';
@@ -23133,6 +23198,7 @@ function _checkoutPrintHTML(p,c){
   html+='<div class="ck-sumcard"><div class="sec">總結算</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>上期總結</td><td class="num">'+c.prevTotal.toLocaleString()+'</td></tr>';
   html+='<tr><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
+  if(c.extraIncome)html+='<tr><td>非常態收入</td><td class="num">'+c.extraIncome.toLocaleString()+'</td></tr>';
   html+='</tbody></table></div></div>';
 
   html+='</div>';
