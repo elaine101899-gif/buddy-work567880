@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112195546';
+  var BUILD='20261112221656';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22624,6 +22624,15 @@ var LEDGER=(function(){
    .tbl-wrap 做圓角卡片。.tbl-wrap 這個 class 只在列印頁自己的 <style>
    裡有定義，所以同一段 HTML 被畫面（cln-table 樣式）重複使用時完全不受
    影響，畫面長相不會跟著變。 */
+function _rocFullRange(startIso,endIso){
+  function f(iso){
+    if(!iso)return '?';
+    var p=(iso+'').split('-');
+    if(p.length<3)return iso;
+    return (parseInt(p[0],10)-1911)+'/'+p[1]+'/'+p[2];
+  }
+  return f(startIso)+' ～ '+f(endIso);
+}
 function _moneyReportCss(pageSize){
   return '@page{size:'+(pageSize||'A4 portrait')+';margin:12mm 12mm;}'+
     '*{box-sizing:border-box;}'+
@@ -22699,7 +22708,7 @@ function _ledgerPrintHTML(rows,t,p,open){
         '<td class="num">'+(inc?inc.toLocaleString():'')+'</td><td class="num">'+(exp?exp.toLocaleString():'')+'</td></tr>';
     });
   }
-  var periodLabel=(p&&(p.label||p.startDate||p.endDate))?((p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?')):'';
+  var periodLabel=(p&&(p.startDate||p.endDate))?_rocFullRange(p.startDate,p.endDate):'';
   var html='<!doctype html><html><head><meta charset="utf-8"><title>零用金明細</title><style>'+_moneyReportCss('194mm 267mm')+'</style></head><body>';
   html+='<div class="hd1">'+companyLabel+' &middot; 零用金明細</div>';
   html+='<div class="hd2">'+(periodLabel||'')+'</div>';
@@ -23045,11 +23054,18 @@ var CHECKOUT=(function(){
    圓角卡片），把畫面上的收入／支出／本期結算／A-B-C帳資產／總結都印出來。 */
 function _checkoutPrintHTML(p,c){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
-  var periodLabel=(p.label?p.label+'　':'')+(p.startDate||'?')+' ～ '+(p.endDate||'?');
-  var html='<!doctype html><html><head><meta charset="utf-8"><title>結帳</title><style>'+_moneyReportCss()+'</style></head><body>';
+  var periodLabel=_rocFullRange(p.startDate,p.endDate);
+  /* 2026-11-12：使用者要求結帳列印改成一頁、一目了然：收入/支出改成
+     左右兩欄並排（不是原本從上到下疊兩張大表），下面本期結算/A-B-C帳
+     資產/上期總結這三塊也改成並排的小卡，取代原本三張獨立的直式表格。
+     字級、間距也配合縮小，盡量讓一般月份的資料量塞進一張 A4。 */
+  var html='<!doctype html><html><head><meta charset="utf-8"><title>結帳</title><style>'+_moneyReportCss()+_checkoutPrintCss()+'</style></head><body class="ck-compact">';
   html+='<div class="hd1">'+companyLabel+' &middot; 結帳</div>';
   html+='<div class="hd2">'+periodLabel+'</div>';
 
+  html+='<div class="ck-2col">';
+
+  html+='<div class="ck-col">';
   html+='<div class="sec">收入</div><div class="tbl-wrap"><table><thead><tr><th>項目</th><th class="num">金額</th><th>備註</th></tr></thead><tbody>';
   html+='<tr><td>註冊費</td><td class="num">'+c.regFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
   html+='<tr><td>月費</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td style="color:#aaa;">月費單自動帶入</td></tr>';
@@ -23065,7 +23081,9 @@ function _checkoutPrintHTML(p,c){
   });
   html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td><td></td></tr>';
   html+='</tbody></table></div>';
+  html+='</div>';
 
+  html+='<div class="ck-col">';
   html+='<div class="sec">支出</div><div class="tbl-wrap"><table><thead><tr><th>類別</th><th>備註</th><th class="num">金額</th></tr></thead><tbody>';
   /* 2026-11-11：使用者要求列印版的支出要「按科目統整」，同科目的排在一起，
      每個科目後面加一個小計——不是原本按新增時間排的流水帳。分組順序照
@@ -23093,29 +23111,48 @@ function _checkoutPrintHTML(p,c){
   html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td></tr>';
   html+='<tr class="tot-row"><td>支出總計</td><td></td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
   html+='</tbody></table></div>';
+  html+='</div>';
 
-  html+='<div class="sec">本期結算</div><div class="tbl-wrap"><table><tbody>';
+  html+='</div>';
+
+  html+='<div class="ck-3col">';
+
+  html+='<div class="ck-sumcard"><div class="sec">本期結算</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td></tr>';
   html+='<tr><td>支出總計</td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
   html+='<tr class="tot-row"><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
-  html+='</tbody></table></div>';
+  html+='</tbody></table></div></div>';
 
-  html+='<div class="sec">A/B/C 帳資產</div><div class="tbl-wrap"><table><thead><tr><th>項目</th><th class="num">金額</th></tr></thead><tbody>';
+  html+='<div class="ck-sumcard"><div class="sec">A/B/C 帳資產</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>A帳</td><td class="num">'+c.aAccount.toLocaleString()+'</td></tr>';
   html+='<tr><td>B帳</td><td class="num">'+c.bAccount.toLocaleString()+'</td></tr>';
   html+='<tr><td>C帳（零用金目前餘額）</td><td class="num">'+c.cAccount.toLocaleString()+'</td></tr>';
   html+='<tr class="tot-row"><td>資產結餘</td><td class="num">'+c.assetTotal.toLocaleString()+'</td></tr>';
-  html+='</tbody></table></div>';
+  html+='</tbody></table></div></div>';
 
-  html+='<div class="tbl-wrap"><table><tbody>';
+  html+='<div class="ck-sumcard"><div class="sec">總結算</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>上期總結</td><td class="num">'+c.prevTotal.toLocaleString()+'</td></tr>';
   html+='<tr><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
-  html+='</tbody></table></div>';
+  html+='</tbody></table></div></div>';
+
+  html+='</div>';
   html+='<div class="grand">總結：'+c.grandTotal.toLocaleString()+' 元</div>';
 
   html+='<script>window.onload=function(){setTimeout(function(){window.print();},150);}<\/script>';
   html+='</body></html>';
   return html;
+}
+function _checkoutPrintCss(){
+  return '.ck-2col{display:flex;gap:8mm;align-items:flex-start;}'+
+    '.ck-2col .ck-col{flex:1;min-width:0;}'+
+    '.ck-3col{display:flex;gap:6mm;align-items:flex-start;margin-top:2mm;}'+
+    '.ck-3col .ck-sumcard{flex:1;min-width:0;}'+
+    'body.ck-compact .sec{margin:3mm 0 1.5mm;font-size:9.5pt;}'+
+    'body.ck-compact table{font-size:8.3pt;}'+
+    'body.ck-compact td,body.ck-compact th{padding:2.5px 6px;}'+
+    'body.ck-compact .grand{margin-top:3mm;padding:6px 14px;font-size:12pt;}'+
+    'body.ck-compact .hd1{font-size:13.5pt;margin-bottom:1mm;}'+
+    'body.ck-compact .hd2{margin-bottom:3mm;}';
 }
 
 /* ── 體溫管理 ── */
