@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112150923';
+  var BUILD='20261112165914';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20769,9 +20769,15 @@ var BEDDING=(function(){
       h+='</div>';
     });
     h+='<button class="cfm-add-row-btn" onclick="BEDDING.addRow()">＋ 新增一列</button>';
+    /* 2026-11-12：這5格簽名原本只有點開小視窗後才看得到「第N次」，
+       畫面上5個按鈕長得一模一樣，使用者反映看不出來哪一格對應哪一次
+       （本來是想每週簽一次，但每個孩子自己的5個日期不一定對齊同一週，
+       沒有一個大家共用的「第幾週」，所以不能標日期，只能比照點進去
+       小視窗同一套「第N次」順序編號，至少先後對應得起來）。 */
     h+='<div class="cfm-sig-card"><div class="cfm-sig-lbl" style="margin-bottom:8px;">托育人員簽章</div><div style="display:flex;flex-wrap:wrap;gap:12px;">';
     for(var si=0;si<5;si++){
       h+='<div class="cfm-sig-item">';
+      h+='<div style="font-size:.68rem;color:#8a8073;text-align:center;margin-bottom:4px;">第'+(si+1)+'次</div>';
       if(rec.sigs[si]){h+='<img src="'+rec.sigs[si]+'" class="cln-sig-img" onclick="BEDDING.openSig('+si+')">';}
       else{h+='<button class="cfm-sig-btn" onclick="BEDDING.openSig('+si+')">簽名</button>';}
       h+='</div>';
