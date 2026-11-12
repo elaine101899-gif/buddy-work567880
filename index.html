@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261111211534';
+  var BUILD='20261112091809';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2256,6 +2256,80 @@ body.adm .sync-setup{display:block;}
 .pc-tx-row-io.exp{color:#C2603E;}
 .pc-tx-row-bal{font-weight:800;color:#3E8E6A;font-size:.78rem;margin-top:1px;}
 /* ══ 零用金明細頁修正結束 ══ */
+
+/* ══════ 2026-11-12：體溫管理／請假總表／延托費總表 排版改版（純樣式，
+   不動任何邏輯/函式/資料/計算方式）══════
+   三頁原本外層都有一條靜態 .bbar，裡面 render() 又自己疊一條標題
+   （體溫管理 renderDetail 尤其明顯），改成外層 pg 容器完全不放標題，
+   標題整個交給 render()/renderHub()/renderDetail() 自己輸出一次
+   （.pghdr），這樣永遠只有一條，且能依畫面換色換字。 ══════ */
+.pghdr{border-radius:30px;padding:14px 16px 16px;margin:10px 10px 0;}
+.pghdr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pghdr-back{background:#fff;border:none;color:#33302a;padding:8px 18px;border-radius:999px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;box-shadow:0 2px 6px rgba(0,0,0,.08);flex-shrink:0;}
+.pghdr-path{font-size:.74rem;color:#8a8073;font-weight:700;}
+.pghdr-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.7rem;font-weight:800;letter-spacing:2px;margin-top:14px;}
+.pghdr-title{font-size:1.5rem;font-weight:900;color:#1d2433;margin-top:2px;font-family:'Noto Sans TC',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+#pg-bodytemp .pghdr{background:#FCEFD9;} #pg-bodytemp .pghdr-eyebrow{color:#B9822A;}
+#pg-childleave-summary .pghdr{background:#E2ECF9;} #pg-childleave-summary .pghdr-eyebrow{color:#3E6BB0;}
+#pg-extendcare-fee .pghdr{background:#EEE6F7;} #pg-extendcare-fee .pghdr-eyebrow{color:#7B55A0;}
+#pg-bodytemp,#pg-childleave-summary,#pg-extendcare-fee{background:#FAF6EE;}
+#pg-bodytemp .ov-card,#pg-childleave-summary .ov-card,#pg-extendcare-fee .ov-card{background:#fff;border:1px solid #ECE6DA;border-radius:26px;padding:14px 16px;margin:12px 10px 0;color:#2E2A3A;}
+#pg-bodytemp .ov-pill,#pg-childleave-summary .ov-pill,#pg-extendcare-fee .ov-pill{border-radius:999px;border:1.5px solid #E2D9C8;background:#FAF6EE;color:#6b5f4a;padding:7px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+#pg-bodytemp select.ov-sel,#pg-bodytemp input.ov-sel,#pg-childleave-summary select.ov-sel,#pg-childleave-summary input.ov-sel,#pg-extendcare-fee select.ov-sel,#pg-extendcare-fee input.ov-sel{border-radius:999px;border:1.5px solid #E2D9C8;background:#FAF6EE;padding:7px 14px;font-size:.84rem;color:#2E2A3A;font-family:'Noto Sans TC',sans-serif;}
+#pg-bodytemp .ov-pill-go,#pg-childleave-summary .ov-pill-go,#pg-extendcare-fee .ov-pill-go{background:#E3F2EA;color:#3E8E6A;border-color:#E3F2EA;}
+#pg-bodytemp .ov-pill-go2,#pg-childleave-summary .ov-pill-go2,#pg-extendcare-fee .ov-pill-go2{background:#3E8E6A;color:#fff;border-color:#3E8E6A;}
+
+/* ── 體溫管理：老師列表（頭像沿用共用的 .pick-card／.pick-avatar，
+   這裡只蓋掉顏色跟圓角，不改 _pickGridHTML 這個共用函式本身，
+   以免影響其他也用到這個函式的畫面）── */
+#pg-bodytemp .pick-card{border-radius:24px;border-color:#ECE6DA;}
+#pg-bodytemp .pick-avatar{background:#FAF1DE!important;color:#B9822A!important;}
+
+/* ── 體溫管理：某位老師的月份，原本的大表格改成一天一張卡 ── */
+.bt-daycard{background:#fff;border:1.5px solid #ECE6DA;border-radius:22px;padding:12px 14px;margin:0 10px 12px;}
+.bt-daycard.unfilled{border-color:#F1D8A8;}
+.bt-daycard-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;}
+.bt-datepill{background:#FCEFD9;color:#B9822A;border-radius:999px;padding:4px 14px;font-weight:800;font-size:.86rem;white-space:nowrap;}
+.bt-offbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.bt-offbtn{background:#fff;border:1.5px solid #E2D9C8;color:#8a8073;border-radius:999px;padding:4px 10px;font-size:.66rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.bt-offbtn.on{background:#cf6b6b;border-color:#cf6b6b;color:#fff;}
+.bt-temprow{display:flex;gap:8px;margin-bottom:10px;}
+.bt-tempcol{flex:1;min-width:0;}
+.bt-tempcol-lbl{font-size:.68rem;color:#8a8073;margin-bottom:4px;}
+.bt-statusrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+.bt-statustg{border-radius:999px;border:1.5px solid #E2D9C8;background:#fff;color:#8a8073;padding:6px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.bt-statustg.normal-on{background:#3E8E6A;border-color:#3E8E6A;color:#fff;}
+.bt-statustg.abn-on{background:#C2603E;border-color:#C2603E;color:#fff;}
+.bt-leaverow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.78rem;color:#8a8073;margin-top:4px;}
+.bt-offday-banner{background:#FBF3F0;border-radius:16px;padding:10px 16px;margin:0 10px 12px;color:#c0806e;font-weight:700;font-size:.82rem;text-align:center;}
+
+/* ── 請假總表：班級標題／每位幼兒一張卡／每天一個小膠囊 ── */
+.cl-clslbl{font-weight:900;font-size:.95rem;margin:16px 10px 8px;color:#2E2A3A;}
+.cl-totalcard{background:#FCEFD9;border-radius:22px;margin:12px 10px 0;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;}
+.cl-totalcard .lbl{font-weight:700;color:#8a7044;font-size:.86rem;}
+.cl-totalcard .amt{font-weight:900;font-size:1.3rem;color:#9a6a1a;}
+.cl-childcard{background:#fff;border:1px solid #ECE6DA;border-radius:22px;padding:12px 16px;margin:0 10px 10px;}
+.cl-childcard-hd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.cl-childname{font-weight:900;font-size:.95rem;color:#2E2A3A;}
+.cl-daysbadge{background:#F5F0E6;color:#8a7a5a;border-radius:999px;padding:2px 10px;font-size:.7rem;font-weight:700;}
+.cl-refundbadge{background:#E3F2EA;color:#3E8E6A;border-radius:999px;padding:2px 10px;font-size:.7rem;font-weight:700;}
+.cl-daypills{display:flex;flex-wrap:wrap;gap:6px;}
+.cl-daypill{background:#FAF6EE;border:1px solid #ECE6DA;border-radius:999px;padding:4px 10px;font-size:.76rem;white-space:nowrap;}
+
+/* ── 延托費總表：原本的大表格改成一個幼兒一張卡 ── */
+.ec-childcard{background:#fff;border:1px solid #ECE6DA;border-radius:22px;padding:14px 16px;margin:0 10px 12px;}
+.ec-childcard-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+.ec-childname-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.ec-childname{font-weight:900;font-size:.98rem;color:#2E2A3A;}
+.ec-clsbadge{background:#F5F0E6;color:#8a7a5a;border-radius:999px;padding:2px 10px;font-size:.7rem;font-weight:700;}
+.ec-daysbadge{background:#F5F0E6;color:#8a7a5a;border-radius:999px;padding:2px 10px;font-size:.7rem;font-weight:700;}
+.ec-childtotal{font-weight:900;font-size:1.15rem;color:#7B55A0;white-space:nowrap;}
+.ec-daygrid{display:flex;flex-wrap:wrap;gap:8px;}
+.ec-daymini{background:#FAF6EE;border-radius:14px;padding:8px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:1 1 calc(50% - 4px);min-width:140px;box-sizing:border-box;}
+.ec-daymini-info{font-size:.76rem;color:#6b5f4a;}
+.ec-daymini input.ec-fee-inp{width:64px;text-align:center;border-radius:999px;border:1.5px solid #D9C9E8;background:#fff;padding:5px 6px;font-size:.8rem;font-family:'Noto Sans TC',sans-serif;}
+.ec-hint-card{border:1.5px dashed #E2D9C8;border-radius:16px;padding:10px 14px;font-size:.72rem;color:#8a8073;margin:0 10px 12px;}
+/* ══ 體溫管理／請假總表／延托費總表 改版結束 ══ */
 
 /* ══ 2026-11 請假交接單改版（純樣式）：身份選單沿用 .admin-hero，四種
    身份內頁沿用 .stat-hero-sm，人員列表／老師格狀卡片都是新的小 class，
@@ -4925,11 +4999,7 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ BODY TEMPERATURE ═══ -->
 <div class="pg" id="pg-bodytemp">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">體溫管理</span>
-  </div>
-  <div id="bodytempWrap" style="padding:10px 12px 40px;"></div>
+  <div id="bodytempWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ PHONE VISIT FORM ═══ -->
@@ -5344,11 +5414,7 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 延托費總表 ═══ -->
 <div class="pg" id="pg-extendcare-fee">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('extendcare')">&#x2190; 延托幼兒</button>
-    <span class="btitle">延托費總表</span>
-  </div>
-  <div style="padding:14px 16px 40px;" id="ecfee-root">
+  <div id="ecfee-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
@@ -5368,11 +5434,7 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
 </div>
 <div class="pg" id="pg-childleave-summary">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('childleave')">&#x2190; 幼兒請假記錄</button>
-    <span class="btitle">請假總表</span>
-  </div>
-  <div style="padding:14px 16px 40px;" id="clsum-root">
+  <div id="clsum-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
@@ -22945,7 +23007,7 @@ var BODYTEMP=(function(){
   function getRecFor(t){var k=recKey(t);if(!db.records[k])db.records[k]={days:{}};return db.records[k];}
   var TEMP_OPTS=(function(){var a=[];for(var i=350;i<=400;i++)a.push((i/10).toFixed(1));return a;})();
   function tempSelect(day,field,val,onchangeFn){
-    var h='<select class="cln-num" style="width:58px;" onchange="'+onchangeFn+'">';
+    var h='<select class="cln-num ov-sel" style="width:100%;box-sizing:border-box;" onchange="'+onchangeFn+'">';
     h+='<option value="">–</option>';
     h+='<option value="請假"'+(val==='請假'?' selected':'')+'>請假</option>';
     TEMP_OPTS.forEach(function(t){h+='<option value="'+t+'"'+(val===t?' selected':'')+'>'+t+'</option>';});
@@ -23057,15 +23119,15 @@ var BODYTEMP=(function(){
 
   function renderHub(wrap){
     var h='';
-    h+='<div class="df-sec" style="display:flex;gap:10px;">';
-    h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="btYInp" value="'+curY+'" onchange="BODYTEMP.changeYM()"></div>';
-    h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="btMSel" onchange="BODYTEMP.changeYM()">';
+    h+='<div class="pghdr"><div class="pghdr-top"><button class="pghdr-back" onclick="GO(\'home\')">&#x2190; 首頁</button></div><div class="pghdr-eyebrow">TEMPERATURE</div><div class="pghdr-title">體溫管理</div></div>';
+    h+='<div class="ov-card" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:90px;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp ov-sel" style="width:100%;box-sizing:border-box;" id="btYInp" value="'+curY+'" onchange="BODYTEMP.changeYM()"></div>';
+    h+='<div style="flex:1;min-width:90px;"><div class="df-lbl">月</div><select class="df-inp ov-sel" style="width:100%;box-sizing:border-box;" id="btMSel" onchange="BODYTEMP.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
-    h+='</select></div></div>';
-    h+='<div class="df-sec"><div class="df-lbl">🖨 列印</div><div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    h+='<button class="cln-sig-btn" onclick="BODYTEMP.downloadMonth()">📊 月報表（全部老師）</button>';
-    h+='</div></div>';
-    h+='<div class="df-sec"><div class="df-lbl">👤 選擇老師</div>';
+    h+='</select></div>';
+    h+='<button class="ov-pill ov-pill-go" onclick="BODYTEMP.downloadMonth()">列印月報表</button>';
+    h+='</div>';
+    h+='<div class="ov-card">';
     h+=_pickGridHTML(SIGNERS.map(function(n){return{value:n,label:n};}),'BODYTEMP.selectTeacher');
     h+='</div>';
     wrap.innerHTML=h;
@@ -23075,59 +23137,71 @@ var BODYTEMP=(function(){
     var nd=daysInMonth(curY,curM);
     var rec=getRec();
     var h='';
-    h+='<div class="bbar" style="padding:0 0 10px;"><button class="bbtn" onclick="BODYTEMP.show(\'hub\')">&#x2190; 老師列表</button><span class="btitle">'+curT+'</span></div>';
-    h+='<div class="df-sec" style="display:flex;gap:10px;">';
-    h+='<div style="flex:1;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp" id="btYInp" value="'+curY+'" onchange="BODYTEMP.changeYM()"></div>';
-    h+='<div style="flex:1;"><div class="df-lbl">月</div><select class="df-inp" id="btMSel" onchange="BODYTEMP.changeYM()">';
+    h+='<div class="pghdr"><div class="pghdr-top"><button class="pghdr-back" onclick="BODYTEMP.show(\'hub\')">&#x2190; 老師列表</button><span class="pghdr-path">體溫管理 &rsaquo; '+curT+'</span></div><div class="pghdr-eyebrow">TEMPERATURE</div><div class="pghdr-title">'+curT+'</div></div>';
+    h+='<div class="ov-card" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:90px;"><div class="df-lbl">年（民國）</div><input type="number" class="df-inp ov-sel" style="width:100%;box-sizing:border-box;" id="btYInp" value="'+curY+'" onchange="BODYTEMP.changeYM()"></div>';
+    h+='<div style="flex:1;min-width:90px;"><div class="df-lbl">月</div><select class="df-inp ov-sel" style="width:100%;box-sizing:border-box;" id="btMSel" onchange="BODYTEMP.changeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===curM?' selected':'')+'>'+m+'</option>';
-    h+='</select></div></div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<div class="df-lbl">'+curT+' 體溫紀錄 — '+curY+'年'+curM+'月<button class="cln-sig-btn" style="float:right;" onclick="BODYTEMP.download()">📥 下載本月表單</button></div>';
-    h+='<table class="cln-table"><thead><tr><th>日期</th><th>8:00</th><th>12:00</th><th>16:00</th><th>狀況</th><th>異狀項目</th><th>請假</th><th>假別</th></tr></thead><tbody>';
+    h+='</select></div>';
+    h+='<button class="ov-pill ov-pill-go" onclick="BODYTEMP.download()">下載本月表單</button>';
+    h+='</div>';
+    /* 2026-11-12：使用者要求原本的大表格改成「一天一張卡」，不要左右滑，
+       欄位、下拉選項（symptom/leaveType）、儲存方式(setVal/setLeave/
+       setOffType)全部照舊，只是把 table/tr/td 換成卡片 div。 */
     var offTypeBtns=[{type:'國定假日',lbl:'設國定假日'},{type:'颱風假',lbl:'設颱風假'},{type:'豪雨假',lbl:'設豪雨假'}];
+    var nowRef=new Date();
+    var todayY=nowRef.getFullYear()-1911,todayM=nowRef.getMonth()+1,todayD=nowRef.getDate();
+    var hrNow=nowRef.getHours()+nowRef.getMinutes()/60;
     for(var d=1;d<=nd;d++){
       var dayRec=rec.days[d]||{};
       var wkd=isWeekend(curY,curM,d);
       var offType=dayRec.offType||'';
       var offDay=wkd||!!offType;
-      h+='<tr'+(offDay?' style="background:#fdeaea;"':'')+'>';
-      h+='<td class="cln-day">'+d+'（'+weekdayLabel(curY,curM,d)+'）';
-      h+='<div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;">';
+      var dateLbl=d+'（'+weekdayLabel(curY,curM,d)+'）';
+      if(offDay){
+        h+='<div class="bt-offday-banner">'+dateLbl+'　'+(wkd?'六日':offType)+'公休，不用填寫體溫</div>';
+        continue;
+      }
+      var isToday=(curY===todayY&&curM===todayM&&d===todayD);
+      var unfilled=isToday&&!dayRec.t1&&!dayRec.t2&&!dayRec.t3&&!dayRec.leave;
+      h+='<div class="bt-daycard'+(unfilled?' unfilled':'')+'">';
+      h+='<div class="bt-daycard-hd">';
+      h+='<span class="bt-datepill">'+dateLbl+'</span>';
+      h+='<div class="bt-offbtns">';
       offTypeBtns.forEach(function(b){
         var active=(offType===b.type);
-        h+='<button class="cln-sig-btn" style="font-size:.6rem;padding:2px 5px;'+(active?'background:#cf6b6b;':'background:#eee;color:#888;')+'" onclick="BODYTEMP.setOffType('+d+',\''+b.type+'\')">'+(active?'🎌'+b.type:b.lbl)+'</button>';
+        h+='<button class="bt-offbtn'+(active?' on':'')+'" onclick="BODYTEMP.setOffType('+d+',\''+b.type+'\')">'+b.lbl+'</button>';
+      });
+      h+='</div></div>';
+      h+='<div class="bt-temprow">';
+      [['8:00','t1'],['12:00','t2'],['16:00','t3']].forEach(function(pair){
+        var f=pair[1];
+        h+='<div class="bt-tempcol"><div class="bt-tempcol-lbl">'+pair[0]+'</div>';
+        if(isToday&&hrNow<SLOT_HOURS[f]){
+          h+='<div style="text-align:center;color:#bbb;font-size:.8rem;padding:7px 0;">還沒到時間</div>';
+        } else {
+          h+=tempSelect(d,f,dayRec[f]||'','BODYTEMP.setVal('+d+',\''+f+'\',this.value)');
+        }
+        h+='</div>';
       });
       h+='</div>';
-      h+='</td>';
-      if(offDay){
-        h+='<td colspan="7" style="text-align:center;color:#cf6b6b;font-weight:700;">'+(wkd?'六日':offType)+'公休，不用填寫體溫</td>';
-      } else {
-        var nowRef=new Date();
-        var todayY=nowRef.getFullYear()-1911,todayM=nowRef.getMonth()+1,todayD=nowRef.getDate();
-        var hrNow=nowRef.getHours()+nowRef.getMinutes()/60;
-        var isToday=(curY===todayY&&curM===todayM&&d===todayD);
-        ['t1','t2','t3'].forEach(function(f){
-          if(isToday&&hrNow<SLOT_HOURS[f]){
-            h+='<td style="text-align:center;color:#bbb;font-size:.8rem;">—</td>';
-          } else {
-            h+='<td>'+tempSelect(d,f,dayRec[f]||'','BODYTEMP.setVal('+d+',\''+f+'\',this.value)')+'</td>';
-          }
-        });
-        h+='<td style="white-space:nowrap;font-size:.72rem;text-align:left;">';
-        h+='<label style="display:block;cursor:pointer;"><input type="radio" name="btSt'+d+'" value="abnormal"'+(dayRec.status==='abnormal'?' checked':'')+' onchange="BODYTEMP.setVal('+d+',\'status\',this.value)"> 有異狀</label>';
-        h+='<label style="display:block;cursor:pointer;"><input type="radio" name="btSt'+d+'" value="normal"'+(dayRec.status==='normal'?' checked':'')+' onchange="BODYTEMP.setVal('+d+',\'status\',this.value)"> 無異狀</label>';
-        h+='</td>';
-        h+='<td><select class="cln-num" style="width:74px;" onchange="BODYTEMP.setVal('+d+',\'symptom\',this.value)"><option value="">–</option>';
+      h+='<div class="bt-statusrow">';
+      h+='<button class="bt-statustg'+(dayRec.status==='normal'?' normal-on':'')+'" onclick="BODYTEMP.setVal('+d+',\'status\',\'normal\')">無異狀</button>';
+      h+='<button class="bt-statustg'+(dayRec.status==='abnormal'?' abn-on':'')+'" onclick="BODYTEMP.setVal('+d+',\'status\',\'abnormal\')">有異狀</button>';
+      if(dayRec.status==='abnormal'){
+        h+='<select class="ov-sel" style="font-size:.76rem;padding:6px 12px;" onchange="BODYTEMP.setVal('+d+',\'symptom\',this.value)"><option value="">異狀說明</option>';
         BODYTEMP_SYMPTOMS.forEach(function(sy){h+='<option value="'+sy+'"'+(dayRec.symptom===sy?' selected':'')+'>'+sy+'</option>';});
-        h+='</select></td>';
-        h+='<td><input type="checkbox" class="cln-chk"'+(dayRec.leave?' checked':'')+' onchange="BODYTEMP.setLeave('+d+',this.checked)"></td>';
-        h+='<td><select class="cln-num" style="width:70px;" onchange="BODYTEMP.setVal('+d+',\'leaveType\',this.value)"><option value="">–</option>';
-        BODYTEMP_LEAVE_TYPES.forEach(function(lt){h+='<option value="'+lt+'"'+(dayRec.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
-        h+='</select></td>';
+        h+='</select>';
       }
-      h+='</tr>';
+      h+='</div>';
+      h+='<div class="bt-leaverow">';
+      h+='<label style="display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" class="cln-chk"'+(dayRec.leave?' checked':'')+' onchange="BODYTEMP.setLeave('+d+',this.checked)"> 請假</label>';
+      h+='<select class="ov-sel" style="font-size:.76rem;padding:6px 12px;" onchange="BODYTEMP.setVal('+d+',\'leaveType\',this.value)"><option value="">假別</option>';
+      BODYTEMP_LEAVE_TYPES.forEach(function(lt){h+='<option value="'+lt+'"'+(dayRec.leaveType===lt?' selected':'')+'>'+lt+'</option>';});
+      h+='</select>';
+      h+='</div>';
+      h+='</div>';
     }
-    h+='</tbody></table></div>';
     wrap.innerHTML=h;
   }
 
@@ -23138,6 +23212,10 @@ var BODYTEMP=(function(){
     save();
     var fb=_fbInit();
     if(fb)fb.ref('xiaobuddyClean/bodytemp/records/'+key()+'/days/'+day+'/'+field).set(val);
+    /* 2026-11-12：狀況改成「無異狀／有異狀」兩個按鈕切換（取代原本的
+       radio），按鈕本身沒有原生的勾選外觀，需要重畫才能換成選中樣式，
+       另外「有異狀」選中時旁邊才要多顯示異狀說明欄，也需要重畫。 */
+    if(field==='status')render();
   }
   function setLeave(day,checked){
     var rec=getRec();
@@ -24443,46 +24521,46 @@ var EXTENDCARE=(function(){
     var col=_feeCollect(_feeEndY,_feeEndM);
     _feeRows=col.rows;
     var r=col.range;
-    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">&#x1F4C5; 收費期間（到第幾個月的26號）</div>';
-    h+='<select class="df-inp" style="width:auto;" id="ecfeeYr" onchange="EXTENDCARE.feeChangeYM()">';
+    /* 2026-11-12：純樣式改版，收集/計算邏輯(_feeCollect/_feeChildSub/
+       _feeGrandTotal等)跟 feeSetEntryFee 的欄位修改方式完全不動，只是
+       把表格換成一個幼兒一張卡。注意 feeSetEntryFee 只會把 ecfeeSub+ri
+       這個元素的 textContent 直接換成純數字，所以「共」「元」這些字
+       要包在外層，不能跟數字放進同一個會被整個換掉的元素裡。 */
+    var h='';
+    h+='<div class="pghdr"><div class="pghdr-top"><button class="pghdr-back" onclick="GO(\'extendcare\')">&#x2190; 延托幼兒</button></div><div class="pghdr-eyebrow">EXTENDED CARE FEE</div><div class="pghdr-title">延托費總表</div></div>';
+    h+='<div class="ov-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">收費期間（到第幾個月的26號）</div>';
+    h+='<select class="df-inp ov-sel" style="width:auto;" id="ecfeeYr" onchange="EXTENDCARE.feeChangeYM()">';
     for(var y=_feeEndY;y>=_feeEndY-1;y--)h+='<option value="'+y+'"'+(y===_feeEndY?' selected':'')+'>'+y+' 年</option>';
     h+='</select>';
-    h+='<select class="df-inp" style="width:auto;" id="ecfeeMn" onchange="EXTENDCARE.feeChangeYM()">';
+    h+='<select class="df-inp ov-sel" style="width:auto;" id="ecfeeMn" onchange="EXTENDCARE.feeChangeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_feeEndM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
-    h+='<span style="font-size:.78rem;color:#888;">（即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_feeEndY+'/'+_feeEndM+'/26）</span>';
-    h+='<span style="margin-left:auto;display:flex;gap:8px;">';
-    h+='<button class="cln-sig-btn" onclick="EXTENDCARE.feePrint()">&#x1F5A8; 列印總表</button>';
-    h+='<button class="cln-sig-btn" onclick="EXTENDCARE.feePrintSlips()">&#x1F4C4; 列印家長明細（每人一張）</button>';
-    h+='</span>';
+    h+='<span style="color:#8a8073;font-size:.8rem;">即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_feeEndY+'/'+_feeEndM+'/26</span>';
+    h+='</div>';
+    h+='<div class="ov-card" style="display:flex;gap:8px;flex-wrap:wrap;">';
+    h+='<button class="ov-pill ov-pill-go2" onclick="EXTENDCARE.feePrint()">列印總表</button>';
+    h+='<button class="ov-pill ov-pill-go" onclick="EXTENDCARE.feePrintSlips()">列印家長明細（每人一張）</button>';
     h+='</div>';
     if(!_feeRows.length){
-      h+='<div style="color:#aaa;text-align:center;padding:40px 0;">這一期沒有任何延托紀錄</div>';
+      h+='<div class="ov-card" style="color:#aaa;text-align:center;">這一期沒有任何延托紀錄</div>';
       wrap.innerHTML=h;
       return;
     }
-    h+='<div style="font-size:.72rem;color:#888;margin-bottom:8px;">每一天的金額都可以分別修改，超過某個時間要多收費的話，那一天改成對應的金額就好</div>';
-    h+='<div class="df-sec" style="overflow-x:auto;">';
-    h+='<table class="cln-table"><thead><tr><th>姓名</th><th>班級</th><th>日期</th><th>離園時間</th><th>金額</th><th>小計</th></tr></thead><tbody id="ecfeeBody">';
+    h+='<div class="ec-hint-card">每一天的金額都可以分別修改，超過某個時間要多收費的話，那一天改成對應的金額就好</div>';
     _feeRows.forEach(function(row,ri){
+      h+='<div class="ec-childcard">';
+      h+='<div class="ec-childcard-hd">';
+      h+='<div class="ec-childname-wrap"><span class="ec-childname">'+row.name+'</span>'+(CLSLABEL[row.cls]?'<span class="ec-clsbadge">'+CLSLABEL[row.cls]+'</span>':'')+'<span class="ec-daysbadge">'+row.entries.length+' 天</span></div>';
+      h+='<span class="ec-childtotal">共 <span id="ecfeeSub'+ri+'">'+_feeChildSub(row)+'</span> 元</span>';
+      h+='</div>';
+      h+='<div class="ec-daygrid">';
       row.entries.forEach(function(e,ei){
-        h+='<tr>';
-        if(ei===0){
-          h+='<td style="font-weight:700;white-space:nowrap;" rowspan="'+row.entries.length+'">'+row.name+'</td>';
-          h+='<td style="white-space:nowrap;" rowspan="'+row.entries.length+'">'+(CLSLABEL[row.cls]||'')+'</td>';
-        }
-        h+='<td style="text-align:center;white-space:nowrap;">'+e.date+'</td>';
-        h+='<td style="text-align:center;white-space:nowrap;">'+e.time+'</td>';
-        h+='<td style="text-align:center;"><input type="number" class="cln-txt" style="width:70px;text-align:center;" value="'+e.fee+'" min="0" onchange="EXTENDCARE.feeSetEntryFee('+ri+','+ei+',this.value)"></td>';
-        if(ei===0){
-          h+='<td style="text-align:center;font-weight:700;" rowspan="'+row.entries.length+'" id="ecfeeSub'+ri+'">'+_feeChildSub(row)+'</td>';
-        }
-        h+='</tr>';
+        h+='<div class="ec-daymini"><span class="ec-daymini-info">'+e.date+' '+e.time+'</span><input type="number" class="ec-fee-inp" value="'+e.fee+'" min="0" onchange="EXTENDCARE.feeSetEntryFee('+ri+','+ei+',this.value)"></div>';
       });
+      h+='</div></div>';
     });
-    h+='</tbody></table></div>';
-    h+='<div class="df-sec" style="text-align:right;font-weight:800;font-size:1rem;color:#a5680a;" id="ecfeeTotal">總計：'+_feeGrandTotal()+' 元</div>';
+    h+='<div class="ov-card" style="text-align:right;font-weight:800;font-size:1.1rem;color:#7B55A0;" id="ecfeeTotal">總計：'+_feeGrandTotal()+' 元</div>';
     wrap.innerHTML=h;
   }
   function _feeChildSub(row){
@@ -25025,33 +25103,42 @@ var CHILDLEAVE=(function(){
     if(!wrap)return;
     var col=_sumCollect(_sumEndY,_sumEndM);
     var r=col.range;
-    var h='<div class="df-sec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
-    h+='<div class="df-lbl" style="margin:0;">📅 收費期間（到第幾個月的26號）</div>';
-    h+='<select class="df-inp" style="width:auto;" id="clsumEndRoc" onchange="CHILDLEAVE.sumChangeYM()">';
+    /* 2026-11-12：純樣式改版，收集/計算邏輯(_sumCollect等)完全不動，
+       只是把表格換成卡片、文字換成膠囊，並把外層疊兩層的標題合併成
+       .pghdr 這一條。 */
+    var CLS_COLOR={baby:'#A87C55',crawl:'#6A8343',run:'#4D6C90'};
+    var h='';
+    h+='<div class="pghdr"><div class="pghdr-top"><button class="pghdr-back" onclick="GO(\'childleave\')">&#x2190; 幼兒請假記錄</button></div><div class="pghdr-eyebrow">LEAVE SUMMARY</div><div class="pghdr-title">請假總表</div></div>';
+    h+='<div class="ov-card" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">';
+    h+='<div class="df-lbl" style="margin:0;">收費期間（到第幾個月的26號）</div>';
+    h+='<select class="df-inp ov-sel" style="width:auto;" id="clsumEndRoc" onchange="CHILDLEAVE.sumChangeYM()">';
     [114,115,116].forEach(function(y){h+='<option value="'+y+'"'+(y===_sumEndY?' selected':'')+'>'+y+' 年</option>';});
     h+='</select>';
-    h+='<select class="df-inp" style="width:auto;" id="clsumEndMo" onchange="CHILDLEAVE.sumChangeYM()">';
+    h+='<select class="df-inp ov-sel" style="width:auto;" id="clsumEndMo" onchange="CHILDLEAVE.sumChangeYM()">';
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_sumEndM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
-    h+='<span style="color:#aaa;font-size:.8rem;">（即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_sumEndY+'/'+_sumEndM+'/26）</span>';
+    h+='<span style="color:#8a8073;font-size:.8rem;">即 '+r.startRoc+'/'+r.startMo+'/27 ～ '+_sumEndY+'/'+_sumEndM+'/26</span>';
     h+='</div>';
     if(!col.rows.length){
-      h+='<div style="color:#aaa;text-align:center;padding:40px 0;">這一期沒有請假紀錄</div>';
+      h+='<div class="ov-card" style="color:#aaa;text-align:center;">這一期沒有請假紀錄</div>';
       wrap.innerHTML=h;
       return;
     }
     var curCls='';
     var grandTotal=0;
     col.rows.forEach(function(row){grandTotal+=row.refundTotal;});
-    h+='<div style="text-align:right;font-weight:800;color:#9a6a1a;font-size:.92rem;margin:6px 0 14px;">這一期預估退費總計：'+grandTotal+' 元</div>';
+    h+='<div class="cl-totalcard"><span class="lbl">這一期預估退費總計</span><span class="amt">'+grandTotal+' 元</span></div>';
     col.rows.forEach(function(row){
-      if(row.cls!==curCls){curCls=row.cls;h+='<div class="df-lbl" style="margin-top:16px;">'+(CLSLABEL[curCls]||'未分班')+'</div>';}
-      h+='<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06);">';
-      h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;margin-bottom:6px;">'+row.name+'　<span style="font-weight:400;font-size:.76rem;color:#aaa;">共 '+row.entries.length+' 天</span>'+(row.refundTotal?'　<span style="font-weight:700;font-size:.78rem;color:#9a6a1a;">退費 '+row.refundTotal+' 元</span>':'')+'</div>';
-      h+='<div style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;">';
+      if(row.cls!==curCls){curCls=row.cls;h+='<div class="cl-clslbl" style="color:'+(CLS_COLOR[curCls]||'#2E2A3A')+';">'+(CLSLABEL[curCls]||'未分班')+'</div>';}
+      h+='<div class="cl-childcard">';
+      h+='<div class="cl-childcard-hd"><span class="cl-childname">'+row.name+'</span><span class="cl-daysbadge">共 '+row.entries.length+' 天</span>'+(row.refundTotal?'<span class="cl-refundbadge">退費 '+row.refundTotal+' 元</span>':'')+'</div>';
+      h+='<div class="cl-daypills">';
       row.entries.forEach(function(e){
-        var c=TYPE_COLOR[e.type]||'#888';
-        h+='<span><b style="color:#2C2820;">'+e.date+'</b> <span style="color:'+c+';font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+(e.refund?'<span style="color:#9a6a1a;font-weight:700;"> 退'+e.refund+'元</span>':'<span style="color:#ccc;"> 不退</span>')+'</span>';
+        /* 使用者指定事假/病假在這個總表頁要用這兩個特定顏色，但 TYPE_COLOR
+           是跟「幼兒請假記錄」那一頁共用的常數，不能直接改，改成只在
+           這裡顯示時覆蓋這兩種顏色。 */
+        var c=(e.type==='事假')?'#B9822A':(e.type==='病假')?'#3E6BB0':(TYPE_COLOR[e.type]||'#888');
+        h+='<span class="cl-daypill"><b style="color:#2C2820;">'+e.date+'</b> <span style="color:'+c+';font-weight:700;">'+e.type+'</span>'+(e.note?'<span style="color:#aaa;"> '+e.note+'</span>':'')+(e.refund?'<span style="color:#3E8E6A;font-weight:700;"> 退'+e.refund+'元</span>':'<span style="color:#ccc;"> 不退</span>')+'</span>';
       });
       h+='</div></div>';
     });
