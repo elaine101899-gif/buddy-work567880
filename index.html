@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112091809';
+  var BUILD='20261112105340';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2331,6 +2331,53 @@ body.adm .sync-setup{display:block;}
 .ec-hint-card{border:1.5px dashed #E2D9C8;border-radius:16px;padding:10px 14px;font-size:.72rem;color:#8a8073;margin:0 10px 12px;}
 /* ══ 體溫管理／請假總表／延托費總表 改版結束 ══ */
 
+/* ══════ 2026-11-12：評鑑／電訪表 排版改版（純樣式，不動任何邏輯/
+   函式/資料/儲存方式）══════ */
+.pghdr2{border-radius:32px;padding:14px 18px 16px;margin:10px 10px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.pghdr2-left{flex:1;min-width:0;}
+.pghdr2-deco{width:96px;height:auto;flex-shrink:0;object-fit:contain;margin-top:4px;}
+#pg-pingjian{background:#FAF6EE;} #pg-pingjian .pghdr2{background:#E3F2EA;} #pg-pingjian .pghdr-eyebrow{color:#3E8E6A;}
+#pg-phonevisit{background:#FAF6EE;} #pg-phonevisit .pghdr2{background:#E2ECF9;} #pg-phonevisit .pghdr-eyebrow{color:#3E6BB0;}
+
+/* 評鑑：hub 卡片 */
+.pj-sublbl{font-size:.9rem;color:#2E2A3A;font-weight:700;margin:14px 16px 8px;}
+.pj-card{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid #ECE6DA;border-radius:26px;padding:12px 16px;margin:0 10px 10px;cursor:pointer;}
+.pj-card-ico{width:70px;height:70px;border-radius:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.pj-card-ico img{width:48px;height:48px;object-fit:contain;}
+.pj-card-body{min-width:0;}
+.pj-card-eyebrow{font-family:'Baloo 2','Noto Sans TC',sans-serif;font-size:.64rem;font-weight:800;letter-spacing:1.5px;}
+.pj-card-title{font-size:1rem;font-weight:800;color:#2E2A3A;margin-top:1px;}
+.pj-card-desc{font-size:.76rem;color:#8a8073;margin-top:1px;}
+.pj-card-arr{width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:700;flex-shrink:0;margin-left:auto;}
+
+/* 電訪表 */
+.pv-cls-tabs{display:flex;gap:8px;margin:12px 10px 14px;}
+.pv-cls-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 4px;border:2px solid #ECE6DA;border-radius:18px;background:#fff;font-size:.85rem;color:#8a8073;cursor:pointer;text-align:center;font-family:'Noto Sans TC',sans-serif;font-weight:700;}
+.pv-cls-tab img{width:24px;height:24px;object-fit:contain;}
+.pv-cls-tab.on.cls-baby{background:#F8EEE3;border-color:#A87C55;color:#A87C55;}
+.pv-cls-tab.on.cls-crawl{background:#EEF3E3;border-color:#6A8343;color:#6A8343;}
+.pv-cls-tab.on.cls-run{background:#E6EDF5;border-color:#4D6C90;color:#4D6C90;}
+#pg-phonevisit .ov-card{background:#fff;border:1px solid #ECE6DA;border-radius:26px;padding:14px 16px;margin:0 10px 14px;color:#2E2A3A;}
+#pg-phonevisit .ov-pill{border-radius:999px;border:1.5px solid #E2D9C8;background:#FAF6EE;color:#6b5f4a;padding:7px 16px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+#pg-phonevisit select.ov-sel,#pg-phonevisit input.ov-sel{border-radius:999px;border:1.5px solid #E2D9C8;background:#FAF6EE;padding:7px 14px;font-size:.84rem;color:#2E2A3A;font-family:'Noto Sans TC',sans-serif;}
+#pg-phonevisit .ov-pill-blue{background:#3E6BB0;color:#fff;border-color:#3E6BB0;}
+.pv-hint-card{background:#FCEFD9;color:#B9822A;border-radius:14px;padding:8px 14px;font-size:.72rem;line-height:1.6;margin-top:8px;}
+.pv-form{background:#fff;border:1px solid #ECE6DA;border-radius:26px;padding:16px;margin:0 10px 14px;}
+.pv-fm-hd{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.pv-fm-hd-title{font-weight:900;font-size:1rem;color:#2E2A3A;}
+.pv-fm-hd-badge{background:#E2ECF9;color:#3E6BB0;border-radius:999px;padding:3px 12px;font-size:.74rem;font-weight:700;}
+.pv-frow{margin-bottom:12px;}
+.pv-lbl{font-size:.74rem;color:#8a8073;margin-bottom:5px;}
+.pv-inp,.pv-sel,.pv-ta{width:100%;box-sizing:border-box;padding:9px 14px;border:1.5px solid #E2D9C8;border-radius:20px;font-size:.88rem;background:#FAF6EE;color:#2E2A3A;font-family:'Noto Sans TC',sans-serif;}
+.pv-ta{min-height:110px;resize:vertical;border-radius:18px;}
+.pv-needs-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.pv-need-item{display:flex;align-items:center;gap:4px;font-size:.8rem;background:#FAF6EE;border:1.5px solid #E2D9C8;color:#6b5f4a;padding:7px 14px;border-radius:999px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;position:relative;}
+.pv-need-item input{position:absolute;opacity:0;width:0;height:0;}
+.pv-need-item:has(input:checked){background:#3E6BB0;border-color:#3E6BB0;color:#fff;}
+.pv-save-btn{width:100%;padding:13px;background:#3E6BB0;color:#fff;border:none;border-radius:999px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:4px;font-family:'Noto Sans TC',sans-serif;}
+.pv-rec{background:#fff;border:1px solid #ECE6DA;border-radius:18px;padding:12px 14px;margin:0 10px 10px;}
+/* ══ 評鑑／電訪表 改版結束 ══ */
+
 /* ══ 2026-11 請假交接單改版（純樣式）：身份選單沿用 .admin-hero，四種
    身份內頁沿用 .stat-hero-sm，人員列表／老師格狀卡片都是新的小 class，
    只套用在請假交接單相關頁面，不影響其他地方。顏色跟行政首頁卡片的
@@ -3752,36 +3799,39 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ 評鑑 ═══ -->
 <div class="pg" id="pg-pingjian">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('home')">&#x2190; 首頁</button>
-    <span class="btitle">評鑑</span>
+  <div class="pghdr2">
+    <div class="pghdr2-left">
+      <button class="pghdr-back" onclick="GO('home')">&#x2190; 首頁</button>
+      <div class="pghdr-eyebrow">EVALUATION</div>
+      <div class="pghdr-title">評鑑</div>
+    </div>
+    <img class="pghdr2-deco" src="images/evaluation.png" alt="">
   </div>
-  <div style="max-width:680px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:10px;">
-    <div onclick="GO('pingjian-admin')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7a9ac8;">
-      <span style="font-size:1.8rem;">&#x1F4CB;</span>
-      <div><div style="font-weight:800;font-size:1rem;color:#30588a;">行政管理</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
-      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-    </div>
-    <div onclick="GO('pingjian-care')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #6ab07e;">
-      <span style="font-size:1.8rem;">&#x1F9F8;</span>
-      <div><div style="font-weight:800;font-size:1rem;color:#2d7a4a;">教保活動</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
-      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-    </div>
-    <div onclick="GO('pingjian-health')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #e08a8a;">
-      <span style="font-size:1.8rem;">&#x1FA7A;</span>
-      <div><div style="font-weight:800;font-size:1rem;color:#a83a3a;">衛生保健</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
-      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-    </div>
-    <div onclick="GO('pingjian-welfare')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #d9a916;">
-      <span style="font-size:1.8rem;">&#x1F91D;</span>
-      <div><div style="font-weight:800;font-size:1rem;color:#a67c0a;">員工福利措施</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
-      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-    </div>
-    <div onclick="GO('pingjian-infection')" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.08);cursor:pointer;border-left:5px solid #7ab0a8;">
-      <span style="font-size:1.8rem;">&#x1F9A0;</span>
-      <div><div style="font-weight:800;font-size:1rem;color:#2d7a6e;">感染管控</div><div style="font-size:.78rem;color:#888;margin-top:2px;">評鑑相關資料</div></div>
-      <span style="margin-left:auto;color:#ccc;font-size:1.2rem;">&#x203A;</span>
-    </div>
+  <div class="pj-sublbl">要看哪一項？</div>
+  <div onclick="GO('pingjian-admin')" class="pj-card">
+    <div class="pj-card-ico" style="background:#E2ECF9;"><img src="images/eval_admin.png" alt=""></div>
+    <div class="pj-card-body"><div class="pj-card-eyebrow" style="color:#3E6BB0;">ADMINISTRATION</div><div class="pj-card-title">行政管理</div><div class="pj-card-desc">評鑑相關資料</div></div>
+    <span class="pj-card-arr" style="background:#E2ECF9;color:#3E6BB0;">&#x203A;</span>
+  </div>
+  <div onclick="GO('pingjian-care')" class="pj-card">
+    <div class="pj-card-ico" style="background:#EEF3E3;"><img src="images/eval_teach.png" alt=""></div>
+    <div class="pj-card-body"><div class="pj-card-eyebrow" style="color:#6A8343;">CARE &amp; EDUCATION</div><div class="pj-card-title">教保活動</div><div class="pj-card-desc">評鑑相關資料</div></div>
+    <span class="pj-card-arr" style="background:#EEF3E3;color:#6A8343;">&#x203A;</span>
+  </div>
+  <div onclick="GO('pingjian-health')" class="pj-card">
+    <div class="pj-card-ico" style="background:#FBE3EA;"><img src="images/eval_health.png" alt=""></div>
+    <div class="pj-card-body"><div class="pj-card-eyebrow" style="color:#B8507A;">HEALTH</div><div class="pj-card-title">衛生保健</div><div class="pj-card-desc">評鑑相關資料</div></div>
+    <span class="pj-card-arr" style="background:#FBE3EA;color:#B8507A;">&#x203A;</span>
+  </div>
+  <div onclick="GO('pingjian-welfare')" class="pj-card">
+    <div class="pj-card-ico" style="background:#FCEFD9;"><img src="images/eval_welfare.png" alt=""></div>
+    <div class="pj-card-body"><div class="pj-card-eyebrow" style="color:#B9822A;">STAFF WELFARE</div><div class="pj-card-title">員工福利措施</div><div class="pj-card-desc">評鑑相關資料</div></div>
+    <span class="pj-card-arr" style="background:#FCEFD9;color:#B9822A;">&#x203A;</span>
+  </div>
+  <div onclick="GO('pingjian-infection')" class="pj-card">
+    <div class="pj-card-ico" style="background:#E3F2EA;"><img src="images/eval_infection.png" alt=""></div>
+    <div class="pj-card-body"><div class="pj-card-eyebrow" style="color:#3E8E6A;">INFECTION CONTROL</div><div class="pj-card-title">感染管控</div><div class="pj-card-desc">評鑑相關資料</div></div>
+    <span class="pj-card-arr" style="background:#E3F2EA;color:#3E8E6A;">&#x203A;</span>
   </div>
 </div>
 
@@ -5004,11 +5054,15 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ PHONE VISIT FORM ═══ -->
 <div class="pg" id="pg-phonevisit">
-  <div class="bbar">
-    <button class="bbtn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
-    <span class="btitle">電訪表</span>
+  <div class="pghdr2">
+    <div class="pghdr2-left">
+      <button class="pghdr-back" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+      <div class="pghdr-eyebrow">PHONE VISIT</div>
+      <div class="pghdr-title">電訪表</div>
+    </div>
+    <img class="pghdr2-deco" src="images/forms_phone.png" alt="">
   </div>
-  <div style="padding:14px 16px 40px;" id="pv-root">
+  <div style="padding-bottom:40px;" id="pv-root">
     <div style="color:#aaa;text-align:center;padding:40px 0;font-size:.9rem;">載入中…</div>
   </div>
 </div>
@@ -23582,26 +23636,32 @@ var PHONEVISIT=(function(){
   function buildForm(){
     var h='';
     var now2=new Date(),ry=now2.getFullYear()-1911;
+    /* 2026-11-12：純樣式改版，class tab/選單/儲存方式(onclick/onchange
+       呼叫)全部不動，只換外觀。班級小圖＋純文字取代原本 CLSLABEL 的
+       emoji+文字組合（CLSLABEL本身是別處也共用的資料，不能改，這裡
+       另外用 CLS_ICON/CLS_PLAIN 兩個只在這裡用的對照表）。 */
+    var CLS_ICON={baby:'images/class_baby.png',crawl:'images/class_crawl.png',run:'images/class_run.png'};
+    var CLS_PLAIN={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
     // class tabs
     h+='<div class="pv-cls-tabs">';
     ['baby','crawl','run'].forEach(function(cls){
-      h+='<button class="pv-cls-tab'+(curCls===cls?' on':'')+'" onclick="PHONEVISIT.setCls(\''+cls+'\')">'+CLSLABEL[cls]+'</button>';
+      h+='<button class="pv-cls-tab cls-'+cls+(curCls===cls?' on':'')+'" onclick="PHONEVISIT.setCls(\''+cls+'\')"><img src="'+CLS_ICON[cls]+'" alt="">'+CLS_PLAIN[cls]+'</button>';
     });
     h+='</div>';
     // 資料月份：決定下面「選擇幼兒」抓哪個月的名單、以及下方歷史記錄要看哪個月；同一排也放列印按鈕（跟原本標題旁的按鈕合併，不重複放兩套年月選單）
     var _mr=_selectedMonthRange();
-    h+='<div style="background:#fff6e0;border-radius:10px;padding:10px 14px;margin-bottom:12px;">';
+    h+='<div class="ov-card">';
     h+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
-    h+='<span style="font-size:.85rem;color:#a5680a;font-weight:700;">🗓️ 資料月份</span>';
-    h+='<select id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
+    h+='<span style="font-size:.84rem;color:#2E2A3A;font-weight:700;">資料月份</span>';
+    h+='<select class="ov-sel" id="pv-rec-yr" onchange="PHONEVISIT.onRecMonthChange()">';
     for(var vy=ry;vy>=ry-2;vy--) h+='<option value="'+vy+'"'+(vy===_mr.roc?' selected':'')+'>'+vy+' 年</option>';
     h+='</select>';
-    h+='<select id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()" style="padding:6px 8px;border:1.5px solid #f0c97a;border-radius:8px;font-size:.88rem;background:#fff;">';
+    h+='<select class="ov-sel" id="pv-rec-mn" onchange="PHONEVISIT.onRecMonthChange()">';
     for(var vm=1;vm<=12;vm++) h+='<option value="'+vm+'"'+(vm===_mr.mo?' selected':'')+'>'+vm+' 月</option>';
     h+='</select>';
-    h+='<button onclick="PHONEVISIT.printMonthly()" style="padding:6px 14px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:.85rem;font-weight:700;cursor:pointer;">&#x1F4C5; 列印本月</button>';
+    h+='<button class="ov-pill ov-pill-blue" style="margin-left:auto;" onclick="PHONEVISIT.printMonthly()">列印本月</button>';
     h+='</div>';
-    h+='<div style="margin-top:6px;font-size:.7rem;color:#a5680a;line-height:1.6;">';
+    h+='<div class="pv-hint-card">';
     h+='<div>還沒填完舊月份的電訪表，調到那個月，下面幼兒名單會自動換回那時候的名單</div>';
     h+='<div>列印本月：依照上面選擇的年月，列印整月的電訪紀錄</div>';
     h+='</div>';
@@ -23609,6 +23669,7 @@ var PHONEVISIT=(function(){
     // child selector
     var kids=getKids(curCls);
     h+='<div class="pv-form">';
+    h+='<div class="pv-fm-hd"><span class="pv-fm-hd-title">填寫電訪</span><span class="pv-fm-hd-badge">'+CLS_PLAIN[curCls]+'</span></div>';
     h+='<div class="pv-frow"><div class="pv-lbl">選擇幼兒</div>';
     h+='<select class="pv-sel" id="pv-child" onchange="PHONEVISIT.onChildChange()">';
     h+='<option value="">── 請選擇幼兒 ──</option>';
@@ -23618,17 +23679,18 @@ var PHONEVISIT=(function(){
     h+='</select></div>';
     // date/time row
     h+='<div style="display:flex;gap:10px;">';
-    h+='<div class="pv-frow" style="flex:3"><div class="pv-lbl">日期（民國）</div><input type="text" class="pv-inp" id="pv-date" placeholder="115.07.10" value="'+todayStr()+'"></div>';
-    h+='<div class="pv-frow" style="flex:2"><div class="pv-lbl">時間</div><input type="text" class="pv-inp" id="pv-time" placeholder="09:00" value="'+nowTimeStr()+'"></div>';
+    h+='<div class="pv-frow" style="flex:1"><div class="pv-lbl">日期（民國）</div><input type="text" class="pv-inp" id="pv-date" placeholder="115.07.10" value="'+todayStr()+'"></div>';
+    h+='<div class="pv-frow" style="flex:1"><div class="pv-lbl">時間</div><input type="text" class="pv-inp" id="pv-time" placeholder="09:00" value="'+nowTimeStr()+'"></div>';
     h+='</div>';
-    // 方式
-    h+='<div class="pv-frow"><div class="pv-lbl">訪談方式</div><select class="pv-sel" id="pv-method">';
+    // 方式／關係 同一排
+    h+='<div style="display:flex;gap:10px;">';
+    h+='<div class="pv-frow" style="flex:1"><div class="pv-lbl">訪談方式</div><select class="pv-sel" id="pv-method">';
     for(var mi=1;mi<METHOD.length;mi++) h+='<option value="'+mi+'">'+mi+'.'+METHOD[mi]+'</option>';
     h+='</select></div>';
-    // 關係
-    h+='<div class="pv-frow"><div class="pv-lbl">聯絡人關係</div><select class="pv-sel" id="pv-relation">';
+    h+='<div class="pv-frow" style="flex:1"><div class="pv-lbl">聯絡人關係</div><select class="pv-sel" id="pv-relation">';
     for(var ri=1;ri<RELATION.length;ri++) h+='<option value="'+ri+'">'+ri+'.'+RELATION[ri]+'</option>';
     h+='</select></div>';
+    h+='</div>';
     // 問題需求（多選）
     h+='<div class="pv-frow"><div class="pv-lbl">問題需求（可複選）</div><div class="pv-needs-grid">';
     for(var ni=1;ni<NEEDS.length;ni++){
@@ -23644,11 +23706,11 @@ var PHONEVISIT=(function(){
     // 托育人員
     h+='<div class="pv-frow"><div class="pv-lbl">托育人員</div><input type="text" class="pv-inp" id="pv-teacher" placeholder="填寫人員姓名"></div>';
     // save
-    h+='<button class="pv-save-btn" onclick="PHONEVISIT.save()">💾 儲存記錄</button>';
+    h+='<button class="pv-save-btn" onclick="PHONEVISIT.save()">儲存記錄</button>';
     h+='</div>';
     // records section（跟著上面的「資料月份」一起切換，不再重複一份選單）
-    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;margin-top:4px;">';
-    h+='<span id="pv-rec-lbl" style="font-size:.8rem;color:#888;">歷史記錄</span>';
+    h+='<div class="ov-card" style="padding:10px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+    h+='<span id="pv-rec-lbl" style="font-size:.8rem;color:#8a8073;">歷史記錄</span>';
     h+='</div>';
     h+='<div id="pv-records"></div>';
     return h;
