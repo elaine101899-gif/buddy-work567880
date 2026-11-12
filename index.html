@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112165914';
+  var BUILD='20261112195546';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2288,6 +2288,7 @@ body.adm .sync-setup{display:block;}
 /* ── 體溫管理：某位老師的月份，原本的大表格改成一天一張卡 ── */
 .bt-daycard{background:#fff;border:1.5px solid #ECE6DA;border-radius:22px;padding:12px 14px;margin:0 10px 12px;}
 .bt-daycard.unfilled{border-color:#F1D8A8;}
+.bt-remind{background:#FBE9E3;color:#B8502E;border-radius:14px;padding:7px 12px;font-size:.76rem;font-weight:700;margin-bottom:10px;}
 .bt-daycard-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;}
 .bt-datepill{background:#FCEFD9;color:#B9822A;border-radius:999px;padding:4px 14px;font-weight:800;font-size:.86rem;white-space:nowrap;}
 .bt-offbtns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
@@ -23289,7 +23290,12 @@ var BODYTEMP=(function(){
         continue;
       }
       var isToday=(curY===todayY&&curM===todayM&&d===todayD);
-      var unfilled=isToday&&!dayRec.t1&&!dayRec.t2&&!dayRec.t3&&!dayRec.leave;
+      var isFuture=(new Date(curY+1911,curM-1,d))>(new Date(todayY+1911,todayM-1,todayD));
+      var dueNow=['t1','t2','t3'].filter(function(f){return !isToday||hrNow>=SLOT_HOURS[f];});
+      var filledNow=dueNow.filter(function(f){return dayRec[f];});
+      var leaveOk=dayRec.leave&&dayRec.leaveType;
+      var needsRemind=!isFuture&&dueNow.length>0&&filledNow.length===0&&!leaveOk;
+      var unfilled=needsRemind;
       h+='<div class="bt-daycard'+(unfilled?' unfilled':'')+'">';
       h+='<div class="bt-daycard-hd">';
       h+='<span class="bt-datepill">'+dateLbl+'</span>';
@@ -23299,6 +23305,7 @@ var BODYTEMP=(function(){
         h+='<button class="bt-offbtn'+(active?' on':'')+'" onclick="BODYTEMP.setOffType('+d+',\''+b.type+'\')">'+b.lbl+'</button>';
       });
       h+='</div></div>';
+      if(needsRemind)h+='<div class="bt-remind">⚠️ 這天體溫都沒填，也沒有勾請假並選假別，記得跟老師確認</div>';
       h+='<div class="bt-temprow">';
       [['8:00','t1'],['12:00','t2'],['16:00','t3']].forEach(function(pair){
         var f=pair[1];
@@ -23468,7 +23475,7 @@ var BODYTEMP=(function(){
       SIGNERS.forEach(function(name){
         var k=name+'_'+ty+'_'+tm;
         var dayRec=(db.records[k]&&db.records[k].days&&db.records[k].days[td])||{};
-        if(dayRec.leave||dayRec.offType)return;
+        if((dayRec.leave&&dayRec.leaveType)||dayRec.offType)return;
         var due=['t1','t2','t3'].filter(function(f){return hr>=SLOT_HOURS[f];});
         if(due.some(function(f){return !dayRec[f];}))missing.push(name);
         var fv=[dayRec.t1,dayRec.t2,dayRec.t3].filter(function(v){return v&&!isNaN(parseFloat(v));}).map(parseFloat);
