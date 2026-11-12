@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112105340';
+  var BUILD='20261112115915';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3028,18 +3028,20 @@ function _restyleAllWeekHeaders(root){
   (root||document).querySelectorAll('.week-page,.week5-page,.weekB-page').forEach(_restyleWeekHeader);
 }
 /* 這些路徑兩間公司要共用（不加公司前綴）。
-   diaryResourceSync：小布迪老師在日誌裡填的「教學資源／活動引導重點」，
-   邦比諾直接沿用同一份，只有這兩個欄位共用，其他日誌內容（學生、照片、省思）不共用。
-   teachSync（教學課程後台的名稱/內容/指標覆蓋）原本也共用，但小布迪後台改動
-   不應該連動影響邦比諾，已經改成各自獨立——換公司時改寫不同路徑，兩邊從此
-   各自維護自己的教學課程覆蓋內容，互不影響。（換成獨立前已經把小布迪當時的
-   內容複製一份給邦比諾當起始值，邦比諾不會因為這次改動掉資料。） */
+   2026-11-12：diaryResourceSync（日誌裡「教學資源／活動引導重點」兩欄）
+   原本是唯一還共用的教學內容，使用者要求教學課程/日誌/適性全部兩邊
+   各自處理、不要互相連動，已經改成各自獨立——換公司時改寫不同路徑，
+   兩邊從此各自維護自己的教學資源內容，互不影響。（換成獨立前已經把
+   小布迪當時的內容複製一份給邦比諾當起始值，邦比諾不會因為這次改動
+   掉資料。）教學課程(teachSync)、適性(asr/...)本來就已經各自獨立，
+   不在這份共用清單裡，這次沒有要再調整。 */
 /* userRoles（誰是 owner/admin）是跨公司共用的同一份名單，不該因為
    CURRENT_COMPANY 當時剛好是 bambino 就被加上 xiaobuddyBambino/ 前綴去
    讀一個根本不存在的路徑——之前漏列在這裡，造成如果登入當下公司剛好
    停在邦比諾，_loadRoles() 就會抓到空資料，角色永遠判定不出來、卡在
-   保底的 teacher，owner 自己都會被擋。 */
-var _FB_SHARED_PATHS=['xiaobuddyClean/diaryResourceSync','xiaobuddyClean/userRoles'];
+   保底的 teacher，owner 自己都會被擋。這份名單是帳號權限管理，不是
+   教學內容，繼續維持共用。 */
+var _FB_SHARED_PATHS=['xiaobuddyClean/userRoles'];
 function _fbCompanyPrefix(path){
   if(typeof CURRENT_COMPANY==='undefined'||CURRENT_COMPANY!=='bambino')return path;
   for(var i=0;i<_FB_SHARED_PATHS.length;i++){
