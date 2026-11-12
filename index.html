@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112115915';
+  var BUILD='20261112124607';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -20995,7 +20995,6 @@ var TEMP=(function(){
     if(rowLbl==='冷凍'){var f=[-18,-18,-19,-19,-19,-20,-20,-20,-21,-22];return String(f[r%f.length]);}
     return '';
   }
-  var _autoFilled=false;
   /* 原本只補「今天」這一格，如果某間公司好幾天沒人打開這個頁面，
      中間漏掉的工作日就永遠是空的，不會自己補回來。改成從這個月 1 號
      補到今天，把漏掉的工作日一次補齊，不管哪間公司、多久沒開都一樣會自動跳。 */
@@ -21046,19 +21045,28 @@ var TEMP=(function(){
     });
     save();
   }
+  /* 2026-11-12：原本用一個 true/false 的 _autoFilled 旗標擋重複執行，
+     代表「這次連線只補一次」——如果裝置從前一天就開著這個頁面沒有
+     重新整理，_autoFilled 已經是 true，跨到新的一天也不會再補，老師
+     會覺得「沒有自己每天跳」。改成記住「上次補到哪一天」的日期字串，
+     搭配下面的 _tempDailyWatch() 定時檢查，只要偵測到日期換了，不用
+     重新整理頁面也會自動再補一次。 */
+  var _autoFilledDateKey=null;
+  function _todayDateKey(){var n=new Date();return n.getFullYear()+'-'+(n.getMonth()+1)+'-'+n.getDate();}
   function attachFb(){
     if(_fbAttachedCompany===CURRENT_COMPANY)return;
     var fb=_fbInit();
     if(!fb)return;
     if(_fbRef){try{_fbRef.off('value');}catch(e){}}
     _fbAttachedCompany=CURRENT_COMPANY;
-    _autoFilled=false;
+    _autoFilledDateKey=null;
     _fbRef=fb.ref('xiaobuddyClean/temp');
     _fbRef.on('value',function(snap){
       var v=snap.val();
       db=(v&&v.records)?v:{records:{}};
       try{localStorage.setItem(_ckey('tempDB'),JSON.stringify(db));}catch(e){}
-      if(!_autoFilled){_autoFilled=true;autoFillToday();}
+      var tk=_todayDateKey();
+      if(_autoFilledDateKey!==tk){_autoFilledDateKey=tk;autoFillToday();}
       render();
     });
   }
@@ -21072,7 +21080,26 @@ var TEMP=(function(){
       });
     }
     attachFb();
-    if(!_fbInit()&&!_autoFilled){_autoFilled=true;autoFillToday();}
+    if(!_fbInit()){
+      var tk=_todayDateKey();
+      if(_autoFilledDateKey!==tk){_autoFilledDateKey=tk;autoFillToday();}
+    }
+  }
+  /* 裝置整天開著這個頁面不關也不重整的話，上面的補值只有「連線那一刻」
+     會跑一次，過了午夜也不會自己再跑。這裡每隔一段時間檢查一次日期，
+     發現換日就重補，不用使用者自己記得重新整理。只有真的連過線
+     （_fbAttachedCompany 有值）才檢查，避免從來沒開過溫濕度頁面也
+     平白無故跑一次。 */
+  function _tempDailyWatch(){
+    if(!_fbAttachedCompany)return;
+    var tk=_todayDateKey();
+    if(_autoFilledDateKey!==tk){_autoFilledDateKey=tk;autoFillToday();render();}
+  }
+  setInterval(_tempDailyWatch,10*60*1000);
+  if(typeof document!=='undefined'){
+    document.addEventListener('visibilitychange',function(){
+      if(document.visibilityState==='visible')_tempDailyWatch();
+    });
   }
   function save(){
     var json=JSON.stringify(db);
