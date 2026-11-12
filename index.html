@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112130909';
+  var BUILD='20261112150923';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2668,7 +2668,11 @@ body.adm .sync-setup{display:block;}
 .cfm-tmp-date{font-weight:700;font-size:.82rem;color:#2d3057;display:flex;align-items:center;gap:8px;}
 .cfm-holiday-btn{background:none;border:none;color:#9a9388;font-size:.64rem;padding:2px 6px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 .cfm-tmp-vals{display:flex;gap:8px;flex-wrap:wrap;}
-.cfm-tmp-val select{border-radius:999px;border:1.5px solid #CBD9EE;background:#E2ECF9;color:#3E6BB0;font-size:.8rem;padding:5px 10px;font-weight:700;}
+/* 2026-11-12：這裡的 select 沒有自己設 width，會吃到 .cln-num 的
+   width:42px，扣掉這裡自己加的 padding:5px 10px 之後，內容可用空間
+   剩不到 22px，數字（尤其「-18」「-20」這種兩三位數）會被原生下拉
+   箭頭擠到幾乎看不見——不是沒存到值，是顯示空間不夠。加寬一點。 */
+.cfm-tmp-val select{width:68px;border-radius:999px;border:1.5px solid #CBD9EE;background:#E2ECF9;color:#3E6BB0;font-size:.8rem;padding:5px 8px;font-weight:700;}
 .cfm-tmp-val.c1 select{border-color:#DCCBEE;background:#EEE6F7;color:#7B55A0;}
 .cfm-sig-card{background:#fff;border:1.5px solid #ECE6DA;border-radius:18px;margin:10px 12px 0;padding:14px 16px;}
 .cfm-sig-item{display:flex;align-items:center;gap:8px;}
