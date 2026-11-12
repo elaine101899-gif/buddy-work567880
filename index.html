@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261112125622';
+  var BUILD='20261112130909';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3330,6 +3330,9 @@ var ROSTER=(function(){
        問題，一起補上自動刷新。 */
     if(typeof CHILDLEAVE!=='undefined'&&CHILDLEAVE.refreshIfOpen)CHILDLEAVE.refreshIfOpen();
     if(typeof EXTENDCARE!=='undefined'&&EXTENDCARE.refreshIfOpen)EXTENDCARE.refreshIfOpen();
+    /* 老師名單裡的 bedCls（適性老師卡片填的「第幾班」）要自動同步到
+       班級寢具，不用使用者自己回頭維護兩份一樣的班級清單。 */
+    if(typeof SPACES!=='undefined'&&SPACES.syncBeddingFromRoster)SPACES.syncBeddingFromRoster(result.teachers);
   }
   /* 查詢「某一天」的名單快照（例如寢具/日誌/電訪表查 9 月資料時，要用 9 月
      那天的名單，不是今天的名單）。dateStr 格式 'YYYY-MM-DD'（西元年）。
@@ -21455,7 +21458,29 @@ var SPACES=(function(){
     _rebuild(kind);
   }
   function idsOf(kind){return Object.keys(lists[kind]||{});}
-  return{init:init,forceSync:forceSync,add:add,setWithId:setWithId,remove:remove,idsOf:idsOf};
+  /* 2026-11-12：使用者反映在「適性」老師卡片調整過的班級（bedCls欄位），
+     沒有同步到「班級寢具」——這兩邊本來是各自獨立維護的清單，老師卡片
+     改了「第幾班」之後，寢具這邊的班級名稱/年齡層還是舊的，要手動回
+     後台改名才會一致。改成只要老師名單有 bedCls，就自動把寢具班級的
+     名稱/年齡層對齊過去，不用再手動維護兩份。只會新增/更新，不會自動
+     刪除——老師被移除後，原本寢具那邊累積的紀錄還留著，由使用者自己
+     決定要不要手動刪掉那個班級。這個函式由 ROSTER 每次名單同步完成後
+     呼叫（跟 ASR.refreshRoster／DIARY.refreshIfOpen 同一套「名單一到就
+     自動通知其他模組」的既有做法）。 */
+  function syncBeddingFromRoster(teachers){
+    if(!teachers||!teachers.length)return;
+    var lvMap={baby:'baby',crawl:'crawl',run:'run'};
+    teachers.forEach(function(t){
+      if(!t.bedCls||!t.id)return;
+      var level=lvMap[t.cls]||'baby';
+      var label=t.bedCls+'（'+(t.name||'')+'）';
+      var cur=lists.bedding[t.id];
+      if(!cur||cur.label!==label||cur.level!==level){
+        setWithId('bedding',t.id,{label:label,level:level});
+      }
+    });
+  }
+  return{init:init,forceSync:forceSync,add:add,setWithId:setWithId,remove:remove,idsOf:idsOf,syncBeddingFromRoster:syncBeddingFromRoster};
 })();
 
 /* ── 統計表（物品統計表／衛生統計表）：結構幾乎一樣，只有品項清單跟標題不同，
