@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113074333';
+  var BUILD='20261113151535';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14922,14 +14922,16 @@ var INCIDENT=(function(){
     p+='<tr><td class="th">年齡</td><td>'+esc2(d.iAge||'__')+'歲 '+esc2(d.iAgeMonth||'__')+'月</td><td class="th">班級</td><td>'+esc2(d.iCls||'')+'</td></tr>';
     p+='<tr><td class="th">班級托育人員</td><td colspan="3">'+esc2(d.iTeacher||'')+'</td></tr>';
     p+='<tr><td class="th">事故發生時間</td><td colspan="3">'+esc2(d.iAccDate||'')+'　'+rs(d.iAccAmPm,'上午')+'上午 '+rs(d.iAccAmPm,'下午')+'下午　'+esc2(d.iAccHour||'__')+'時 '+esc2(d.iAccMin||'__')+'分</td></tr>';
+    /* 2026-11-13：使用者要求事故發生地點／事故類屬不要再各自佔一個完整的
+       勾選格子清單，改成只顯示「有勾到的那個」純文字，直接併進基本資料
+       表格、緊接在事故發生時間下面。 */
+    function selOf(arr,opts){return (arr||[]).filter(function(o){return opts.indexOf(o)!==-1;}).join('、');}
+    var locSel=selOf(d.iLoc,['戶外遊戲場','行政區','班級教室','走廊','廁所','其他']);
+    if(d.iLoc&&d.iLoc.indexOf('其他')!==-1&&d.iLocOther)locSel=locSel.replace('其他','其他：'+esc2(d.iLocOther));
+    var typeSel=selOf(d.iType,['本身意外','他人意外','他人故意','托育人員疏忽','其他']);
+    p+='<tr><td class="th">事故發生地點</td><td colspan="3">'+(locSel||'')+'</td></tr>';
+    p+='<tr><td class="th">事故類屬</td><td colspan="3">'+(typeSel||'')+'</td></tr>';
     p+='</table></div></div>';
-    p+='<div style="display:flex;gap:7px;margin-bottom:7px;">';
-    p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📍 事故發生地點</div><div class="card-body"><div class="ck-row">';
-    ['戶外遊戲場','行政區','班級教室','走廊','廁所'].forEach(function(vv){p+=cks(d.iLoc,vv)+vv+' ';});
-    p+='</div><div style="font-size:8pt;margin-top:4px;">其他：'+esc2(d.iLocOther||'')+'</div></div></div>';
-    p+='<div class="card" style="flex:1;margin-bottom:0;"><div class="card-hd">📂 事故類屬</div><div class="card-body"><div class="ck-row">';
-    ['本身意外','他人意外','他人故意','托育人員疏忽','其他'].forEach(function(vv){p+=cks(d.iType,vv)+vv+' ';});
-    p+='</div></div></div></div>';
     p+='<div class="card"><div class="card-hd">📝 事故發生簡述</div><div class="card-body"><div class="inpbox" style="min-height:50px;">'+esc2(d.iDesc||'')+'</div></div></div>';
     p+='<div class="card"><div class="card-hd">🩹 立即處理措施</div><div class="card-body"><div class="ck-row">';
     ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){p+=cks(d.iImm,vv)+vv+'　';});
@@ -27182,7 +27184,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113074333--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113151535--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
