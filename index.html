@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113155103';
+  var BUILD='20261113160711';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14553,10 +14553,10 @@ var INCIDENT=(function(){
     h+='</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:4px;">事故發生時間</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
-    h+='<input type="date" id="iAccDate" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.iAccDate||'')+'">';
+    h+='<input type="date" id="iAccDate" class="df-inp" style="flex:1;min-width:112px;font-size:.76rem;padding:6px 7px;" value="'+esc(d.iAccDate||'')+'">';
     h+=rad('iAccAmPm','上午',d.iAccAmPm)+rad('iAccAmPm','下午',d.iAccAmPm);
-    h+='<input type="number" id="iAccHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iAccHour||'')+'"><span style="font-size:.82rem;">時</span>';
-    h+='<input type="number" id="iAccMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iAccMin||'')+'"><span style="font-size:.82rem;">分</span>';
+    h+='<input type="number" id="iAccHour" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="23" placeholder="時" value="'+esc(d.iAccHour||'')+'"><span style="font-size:.74rem;">時</span>';
+    h+='<input type="number" id="iAccMin" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="59" placeholder="分" value="'+esc(d.iAccMin||'')+'"><span style="font-size:.74rem;">分</span>';
     h+='</div></div>';
     /* 地點 */
     h+='<div class="df-sec"><div class="df-lbl">📍 事故發生地點</div>';
@@ -14608,10 +14608,10 @@ var INCIDENT=(function(){
     /* 通知家長時間 */
     h+='<div class="df-sec"><div class="df-lbl">📞 通知家長時間</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
-    h+='<input type="date" id="iNotifyDate" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.iNotifyDate||'')+'">';
+    h+='<input type="date" id="iNotifyDate" class="df-inp" style="flex:1;min-width:112px;font-size:.76rem;padding:6px 7px;" value="'+esc(d.iNotifyDate||'')+'">';
     h+=rad('iNotifyAmPm','上午',d.iNotifyAmPm)+rad('iNotifyAmPm','下午',d.iNotifyAmPm);
-    h+='<input type="number" id="iNotifyHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iNotifyHour||'')+'"><span style="font-size:.82rem;">時</span>';
-    h+='<input type="number" id="iNotifyMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iNotifyMin||'')+'"><span style="font-size:.82rem;">分</span>';
+    h+='<input type="number" id="iNotifyHour" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="23" placeholder="時" value="'+esc(d.iNotifyHour||'')+'"><span style="font-size:.74rem;">時</span>';
+    h+='<input type="number" id="iNotifyMin" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="59" placeholder="分" value="'+esc(d.iNotifyMin||'')+'"><span style="font-size:.74rem;">分</span>';
     h+='</div></div>';
     /* 通知內容 */
     h+='<div class="df-sec"><div class="df-lbl">💬 通知家長內容</div><textarea id="iNotifyContent" class="df-ta" placeholder="請填寫通知內容…" style="min-height:80px;">'+pe(d.iNotifyContent||'')+'</textarea></div>';
@@ -14659,17 +14659,17 @@ var INCIDENT=(function(){
     h+='<div class="df-sec"><div class="df-lbl">🗂 受傷記錄（詳細）</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">受傷日期</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<input type="date" id="iInjDate2" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.iInjDate2||'')+'">';
+    h+='<input type="date" id="iInjDate2" class="df-inp" style="flex:1;min-width:112px;font-size:.76rem;padding:6px 7px;" value="'+esc(d.iInjDate2||'')+'">';
     h+=rad('iInjAmPm2','上午',d.iInjAmPm2)+rad('iInjAmPm2','下午',d.iInjAmPm2);
-    h+='<input type="number" id="iInjHour2" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iInjHour2||'')+'"><span style="font-size:.82rem;">時</span>';
-    h+='<input type="number" id="iInjMin2" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iInjMin2||'')+'"><span style="font-size:.82rem;">分</span>';
+    h+='<input type="number" id="iInjHour2" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="23" placeholder="時" value="'+esc(d.iInjHour2||'')+'"><span style="font-size:.74rem;">時</span>';
+    h+='<input type="number" id="iInjMin2" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="59" placeholder="分" value="'+esc(d.iInjMin2||'')+'"><span style="font-size:.74rem;">分</span>';
     h+='</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">緊急處理傷口日期</div>';
     h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<input type="date" id="iTreatDate" class="df-inp" style="flex:2;min-width:140px;" value="'+esc(d.iTreatDate||'')+'">';
+    h+='<input type="date" id="iTreatDate" class="df-inp" style="flex:1;min-width:112px;font-size:.76rem;padding:6px 7px;" value="'+esc(d.iTreatDate||'')+'">';
     h+=rad('iTreatAmPm','上午',d.iTreatAmPm)+rad('iTreatAmPm','下午',d.iTreatAmPm);
-    h+='<input type="number" id="iTreatHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iTreatHour||'')+'"><span style="font-size:.82rem;">時</span>';
-    h+='<input type="number" id="iTreatMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iTreatMin||'')+'"><span style="font-size:.82rem;">分</span>';
+    h+='<input type="number" id="iTreatHour" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="23" placeholder="時" value="'+esc(d.iTreatHour||'')+'"><span style="font-size:.74rem;">時</span>';
+    h+='<input type="number" id="iTreatMin" class="df-inp" style="width:40px;font-size:.76rem;padding:6px 4px;" min="0" max="59" placeholder="分" value="'+esc(d.iTreatMin||'')+'"><span style="font-size:.74rem;">分</span>';
     h+='</div>';
     /* 2026-11-13：使用者要求「受傷部位」「傷口處理」改成跟上面「受傷情形」
        「立即處理措施」一樣用勾選的（沿用同一套選項），不要再打字輸入，
@@ -27191,7 +27191,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113155103--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113160711--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
