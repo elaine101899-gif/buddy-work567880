@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113152256';
+  var BUILD='20261113153326';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14920,8 +14920,7 @@ var INCIDENT=(function(){
     p+='<table class="dt">';
     p+='<tr><td class="th" style="width:15%;">日期</td><td style="width:35%;">'+esc2(d.iDate||'')+'</td><td class="th" style="width:15%;">嬰幼兒姓名</td><td>'+esc2(d.iChildName||'')+'</td></tr>';
     p+='<tr><td class="th">年齡</td><td>'+esc2(d.iAge||'__')+'歲 '+esc2(d.iAgeMonth||'__')+'月</td><td class="th">班級</td><td>'+esc2(d.iCls||'')+'</td></tr>';
-    p+='<tr><td class="th">班級托育人員</td><td colspan="3">'+esc2(d.iTeacher||'')+'</td></tr>';
-    p+='<tr><td class="th">事故發生時間</td><td colspan="3">'+esc2(d.iAccDate||'')+'　'+rs(d.iAccAmPm,'上午')+'上午 '+rs(d.iAccAmPm,'下午')+'下午　'+esc2(d.iAccHour||'__')+'時 '+esc2(d.iAccMin||'__')+'分</td></tr>';
+    p+='<tr><td class="th">班級托育人員</td><td>'+esc2(d.iTeacher||'')+'</td><td class="th">事故發生時間</td><td>'+esc2(d.iAccDate||'')+'　'+rs(d.iAccAmPm,'上午')+'上午 '+rs(d.iAccAmPm,'下午')+'下午　'+esc2(d.iAccHour||'__')+'時 '+esc2(d.iAccMin||'__')+'分</td></tr>';
     /* 2026-11-13：使用者要求事故發生地點／事故類屬不要再各自佔一個完整的
        勾選格子清單，改成只顯示「有勾到的那個」純文字，直接併進基本資料
        表格、緊接在事故發生時間下面。 */
@@ -27183,7 +27182,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113152256--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113153326--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
