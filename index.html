@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113154250';
+  var BUILD='20261113154842';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14671,9 +14671,14 @@ var INCIDENT=(function(){
     h+='<input type="number" id="iTreatHour" class="df-inp" style="width:58px;" min="0" max="23" placeholder="時" value="'+esc(d.iTreatHour||'')+'"><span style="font-size:.82rem;">時</span>';
     h+='<input type="number" id="iTreatMin" class="df-inp" style="width:58px;" min="0" max="59" placeholder="分" value="'+esc(d.iTreatMin||'')+'"><span style="font-size:.82rem;">分</span>';
     h+='</div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<div style="flex:1;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">受傷部位</div><input type="text" id="iInjPart2" class="df-inp" value="'+esc(d.iInjPart2||'')+'"></div>';
-    h+='<div style="flex:1;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">傷口處理</div><input type="text" id="iWoundTreat" class="df-inp" value="'+esc(d.iWoundTreat||'')+'"></div>';
+    /* 2026-11-13：使用者要求「受傷部位」「傷口處理」改成跟上面「受傷情形」
+       「立即處理措施」一樣用勾選的（沿用同一套選項），不要再打字輸入，
+       列印時才能比照辦理只顯示有勾到的內容。 */
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">受傷部位</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
+    ['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部'].forEach(function(vv){h+=chk('iInjPart2',vv,d.iInjPart2);});
+    h+='</div><div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iInjPart2Other" class="df-inp" value="'+esc(d.iInjPart2Other||'')+'"></div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">傷口處理</div><div style="display:flex;flex-wrap:wrap;margin-bottom:8px;">';
+    ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){h+=chk('iWoundTreat',vv,d.iWoundTreat);});
     h+='</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">傷口處描述</div>';
     h+='<textarea id="iWoundDesc" class="df-ta" placeholder="請描述傷口狀況…" style="min-height:80px;">'+pe(d.iWoundDesc||'')+'</textarea>';
@@ -14715,12 +14720,12 @@ var INCIDENT=(function(){
      'iFiller','iDirector','iCloseDate',
      'iInjDate2','iInjHour2','iInjMin2',
      'iTreatDate','iTreatHour','iTreatMin',
-     'iInjPart2','iWoundTreat','iWoundDesc'
+     'iInjPart2Other','iWoundDesc'
     ].forEach(function(id){d[id]=v(id);});
     ['iAccAmPm','iNotifyAmPm','iTreatment','iHospSent','iHospResult','iInjAmPm2','iTreatAmPm'].forEach(function(name){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
     });
-    ['iLoc','iType','iImm','iBodyPart','iInjA','iInjB','iFB','iParent','iReview'].forEach(function(name){d[name]=gcb(name);});
+    ['iLoc','iType','iImm','iBodyPart','iInjA','iInjB','iFB','iParent','iReview','iInjPart2','iWoundTreat'].forEach(function(name){d[name]=gcb(name);});
     if(_iPhotos[1])d.photo1=_iPhotos[1];
     if(_iPhotos[2])d.photo2=_iPhotos[2];
     var _ex=db[curCls][curFid]||{};if(_ex.iFillerSig)d.iFillerSig=_ex.iFillerSig;if(_ex.iDirectorSig)d.iDirectorSig=_ex.iDirectorSig;
@@ -14967,7 +14972,10 @@ var INCIDENT=(function(){
     p+='</div></div></div>';
     p+='<div class="card"><div class="card-hd">🗂 受傷記錄（詳細）</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:18%;">受傷日期</td><td>'+esc2(d.iInjDate2||'')+'　'+rs(d.iInjAmPm2,'上午')+'上午 '+rs(d.iInjAmPm2,'下午')+'下午　'+esc2(d.iInjHour2||'__')+'時 '+esc2(d.iInjMin2||'__')+'分</td><td class="th" style="width:20%;">緊急處理傷口日期</td><td>'+esc2(d.iTreatDate||'')+'　'+rs(d.iTreatAmPm,'上午')+'上午 '+rs(d.iTreatAmPm,'下午')+'下午　'+esc2(d.iTreatHour||'__')+'時 '+esc2(d.iTreatMin||'__')+'分</td></tr>';
-    p+='<tr><td class="th">受傷部位</td><td>'+esc2(d.iInjPart2||'')+'</td><td class="th">傷口處理</td><td>'+esc2(d.iWoundTreat||'')+'</td></tr>';
+    var injPart2Sel=selOf(d.iInjPart2,['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部']);
+    if(d.iInjPart2Other)injPart2Sel=(injPart2Sel?injPart2Sel+'、':'')+'其他：'+esc2(d.iInjPart2Other);
+    var woundTreatSel=selOf(d.iWoundTreat,['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗']);
+    p+='<tr><td class="th">受傷部位</td><td>'+(injPart2Sel||'')+'</td><td class="th">傷口處理</td><td>'+(woundTreatSel||'')+'</td></tr>';
     p+='<tr><td class="th">傷口處描述</td><td colspan="3"><div class="inpbox" style="min-height:50px;">'+esc2(d.iWoundDesc||'')+'</div></td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📷 事故照片</div><div class="card-body"><div class="photos">';
@@ -27178,7 +27186,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113154250--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113154842--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
