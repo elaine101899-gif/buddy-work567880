@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113162030';
+  var BUILD='20261113162750';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14543,8 +14543,10 @@ var INCIDENT=(function(){
       h+='</select></div>';
     })();
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">日期</div><input type="date" id="iDate" class="df-inp" value="'+esc(d.iDate||'')+'"></div>';
-    h+='<div style="flex:2;min-width:180px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">嬰幼兒姓名</div><input type="text" id="iChildName" class="df-inp" placeholder="請填寫" value="'+esc(d.iChildName||'')+'"></div>';
+    /* 2026-11-13：日期欄（原生 date input）跟姓名欄在手機上會擠在一起、
+       看起來像互相卡住，縮小日期欄的字級／寬度，姓名欄也跟著縮一點。 */
+    h+='<div style="flex:1;min-width:108px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">日期</div><input type="date" id="iDate" class="df-inp" style="font-size:.76rem;padding:6px 7px;" value="'+esc(d.iDate||'')+'"></div>';
+    h+='<div style="flex:1.3;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">嬰幼兒姓名</div><input type="text" id="iChildName" class="df-inp" style="font-size:.82rem;padding:6px 8px;" placeholder="請填寫" value="'+esc(d.iChildName||'')+'"></div>';
     h+='</div>';
     h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
     h+='<div style="flex:1;min-width:160px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">年齡</div><div style="display:flex;align-items:center;gap:4px;"><input type="number" id="iAge" class="df-inp" style="width:52px;" min="0" max="3" placeholder="0" value="'+esc(d.iAge||'')+'"><span style="font-size:.82rem;">歲</span><input type="number" id="iAgeMonth" class="df-inp" style="width:52px;" min="0" max="11" placeholder="0" value="'+esc(d.iAgeMonth||'')+'"><span style="font-size:.82rem;">月</span></div></div>';
@@ -14636,9 +14638,9 @@ var INCIDENT=(function(){
       h+='<div id="iDirectorSigImg" style="color:#bbb;font-size:.78rem;">（尚未存簽名）</div>';
     }
     h+='</div>';
-    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="flex:1;min-width:108px;">';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:6px;">結案日期</div>';
-    h+='<input type="date" id="iCloseDate" class="df-inp" value="'+esc(d.iCloseDate||'')+'">';
+    h+='<input type="date" id="iCloseDate" class="df-inp" style="font-size:.76rem;padding:6px 7px;" value="'+esc(d.iCloseDate||'')+'">';
     h+='</div>';
     h+='</div>';
     /* 受傷記錄詳細 */
@@ -27193,7 +27195,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113162030--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113162750--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
