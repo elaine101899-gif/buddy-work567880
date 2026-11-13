@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113154842';
+  var BUILD='20261113155103';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14929,7 +14929,12 @@ var INCIDENT=(function(){
     /* 2026-11-13：使用者要求事故發生地點／事故類屬不要再各自佔一個完整的
        勾選格子清單，改成只顯示「有勾到的那個」純文字，直接併進基本資料
        表格、緊接在事故發生時間下面。 */
-    function selOf(arr,opts){return (arr||[]).filter(function(o){return opts.indexOf(o)!==-1;}).join('、');}
+    /* 受傷部位／傷口處理 2026-11-13 之前是打字輸入（存成字串），改成勾選
+       （存成陣列）之後，舊資料仍是字串，直接照舊顯示，不要丟錯。 */
+    function selOf(arr,opts){
+      if(arr&&!Array.isArray(arr))return esc2(arr);
+      return (arr||[]).filter(function(o){return opts.indexOf(o)!==-1;}).join('、');
+    }
     var locSel=selOf(d.iLoc,['戶外遊戲場','行政區','班級教室','走廊','廁所','其他']);
     if(d.iLoc&&d.iLoc.indexOf('其他')!==-1&&d.iLocOther)locSel=locSel.replace('其他','其他：'+esc2(d.iLocOther));
     var typeSel=selOf(d.iType,['本身意外','他人意外','他人故意','托育人員疏忽','其他']);
@@ -27186,7 +27191,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113154842--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113155103--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
