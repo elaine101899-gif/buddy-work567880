@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113153326';
+  var BUILD='20261113154250';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14930,16 +14930,12 @@ var INCIDENT=(function(){
     var typeSel=selOf(d.iType,['本身意外','他人意外','他人故意','托育人員疏忽','其他']);
     p+='<tr><td class="th">事故發生地點</td><td>'+(locSel||'')+'</td><td class="th">事故類屬</td><td>'+(typeSel||'')+'</td></tr>';
     p+='</table></div></div>';
-    p+='<div class="card"><div class="card-hd">📝 事故發生簡述</div><div class="card-body"><div class="inpbox" style="min-height:50px;">'+esc2(d.iDesc||'')+'</div></div></div>';
-    p+='<div class="card"><div class="card-hd">🩹 立即處理措施</div><div class="card-body"><div class="ck-row">';
-    ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){p+=cks(d.iImm,vv)+vv+'　';});
-    p+='</div></div></div>';
+    /* 2026-11-13：使用者要求列印版拿掉「事故發生簡述」整塊、「立即處理
+       措施」整塊，以及「受傷情形」裡的受傷部位／狀況（一）這兩行——
+       狀況（二）繼續保留。事故描述改放在下面「通知家長」那區的欄位裡
+       （標籤從「通知內容」改成「事故發生描述」），不重複列兩次。 */
     p+='<div class="card"><div class="card-hd">🫀 受傷情形</div><div class="card-body"><table class="dt">';
-    p+='<tr><td class="th" style="width:15%;">受傷部位</td><td>';
-    ['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部'].forEach(function(vv){p+=cks(d.iBodyPart,vv)+vv+' ';});
-    p+='　其他：'+esc2(d.iBodyOther||'')+'</td></tr>';
-    p+='<tr><td class="th">狀況（一）</td><td>';['出血','疼痛','紅腫','瘀青'].forEach(function(vv){p+=cks(d.iInjA,vv)+vv+' ';});p+='其他：'+esc2(d.iInjAOther||'')+'</td></tr>';
-    p+='<tr><td class="th">狀況（二）</td><td>';['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀'].forEach(function(vv){p+=cks(d.iInjB,vv)+vv+' ';});
+    p+='<tr><td class="th" style="width:15%;">狀況（二）</td><td>';['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀'].forEach(function(vv){p+=cks(d.iInjB,vv)+vv+' ';});
     p+='　異物入：';['鼻','眼','耳','喉'].forEach(function(vv){p+=cks(d.iFB,vv)+vv+' ';});p+='其他：'+esc2(d.iInjBOther||'')+'</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">🚑 緊急措施</div><div class="card-body"><table class="dt">';
@@ -14953,7 +14949,7 @@ var INCIDENT=(function(){
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">📞 通知家長</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:15%;">通知時間</td><td colspan="3">'+esc2(d.iNotifyDate||'')+'　'+rs(d.iNotifyAmPm,'上午')+'上午 '+rs(d.iNotifyAmPm,'下午')+'下午　'+esc2(d.iNotifyHour||'__')+'時 '+esc2(d.iNotifyMin||'__')+'分</td></tr>';
-    p+='<tr><td class="th">通知內容</td><td colspan="3"><div class="inpbox" style="min-height:36px;">'+esc2(d.iNotifyContent||'')+'</div></td></tr>';
+    p+='<tr><td class="th">事故發生描述</td><td colspan="3"><div class="inpbox" style="min-height:36px;">'+esc2(d.iNotifyContent||'')+'</div></td></tr>';
     p+='<tr><td class="th">家長反應</td><td colspan="3"><div class="ck-row">';
     ['無法諒解','諒解','提出告訴','和解','其它'].forEach(function(vv){p+=cks(d.iParent,vv)+vv+' ';});p+='其他：'+esc2(d.iParentOther||'');
     p+='</div></td></tr></table></div></div>';
@@ -27182,7 +27178,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113153326--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113154250--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
