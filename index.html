@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113160711';
+  var BUILD='20261113161300';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -14567,16 +14567,11 @@ var INCIDENT=(function(){
     h+='<div class="df-sec"><div class="df-lbl">📂 事故類屬</div><div style="display:flex;flex-wrap:wrap;">';
     ['本身意外','他人意外','他人故意','托育人員疏忽','其他'].forEach(function(vv){h+=chk('iType',vv,d.iType);});
     h+='</div></div>';
-    /* 簡述 */
-    h+='<div class="df-sec"><div class="df-lbl">📝 事故發生簡述</div><textarea id="iDesc" class="df-ta" placeholder="請描述事故經過…" style="min-height:100px;">'+pe(d.iDesc||'')+'</textarea></div>';
-    /* 立即處理 */
-    h+='<div class="df-sec"><div class="df-lbl">🩹 立即處理措施</div><div style="display:flex;flex-wrap:wrap;">';
-    ['冰敷','加壓止血','肢體固定','繃帶包紮','生理食鹽水清洗'].forEach(function(vv){h+=chk('iImm',vv,d.iImm);});
-    h+='</div></div>';
-    /* 受傷部位 */
-    h+='<div class="df-sec"><div class="df-lbl">🫀 受傷部位</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
-    ['頭部','臉部','眼部','鼻部','口部','耳部','背部','腹部','手部','胸部','腕部','手指','小腿','大腿','膝部','足踝','肘部'].forEach(function(vv){h+=chk('iBodyPart',vv,d.iBodyPart);});
-    h+='</div><div style="display:flex;align-items:center;gap:6px;"><span style="font-size:.82rem;white-space:nowrap;">其他：</span><input type="text" id="iBodyOther" class="df-inp" value="'+esc(d.iBodyOther||'')+'"></div></div>';
+    /* 2026-11-13：使用者要求拿掉「事故發生簡述」「立即處理措施」「受傷部位」
+       這三個編輯欄位——跟下面「受傷記錄（詳細）」裡的傷口處理／受傷部位
+       重複了，資料已經改放在那邊填。欄位本身不刪（d.iDesc/d.iImm/
+       d.iBodyPart/d.iBodyOther 還留著，避免舊資料不見），只是不再給
+       使用者編輯、列印版也早就不印這幾項了。 */
     /* 狀況A */
     h+='<div class="df-sec"><div class="df-lbl">🔴 受傷狀況（一）</div><div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">';
     ['出血','疼痛','紅腫','瘀青'].forEach(function(vv){h+=chk('iInjA',vv,d.iInjA);});
@@ -14944,9 +14939,15 @@ var INCIDENT=(function(){
        措施」整塊，以及「受傷情形」裡的受傷部位／狀況（一）這兩行——
        狀況（二）繼續保留。事故描述改放在下面「通知家長」那區的欄位裡
        （標籤從「通知內容」改成「事故發生描述」），不重複列兩次。 */
+    /* 2026-11-13：狀況（二）跟異物入也比照辦理，只印有勾到的，不要整排
+       選項都印出來。 */
+    var injBSel=selOf(d.iInjB,['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀']);
+    var fbSel=selOf(d.iFB,['鼻','眼','耳','喉']);
+    var injBLine=injBSel||'';
+    if(fbSel)injBLine=(injBLine?injBLine+'　':'')+'異物入：'+fbSel;
+    if(d.iInjBOther)injBLine=(injBLine?injBLine+'　':'')+'其他：'+esc2(d.iInjBOther);
     p+='<div class="card"><div class="card-hd">🫀 受傷情形</div><div class="card-body"><table class="dt">';
-    p+='<tr><td class="th" style="width:15%;">狀況（二）</td><td>';['撞傷','割傷','跌傷','刺傷','扭傷','咬傷','抓傷','夾傷','脫白','骨折','燙傷','用藥異狀'].forEach(function(vv){p+=cks(d.iInjB,vv)+vv+' ';});
-    p+='　異物入：';['鼻','眼','耳','喉'].forEach(function(vv){p+=cks(d.iFB,vv)+vv+' ';});p+='其他：'+esc2(d.iInjBOther||'')+'</td></tr>';
+    p+='<tr><td class="th" style="width:15%;">狀況（二）</td><td>'+injBLine+'</td></tr>';
     p+='</table></div></div>';
     p+='<div class="card"><div class="card-hd">🚑 緊急措施</div><div class="card-body"><table class="dt">';
     p+='<tr><td class="th" style="width:18%;">急救者</td><td>'+esc2(d.iFirstAider||'')+'</td><td class="th" style="width:18%;">送醫者</td><td>'+esc2(d.iSentBy||'')+'</td></tr>';
@@ -27191,7 +27192,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113160711--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113161300--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
