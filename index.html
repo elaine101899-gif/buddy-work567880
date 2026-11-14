@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261113185004';
+  var BUILD='20261114193125';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -11008,20 +11008,25 @@ var LEAVE=(function(){
 
     /* ── 基本資料 ── */
     h+='<div class="df-sec"><div class="df-lbl">📄 基本資料</div>';
+    /* 2026-11-13：使用者要求交接日期／請假日期（起迄）的日期時間欄位都
+       縮小；另外「請假日期（起）」的標籤原本多帶一段提示文字，害它比
+       「請假日期（迄）」多一行，兩欄位下面的日期/時間欄就對不齊了——
+       提示文字搬出來變成獨立一行，兩個標籤都還原成一行就會平行。 */
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" style="font-size:.76rem;padding:6px 7px;" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="lHdrName" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.name||teacher.name||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">班級</div><input type="text" id="lHdrCls" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.cls||clsLabel(cls)).replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
+    h+='<div style="font-size:.7rem;color:#999;margin-top:8px;">下面幼兒名單會依「請假日期（起）」這天的名單顯示</div>';
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）<span style="font-weight:400;color:#999;">（下面幼兒名單會依這天的名單顯示）</span></div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
+    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;font-size:.76rem;padding:6px 7px;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
+    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;font-size:.76rem;padding:6px 4px;" onchange="LEAVE.saveForm()" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
     h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;" onchange="LEAVE.saveForm()" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;font-size:.76rem;padding:6px 7px;" onchange="LEAVE.saveForm()" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
+    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;font-size:.76rem;padding:6px 4px;" onchange="LEAVE.saveForm()" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">打掃區域</div><input type="text" id="lHdrClean" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.clean||'').replace(/"/g,'&quot;')+'"></div>';
@@ -27195,7 +27200,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261113185004--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261114193125--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
