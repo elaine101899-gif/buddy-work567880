@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116152420';
+  var BUILD='20261116153310';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23161,24 +23161,30 @@ function _checkoutPrintHTML(p,c){
   html+='<div class="hd1">'+companyLabel+' &middot; 結帳</div>';
   html+='<div class="hd2">'+periodLabel+'</div>';
 
-  html+='<div class="sec">收支明細</div><div class="tbl-wrap"><table><thead><tr><th>科目</th><th>備註</th><th class="num">收入金額</th><th class="num">支出金額</th></tr></thead><tbody>';
-  html+='<tr><td>註冊費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.regFee.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>月費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>代辦費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.agencyFee.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>延托費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.extendFee.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>保險費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.insurance.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>退費</td><td style="color:#aaa;">月費單自動帶入</td><td></td><td class="num">'+c.refund.toLocaleString()+'</td></tr>';
-  html+='<tr><td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td></tr>';
+  /* 2026-11-16：使用者要求每個科目的「小計」不要再自己獨立佔一整列
+     （原本是左邊合併三欄、右邊寫金額，混在逐筆明細中間看起來很亂），
+     改成在表格最右邊多開一欄「項目總結」，小計金額寫在該科目最後一筆
+     那一列的這一欄就好，其餘列這欄空白——這樣視覺上行數變少、小計跟
+     逐筆明細也分得清楚。收入區、零用金、收支總計/本期（損益）這些沒有
+     科目小計概念的列，這欄一律留空，只是要維持 5 欄一致、版面不跑掉。 */
+  html+='<div class="sec">收支明細</div><div class="tbl-wrap"><table><thead><tr><th>科目</th><th>備註</th><th class="num">收入金額</th><th class="num">支出金額</th><th class="num">項目總結</th></tr></thead><tbody>';
+  html+='<tr><td>註冊費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.regFee.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>月費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>代辦費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.agencyFee.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>延托費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.extendFee.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>保險費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.insurance.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>退費</td><td style="color:#aaa;">月費單自動帶入</td><td></td><td class="num">'+c.refund.toLocaleString()+'</td><td></td></tr>';
+  html+='<tr><td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td><td></td></tr>';
   Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
     var r=p.incomeEntries[id]||{};
-    html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td></tr>';
+    html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td><td></td></tr>';
   });
   /* 非常態收入現在算進本期（損益），所以跟一般收入併在同一張表裡，
      只在備註加註「非常態」方便辨識是哪一筆。 */
   Object.keys(p.extraIncomeEntries||{}).sort(function(a,b){return((p.extraIncomeEntries[a]||{}).ts||0)-((p.extraIncomeEntries[b]||{}).ts||0);}).forEach(function(id){
     var r=p.extraIncomeEntries[id]||{};
-    html+='<tr><td>非常態收入</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td></tr>';
+    html+='<tr><td>非常態收入</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td><td></td></tr>';
   });
   /* 2026-11-11：支出按科目統整，同科目排在一起，每個科目後面加小計——
      不是原本按新增時間排的流水帳。分組順序照 CHECKOUT_EXPENSE_CATS，
@@ -23197,17 +23203,19 @@ function _checkoutPrintHTML(p,c){
   });
   expCatOrder.forEach(function(cat){
     var catSum=0;
-    expByCat[cat].forEach(function(r){
-      var amt=parseFloat(r.amount)||0;catSum+=amt;
-      html+='<tr><td>'+cat+'</td><td>'+(r.note||'')+'</td><td></td><td class="num">'+amt.toLocaleString()+'</td></tr>';
+    expByCat[cat].forEach(function(r){var amt=parseFloat(r.amount)||0;catSum+=amt;});
+    expByCat[cat].forEach(function(r,idx){
+      var amt=parseFloat(r.amount)||0;
+      var isLast=idx===expByCat[cat].length-1;
+      html+='<tr><td>'+cat+'</td><td>'+(r.note||'')+'</td><td></td><td class="num">'+amt.toLocaleString()+'</td>'+
+        '<td class="num" style="font-weight:600;color:#a5680a;">'+(isLast?catSum.toLocaleString():'')+'</td></tr>';
     });
-    html+='<tr style="background:#faf8f3;"><td colspan="3" style="text-align:right;font-weight:600;">'+cat+' 小計</td><td class="num" style="font-weight:600;">'+catSum.toLocaleString()+'</td></tr>';
   });
-  html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td></td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td></tr>';
+  html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td></td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
   var incomeColTotal=c.totalIncome+c.refund+c.extraIncome;
   var expenseColTotal=c.totalExpense+c.refund;
-  html+='<tr class="tot-row"><td colspan="2">收支總計</td><td class="num">'+incomeColTotal.toLocaleString()+'</td><td class="num">'+expenseColTotal.toLocaleString()+'</td></tr>';
-  html+='<tr class="tot-row"><td colspan="3">本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
+  html+='<tr class="tot-row"><td colspan="2">收支總計</td><td class="num">'+incomeColTotal.toLocaleString()+'</td><td class="num">'+expenseColTotal.toLocaleString()+'</td><td></td></tr>';
+  html+='<tr class="tot-row"><td colspan="3">本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td><td></td></tr>';
   html+='</tbody></table></div>';
 
   html+='<div class="ck-3col">';
@@ -27203,7 +27211,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116152420--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116153310--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
