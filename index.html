@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116194650';
+  var BUILD='20261116200725';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23174,7 +23174,11 @@ function _checkoutPrintHTML(p,c){
      那一列的這一欄就好，其餘列這欄空白——這樣視覺上行數變少、小計跟
      逐筆明細也分得清楚。收入區、零用金、收支總計/本期（損益）這些沒有
      科目小計概念的列，這欄一律留空，只是要維持 5 欄一致、版面不跑掉。 */
-  html+='<div class="sec">收支明細</div><div class="tbl-wrap"><table><thead><tr><th>科目</th><th>備註</th><th class="num">收入金額</th><th class="num">支出金額</th><th class="num">項目總結</th></tr></thead><tbody>';
+  /* 2026-11-16：使用者要求收入金額/支出金額欄縮窄（往左靠），把空間
+     讓給最右邊的「項目總結」欄，不然「薪資小計 620,271」這種字會被
+     擠到換行變兩排。用 colgroup 直接訂死這張表 5 欄各自的寬度比例，
+     不影響其他共用同一套 CSS 的表格。 */
+  html+='<div class="sec">收支明細</div><div class="tbl-wrap"><table><colgroup><col style="width:15%;"><col style="width:27%;"><col style="width:15%;"><col style="width:15%;"><col style="width:28%;"></colgroup><thead><tr><th>科目</th><th>備註</th><th class="num">收入金額</th><th class="num">支出金額</th><th class="num">項目總結</th></tr></thead><tbody>';
   html+='<tr><td>註冊費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.regFee.toLocaleString()+'</td><td></td><td></td></tr>';
   html+='<tr><td>月費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td></td><td></td></tr>';
   html+='<tr><td>代辦費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.agencyFee.toLocaleString()+'</td><td></td><td></td></tr>';
@@ -27235,7 +27239,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116194650--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116200725--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
