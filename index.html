@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116150243';
+  var BUILD='20261116152420';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22156,7 +22156,9 @@ function _pettyCashPrintHTML(p,t){
     if(c==='請款')return;
     sumHtml+='<tr><td>'+c+'</td><td>'+((t.byCat[c]||0)).toLocaleString()+'</td></tr>';
   });
-  sumHtml+='<tr style="font-weight:800;"><td>目前結餘</td><td>'+t.closing.toLocaleString()+'</td></tr>';
+  /* 2026-11-16：使用者要求零用金列印不要再印「目前結餘」這個小計——
+     明細表最後一欄（逐筆累加的「金額」欄）還是保留，只拿掉這張科目
+     分類統計表最下面那行總結餘。 */
   return '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+(p.label||'零用金明細')+'</title>'+
     '<style>html,body{margin:0;padding:0;}body{font-family:"Noto Sans TC",sans-serif;padding:10px 12px;color:#1a2b4a;}'+
     '@page{size:194mm 267mm;margin:10mm;}'+
@@ -27201,7 +27203,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116150243--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116152420--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
