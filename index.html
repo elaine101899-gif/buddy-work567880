@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116154153';
+  var BUILD='20261116154849';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22758,7 +22758,11 @@ function _ledgerPrintHTML(rows,t,p,open){
    跟 A/B/C 帳資產結餘，「總結」自動承接上一期的總結當起始值。
    跟零用金一樣是「期別制」，兩間公司各自獨立一份期別清單。 */
 var CHECKOUT_EXPENSE_CATS=['薪資','員工福利','三保','房租','電信','水電','電費','設備','其他'];
-var CHECKOUT_INCOME_CATS=['政府補助','捐款','退稅','雜項收入','其他'];
+/* 2026-11-16：使用者要自己手動新增一筆「上個月的退費」，每個月再自己
+   看要不要刪掉，所以收入項目的科目要多一個「退費」可以選——新增的這筆
+   位置也要求跟自動帶入的那行「退費」排在一起（退費下面、優化補助上面），
+   不要照原本固定排在「利息」後面、收入總計前面。 */
+var CHECKOUT_INCOME_CATS=['退費','政府補助','捐款','退稅','雜項收入','其他'];
 var CHECKOUT=(function(){
   var periods={};
   var curPid=null;
@@ -23056,8 +23060,9 @@ var CHECKOUT=(function(){
       h+='<div class="chk-row"><div class="chk-row-name">'+row[0]+'</div><div class="chk-row-amt">'+row[1].toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
     });
     h+='<div class="chk-row"><div class="chk-row-name">退費</div><div class="chk-row-amt">-'+c.refund.toLocaleString()+'</div><span class="chk-row-note">月費單自動帶入</span></div>';
-    h+='<div class="chk-row"><div class="chk-row-name">優化補助</div><input type="text" class="chk-row-inp" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></div>';
-    h+='<div class="chk-row"><div class="chk-row-name">利息</div><input type="text" class="chk-row-inp" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></div>';
+    /* 2026-11-16：使用者要求自己新增的收入項目（例如補登上個月的退費）
+       要跟自動帶入的「退費」排在一起、顯示在它下面、優化補助上面——原本
+       固定排在「利息」後面、收入總計前面，改成提到這裡來。 */
     Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
       var r=p.incomeEntries[id]||{};
       h+='<div class="chk-row"><select class="chk-cat-sel" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'cat\',this.value)"><option value="">–</option>';
@@ -23067,6 +23072,8 @@ var CHECKOUT=(function(){
       h+='<input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setIncomeRowField(\''+id+'\',\'note\',this.value)">';
       h+='<button class="chk-row-del" onclick="CHECKOUT.delIncomeRow(\''+id+'\')">&#x1F5D1;&#xFE0F;</button></div>';
     });
+    h+='<div class="chk-row"><div class="chk-row-name">優化補助</div><input type="text" class="chk-row-inp" value="'+((p.subsidyAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'subsidyAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.subsidyNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'subsidyNote\',this.value)"></div>';
+    h+='<div class="chk-row"><div class="chk-row-name">利息</div><input type="text" class="chk-row-inp" value="'+((p.interestAmt||'')+'')+'" onchange="CHECKOUT.setMeta(\'interestAmt\',this.value)"><input type="text" class="chk-row-noteinp" value="'+((p.interestNote||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setMeta(\'interestNote\',this.value)"></div>';
     h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
     h+='</div>';
     /* 2026-11-16：使用者改口要求非常態收入要加回本期（損益）一起算
@@ -23174,12 +23181,14 @@ function _checkoutPrintHTML(p,c){
   html+='<tr><td>延托費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.extendFee.toLocaleString()+'</td><td></td><td></td></tr>';
   html+='<tr><td>保險費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.insurance.toLocaleString()+'</td><td></td><td></td></tr>';
   html+='<tr><td>退費</td><td style="color:#aaa;">月費單自動帶入</td><td></td><td class="num">'+c.refund.toLocaleString()+'</td><td></td></tr>';
-  html+='<tr><td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td><td></td></tr>';
-  html+='<tr><td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td><td></td></tr>';
+  /* 2026-11-16：自己新增的收入項目（例如補登上個月的退費）跟畫面上
+     一樣，移到這裡——緊接在自動帶入的「退費」下面、優化補助上面。 */
   Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
     var r=p.incomeEntries[id]||{};
     html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td><td></td></tr>';
   });
+  html+='<tr><td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td><td></td></tr>';
   /* 非常態收入現在算進本期（損益），所以跟一般收入併在同一張表裡，
      只在備註加註「非常態」方便辨識是哪一筆。 */
   Object.keys(p.extraIncomeEntries||{}).sort(function(a,b){return((p.extraIncomeEntries[a]||{}).ts||0)-((p.extraIncomeEntries[b]||{}).ts||0);}).forEach(function(id){
@@ -27217,7 +27226,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116154153--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116154849--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
