@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261114193125';
+  var BUILD='20261116141317';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22810,11 +22810,15 @@ var CHECKOUT=(function(){
       if(r.cat){if(!byCat[r.cat])byCat[r.cat]=0;byCat[r.cat]+=amt;}
     });
     var totalExpense=manualExpense+pettycashExpense;
-    var netThis=totalIncome-totalExpense;
+    /* 2026-11-16：使用者改口要求本期（損益）要把非常態收入加回來一起算
+       （原本 11/12 的設計是特地不算進去），所以 netThis 改成收入總計＋
+       非常態收入－支出總計。grandTotal 不能再另外加一次 extraIncome，
+       不然會算兩次。 */
+    var netThis=totalIncome+extraIncome-totalExpense;
     var aAccount=parseFloat(p.aAccount)||0,bAccount=parseFloat(p.bAccount)||0;
     var assetTotal=aAccount+bAccount+cAccount;
     var prevTotal=parseFloat(p.prevTotal)||0;
-    var grandTotal=prevTotal+netThis+extraIncome;
+    var grandTotal=prevTotal+netThis;
     return{regFee:regFee,monthFee:monthFee,agencyFee:agencyFee,extendFee:extendFee,insurance:insurance,refund:refund,
       incomeAuto:incomeAuto,subsidyAmt:subsidyAmt,interestAmt:interestAmt,totalIncome:totalIncome,
       extraIncome:extraIncome,
@@ -23051,11 +23055,12 @@ var CHECKOUT=(function(){
     });
     h+='<div class="chk-row chk-row-tot"><div class="chk-row-name">收入總計</div><div class="chk-row-amt" style="color:#3E6BB0;">'+c.totalIncome.toLocaleString()+'</div></div>';
     h+='</div>';
-    /* 非常態收入：股東匯入款、公司間轉帳這類一次性進帳，不算進上面的
-       收入總計／本期（損益），獨立一區讓使用者自己新增，只會算進最
-       下面的總結算。 */
+    /* 2026-11-16：使用者改口要求非常態收入要加回本期（損益）一起算
+       （原本 11/12 的設計是特地不算進去），所以這裡的說明文字也要
+       跟著改──不算進「收入總計」這個小計本身，但會加進本期（損益）
+       跟總結算。實際加總邏輯在 calc() 的 netThis。 */
     h+='<div class="df-sec"><div class="chk-sec-title"><span class="chk-sec-sq in"></span>非常態收入<button class="ldg-addrow-btn" style="margin-left:auto;" onclick="CHECKOUT.addExtraIncomeRow()">&#xFF0B; 新增非常態收入</button></div>';
-    h+='<div style="font-size:.72rem;color:#999;margin-bottom:6px;">股東匯入款、公司間轉帳這類不是常態營運的進帳，填在這裡不會算進上面的收入總計／本期（損益），只會加進最下面的總結算。</div>';
+    h+='<div style="font-size:.72rem;color:#999;margin-bottom:6px;">股東匯入款、公司間轉帳這類不是常態營運的進帳，填在這裡不會算進上面的收入總計，但會加進下面的本期（損益）跟總結算。</div>';
     Object.keys(p.extraIncomeEntries||{}).sort(function(a,b){return((p.extraIncomeEntries[a]||{}).ts||0)-((p.extraIncomeEntries[b]||{}).ts||0);}).forEach(function(id){
       var r=p.extraIncomeEntries[id]||{};
       h+='<div class="chk-row"><input type="text" class="chk-row-noteinp" value="'+((r.note||'')).replace(/"/g,'&quot;')+'" placeholder="備註" onchange="CHECKOUT.setExtraIncomeRowField(\''+id+'\',\'note\',this.value)">';
@@ -23082,6 +23087,7 @@ var CHECKOUT=(function(){
     /* 本期結算 + A/B/C 帳 */
     h+='<div class="df-sec"><div class="df-lbl">本期結算</div><table class="ck-table"><tbody>';
     h+='<tr><td>收入總計</td><td>'+c.totalIncome.toLocaleString()+'</td></tr>';
+    if(c.extraIncome)h+='<tr><td>非常態收入</td><td>'+c.extraIncome.toLocaleString()+'</td></tr>';
     h+='<tr><td>支出總計</td><td>'+c.totalExpense.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;"><td>本期（損益）</td><td style="color:'+(c.netThis<0?'#C2603E':'#3E6BB0')+';">'+c.netThis.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
@@ -23094,7 +23100,6 @@ var CHECKOUT=(function(){
     h+='<div class="df-sec"><table class="ck-table"><tbody>';
     h+='<tr><td>上期總結</td><td><input type="text" value="'+((p.prevTotal||'')+'')+'" onchange="CHECKOUT.setMeta(\'prevTotal\',this.value)"></td></tr>';
     h+='<tr><td>本期（損益）</td><td>'+c.netThis.toLocaleString()+'</td></tr>';
-    if(c.extraIncome)h+='<tr><td>非常態收入</td><td>'+c.extraIncome.toLocaleString()+'</td></tr>';
     h+='<tr style="font-weight:800;background:#E2ECF9;"><td>總結</td><td style="color:#3E6BB0;">'+c.grandTotal.toLocaleString()+'</td></tr>';
     h+='</tbody></table></div>';
     wrap.innerHTML=h;
@@ -23202,6 +23207,7 @@ function _checkoutPrintHTML(p,c){
 
   html+='<div class="ck-sumcard"><div class="sec">本期結算</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>收入總計</td><td class="num">'+c.totalIncome.toLocaleString()+'</td></tr>';
+  if(c.extraIncome)html+='<tr><td>非常態收入</td><td class="num">'+c.extraIncome.toLocaleString()+'</td></tr>';
   html+='<tr><td>支出總計</td><td class="num">'+c.totalExpense.toLocaleString()+'</td></tr>';
   html+='<tr class="tot-row"><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
   html+='</tbody></table></div></div>';
@@ -23216,7 +23222,6 @@ function _checkoutPrintHTML(p,c){
   html+='<div class="ck-sumcard"><div class="sec">總結算</div><div class="tbl-wrap"><table><tbody>';
   html+='<tr><td>上期總結</td><td class="num">'+c.prevTotal.toLocaleString()+'</td></tr>';
   html+='<tr><td>本期（損益）</td><td class="num">'+c.netThis.toLocaleString()+'</td></tr>';
-  if(c.extraIncome)html+='<tr><td>非常態收入</td><td class="num">'+c.extraIncome.toLocaleString()+'</td></tr>';
   html+='</tbody></table></div></div>';
 
   html+='</div>';
@@ -27200,7 +27205,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261114193125--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116141317--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
