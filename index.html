@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116154849';
+  var BUILD='20261116172052';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22762,7 +22762,7 @@ var CHECKOUT_EXPENSE_CATS=['薪資','員工福利','三保','房租','電信','�
    看要不要刪掉，所以收入項目的科目要多一個「退費」可以選——新增的這筆
    位置也要求跟自動帶入的那行「退費」排在一起（退費下面、優化補助上面），
    不要照原本固定排在「利息」後面、收入總計前面。 */
-var CHECKOUT_INCOME_CATS=['退費','政府補助','捐款','退稅','雜項收入','其他'];
+var CHECKOUT_INCOME_CATS=['退費','訂金','政府補助','捐款','退稅','雜項收入','其他'];
 var CHECKOUT=(function(){
   var periods={};
   var curPid=null;
@@ -27226,7 +27226,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116154849--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116172052--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
