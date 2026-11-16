@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116153310';
+  var BUILD='20261116154153';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26081,12 +26081,18 @@ var CHILDFEE=(function(){
     }
     html+='</div>';
 
+    /* 2026-11-16：使用者要求「月費」維持真正的月費金額（不要先扣掉請假
+       退費），退費改成自己獨立一行、用負數明寫出來再減，這樣收入總計
+       才能直接用眼睛加總表格裡每一行驗證（之前退費只暗中扣在 income
+       這個總計裡、表格完全看不到這一行，對不起來很困惑）。fieldTotals.
+       refund 存的是正數（退費總額），這裡顯示成負數代表用減的。 */
     html+='<div class="sec">收入細項（共 '+childCount+' 位已繳費幼兒）</div>';
     html+='<div class="tbl-wrap"><table><thead><tr><th>科目</th><th class="num">金額</th></tr></thead><tbody>';
     FIELDS.forEach(function(f){
       if(f.k==='refund')return;
       html+='<tr><td>'+f.label+'</td><td class="num">'+fieldTotals[f.k]+'</td></tr>';
     });
+    html+='<tr><td>退費(請假)</td><td class="num">-'+fieldTotals.refund+'</td></tr>';
     html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+income+'</td></tr>';
     html+='</tbody></table></div>';
 
@@ -27211,7 +27217,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116153310--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116154153--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
