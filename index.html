@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116143019';
+  var BUILD='20261116144251';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22208,7 +22208,13 @@ function _updateLedgerTitles(){
     if(el)el.textContent=map[id]+'（'+label+'）';
   });
 }
-var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料'];
+/* 2026-11-16：「請款」記在支出欄的那種（真的拿零用金代墊，之後要跟
+   公司請款的）本來就有算進 totalExpense（totals() 裡只排除 B／HIDDEN
+   這兩組，請款兩者都不是），但這裡的顯示清單漏列，造成總支出的數字
+   其實包含了請款金額、左邊「日常科目」明細表卻完全看不到這筆、好像
+   憑空多算了一筆——使用者反映「請款有用，但左邊支出沒出現」，補列進
+   來讓這筆看得到，sumA 才會跟 totalExpense 兜起來。 */
+var LEDGER_CATS_A=['餐費','設備','行政','雜項','清潔','水電','廚房用品','教具材料','請款'];
 var LEDGER_CATS_B=['薪資支出','員工福利','退費','房租','薪資'];
 /* 2026-11-11：「撥補零用金」是使用者自己掏錢補進公司零用金的款項
    （只是為了讓零用金餘額跟實際現金對得起來，登記用），不是真的公司
@@ -27189,7 +27195,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116143019--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116144251--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
