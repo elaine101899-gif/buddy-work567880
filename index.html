@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116144819';
+  var BUILD='20261116150243';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22716,6 +22716,12 @@ function _ledgerSummaryTablesHtml(t,open){
 }
 function _ledgerPrintHTML(rows,t,p,open){
   var companyLabel=(COMPANIES[CURRENT_COMPANY]||COMPANIES.xbd).name;
+  /* 2026-11-16：「撥補零用金」本來就不出現在下面「科目分類統計」兩張
+     表格裡（LEDGER_CATS_HIDDEN），但明細清單（rowsHtml）沒有跟著排除，
+     列印出來還是看得到這一筆——使用者要求小布迪/邦比諾兩邊列印都不要
+     再印這筆。只過濾列印版的明細，畫面上的清單（render()）還是要看得到
+     才能點開編輯/刪除，不受影響。 */
+  rows=rows.filter(function(r){return LEDGER_CATS_HIDDEN.indexOf(r.cat)<0;});
   var rowsHtml='';
   if(!rows.length){
     rowsHtml='<tr><td colspan="5" style="text-align:center;color:#888;">（目前沒有任何明細）</td></tr>';
@@ -27195,7 +27201,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116144819--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116150243--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
