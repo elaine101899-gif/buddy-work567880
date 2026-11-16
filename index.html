@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261116193051';
+  var BUILD='20261116194650';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23211,16 +23211,22 @@ function _checkoutPrintHTML(p,c){
     return ia-ib;
   });
   /* 2026-11-16：使用者反映「項目總結」欄只印一個數字，要往上找才知道
-     是哪個科目的小計，不夠清楚——改成數字前面加上「科目名稱＋小計」字樣
-     （例如「薪資小計 217,641」），不用再對照科目欄自己推。 */
+     是哪個科目的小計，不夠清楚——先加上「科目名稱＋小計」字樣（例如
+     「薪資小計 217,641」），後來她手繪了一個括弧框住整組科目、要求
+     小計文字「置中」在括弧中間，不要靠底部對齊最後一筆。改成這欄用
+     rowspan 合併整個科目的列數、文字垂直置中（vertical-align:middle），
+     視覺上就等於小計橫跨整組、置中對齊，不用真的畫括弧圖形。 */
   expCatOrder.forEach(function(cat){
     var catSum=0;
-    expByCat[cat].forEach(function(r){var amt=parseFloat(r.amount)||0;catSum+=amt;});
-    expByCat[cat].forEach(function(r,idx){
+    var catRows=expByCat[cat];
+    catRows.forEach(function(r){var amt=parseFloat(r.amount)||0;catSum+=amt;});
+    catRows.forEach(function(r,idx){
       var amt=parseFloat(r.amount)||0;
-      var isLast=idx===expByCat[cat].length-1;
-      html+='<tr><td>'+cat+'</td><td>'+(r.note||'')+'</td><td></td><td class="num">'+amt.toLocaleString()+'</td>'+
-        '<td class="num" style="font-weight:600;color:#a5680a;">'+(isLast?(cat+'小計 '+catSum.toLocaleString()):'')+'</td></tr>';
+      html+='<tr><td>'+cat+'</td><td>'+(r.note||'')+'</td><td></td><td class="num">'+amt.toLocaleString()+'</td>';
+      if(idx===0){
+        html+='<td class="num" rowspan="'+catRows.length+'" style="font-weight:600;color:#a5680a;vertical-align:middle;">'+cat+'小計 '+catSum.toLocaleString()+'</td>';
+      }
+      html+='</tr>';
     });
   });
   html+='<tr><td>零用金</td><td style="color:#aaa;">零用金期別自動帶入</td><td></td><td class="num">'+c.pettycashExpense.toLocaleString()+'</td><td></td></tr>';
@@ -27229,7 +27235,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116193051--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261116194650--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
