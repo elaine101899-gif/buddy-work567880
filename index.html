@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261117101915';
+  var BUILD='20261117133426';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -23179,12 +23179,19 @@ function _checkoutPrintHTML(p,c){
      擠到換行變兩排。用 colgroup 直接訂死這張表 5 欄各自的寬度比例，
      不影響其他共用同一套 CSS 的表格。 */
   html+='<div class="sec">收支明細</div><div class="tbl-wrap"><table><colgroup><col style="width:15%;"><col style="width:27%;"><col style="width:15%;"><col style="width:15%;"><col style="width:28%;"></colgroup><thead><tr><th>科目</th><th>備註</th><th class="num">收入金額</th><th class="num">支出金額</th><th class="num">項目總結</th></tr></thead><tbody>';
-  /* 2026-11-17：使用者反映收入這區「項目總結」欄整片空白太浪費——比照
-     支出那邊的做法，收入也分兩組各自用 rowspan 置中寫一個小計：「一般
-     收入」（註冊費～利息，含自己新增的收入項目）小計就是 c.totalIncome
-     （calc() 本來就是這樣加總的，不用重算）；「非常態收入」小計是
-     c.extraIncome。先把每一列的前 4 欄存進陣列，知道總列數之後才回頭
-     在第一列補上 rowspan 的小計欄。 */
+  /* 2026-11-17：使用者反映收入這區「項目總結」欄整片空白太浪費，先加了
+     「一般收入小計」整組（註冊費～利息）。後來她又說政府補助、雜項收入、
+     優化補助、利息這幾項不算「學費類」常態收入，不要算進這個小計裡——
+     改成小計只框「註冊費/月費/代辦費/延托費/保險費/退費」這些學費單
+     直接帶出來的項目，加上自己新增、分類選「退費」或「訂金」的項目
+     （這兩種性質上也是學費單的一部分）。政府補助/捐款/退稅/雜項收入/
+     其他這些自訂分類、以及優化補助/利息這兩個固定欄位，都移到這組小計
+     後面個別列出、不計入小計、這欄留空——這樣小計金額不等於 c.totalIncome
+     了，要自己重新加總這幾項。 */
+  var coreIncomeCats={'退費':1,'訂金':1};
+  var incomeEntriesList=Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).map(function(id){return p.incomeEntries[id]||{};});
+  var coreEntries=incomeEntriesList.filter(function(r){return coreIncomeCats[r.cat];});
+  var otherEntries=incomeEntriesList.filter(function(r){return !coreIncomeCats[r.cat];});
   var niRows=[];
   niRows.push('<td>註冊費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.regFee.toLocaleString()+'</td><td></td>');
   niRows.push('<td>月費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.monthFee.toLocaleString()+'</td><td></td>');
@@ -23192,18 +23199,22 @@ function _checkoutPrintHTML(p,c){
   niRows.push('<td>延托費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.extendFee.toLocaleString()+'</td><td></td>');
   niRows.push('<td>保險費</td><td style="color:#aaa;">月費單自動帶入</td><td class="num">'+c.insurance.toLocaleString()+'</td><td></td>');
   niRows.push('<td>退費</td><td style="color:#aaa;">月費單自動帶入</td><td></td><td class="num">'+c.refund.toLocaleString()+'</td>');
-  /* 自己新增的收入項目（例如補登上個月的退費）跟畫面上一樣，排在這裡——
-     緊接在自動帶入的「退費」下面、優化補助上面。 */
-  Object.keys(p.incomeEntries||{}).sort(function(a,b){return((p.incomeEntries[a]||{}).ts||0)-((p.incomeEntries[b]||{}).ts||0);}).forEach(function(id){
-    var r=p.incomeEntries[id]||{};
-    niRows.push('<td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td>');
+  var coreSum=c.regFee+c.monthFee+c.agencyFee+c.extendFee+c.insurance-c.refund;
+  coreEntries.forEach(function(r){
+    var amt=parseFloat(r.amount)||0;coreSum+=amt;
+    niRows.push('<td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+amt.toLocaleString()+'</td><td></td>');
   });
-  niRows.push('<td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td>');
-  niRows.push('<td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td>');
   niRows.forEach(function(cells,idx){
     html+='<tr>'+cells;
-    if(idx===0)html+='<td class="num" rowspan="'+niRows.length+'" style="font-weight:600;color:#a5680a;vertical-align:middle;">一般收入小計 '+c.totalIncome.toLocaleString()+'</td>';
+    if(idx===0)html+='<td class="num" rowspan="'+niRows.length+'" style="font-weight:600;color:#a5680a;vertical-align:middle;">一般收入小計 '+coreSum.toLocaleString()+'</td>';
     html+='</tr>';
+  });
+  /* 政府補助/捐款/退稅/雜項收入/其他這些自訂分類，加上優化補助/利息，
+     都不計入上面的小計，個別列出、項目總結欄留空。 */
+  html+='<tr><td>優化補助</td><td>'+((p.subsidyNote||''))+'</td><td class="num">'+c.subsidyAmt.toLocaleString()+'</td><td></td><td></td></tr>';
+  html+='<tr><td>利息</td><td>'+((p.interestNote||''))+'</td><td class="num">'+c.interestAmt.toLocaleString()+'</td><td></td><td></td></tr>';
+  otherEntries.forEach(function(r){
+    html+='<tr><td>'+(r.cat||'')+'</td><td>'+(r.note||'')+'</td><td class="num">'+(parseFloat(r.amount)||0).toLocaleString()+'</td><td></td><td></td></tr>';
   });
   /* 非常態收入現在算進本期（損益），所以跟一般收入併在同一張表裡，
      只在備註加註「非常態」方便辨識是哪一筆。 */
@@ -27257,7 +27268,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261117101915--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261117133426--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
