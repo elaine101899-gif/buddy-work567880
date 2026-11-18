@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119065850';
+  var BUILD='20261119070855';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26886,21 +26886,21 @@ var CHILDFEE=(function(){
     var enrollParts=enrollStr.split('-');
     var enrollDateObj=new Date(parseInt(enrollParts[0],10),parseInt(enrollParts[1],10)-1,parseInt(enrollParts[2],10));
     var period=_periodForDate(enrollDateObj);
-    var periodEndCivilYr=period.endRoc+1911;
-    var periodEndDateObj=new Date(periodEndCivilYr,period.endMo-1,26);
-    var days=Math.round((periodEndDateObj-enrollDateObj)/86400000)+1;
-    if(days<0)days=0;
+    /* 2026-11-19：使用者指出月費/餐費不能按入托日期比例天數打折——
+       27~26號那個區間只是用來判斷「這筆要算進哪一期」，以及之後請假
+       退費要算哪天到哪天，不是用來決定這個月要收多少月費。只要有算進
+       這一期，月費/餐費就是整月全額，不管是這期第1天還是第26天入托。
+       （註冊費不一樣：註冊費本來就是用「這學期還剩幾個月」來算，是
+       合法的月份級距折算，跟這裡講的「按天數比例」是兩回事，維持不變。）*/
     var monthFeeFull=SPECIAL_MONTHFEE_NAMES.indexOf(name)>=0?15800:16415;
-    var dailyRate=Math.round(monthFeeFull/30);
-    var proratedMonthFee=dailyRate*days;
-    var proratedMealFee=67*days;
+    var mealFeeFull=2000;
     var regFee=_regFeeMonthsLeft(parseInt(enrollParts[1],10))*3000;
 
     var pk=periodKey(period.endRoc,period.endMo);
     var rec=_getRec(pk,childId);
     rec.name=name;
-    rec.monthFee=proratedMonthFee;
-    rec.mealFee=proratedMealFee;
+    rec.monthFee=monthFeeFull;
+    rec.mealFee=mealFeeFull;
     rec.regFee=regFee;
     save();pushRec(pk,childId);
 
@@ -26908,7 +26908,7 @@ var CHILDFEE=(function(){
     _endY=period.endRoc;_endM=period.endMo;
     _selCls=cls;_selChild=childId;
     render();
-    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+proratedMonthFee+'元（'+days+'天比例）\n餐費 '+proratedMealFee+'元\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
+    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+monthFeeFull+'元（整月）\n餐費 '+mealFeeFull+'元（整月）\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
   /* ── 給「結帳」模組用的唯讀存取：結帳要把月費單某一期的收入總額自動帶入，
@@ -27797,7 +27797,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119065850--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119070855--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
