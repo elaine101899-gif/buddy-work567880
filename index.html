@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118212401';
+  var BUILD='20261118212927';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25785,6 +25785,11 @@ var CHILDFEE=(function(){
       if(FIELDS_SUBTRACT[f.k])t-=(parseFloat(rec[f.k])||0);
       else t+=(parseFloat(rec[f.k])||0);
     });
+    /* 2026-11-18：rec.hfmdRefund 是補 6-9 月歷史資料用的腸病毒退費手動
+       欄位（見 previewFeeReport），故意不放進 FIELDS（不想讓一般月費單
+       編輯畫面多一個每月都要填的欄位），但這樣月費單收入這裡的加總會
+       漏算這筆扣款，所以在這裡另外手動扣一次。 */
+    t-=(parseFloat(rec.hfmdRefund)||0);
     return t;
   }
   /* 把一筆帳單裡所有有填的科目兜成一行文字，給繳費明細表用，例如「月費16415、餐費2000、延托費98」 */
@@ -27504,7 +27509,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118212401--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118212927--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
