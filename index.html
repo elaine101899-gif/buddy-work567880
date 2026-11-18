@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118123556';
+  var BUILD='20261118131403';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3354,6 +3354,17 @@ var ROSTER=(function(){
      不套用「入園日還沒到」這條（這點跟 rosterAll 一樣），但已經離園的
      孩子月費單不該再出現（這點不能跟著 rosterAll 一起跳過，不然已經
      離園的孩子會一直留在月費單名單裡）。 */
+  /* 2026-11-18：補登過去月份的月費單時，需要「那個月當時的billable名單」
+     （離園的孩子要濾掉，但還沒正式入園、提前繳費的新生不能濾掉——跟
+     rosterBillable 同一套邏輯，只是 asOfDate 不是寫死「今天」，而是
+     呼叫端自己帶進來那個月的日期）。例如8月才入園的小孩，7月初就先繳了
+     錢（月費單慣例7號以前算上一期），查「7月」這一期的名單時就要能看到
+     這個孩子，才能把這筆提前繳費記進7月的帳——rosterAsOf() 不能用在
+     這裡，因為它沒有套用 billable 模式，還是會把「入園日還沒到」的新生
+     濾掉。 */
+  function rosterBillableAsOf(yr,dateStr){
+    return _computeRoster(yr,lastCloud[yr],dateStr,'billable');
+  }
   function rosterBillable(yr){
     return _computeRoster(yr,lastCloud[yr],_todayISO(),'billable');
   }
@@ -3537,7 +3548,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,rosterBillableAsOf:rosterBillableAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -25632,16 +25643,20 @@ var CHILDFEE=(function(){
      資料寫進 Firebase，這個孩子也不會出現在6月的名單/報表裡，因為他
      「現在」已經離園了——月費單、月費報表都會悄悄漏掉這個人。
      改成 getKidsByCls 可以選擇性帶入 (endRoc,endMo) 這個期別，有帶的話
-     就用 ROSTER.rosterAsOf() 查「那個時間點」的名單（入園/離園日期都照
-     那個時間點判斷，不是今天），沒帶的話維持原本用 rosterBillable()
-     查「今天」的行為，不影響其他沒有期別概念的呼叫方式。 */
+     就用 ROSTER.rosterBillableAsOf() 查「那個時間點」的 billable 名單
+     （離園的孩子照常濾掉，但入園日還沒到的新生不會被濾掉——跟
+     rosterBillable 同一套「billable」邏輯，只是 asOfDate 換成那個期別
+     的日期，不是今天；這樣像「8月才入園、但7號以前提前繳費算進7月帳」
+     這種情況，查7月名單時才看得到這個小孩），沒帶期別的話維持原本用
+     rosterBillable() 查「今天」的行為，不影響其他沒有期別概念的呼叫
+     方式。 */
   function getKidsByCls(endRoc,endMo){
     var asOfDateObj=endRoc?new Date(endRoc+1911,(endMo||1)-1,26):new Date();
     var autoYr=(asOfDateObj>=new Date(2026,7,1))?'115':'114';
     var teachers,children;
-    if(endRoc&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
+    if(endRoc&&typeof ROSTER!=='undefined'&&ROSTER.rosterBillableAsOf){
       var asOfIso=(endRoc+1911)+'-'+pad2(endMo||1)+'-26';
-      var r=ROSTER.rosterAsOf(autoYr,asOfIso)||{teachers:[],children:{}};
+      var r=ROSTER.rosterBillableAsOf(autoYr,asOfIso)||{teachers:[],children:{}};
       teachers=r.teachers||[];
       children=r.children||{};
     } else if(typeof ROSTER!=='undefined'&&ROSTER.rosterBillable){
@@ -27453,7 +27468,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118123556--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118131403--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
