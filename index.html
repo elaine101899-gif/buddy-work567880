@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118232338';
+  var BUILD='20261119065850';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26520,32 +26520,43 @@ var CHILDFEE=(function(){
       'var THIN_BORDER={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};'+
       'var HDR_FILL={type:"pattern",pattern:"solid",fgColor:{argb:"FFF0C97A"}};'+
       'var RED_FONT={color:{argb:"FFC0392B"},bold:true};'+
-      'function buildSheet1(ws,d){'+
+      'function buildSheet1(ws,d,label){'+
       'var headers=["編號","姓名","註冊","月費","病假/其他退費","註冊費退費","颱風假退費","腸病毒退費","腸-停課退費"];'+
       'd.extraTypeOrder.forEach(function(t){headers.push(t+"退費");});'+
       'headers.push("合計","備註");'+
-      'var hr=ws.addRow(headers);'+
-      'hr.eachCell(function(c){c.border=THIN_BORDER;c.font={bold:true};c.fill=HDR_FILL;});'+
+      'var ncols=headers.length;'+
+      'ws.mergeCells(1,1,1,ncols);'+
+      'var t1=ws.getCell(1,1);t1.value=COMPANY_NAME;t1.font={bold:true,size:14};t1.alignment={horizontal:"center"};'+
+      'ws.mergeCells(2,1,2,ncols);'+
+      'var t2=ws.getCell(2,1);t2.value=label+" 收費明細表";t2.font={bold:true};t2.alignment={horizontal:"center"};'+
+      'var headerRowNum=4;'+
+      'headers.forEach(function(h,ci){var c=ws.getCell(headerRowNum,ci+1);c.value=h;c.border=THIN_BORDER;c.font={bold:true};c.fill=HDR_FILL;});'+
+      'var rn=headerRowNum+1;'+
       'd.billed.forEach(function(r,i){'+
       'var row=[i+1,r.name,r.regFee||"",r.monthFee,r.sickOrOther||"",r.regFeeRefund||"",r.typhoonRefund||"",r.hfmdRefund||"",r.closureRefund||""];'+
       'd.extraTypeOrder.forEach(function(t){row.push(r.extraByType[t]||"");});'+
       'row.push(r.total,r.note);'+
-      'var rr=ws.addRow(row);rr.eachCell(function(c){c.border=THIN_BORDER;});'+
+      'row.forEach(function(v,ci){var c=ws.getCell(rn,ci+1);c.value=v;c.border=THIN_BORDER;});'+
+      'rn++;'+
       '});'+
       'var totalsRow=["","總計",d.totalReg,d.totalMonth,d.totalSickOrOther,d.totalRegRefund,d.totalTyphoon,d.totalHfmd,d.totalClosure];'+
       'd.extraTypeOrder.forEach(function(t){totalsRow.push(d.totalExtraByType[t]);});'+
       'totalsRow.push(d.grand,"");'+
-      'var tr=ws.addRow(totalsRow);tr.eachCell(function(c){c.border=THIN_BORDER;c.font={bold:true};});'+
+      'totalsRow.forEach(function(v,ci){var c=ws.getCell(rn,ci+1);c.value=v;c.border=THIN_BORDER;c.font={bold:true};});'+
       'ws.getColumn(2).width=12;'+
-      'for(var i=1;i<=headers.length;i++){if(!ws.getColumn(i).width)ws.getColumn(i).width=11;}'+
+      'for(var i=1;i<=ncols;i++){if(!ws.getColumn(i).width)ws.getColumn(i).width=11;}'+
       '}'+
-      'function buildSheet2(ws,d){'+
+      'function buildSheet2(ws,d,label){'+
       'function setCell(addr,val,bold,red,fill){'+
       'var c=ws.getCell(addr);c.value=val;c.border=THIN_BORDER;'+
       'if(red)c.font=RED_FONT;else if(bold)c.font={bold:true};'+
       'if(fill)c.fill=HDR_FILL;'+
       '}'+
-      'var r=1;'+
+      'ws.mergeCells("B1:I1");'+
+      'var t1=ws.getCell("B1");t1.value=COMPANY_NAME;t1.font={bold:true,size:14};t1.alignment={horizontal:"center"};'+
+      'ws.mergeCells("B2:I2");'+
+      'var t2=ws.getCell("B2");t2.value=label+" 收支總表";t2.font={bold:true};t2.alignment={horizontal:"center"};'+
+      'var r=4;'+
       'setCell("B"+r,"總人數:");setCell("C"+r,d.totalPeople+" 人");r++;'+
       'setCell("B"+r,"休學人數:");setCell("C"+r,d.withdrawCount+" 人");r++;'+
       'setCell("B"+r,"轉學人數:");setCell("C"+r,d.transferCount+" 人");r++;'+
@@ -26553,12 +26564,12 @@ var CHILDFEE=(function(){
       'setCell("B"+r,"月費",true,false,true);setCell("C"+r,"",false,false,true);r++;'+
       'd.monthGroupOrder.forEach(function(amt){setCell("B"+r,amt+"*"+d.monthGroups[amt]);setCell("C"+r,amt*d.monthGroups[amt]);r++;});'+
       'setCell("B"+r,"合計",true);setCell("C"+r,d.totalMonth,true);r++;'+
-      'var r2=1;'+
+      'var r2=4;'+
       'setCell("E"+r2,"註冊費",false,true,true);setCell("F"+r2,"",false,false,true);r2++;'+
       'if(!d.regGroupOrder.length){setCell("E"+r2,"");setCell("F"+r2,"");r2++;}'+
       'else{d.regGroupOrder.forEach(function(amt){setCell("E"+r2,amt+"*"+d.regGroups[amt]);setCell("F"+r2,amt*d.regGroups[amt]);r2++;});}'+
       'setCell("E"+r2,"合計",false,true);setCell("F"+r2,d.totalReg,false,true);r2++;'+
-      'var r3=1;'+
+      'var r3=4;'+
       'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,"月費+註冊費-退費",true,false,true);r3++;'+
       'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,d.totalMonth+d.totalReg);r3++;'+
       'setCell("H"+r3,"病假/其他退費");setCell("I"+r3,d.totalSickOrOther);r3++;'+
@@ -26578,8 +26589,8 @@ var CHILDFEE=(function(){
       'var wb=new ExcelJS.Workbook();'+
       'PERIODS_DATA.forEach(function(p){'+
       'var label=p.endY+"年"+p.endM+"月";'+
-      'buildSheet1(wb.addWorksheet(label+" 收費明細表"),p);'+
-      'buildSheet2(wb.addWorksheet(label+" 收支總表"),p);'+
+      'buildSheet1(wb.addWorksheet(label+" 收費明細表"),p,label);'+
+      'buildSheet2(wb.addWorksheet(label+" 收支總表"),p,label);'+
       '});'+
       'wb.xlsx.writeBuffer().then(function(buf){'+
       'var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});'+
@@ -27786,7 +27797,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118232338--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119065850--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
