@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118221007';
+  var BUILD='20261118224232';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26434,28 +26434,40 @@ var CHILDFEE=(function(){
     /* 2026-11-18：exportExcel 用 XLSX.utils.book_new/aoa_to_sheet 把上面
        組好的 sheet1AOA/sheet2AOA 直接轉成兩張工作表（分頁名稱跟畫面上
        的分頁籤文字一樣），再用 XLSX.writeFile 觸發瀏覽器下載，檔名帶
-       公司名稱跟年月方便辨識。sheetJsReady 是給下面 CDN script 的
-       onload 設 true，避免使用者在函式庫還沒載完就按下載按鈕。 */
-    var js='var sheetJsReady=false;'+
-      'function showSheet(n){'+
+       公司名稱跟年月方便辨識。
+       2026-11-18（第二次修）：手機上 CDN script 的 onload 常常比使用者
+       點按鈕慢，原本「還沒載完就跳提示叫使用者自己再按一次」體驗很差
+       （尤其行動網路）——改成按下去如果還沒載完，按鈕文字先變成「載入
+       中...」，用一個等待函式每 200ms 檢查一次 XLSX 是否已經可用（最多
+       等 15 秒），一載完就自動接著匯出，不用使用者自己重按。 */
+    var js='function showSheet(n){'+
       'document.querySelectorAll(".sheet-tab").forEach(function(el,i){el.className="sheet-tab"+(i===n?" on":"");});'+
       'document.querySelectorAll(".sheet-page").forEach(function(el,i){el.className="sheet-page"+(i===n?" on":"");});'+
       '}'+
+      'function _waitForXLSX(cb,triesLeft){'+
+      'if(typeof XLSX!=="undefined"){cb();return;}'+
+      'if(triesLeft<=0){alert("Excel 匯出功能載入失敗，請檢查網路連線後重新整理再試一次");'+
+      'var btn=document.getElementById("exportBtn");if(btn)btn.textContent="\u{1F4BE} 匯出 Excel";return;}'+
+      'setTimeout(function(){_waitForXLSX(cb,triesLeft-1);},200);'+
+      '}'+
       'function exportExcel(){'+
-      'if(!sheetJsReady||typeof XLSX==="undefined"){alert("Excel 匯出功能還在載入，請稍等幾秒再按一次");return;}'+
+      'var btn=document.getElementById("exportBtn");'+
+      'if(typeof XLSX==="undefined"){if(btn)btn.textContent="載入中...";'+
+      '_waitForXLSX(exportExcel,75);return;}'+
+      'if(btn)btn.textContent="\u{1F4BE} 匯出 Excel";'+
       'var wb=XLSX.utils.book_new();'+
       'XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(SHEET1_AOA),"收費明細表");'+
       'XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(SHEET2_AOA),"收支總表");'+
       'XLSX.writeFile(wb,COMPANY_NAME+"_"+PERIOD_LABEL+"_月費報表.xlsx");'+
       '}';
     var html='<!doctype html><html><head><meta charset="utf-8"><title>月費報表預覽</title><style>'+css+'</style>'+
-      '<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" onload="sheetJsReady=true;"><\/script>'+
+      '<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>'+
       '</head><body>';
     html+='<h2>'+_companyName()+'</h2><h3>'+_incEndY+'年'+_incEndM+'月　月費報表（預覽，尚未存檔）</h3>';
     html+='<div class="note">這是「月費報表」功能第一步的畫面預覽，數字已經是真實資料算出來的，但還沒有存檔。按右上角「匯出 Excel」可以直接下載 .xlsx 檔（兩個分頁對應會計師要的收費明細表／收支總表格式），存檔／累積到年底報表的功能之後再做。</div>';
 
     html+='<div class="sheet-tabs" style="align-items:center;"><div class="sheet-tab on" onclick="showSheet(0)">收費明細表</div><div class="sheet-tab" onclick="showSheet(1)">收支總表</div>'+
-      '<button onclick="exportExcel()" style="margin-left:auto;padding:8px 18px;border:1px solid #2a6a3f;border-radius:6px;background:#2a6a3f;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">&#128190; 匯出 Excel</button></div>';
+      '<button id="exportBtn" onclick="exportExcel()" style="margin-left:auto;padding:8px 18px;border:1px solid #2a6a3f;border-radius:6px;background:#2a6a3f;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">&#128190; 匯出 Excel</button></div>';
 
     html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>病假/其他退費</th><th>註冊費退費</th><th>颱風假退費</th><th>腸病毒退費</th><th>腸-停課退費</th>';
     extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
@@ -27590,7 +27602,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118221007--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118224232--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
