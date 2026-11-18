@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118200103';
+  var BUILD='20261118200736';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26273,8 +26273,9 @@ var CHILDFEE=(function(){
     var groups=getKidsByCls(_incEndY,_incEndM);
     var _prior=_priorPeriod(_incEndY,_incEndM);
     var SICK_TYPES=['病假','住院'];
-    var FLAT_TYPES=['颱風假','豪雨假','腸-停課'];
+    var FLAT_TYPES=['颱風假','豪雨假'];
     var HFMD_TYPES=['腸病毒'];
+    var CLOSURE_TYPES=['腸-停課'];
     var extraTypeOrder=[];
 
     var billed=[];
@@ -26282,7 +26283,7 @@ var CHILDFEE=(function(){
       groups[cls].forEach(function(k){
         var rec=(db.records[pk]||{})[k.id];
         if(!_isBilled(rec))return;
-        var typhoonRefund=0,hfmdRefund=0,sickDeduct=0,extraByType={};
+        var typhoonRefund=0,hfmdRefund=0,closureRefund=0,sickDeduct=0,extraByType={};
         try{
           if(typeof CHILDLEAVE!=='undefined'){
             var entries=CHILDLEAVE.refundEntriesForChild(_prior.roc,_prior.mo,k.id)||[];
@@ -26290,6 +26291,7 @@ var CHILDFEE=(function(){
               if(!e.refund)return;
               if(FLAT_TYPES.indexOf(e.type)>=0){typhoonRefund+=e.refund;}
               else if(HFMD_TYPES.indexOf(e.type)>=0){hfmdRefund+=e.refund;}
+              else if(CLOSURE_TYPES.indexOf(e.type)>=0){closureRefund+=e.refund;}
               else if(SICK_TYPES.indexOf(e.type)>=0){sickDeduct+=e.refund;}
               else{
                 if(extraByType[e.type]===undefined)extraByType[e.type]=0;
@@ -26304,23 +26306,23 @@ var CHILDFEE=(function(){
         var otherRefund=parseFloat(rec.otherRefund)||0;
         var regFeeRefund=parseFloat(rec.regFeeRefund)||0;
         var extraTotal=0;Object.keys(extraByType).forEach(function(t){extraTotal+=extraByType[t];});
-        var total=regFee+monthFee-otherRefund-regFeeRefund-typhoonRefund-hfmdRefund-sickDeduct-extraTotal;
+        var total=regFee+monthFee-otherRefund-regFeeRefund-typhoonRefund-hfmdRefund-closureRefund-sickDeduct-extraTotal;
         billed.push({name:k.name,regFee:regFee,monthFee:monthFee,otherRefund:otherRefund,regFeeRefund:regFeeRefund,
-          typhoonRefund:typhoonRefund,hfmdRefund:hfmdRefund,sickDeduct:sickDeduct,extraByType:extraByType,total:total,note:rec.note||''});
+          typhoonRefund:typhoonRefund,hfmdRefund:hfmdRefund,closureRefund:closureRefund,sickDeduct:sickDeduct,extraByType:extraByType,total:total,note:rec.note||''});
       });
     });
 
     var totalPeople=billed.length;
-    var totalReg=0,totalMonth=0,totalOther=0,totalRegRefund=0,totalTyphoon=0,totalHfmd=0,totalSick=0;
+    var totalReg=0,totalMonth=0,totalOther=0,totalRegRefund=0,totalTyphoon=0,totalHfmd=0,totalClosure=0,totalSick=0;
     var totalExtraByType={};
     extraTypeOrder.forEach(function(t){totalExtraByType[t]=0;});
     billed.forEach(function(r){
       totalReg+=r.regFee;totalMonth+=r.monthFee;totalOther+=r.otherRefund;totalRegRefund+=r.regFeeRefund;
-      totalTyphoon+=r.typhoonRefund;totalHfmd+=r.hfmdRefund;totalSick+=r.sickDeduct;
+      totalTyphoon+=r.typhoonRefund;totalHfmd+=r.hfmdRefund;totalClosure+=r.closureRefund;totalSick+=r.sickDeduct;
       extraTypeOrder.forEach(function(t){totalExtraByType[t]+=(r.extraByType[t]||0);});
     });
     var totalExtra=0;extraTypeOrder.forEach(function(t){totalExtra+=totalExtraByType[t];});
-    var grand=totalMonth+totalReg-totalOther-totalRegRefund-totalTyphoon-totalHfmd-totalSick-totalExtra;
+    var grand=totalMonth+totalReg-totalOther-totalRegRefund-totalTyphoon-totalHfmd-totalClosure-totalSick-totalExtra;
 
     /* 2026-11-18：使用者要求註冊費也要比照月費那樣寫出「金額*人數」，
        不是只顯示合計數字——註冊費不像月費每個人金額都一樣（有人是舊生
@@ -26372,11 +26374,11 @@ var CHILDFEE=(function(){
 
     html+='<div class="sheet-tabs"><div class="sheet-tab on" onclick="showSheet(0)">收費明細表</div><div class="sheet-tab" onclick="showSheet(1)">收支總表</div></div>';
 
-    html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>註冊費退費</th><th>颱風假退費</th><th>腸病毒退費</th><th>病假扣費</th>';
+    html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>註冊費退費</th><th>颱風假退費</th><th>腸病毒退費</th><th>腸-停課退費</th><th>病假扣費</th>';
     extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
     html+='<th>合計</th><th>備註</th></tr></thead><tbody>';
     billed.forEach(function(r,i){
-      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td><td>'+(r.regFeeRefund||'')+'</td><td>'+(r.typhoonRefund||'')+'</td><td>'+(r.hfmdRefund||'')+'</td><td>'+(r.sickDeduct||'')+'</td>';
+      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td><td>'+(r.regFeeRefund||'')+'</td><td>'+(r.typhoonRefund||'')+'</td><td>'+(r.hfmdRefund||'')+'</td><td>'+(r.closureRefund||'')+'</td><td>'+(r.sickDeduct||'')+'</td>';
       extraTypeOrder.forEach(function(t){html+='<td>'+(r.extraByType[t]||'')+'</td>';});
       html+='<td>'+r.total+'</td><td>'+r.note+'</td></tr>';
     });
@@ -26400,6 +26402,7 @@ var CHILDFEE=(function(){
       '<tr><td>病假退費</td><td>'+totalSick+'</td></tr>'+
       '<tr><td>颱風假退費</td><td>'+totalTyphoon+'</td></tr>'+
       '<tr><td>腸病毒退費</td><td>'+totalHfmd+'</td></tr>'+
+      '<tr><td>腸-停課退費</td><td>'+totalClosure+'</td></tr>'+
       '<tr><td>退費</td><td>'+totalOther+'</td></tr>'+
       '<tr><td>註冊費退費</td><td>'+totalRegRefund+'</td></tr>';
     extraTypeOrder.forEach(function(t){html+='<tr><td>'+t+'退費</td><td>'+totalExtraByType[t]+'</td></tr>';});
@@ -27493,7 +27496,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118200103--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118200736--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
