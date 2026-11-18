@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118181218';
+  var BUILD='20261118182650';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26322,6 +26322,16 @@ var CHILDFEE=(function(){
       if(regGroups[r.regFee]===undefined){regGroups[r.regFee]=0;regGroupOrder.push(r.regFee);}
       regGroups[r.regFee]++;
     });
+    /* 2026-11-18：月費也會有不一樣的金額（新生當月是用入托日期比例計算，
+       跟月費不同的幾位小孩本來就是不同費率），之前寫死用第一個人的金額
+       乘總人數（例如「18415*23」），金額不一樣時完全是錯的。改成跟
+       註冊費一樣依實際金額分組，同金額各自一行「金額*人數」。 */
+    var monthGroups={},monthGroupOrder=[];
+    billed.forEach(function(r){
+      if(!r.monthFee)return;
+      if(monthGroups[r.monthFee]===undefined){monthGroups[r.monthFee]=0;monthGroupOrder.push(r.monthFee);}
+      monthGroups[r.monthFee]++;
+    });
 
     /* 2026-11-18：使用者指出會計師原本的檔案是「兩個分頁」（收費明細表、
        收支總表是兩張各自獨立的工作表，底下有分頁籤可以切換），不是一張
@@ -26365,7 +26375,9 @@ var CHILDFEE=(function(){
     html+='<table style="width:auto;margin-bottom:12px;"><tbody>';
     html+='<tr><td>總人數</td><td>'+totalPeople+' 人</td></tr><tr><td>休學人數</td><td>0 人</td></tr><tr><td>轉學人數</td><td>0 人</td></tr>';
     html+='</tbody></table>';
-    html+='<div class="box"><table><tr><th colspan="2">月費</th></tr><tr><td>'+(billed[0]?(billed[0].monthFee+'*'+totalPeople):'')+'</td><td>'+totalMonth+'</td></tr><tr><td><b>合計</b></td><td><b>'+totalMonth+'</b></td></tr></table></div>';
+    html+='<div class="box"><table><tr><th colspan="2">月費</th></tr>';
+    monthGroupOrder.forEach(function(amt){html+='<tr><td>'+amt+'*'+monthGroups[amt]+'</td><td>'+(amt*monthGroups[amt])+'</td></tr>';});
+    html+='<tr><td><b>合計</b></td><td><b>'+totalMonth+'</b></td></tr></table></div>';
     html+='<div class="box"><table><tr><th colspan="2" class="red">註冊費</th></tr>';
     if(!regGroupOrder.length){
       html+='<tr><td></td><td></td></tr>';
@@ -27468,7 +27480,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118181218--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118182650--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
