@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118212927';
+  var BUILD='20261118213959';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26325,6 +26325,19 @@ var CHILDFEE=(function(){
       });
     });
 
+    /* 2026-11-18：休學人數／轉學人數原本寫死都是 0，使用者指出「有退托
+       就等於休學，轉去邦比諾的就是轉學」——用備註文字裡有沒有這些關鍵字
+       來判斷，跟其他地方寫備註的習慣（「9月離園」「10月轉學至邦比諾」）
+       一致，不用另外多存一個獨立欄位。 */
+    var WITHDRAW_KEYWORDS=['退托','休學','離園'];
+    var TRANSFER_KEYWORDS=['轉學'];
+    var withdrawCount=0,transferCount=0;
+    billed.forEach(function(r){
+      var note=r.note||'';
+      if(TRANSFER_KEYWORDS.some(function(kw){return note.indexOf(kw)>=0;})){transferCount++;}
+      else if(WITHDRAW_KEYWORDS.some(function(kw){return note.indexOf(kw)>=0;})){withdrawCount++;}
+    });
+
     var totalPeople=billed.length;
     var totalReg=0,totalMonth=0,totalOther=0,totalRegRefund=0,totalTyphoon=0,totalHfmd=0,totalClosure=0,totalSick=0,totalCleaning=0;
     var totalExtraByType={};
@@ -26369,7 +26382,7 @@ var CHILDFEE=(function(){
       'table{border-collapse:collapse;width:100%;margin-bottom:0;background:#fff;}'+
       'td,th{border:1px solid #999;padding:6px 10px;text-align:center;font-size:13px;}'+
       'th{background:#f0c97a;}'+
-      'td:nth-child(2),th:nth-child(2){white-space:nowrap;}'+
+      'td:nth-child(2),th{white-space:nowrap;}'+
       '.box{display:inline-block;vertical-align:top;margin-right:28px;}'+
       '.red{color:#c0392b;font-weight:700;}'+
       '.note{color:#999;font-size:12px;margin-bottom:14px;}'+
@@ -26400,7 +26413,7 @@ var CHILDFEE=(function(){
 
     html+='<div class="sheet-page">';
     html+='<table style="width:auto;margin-bottom:12px;"><tbody>';
-    html+='<tr><td>總人數</td><td>'+totalPeople+' 人</td></tr><tr><td>休學人數</td><td>0 人</td></tr><tr><td>轉學人數</td><td>0 人</td></tr>';
+    html+='<tr><td>總人數</td><td>'+totalPeople+' 人</td></tr><tr><td>休學人數</td><td>'+withdrawCount+' 人</td></tr><tr><td>轉學人數</td><td>'+transferCount+' 人</td></tr>';
     html+='</tbody></table>';
     html+='<div class="box"><table><tr><th colspan="2">月費</th></tr>';
     monthGroupOrder.forEach(function(amt){html+='<tr><td>'+amt+'*'+monthGroups[amt]+'</td><td>'+(amt*monthGroups[amt])+'</td></tr>';});
@@ -27509,7 +27522,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118212927--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118213959--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
