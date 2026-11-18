@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118224232';
+  var BUILD='20261118230735';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3545,10 +3545,52 @@ var ROSTER=(function(){
       window['_asrPreload'+yr]=cur;
     }
   }
+  /* 2026-11-18：月費單「新增幼兒」要支援「還沒決定老師，先記下來、之後
+     再指派」──不能直接比照 addChild 掛到某個 teacherId 底下（會被老師
+     端的出缺席／課程等畫面看到，而且目前還沒決定要給誰帶），所以另外開
+     一個完全獨立的 roster/{yr}/unassignedChildren 節點，不混進
+     children/{teacherId} 那個結構。只有月費單模組（CHILDFEE）會去讀這個
+     節點並顯示成「未分班」這個虛擬班級，適性後台的老師/幼兒名單、出缺席、
+     課程指派等其他畫面完全不會碰到、也就看不到──天然做到「只有登入月費
+     單（行政專用密碼）的人看得到」。 */
+  function addUnassignedChild(yr,child,cb){
+    var fb=_fbInit();
+    if(fb)fb.ref(_rosterFbBase()+'/'+yr+'/unassignedChildren/'+child.id).set(child,function(err){ if(cb)cb(!err); });
+    else if(cb)cb(false);
+    if(!lastCloud[yr])lastCloud[yr]={};
+    if(!lastCloud[yr].unassignedChildren)lastCloud[yr].unassignedChildren={};
+    lastCloud[yr].unassignedChildren[child.id]=child;
+  }
+  function getUnassignedChildren(yr){
+    var m=lastCloud[yr]&&lastCloud[yr].unassignedChildren;
+    return m?Object.keys(m).map(function(id){return m[id];}):[];
+  }
+  /* 決定好老師之後，把孩子從「未分班」正式搬進某位老師名下——跟 moveChild
+     不同的是來源不是另一位老師，而是 unassignedChildren，搬過去之後從
+     那邊整個移除，之後就跟一般小孩一樣會出現在老師端的所有畫面。 */
+  function assignTeacherToChild(yr,childId,teacherId,cb){
+    var fb=_fbInit();
+    var child=(lastCloud[yr]&&lastCloud[yr].unassignedChildren&&lastCloud[yr].unassignedChildren[childId])||{id:childId};
+    var remaining=2,ok=true;
+    function done(err){ if(err)ok=false; remaining--; if(remaining===0&&cb)cb(ok); }
+    if(fb){
+      fb.ref(_rosterFbBase()+'/'+yr+'/children/'+teacherId+'/'+childId).set(child,function(err){done(err);});
+      fb.ref(_rosterFbBase()+'/'+yr+'/unassignedChildren/'+childId).remove(function(err){done(err);});
+    }else{ if(cb)cb(false); return; }
+    if(lastCloud[yr]&&lastCloud[yr].unassignedChildren)delete lastCloud[yr].unassignedChildren[childId];
+    var cur=window['_asrPreload'+yr];
+    if(cur){
+      if(!cur.children[teacherId])cur.children[teacherId]=[];
+      if(!cur.children[teacherId].some(function(c){return c.id===childId;})){
+        cur.children[teacherId]=cur.children[teacherId].concat([child]);
+        window['_asrPreload'+yr]=cur;
+      }
+    }
+  }
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,rosterBillableAsOf:rosterBillableAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,rosterBillableAsOf:rosterBillableAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle,addUnassignedChild:addUnassignedChild,getUnassignedChildren:getUnassignedChildren,assignTeacherToChild:assignTeacherToChild};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -5582,8 +5624,9 @@ function _rosterKidsAsOf(cls,dateStr){
       <option value="baby">寶寶班</option>
       <option value="crawl">爬爬班</option>
       <option value="run">跑跑班</option>
+      <option value="unassigned">未分班（還沒決定老師，之後再指派）</option>
     </select>
-    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">老師</div>
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;" id="cfNcTeacherLbl">老師</div>
     <select class="asr-msel" id="cfNcTeacher"></select>
     <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">年齡層</div>
     <select class="asr-msel" id="cfNcAge">
@@ -5595,6 +5638,24 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="CHILDFEE.closeNewChild()">取消</button>
       <button class="asr-mok" onclick="CHILDFEE.saveNewChild()">&#x2713; 新增</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="cfAssignOv">
+  <div class="asr-mbox">
+    <h3>&#x1F469;&#x200D;&#x1F3EB; 指派老師</h3>
+    <div style="font-size:.78rem;color:#888;margin-bottom:6px;" id="cfAsName"></div>
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">班級</div>
+    <select class="asr-msel" id="cfAsCls" onchange="CHILDFEE.asClsChanged()">
+      <option value="baby">寶寶班</option>
+      <option value="crawl">爬爬班</option>
+      <option value="run">跑跑班</option>
+    </select>
+    <div style="font-size:.78rem;color:#888;margin:10px 0 6px;">老師</div>
+    <select class="asr-msel" id="cfAsTeacher"></select>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="CHILDFEE.closeAssignTeacher()">取消</button>
+      <button class="asr-mok" onclick="CHILDFEE.saveAssignTeacher()">&#x2713; 指派</button>
     </div>
   </div>
 </div>
@@ -25586,9 +25647,14 @@ var CHILDFEE=(function(){
   }
   var _fbAttachedCompany=null;
   var _fbRef=null;
-  var CLSLABEL={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
-  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png'};
-  var CLSORDER=['baby','crawl','run'];
+  /* 2026-11-18：「未分班」是只有月費單自己知道的虛擬班級（還沒決定給哪位
+     老師帶的新生暫存區），CLSORDER/CLSLABEL/CLSICON 只在這個模組（CHILDFEE）
+     裡加，不會動到其他模組各自獨立的同名變數，所以老師端（出缺席、課程
+     指派等）完全不會多出這個分類。圖示借用寶寶班的，單純視覺用、沒有
+     實質意義。 */
+  var CLSLABEL={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班',unassigned:'未分班（待指派）'};
+  var CLSICON={baby:'images/cls_baby.png',crawl:'images/cls_crawl.png',run:'images/cls_run.png',unassigned:'images/cls_baby.png'};
+  var CLSORDER=['baby','crawl','run','unassigned'];
   var FIELDS=[
     {k:'regFee',label:'註冊費'},
     {k:'monthFee',label:'月費'},
@@ -25672,7 +25738,7 @@ var CHILDFEE=(function(){
       teachers=pl.teachers||[];
       children=pl.children||{};
     }
-    var groups={baby:[],crawl:[],run:[]};
+    var groups={baby:[],crawl:[],run:[],unassigned:[]};
     var seenId={};
     teachers.forEach(function(t){
       if(!groups[t.cls])return;
@@ -25682,6 +25748,16 @@ var CHILDFEE=(function(){
         groups[t.cls].push({id:c.id,name:c.name,teacherName:t.name});
       });
     });
+    /* 2026-11-18：「未分班」待指派的新生——存在獨立的 roster/{yr}/
+       unassignedChildren，不是掛在哪位老師底下，所以要另外補進
+       groups.unassigned，其他老師端的畫面因為沒有同樣的補法，天然看不到。 */
+    if(typeof ROSTER!=='undefined'&&ROSTER.getUnassignedChildren){
+      ROSTER.getUnassignedChildren(autoYr).forEach(function(c){
+        if(!c.id||!c.name||seenId[c.id])return;
+        seenId[c.id]=true;
+        groups.unassigned.push({id:c.id,name:c.name,teacherName:'未分班'});
+      });
+    }
     return groups;
   }
   function _defaultEnd(){
@@ -25848,6 +25924,11 @@ var CHILDFEE=(function(){
     h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
     h+='<div style="font-weight:800;font-size:.92rem;color:#2d3057;">'+k.name+'</div>';
     h+='<span style="font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:'+(paid?'#e8f7f0':'#fdecea')+';color:'+(paid?'#1f7a54':'#c0392b')+';">'+(paid?'已繳':'未繳')+'</span>';
+    /* 2026-11-18：「未分班」待指派的小孩，月費卡片上多一顆「指派老師」
+       按鈕，決定好要給誰帶之後直接在這裡指派，不用回適性後台操作。 */
+    if(k.teacherName==='未分班'){
+      h+='<button class="bbtn" style="padding:2px 10px;font-size:.72rem;" onclick="CHILDFEE.openAssignTeacher(\''+k.id+'\')">👩‍🏫 指派老師</button>';
+    }
     h+='<div style="margin-left:auto;font-weight:800;color:#2a6a3f;font-size:.92rem;">總金額 '+total+' 元</div>';
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
@@ -26647,6 +26728,16 @@ var CHILDFEE=(function(){
   function ncClsChanged(){
     var cls=document.getElementById('cfNcCls').value;
     var sel=document.getElementById('cfNcTeacher');
+    var lbl=document.getElementById('cfNcTeacherLbl');
+    /* 2026-11-18：選「未分班」的話直接把老師那一列整個藏起來，不用選——
+       saveNewChild() 看到 cls==='unassigned' 就會改呼叫
+       ROSTER.addUnassignedChild，不會用到這個欄位的值。 */
+    if(cls==='unassigned'){
+      sel.style.display='none';if(lbl)lbl.style.display='none';
+      sel.innerHTML='';
+      return;
+    }
+    sel.style.display='';if(lbl)lbl.style.display='';
     var list=_teachersByCls(cls);
     sel.innerHTML=list.map(function(t){return '<option value="'+t.id+'">'+t.name+'</option>';}).join('')||'<option value="">（這個班級還沒有老師）</option>';
   }
@@ -26663,6 +26754,41 @@ var CHILDFEE=(function(){
     var ov=document.getElementById('cfNewChildOv');
     if(ov)ov.classList.remove('on');
   }
+  /* 2026-11-18：「未分班」待指派小孩的指派老師小視窗——跟新增幼兒那個
+     彈窗長得很像（班級→老師兩個下拉選單），但這裡是呼叫
+     ROSTER.assignTeacherToChild 把已經存在 unassignedChildren 的孩子
+     搬去正式的 children/{teacherId}，不是新增一筆全新的資料。 */
+  var _asChildId=null;
+  function asClsChanged(){
+    var cls=document.getElementById('cfAsCls').value;
+    var sel=document.getElementById('cfAsTeacher');
+    var list=_teachersByCls(cls);
+    sel.innerHTML=list.map(function(t){return '<option value="'+t.id+'">'+t.name+'</option>';}).join('')||'<option value="">（這個班級還沒有老師）</option>';
+  }
+  function openAssignTeacher(childId){
+    _asChildId=childId;
+    var groups=getKidsByCls(_endY,_endM);
+    var k=(groups.unassigned||[]).filter(function(c){return c.id===childId;})[0];
+    document.getElementById('cfAsName').textContent=k?k.name+'（目前未分班）':'';
+    document.getElementById('cfAsCls').value='baby';
+    asClsChanged();
+    document.getElementById('cfAssignOv').classList.add('on');
+  }
+  function closeAssignTeacher(){
+    var ov=document.getElementById('cfAssignOv');
+    if(ov)ov.classList.remove('on');
+  }
+  function saveAssignTeacher(){
+    var teacherId=document.getElementById('cfAsTeacher').value;
+    if(!teacherId){alert('這個班級目前沒有老師，請先到適性後台新增老師');return;}
+    if(!_asChildId||typeof ROSTER==='undefined'||!ROSTER.assignTeacherToChild){alert('系統錯誤：找不到名冊模組');return;}
+    var yr=_autoYr();
+    ROSTER.assignTeacherToChild(yr,_asChildId,teacherId,function(ok){
+      if(!ok)alert('⚠️ 雲端同步失敗，其他裝置可能看不到，請稍後到適性後台點「立即同步」');
+    });
+    closeAssignTeacher();
+    render();
+  }
   /* 這學期(8~1月／2~7月)從入托月算到學期底，還剩幾個月（含入托當月跟學期最後一個月） */
   function _regFeeMonthsLeft(enrollMo){
     var halfA=[8,9,10,11,12,1],halfB=[2,3,4,5,6,7];
@@ -26678,14 +26804,25 @@ var CHILDFEE=(function(){
     var age=document.getElementById('cfNcAge').value;
     if(!name){alert('請輸入幼兒姓名');return;}
     if(!enrollStr){alert('請選擇入托日期');return;}
-    if(!teacherId){alert('這個班級目前沒有老師，請先到適性後台新增老師');return;}
+    if(cls!=='unassigned'&&!teacherId){alert('這個班級目前沒有老師，請先到適性後台新增老師');return;}
     var yr=_autoYr();
     var childId='c'+Date.now();
     var child={id:childId,name:name,age:age};
     if(typeof ROSTER==='undefined'||!ROSTER.addChild){alert('系統錯誤：找不到名冊模組');return;}
-    ROSTER.addChild(yr,teacherId,child,function(ok){
-      if(!ok)alert('⚠️ 雲端同步失敗，其他裝置可能看不到，請稍後到適性後台點「立即同步」');
-    });
+    /* 2026-11-18：「未分班」不掛在任何老師底下，改存進 ROSTER 的
+       unassignedChildren（只有月費單自己會讀），之後決定好老師再用
+       ROSTER.assignTeacherToChild 正式搬過去，見月費單小孩卡片上的
+       「指派老師」按鈕。 */
+    if(cls==='unassigned'){
+      if(!ROSTER.addUnassignedChild){alert('系統錯誤：找不到名冊模組');return;}
+      ROSTER.addUnassignedChild(yr,child,function(ok){
+        if(!ok)alert('⚠️ 雲端同步失敗，其他裝置可能看不到，請稍後到適性後台點「立即同步」');
+      });
+    } else {
+      ROSTER.addChild(yr,teacherId,child,function(ok){
+        if(!ok)alert('⚠️ 雲端同步失敗，其他裝置可能看不到，請稍後到適性後台點「立即同步」');
+      });
+    }
     if(ROSTER.setChildLifecycle)ROSTER.setChildLifecycle(yr,childId,'enrollDate',enrollStr,function(){});
 
     var enrollParts=enrollStr.split('-');
@@ -26750,7 +26887,7 @@ var CHILDFEE=(function(){
     });
     return sums;
   }
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,previewFeeReport:previewFeeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,previewFeeReport:previewFeeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod,openAssignTeacher:openAssignTeacher,closeAssignTeacher:closeAssignTeacher,asClsChanged:asClsChanged,saveAssignTeacher:saveAssignTeacher};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -27602,7 +27739,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118224232--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118230735--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
