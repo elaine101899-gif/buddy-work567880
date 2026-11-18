@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118115721';
+  var BUILD='20261118123556';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25624,10 +25624,27 @@ var CHILDFEE=(function(){
      要篩，不然離園的孩子會一直賴在月費單名單裡，2026-11-02 確認過
      的bug：洪羽星已離園卻又出現在月費單），讀不到才退回用舊的
      preload 當保底。 */
-  function getKidsByCls(){
-    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+  /* 2026-11-18：原本不管呼叫的時候是在編輯哪一期（_endY/_endM 或
+     _incEndY/_incEndM），getKidsByCls() 永遠都是用「今天」這個時間點去
+     判斷名單——rosterBillable() 內部只濾掉「已經離園」的孩子，而且是用
+     asOfDate>=離園日「今天」去判斷，不是用查詢的那個收費期間去判斷。
+     結果：要幫已經離園的孩子補登過去月份（例如6月）的月費單時，就算
+     資料寫進 Firebase，這個孩子也不會出現在6月的名單/報表裡，因為他
+     「現在」已經離園了——月費單、月費報表都會悄悄漏掉這個人。
+     改成 getKidsByCls 可以選擇性帶入 (endRoc,endMo) 這個期別，有帶的話
+     就用 ROSTER.rosterAsOf() 查「那個時間點」的名單（入園/離園日期都照
+     那個時間點判斷，不是今天），沒帶的話維持原本用 rosterBillable()
+     查「今天」的行為，不影響其他沒有期別概念的呼叫方式。 */
+  function getKidsByCls(endRoc,endMo){
+    var asOfDateObj=endRoc?new Date(endRoc+1911,(endMo||1)-1,26):new Date();
+    var autoYr=(asOfDateObj>=new Date(2026,7,1))?'115':'114';
     var teachers,children;
-    if(typeof ROSTER!=='undefined'&&ROSTER.rosterBillable){
+    if(endRoc&&typeof ROSTER!=='undefined'&&ROSTER.rosterAsOf){
+      var asOfIso=(endRoc+1911)+'-'+pad2(endMo||1)+'-26';
+      var r=ROSTER.rosterAsOf(autoYr,asOfIso)||{teachers:[],children:{}};
+      teachers=r.teachers||[];
+      children=r.children||{};
+    } else if(typeof ROSTER!=='undefined'&&ROSTER.rosterBillable){
       var r=ROSTER.rosterBillable(autoYr)||{teachers:[],children:{}};
       teachers=r.teachers||[];
       children=r.children||{};
@@ -25768,7 +25785,7 @@ var CHILDFEE=(function(){
      按班級分組列出，點名字直接跳到那個小孩的帳單方便處理。 */
   function openUnpaid(){
     var pk=periodKey(_endY,_endM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_endY,_endM);
     var h='';
     var total=0;
     CLSORDER.forEach(function(cls){
@@ -25850,7 +25867,7 @@ var CHILDFEE=(function(){
       return;
     }
     var pk=periodKey(_endY,_endM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_endY,_endM);
     var extendTotals=null,refundTotals=null;
     try{if(typeof EXTENDCARE!=='undefined'){EXTENDCARE.ensureLoaded();var _etPrior=_priorPeriod(_endY,_endM);extendTotals=EXTENDCARE.feeTotalsForPeriod(_etPrior.roc,_etPrior.mo);}}catch(e){}
     try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded();var _rPrior=_priorPeriod(_endY,_endM);refundTotals=CHILDLEAVE.refundTotalsForPeriod(_rPrior.roc,_rPrior.mo);}}catch(e){}
@@ -25893,7 +25910,7 @@ var CHILDFEE=(function(){
   function setField(cid,field,val){
     var pk=periodKey(_endY,_endM);
     var rec=_getRec(pk,cid);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_endY,_endM);
     var found=null;
     CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){if(k.id===cid)found=k.name;});});
     /* 使用者真的開始編輯這筆了，這時候才把延托費/退費的即時試算金額、月費/餐費/註冊費/保險的
@@ -25933,7 +25950,7 @@ var CHILDFEE=(function(){
       return;
     }
     var pk=periodKey(_incEndY,_incEndM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_incEndY,_incEndM);
     var income=0,childCount=0;
     var fieldTotals={};
     FIELDS.forEach(function(f){fieldTotals[f.k]=0;});
@@ -26106,7 +26123,7 @@ var CHILDFEE=(function(){
   function printIncomeReport(){
     if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次列印，避免印到還沒更新的空白資料');return;}
     var pk=periodKey(_incEndY,_incEndM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_incEndY,_incEndM);
     var income=0,childCount=0;
     var fieldTotals={};
     FIELDS.forEach(function(f){fieldTotals[f.k]=0;});
@@ -26231,7 +26248,7 @@ var CHILDFEE=(function(){
   function previewFeeReport(){
     if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次，避免看到還沒更新的空白資料');return;}
     var pk=periodKey(_incEndY,_incEndM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_incEndY,_incEndM);
     var _prior=_priorPeriod(_incEndY,_incEndM);
     var SICK_TYPES=['病假','住院'];
     var FLAT_TYPES=['颱風假','豪雨假','腸病毒','腸-停課'];
@@ -26386,7 +26403,7 @@ var CHILDFEE=(function(){
   function printSlips(){
     if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次列印，避免印到還沒更新的空白資料');return;}
     var pk=periodKey(_endY,_endM);
-    var groups=getKidsByCls();
+    var groups=getKidsByCls(_endY,_endM);
     /* 這份是要印出來「先給家長看這期要繳多少錢」的帳單，不是收完錢
        之後的收據，所以不能只挑 _isBilled（已經記錄繳費方式）的小孩，
        不然還沒繳費的人反而列印不出帳單、本末倒置。改成跟畫面上每張
@@ -27436,7 +27453,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118115721--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118123556--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
