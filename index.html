@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118113409';
+  var BUILD='20261118113928';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26217,61 +26217,68 @@ var CHILDFEE=(function(){
   }
 
   /* 2026-11-18：「月費報表」——給會計師用的另一份獨立報表，完全不影響
-     月費單本身（繳費登記、收據、未繳名單都不動）。第一步先只做預覽畫面
-     （開新視窗秀出跟會計師原本 Excel 一樣的兩張表排版＋真實數字），
-     還沒接存檔／累積／真正匯出 Excel，等使用者看過排版確認沒問題，
-     下一步才會做「存檔進今年度」跟「打包下載 Excel」。
-     假別欄位是動態的：不是寫死「颱風假退費」「病假扣費」兩欄，而是
-     根據這期實際發生過的假別（CHILDLEAVE.refundBreakdownForPeriod
-     回傳的 key）各自開一欄，哪個月剛好只有颱風假、哪個月同時有颱風假
-     跟病假，欄位都會自動跟著變。 */
+     月費單本身（繳費登記、收據、未繳名單都不動）。
+     使用者明確要求欄位照會計師原本規定的格式走，不要自己換版面：
+     編號/姓名/註冊/月費/退費/颱風假退費/病假扣費/合計/備註，固定這
+     幾欄，不是按這期實際出現的假別動態開欄（原本那版是我誤會了）。
+     退費＝otherRefund（月費單新增的「退費(其他)」欄位）；颱風假退費＝
+     CHILDLEAVE 的「平日請假就退、金額固定」那幾種假別（颱風假/豪雨假/
+     腸病毒/腸-停課，FLAT_TYPES）退費總和；病假扣費＝「病假/住院」
+     （SICK_TYPES）退費總和。萬一哪個月出現這兩組以外的假別（機率很低，
+     目前 CHILDLEAVE 的退費規則只訂了這幾種），才會多開一欄「XX退費」
+     補在後面，不會悄悄漏掉金額，但正常情況下欄位就是固定這 7 欄。
+     第一步先只做預覽畫面，還沒接存檔／累積／真正匯出 Excel。 */
   function previewFeeReport(){
     if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次，避免看到還沒更新的空白資料');return;}
     var pk=periodKey(_incEndY,_incEndM);
     var groups=getKidsByCls();
     var _prior=_priorPeriod(_incEndY,_incEndM);
-    var leaveRefundByType={};
-    try{if(typeof CHILDLEAVE!=='undefined'){CHILDLEAVE.ensureLoaded&&CHILDLEAVE.ensureLoaded();leaveRefundByType=CHILDLEAVE.refundBreakdownForPeriod(_prior.roc,_prior.mo)||{};}}catch(e){}
-    var leaveTypeOrder=Object.keys(leaveRefundByType);
+    var SICK_TYPES=['病假','住院'];
+    var FLAT_TYPES=['颱風假','豪雨假','腸病毒','腸-停課'];
+    var extraTypeOrder=[];
 
     var billed=[];
     CLSORDER.forEach(function(cls){
       groups[cls].forEach(function(k){
         var rec=(db.records[pk]||{})[k.id];
         if(!_isBilled(rec))return;
-        var byType={};
-        leaveTypeOrder.forEach(function(t){byType[t]=0;});
+        var typhoonRefund=0,sickDeduct=0,extraByType={};
         try{
           if(typeof CHILDLEAVE!=='undefined'){
             var entries=CHILDLEAVE.refundEntriesForChild(_prior.roc,_prior.mo,k.id)||[];
             entries.forEach(function(e){
               if(!e.refund)return;
-              if(byType[e.type]===undefined)byType[e.type]=0;
-              byType[e.type]+=e.refund;
-              if(leaveTypeOrder.indexOf(e.type)<0)leaveTypeOrder.push(e.type);
+              if(FLAT_TYPES.indexOf(e.type)>=0){typhoonRefund+=e.refund;}
+              else if(SICK_TYPES.indexOf(e.type)>=0){sickDeduct+=e.refund;}
+              else{
+                if(extraByType[e.type]===undefined)extraByType[e.type]=0;
+                extraByType[e.type]+=e.refund;
+                if(extraTypeOrder.indexOf(e.type)<0)extraTypeOrder.push(e.type);
+              }
             });
           }
         }catch(e){}
         var regFee=parseFloat(rec.regFee)||0;
         var monthFee=(parseFloat(rec.monthFee)||0)+(parseFloat(rec.mealFee)||0);
         var otherRefund=parseFloat(rec.otherRefund)||0;
-        var leaveTotal=0;
-        leaveTypeOrder.forEach(function(t){leaveTotal+=(byType[t]||0);});
-        var total=regFee+monthFee-otherRefund-leaveTotal;
-        billed.push({name:k.name,regFee:regFee,monthFee:monthFee,otherRefund:otherRefund,byType:byType,total:total,note:rec.note||''});
+        var extraTotal=0;Object.keys(extraByType).forEach(function(t){extraTotal+=extraByType[t];});
+        var total=regFee+monthFee-otherRefund-typhoonRefund-sickDeduct-extraTotal;
+        billed.push({name:k.name,regFee:regFee,monthFee:monthFee,otherRefund:otherRefund,
+          typhoonRefund:typhoonRefund,sickDeduct:sickDeduct,extraByType:extraByType,total:total,note:rec.note||''});
       });
     });
 
     var totalPeople=billed.length;
-    var totalReg=0,totalMonth=0,totalOther=0;
-    var totalByType={};
-    leaveTypeOrder.forEach(function(t){totalByType[t]=0;});
+    var totalReg=0,totalMonth=0,totalOther=0,totalTyphoon=0,totalSick=0;
+    var totalExtraByType={};
+    extraTypeOrder.forEach(function(t){totalExtraByType[t]=0;});
     billed.forEach(function(r){
       totalReg+=r.regFee;totalMonth+=r.monthFee;totalOther+=r.otherRefund;
-      leaveTypeOrder.forEach(function(t){totalByType[t]+=(r.byType[t]||0);});
+      totalTyphoon+=r.typhoonRefund;totalSick+=r.sickDeduct;
+      extraTypeOrder.forEach(function(t){totalExtraByType[t]+=(r.extraByType[t]||0);});
     });
-    var totalLeave=0;leaveTypeOrder.forEach(function(t){totalLeave+=totalByType[t];});
-    var grand=totalMonth+totalReg-totalOther-totalLeave;
+    var totalExtra=0;extraTypeOrder.forEach(function(t){totalExtra+=totalExtraByType[t];});
+    var grand=totalMonth+totalReg-totalOther-totalTyphoon-totalSick-totalExtra;
 
     var css='body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;padding:16px;color:#2C2820;background:#f7f5f0;}'+
       'h2{text-align:center;margin:4px 0 2px;}h3{text-align:center;margin:0 0 16px;color:#666;font-weight:600;}'+
@@ -26285,12 +26292,12 @@ var CHILDFEE=(function(){
     html+='<h2>'+_companyName()+'</h2><h3>'+_incEndY+'年'+_incEndM+'月　月費報表（預覽，尚未存檔）</h3>';
     html+='<div class="note">這是「月費報表」功能第一步的畫面預覽，數字已經是真實資料算出來的，但還沒有存檔、也還不是真正的 Excel 檔——確認排版跟數字沒問題後，下一步才會做存檔／匯出 Excel。</div>';
 
-    html+='<table><caption style="caption-side:top;font-weight:700;padding:8px;background:#fdf6ec;">收費明細表</caption><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費(其他)</th>';
-    leaveTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
+    html+='<table><caption style="caption-side:top;font-weight:700;padding:8px;background:#fdf6ec;">收費明細表</caption><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>颱風假退費</th><th>病假扣費</th>';
+    extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
     html+='<th>合計</th><th>備註</th></tr></thead><tbody>';
     billed.forEach(function(r,i){
-      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td>';
-      leaveTypeOrder.forEach(function(t){html+='<td>'+(r.byType[t]||'')+'</td>';});
+      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td><td>'+(r.typhoonRefund||'')+'</td><td>'+(r.sickDeduct||'')+'</td>';
+      extraTypeOrder.forEach(function(t){html+='<td>'+(r.extraByType[t]||'')+'</td>';});
       html+='<td>'+r.total+'</td><td>'+r.note+'</td></tr>';
     });
     html+='</tbody></table>';
@@ -26301,10 +26308,12 @@ var CHILDFEE=(function(){
     html+='</td></tr></tbody></table>';
     html+='<div class="box"><table><tr><th colspan="2">月費</th></tr><tr><td>'+(billed[0]?(billed[0].monthFee+'*'+totalPeople):'')+'</td><td>'+totalMonth+'</td></tr><tr><td><b>合計</b></td><td><b>'+totalMonth+'</b></td></tr></table></div>';
     html+='<div class="box"><table><tr><th colspan="2" class="red">註冊費</th></tr><tr><td></td><td></td></tr><tr><td class="red"><b>合計</b></td><td class="red"><b>'+totalReg+'</b></td></tr></table></div>';
-    html+='<div class="box"><table><tr><th colspan="2">月費+註冊費</th></tr><tr><td colspan="2">'+(totalMonth+totalReg)+'</td></tr>'+
-      '<tr><td colspan="2"></td></tr>';
-    leaveTypeOrder.forEach(function(t){html+='<tr><td>'+t+'退費</td><td>'+totalByType[t]+'</td></tr>';});
-    html+='<tr><td>退費(其他)</td><td>'+totalOther+'</td></tr>'+
+    html+='<div class="box"><table><tr><th colspan="2">月費+註冊費-退費</th></tr><tr><td colspan="2">'+(totalMonth+totalReg)+'</td></tr>'+
+      '<tr><td>病假退費</td><td>'+totalSick+'</td></tr>'+
+      '<tr><td>颱風假退費</td><td>'+totalTyphoon+'</td></tr>'+
+      '<tr><td>退費</td><td>'+totalOther+'</td></tr>';
+    extraTypeOrder.forEach(function(t){html+='<tr><td>'+t+'退費</td><td>'+totalExtraByType[t]+'</td></tr>';});
+    html+=
       '<tr><td class="red"><b>合計</b></td><td class="red"><b>'+grand+'</b></td></tr></table></div>';
 
     html+='</body></html>';
@@ -27392,7 +27401,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118113409--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118113928--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
