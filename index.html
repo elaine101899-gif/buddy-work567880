@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118230735';
+  var BUILD='20261118232338';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26353,11 +26353,15 @@ var CHILDFEE=(function(){
      規則只訂了這幾種），才會多開一欄「XX退費」補在後面，不會悄悄漏掉
      金額，但正常情況下欄位就是固定這幾欄。
      第一步先只做預覽畫面，還沒接存檔／累積／真正匯出 Excel。 */
-  function previewFeeReport(){
-    if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次，避免看到還沒更新的空白資料');return;}
-    var pk=periodKey(_incEndY,_incEndM);
-    var groups=getKidsByCls(_incEndY,_incEndM);
-    var _prior=_priorPeriod(_incEndY,_incEndM);
+  /* 2026-11-18：月費報表資料計算抽成獨立函式，原本整段寫在 previewFeeReport()
+     裡面、寫死用 _incEndY/_incEndM，現在「匯出 Excel」要一次產出從115年6月
+     到使用者目前選的月份、每個月各自一組分頁，所以要能對任何一個月份重算
+     一次，不能只算「目前選的這一期」。回傳的物件把畫面預覽跟匯出 Excel
+     會用到的所有數字（billed 明細陣列、各種合計、分組）都包進去。 */
+  function _computeFeeReportData(endY,endM){
+    var pk=periodKey(endY,endM);
+    var groups=getKidsByCls(endY,endM);
+    var _prior=_priorPeriod(endY,endM);
     var SICK_TYPES=['病假','住院'];
     var FLAT_TYPES=['颱風假','豪雨假'];
     var HFMD_TYPES=['腸病毒'];
@@ -26389,9 +26393,9 @@ var CHILDFEE=(function(){
             });
           }
         }catch(e){}
-        /* 2026-11-18：6-9月是補登的歷史資料，沒有逐日的請假記錄（CHILDLEAVE）
-           可以算出腸病毒退費，所以額外開一個 rec.hfmdRefund 讓月費單記錄本身
-           可以直接補一個金額進來，跟 CHILDLEAVE 算出來的加總，兩邊都可能有
+        /* 6-9月是補登的歷史資料，沒有逐日的請假記錄（CHILDLEAVE）可以算出
+           腸病毒退費，所以額外開一個 rec.hfmdRefund 讓月費單記錄本身可以
+           直接補一個金額進來，跟 CHILDLEAVE 算出來的加總，兩邊都可能有
            資料（之後有用請假系統才會自動算，現在先靠這個手動欄位）。 */
         hfmdRefund+=parseFloat(rec.hfmdRefund)||0;
         var regFee=parseFloat(rec.regFee)||0;
@@ -26406,10 +26410,9 @@ var CHILDFEE=(function(){
       });
     });
 
-    /* 2026-11-18：休學人數／轉學人數原本寫死都是 0，使用者指出「有退托
-       就等於休學，轉去邦比諾的就是轉學」——用備註文字裡有沒有這些關鍵字
-       來判斷，跟其他地方寫備註的習慣（「9月離園」「10月轉學至邦比諾」）
-       一致，不用另外多存一個獨立欄位。 */
+    /* 休學人數／轉學人數：用備註文字裡有沒有「退托/休學/離園」「轉學」
+       這些關鍵字來判斷，跟其他地方寫備註的習慣一致，不用另外多存一個
+       獨立欄位。 */
     var WITHDRAW_KEYWORDS=['退托','休學','離園'];
     var TRANSFER_KEYWORDS=['轉學'];
     var withdrawCount=0,transferCount=0;
@@ -26432,20 +26435,14 @@ var CHILDFEE=(function(){
     var totalSickOrOther=totalSick+totalOther+totalCleaning;
     var grand=totalMonth+totalReg-totalOther-totalRegRefund-totalTyphoon-totalHfmd-totalClosure-totalSick-totalCleaning-totalExtra;
 
-    /* 2026-11-18：使用者要求註冊費也要比照月費那樣寫出「金額*人數」，
-       不是只顯示合計數字——註冊費不像月費每個人金額都一樣（有人是舊生
-       補繳、有人是不同學期的新生，金額可能不同），所以這裡依實際金額
-       分組，同金額的算一組「金額*人數」各自一行，不是只能寫一行。 */
+    /* 註冊費／月費依實際金額分組，同金額的算一組「金額*人數」各自一行
+       （新生當月是比例計算，金額本來就會跟其他人不一樣，不能只寫一行）。 */
     var regGroups={},regGroupOrder=[];
     billed.forEach(function(r){
       if(!r.regFee)return;
       if(regGroups[r.regFee]===undefined){regGroups[r.regFee]=0;regGroupOrder.push(r.regFee);}
       regGroups[r.regFee]++;
     });
-    /* 2026-11-18：月費也會有不一樣的金額（新生當月是用入托日期比例計算，
-       跟月費不同的幾位小孩本來就是不同費率），之前寫死用第一個人的金額
-       乘總人數（例如「18415*23」），金額不一樣時完全是錯的。改成跟
-       註冊費一樣依實際金額分組，同金額各自一行「金額*人數」。 */
     var monthGroups={},monthGroupOrder=[];
     billed.forEach(function(r){
       if(!r.monthFee)return;
@@ -26453,51 +26450,41 @@ var CHILDFEE=(function(){
       monthGroups[r.monthFee]++;
     });
 
-    /* 2026-11-18：匯出真正的 .xlsx 檔給會計師——用 SheetJS（CDN 載入，
-       跟預覽畫面同一套 html+='...' 拼字串做法不同，這裡改成先把兩張表
-       的內容組成「陣列的陣列」（AOA），直接對應 Excel 的欄列，之後在
-       匯出視窗裡呼叫 XLSX.utils.aoa_to_sheet 轉成真正的工作表。欄位順序
-       跟上面畫面預覽的表格一致，才不會讓「畫面看到的」跟「下載的檔案」
-       兜不起來。 */
-    var sheet1Header=['編號','姓名','註冊','月費','病假/其他退費','註冊費退費','颱風假退費','腸病毒退費','腸-停課退費'];
-    extraTypeOrder.forEach(function(t){sheet1Header.push(t+'退費');});
-    sheet1Header.push('合計','備註');
-    var sheet1AOA=[sheet1Header];
-    billed.forEach(function(r,i){
-      var row=[i+1,r.name,r.regFee||'',r.monthFee,r.sickOrOther||'',r.regFeeRefund||'',r.typhoonRefund||'',r.hfmdRefund||'',r.closureRefund||''];
-      extraTypeOrder.forEach(function(t){row.push(r.extraByType[t]||'');});
-      row.push(r.total,r.note);
-      sheet1AOA.push(row);
-    });
-    var totalsRow=['','總計',totalReg,totalMonth,totalSickOrOther,totalRegRefund,totalTyphoon,totalHfmd,totalClosure];
-    extraTypeOrder.forEach(function(t){totalsRow.push(totalExtraByType[t]);});
-    totalsRow.push(grand,'');
-    sheet1AOA.push(totalsRow);
-
-    var sheet2AOA=[
-      ['總人數',totalPeople+' 人'],['休學人數',withdrawCount+' 人'],['轉學人數',transferCount+' 人'],[],
-      ['月費']
-    ];
-    monthGroupOrder.forEach(function(amt){sheet2AOA.push([amt+'*'+monthGroups[amt],amt*monthGroups[amt]]);});
-    sheet2AOA.push(['合計',totalMonth],[]);
-    sheet2AOA.push(['註冊費']);
-    regGroupOrder.forEach(function(amt){sheet2AOA.push([amt+'*'+regGroups[amt],amt*regGroups[amt]]);});
-    sheet2AOA.push(['合計',totalReg],[]);
-    sheet2AOA.push(['月費+註冊費-退費']);
-    sheet2AOA.push([totalMonth+totalReg]);
-    sheet2AOA.push(['病假/其他退費',totalSickOrOther]);
-    sheet2AOA.push(['颱風假退費',totalTyphoon]);
-    sheet2AOA.push(['腸病毒退費',totalHfmd]);
-    sheet2AOA.push(['腸-停課退費',totalClosure]);
-    sheet2AOA.push(['註冊費退費',totalRegRefund]);
-    extraTypeOrder.forEach(function(t){sheet2AOA.push([t+'退費',totalExtraByType[t]]);});
-    sheet2AOA.push(['合計',grand]);
+    return{endY:endY,endM:endM,billed:billed,extraTypeOrder:extraTypeOrder,withdrawCount:withdrawCount,transferCount:transferCount,
+      totalPeople:totalPeople,totalReg:totalReg,totalMonth:totalMonth,totalOther:totalOther,totalRegRefund:totalRegRefund,
+      totalTyphoon:totalTyphoon,totalHfmd:totalHfmd,totalClosure:totalClosure,totalSick:totalSick,totalCleaning:totalCleaning,
+      totalExtraByType:totalExtraByType,totalSickOrOther:totalSickOrOther,grand:grand,
+      regGroups:regGroups,regGroupOrder:regGroupOrder,monthGroups:monthGroups,monthGroupOrder:monthGroupOrder};
+  }
+  /* 累積報表涵蓋的月份：固定從115年6月（第一個補登的歷史月份）開始，
+     一路到使用者目前選的月份為止，每個月各自一組分頁。萬一選到115年6月
+     之前（理論上不會，但保險起見），至少產出選到的那一個月，不要整個
+     空白。 */
+  function _feeReportPeriodRange(endY,endM){
+    var periods=[];
+    var y=115,m=6;
+    while(y<endY||(y===endY&&m<=endM)){
+      periods.push({y:y,m:m});
+      m++; if(m>12){m=1;y++;}
+    }
+    if(!periods.length)periods=[{y:endY,m:endM}];
+    return periods;
+  }
+  function previewFeeReport(){
+    if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次，避免看到還沒更新的空白資料');return;}
+    var d=_computeFeeReportData(_incEndY,_incEndM);
+    var billed=d.billed,extraTypeOrder=d.extraTypeOrder,withdrawCount=d.withdrawCount,transferCount=d.transferCount,
+      totalPeople=d.totalPeople,totalReg=d.totalReg,totalMonth=d.totalMonth,totalRegRefund=d.totalRegRefund,
+      totalTyphoon=d.totalTyphoon,totalHfmd=d.totalHfmd,totalClosure=d.totalClosure,totalExtraByType=d.totalExtraByType,
+      totalSickOrOther=d.totalSickOrOther,grand=d.grand,regGroups=d.regGroups,regGroupOrder=d.regGroupOrder,
+      monthGroups=d.monthGroups,monthGroupOrder=d.monthGroupOrder;
 
     /* 2026-11-18：使用者指出會計師原本的檔案是「兩個分頁」（收費明細表、
        收支總表是兩張各自獨立的工作表，底下有分頁籤可以切換），不是一張
        頁面從上到下兩張表都印出來——改成做出分頁籤切換的效果，同一個
-       時間只顯示一張表，模擬 Excel 工作表籤的樣子，以後真的做成 .xlsx
-       時這兩塊內容就直接對應兩張 sheet。 */
+       時間只顯示一張表，模擬 Excel 工作表籤的樣子。畫面預覽只看「目前
+       選的這一個月」，累積整年度多分頁是匯出 Excel 才會做的事（見
+       exportExcel，獨立另外算每個月份一次）。 */
     var css='body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;padding:16px;color:#2C2820;background:#f7f5f0;}'+
       'h2{text-align:center;margin:4px 0 2px;}h3{text-align:center;margin:0 0 16px;color:#666;font-weight:600;}'+
       'table{border-collapse:collapse;width:100%;margin-bottom:0;background:#fff;}'+
@@ -26512,43 +26499,104 @@ var CHILDFEE=(function(){
       '.sheet-tab.on{background:#fff;color:#2C2820;}'+
       '.sheet-page{display:none;border:1px solid #999;border-top:none;padding:14px;background:#fff;}'+
       '.sheet-page.on{display:block;}';
-    /* 2026-11-18：exportExcel 用 XLSX.utils.book_new/aoa_to_sheet 把上面
-       組好的 sheet1AOA/sheet2AOA 直接轉成兩張工作表（分頁名稱跟畫面上
-       的分頁籤文字一樣），再用 XLSX.writeFile 觸發瀏覽器下載，檔名帶
-       公司名稱跟年月方便辨識。
-       2026-11-18（第二次修）：手機上 CDN script 的 onload 常常比使用者
-       點按鈕慢，原本「還沒載完就跳提示叫使用者自己再按一次」體驗很差
-       （尤其行動網路）——改成按下去如果還沒載完，按鈕文字先變成「載入
-       中...」，用一個等待函式每 200ms 檢查一次 XLSX 是否已經可用（最多
-       等 15 秒），一載完就自動接著匯出，不用使用者自己重按。 */
+    /* 2026-11-18：匯出真正的 .xlsx 給會計師——原本用 SheetJS 只能匯出「目前
+       選的這一個月」，也沒辦法畫框線做出跟紙本一樣的「月費／註冊費／
+       月費+註冊費-退費」三個並排的格子。改用 ExcelJS（CDN 載入，支援儲存
+       格框線跟多工作表），並且改成一次把從115年6月到目前選的月份、每個
+       月各自兩張分頁（OO月收費明細表／OO月收支總表）全部產出在同一個
+       檔案裡，不用每個月分開下載再手動合併。exportExcel() 裡的
+       buildSheet1/buildSheet2 是純粹的排版函式，接一個 _computeFeeReportData()
+       算出來的資料物件就能畫出一組分頁，每個月重複呼叫即可。 */
     var js='function showSheet(n){'+
       'document.querySelectorAll(".sheet-tab").forEach(function(el,i){el.className="sheet-tab"+(i===n?" on":"");});'+
       'document.querySelectorAll(".sheet-page").forEach(function(el,i){el.className="sheet-page"+(i===n?" on":"");});'+
       '}'+
-      'function _waitForXLSX(cb,triesLeft){'+
-      'if(typeof XLSX!=="undefined"){cb();return;}'+
+      'function _waitForLib(cb,triesLeft){'+
+      'if(typeof ExcelJS!=="undefined"){cb();return;}'+
       'if(triesLeft<=0){alert("Excel 匯出功能載入失敗，請檢查網路連線後重新整理再試一次");'+
       'var btn=document.getElementById("exportBtn");if(btn)btn.textContent="\u{1F4BE} 匯出 Excel";return;}'+
-      'setTimeout(function(){_waitForXLSX(cb,triesLeft-1);},200);'+
+      'setTimeout(function(){_waitForLib(cb,triesLeft-1);},200);'+
+      '}'+
+      'var THIN_BORDER={top:{style:"thin"},left:{style:"thin"},bottom:{style:"thin"},right:{style:"thin"}};'+
+      'var HDR_FILL={type:"pattern",pattern:"solid",fgColor:{argb:"FFF0C97A"}};'+
+      'var RED_FONT={color:{argb:"FFC0392B"},bold:true};'+
+      'function buildSheet1(ws,d){'+
+      'var headers=["編號","姓名","註冊","月費","病假/其他退費","註冊費退費","颱風假退費","腸病毒退費","腸-停課退費"];'+
+      'd.extraTypeOrder.forEach(function(t){headers.push(t+"退費");});'+
+      'headers.push("合計","備註");'+
+      'var hr=ws.addRow(headers);'+
+      'hr.eachCell(function(c){c.border=THIN_BORDER;c.font={bold:true};c.fill=HDR_FILL;});'+
+      'd.billed.forEach(function(r,i){'+
+      'var row=[i+1,r.name,r.regFee||"",r.monthFee,r.sickOrOther||"",r.regFeeRefund||"",r.typhoonRefund||"",r.hfmdRefund||"",r.closureRefund||""];'+
+      'd.extraTypeOrder.forEach(function(t){row.push(r.extraByType[t]||"");});'+
+      'row.push(r.total,r.note);'+
+      'var rr=ws.addRow(row);rr.eachCell(function(c){c.border=THIN_BORDER;});'+
+      '});'+
+      'var totalsRow=["","總計",d.totalReg,d.totalMonth,d.totalSickOrOther,d.totalRegRefund,d.totalTyphoon,d.totalHfmd,d.totalClosure];'+
+      'd.extraTypeOrder.forEach(function(t){totalsRow.push(d.totalExtraByType[t]);});'+
+      'totalsRow.push(d.grand,"");'+
+      'var tr=ws.addRow(totalsRow);tr.eachCell(function(c){c.border=THIN_BORDER;c.font={bold:true};});'+
+      'ws.getColumn(2).width=12;'+
+      'for(var i=1;i<=headers.length;i++){if(!ws.getColumn(i).width)ws.getColumn(i).width=11;}'+
+      '}'+
+      'function buildSheet2(ws,d){'+
+      'function setCell(addr,val,bold,red,fill){'+
+      'var c=ws.getCell(addr);c.value=val;c.border=THIN_BORDER;'+
+      'if(red)c.font=RED_FONT;else if(bold)c.font={bold:true};'+
+      'if(fill)c.fill=HDR_FILL;'+
+      '}'+
+      'var r=1;'+
+      'setCell("B"+r,"總人數:");setCell("C"+r,d.totalPeople+" 人");r++;'+
+      'setCell("B"+r,"休學人數:");setCell("C"+r,d.withdrawCount+" 人");r++;'+
+      'setCell("B"+r,"轉學人數:");setCell("C"+r,d.transferCount+" 人");r++;'+
+      'r++;'+
+      'setCell("B"+r,"月費",true,false,true);setCell("C"+r,"",false,false,true);r++;'+
+      'd.monthGroupOrder.forEach(function(amt){setCell("B"+r,amt+"*"+d.monthGroups[amt]);setCell("C"+r,amt*d.monthGroups[amt]);r++;});'+
+      'setCell("B"+r,"合計",true);setCell("C"+r,d.totalMonth,true);r++;'+
+      'var r2=1;'+
+      'setCell("E"+r2,"註冊費",false,true,true);setCell("F"+r2,"",false,false,true);r2++;'+
+      'if(!d.regGroupOrder.length){setCell("E"+r2,"");setCell("F"+r2,"");r2++;}'+
+      'else{d.regGroupOrder.forEach(function(amt){setCell("E"+r2,amt+"*"+d.regGroups[amt]);setCell("F"+r2,amt*d.regGroups[amt]);r2++;});}'+
+      'setCell("E"+r2,"合計",false,true);setCell("F"+r2,d.totalReg,false,true);r2++;'+
+      'var r3=1;'+
+      'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,"月費+註冊費-退費",true,false,true);r3++;'+
+      'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,d.totalMonth+d.totalReg);r3++;'+
+      'setCell("H"+r3,"病假/其他退費");setCell("I"+r3,d.totalSickOrOther);r3++;'+
+      'setCell("H"+r3,"颱風假退費");setCell("I"+r3,d.totalTyphoon);r3++;'+
+      'setCell("H"+r3,"腸病毒退費");setCell("I"+r3,d.totalHfmd);r3++;'+
+      'setCell("H"+r3,"腸-停課退費");setCell("I"+r3,d.totalClosure);r3++;'+
+      'setCell("H"+r3,"註冊費退費");setCell("I"+r3,d.totalRegRefund);r3++;'+
+      'd.extraTypeOrder.forEach(function(t){setCell("H"+r3,t+"退費");setCell("I"+r3,d.totalExtraByType[t]);r3++;});'+
+      'setCell("H"+r3,"合計",false,true);setCell("I"+r3,d.grand,false,true);r3++;'+
+      '["B","C","E","F","H","I"].forEach(function(col){ws.getColumn(col).width=14;});'+
       '}'+
       'function exportExcel(){'+
       'var btn=document.getElementById("exportBtn");'+
-      'if(typeof XLSX==="undefined"){if(btn)btn.textContent="載入中...";'+
-      '_waitForXLSX(exportExcel,75);return;}'+
+      'if(typeof ExcelJS==="undefined"){if(btn)btn.textContent="載入中...";'+
+      '_waitForLib(exportExcel,75);return;}'+
       'if(btn)btn.textContent="\u{1F4BE} 匯出 Excel";'+
-      'var wb=XLSX.utils.book_new();'+
-      'XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(SHEET1_AOA),"收費明細表");'+
-      'XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(SHEET2_AOA),"收支總表");'+
-      'XLSX.writeFile(wb,COMPANY_NAME+"_"+PERIOD_LABEL+"_月費報表.xlsx");'+
+      'var wb=new ExcelJS.Workbook();'+
+      'PERIODS_DATA.forEach(function(p){'+
+      'var label=p.endY+"年"+p.endM+"月";'+
+      'buildSheet1(wb.addWorksheet(label+" 收費明細表"),p);'+
+      'buildSheet2(wb.addWorksheet(label+" 收支總表"),p);'+
+      '});'+
+      'wb.xlsx.writeBuffer().then(function(buf){'+
+      'var blob=new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});'+
+      'var url=URL.createObjectURL(blob);'+
+      'var a=document.createElement("a");a.href=url;a.download=COMPANY_NAME+"_"+PERIOD_LABEL+"_月費報表.xlsx";'+
+      'document.body.appendChild(a);a.click();document.body.removeChild(a);'+
+      'setTimeout(function(){URL.revokeObjectURL(url);},3000);'+
+      '});'+
       '}';
     var html='<!doctype html><html><head><meta charset="utf-8"><title>月費報表預覽</title><style>'+css+'</style>'+
-      '<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>'+
+      '<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"><\/script>'+
       '</head><body>';
     html+='<h2>'+_companyName()+'</h2><h3>'+_incEndY+'年'+_incEndM+'月　月費報表（預覽，尚未存檔）</h3>';
-    html+='<div class="note">這是「月費報表」功能第一步的畫面預覽，數字已經是真實資料算出來的，但還沒有存檔。按右上角「匯出 Excel」可以直接下載 .xlsx 檔（兩個分頁對應會計師要的收費明細表／收支總表格式），存檔／累積到年底報表的功能之後再做。</div>';
+    html+='<div class="note">這是「月費報表」功能第一步的畫面預覽（只看目前選的這個月），數字已經是真實資料算出來的，但還沒有存檔。按右上角「匯出 Excel」會把115年6月到目前這個月，每個月各自一組「收費明細表／收支總表」全部匯出成同一個 .xlsx 檔（跟紙本格式一樣有框線），可以直接傳給會計師。</div>';
 
     html+='<div class="sheet-tabs" style="align-items:center;"><div class="sheet-tab on" onclick="showSheet(0)">收費明細表</div><div class="sheet-tab" onclick="showSheet(1)">收支總表</div>'+
-      '<button id="exportBtn" onclick="exportExcel()" style="margin-left:auto;padding:8px 18px;border:1px solid #2a6a3f;border-radius:6px;background:#2a6a3f;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">&#128190; 匯出 Excel</button></div>';
+      '<button id="exportBtn" onclick="exportExcel()" style="margin-left:auto;padding:8px 18px;border:1px solid #2a6a3f;border-radius:6px;background:#2a6a3f;color:#fff;cursor:pointer;font-size:13px;font-weight:600;">&#128190; 匯出 Excel（含6月~目前）</button></div>';
 
     html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>病假/其他退費</th><th>註冊費退費</th><th>颱風假退費</th><th>腸病毒退費</th><th>腸-停課退費</th>';
     extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
@@ -26558,9 +26606,6 @@ var CHILDFEE=(function(){
       extraTypeOrder.forEach(function(t){html+='<td>'+(r.extraByType[t]||'')+'</td>';});
       html+='<td>'+r.total+'</td><td>'+r.note+'</td></tr>';
     });
-    /* 2026-11-18：使用者要求收費明細表下面也要有總計列，跟收支總表那邊
-       的合計數字（totalReg/totalMonth/...）是同一組變數，直接拿來放
-       最後一列，不用另外重算一次。 */
     html+='<tr style="font-weight:700;background:#faf3e3;"><td colspan="2">總計</td><td>'+totalReg+'</td><td>'+totalMonth+'</td><td>'+totalSickOrOther+'</td><td>'+totalRegRefund+'</td><td>'+totalTyphoon+'</td><td>'+totalHfmd+'</td><td>'+totalClosure+'</td>';
     extraTypeOrder.forEach(function(t){html+='<td>'+totalExtraByType[t]+'</td>';});
     html+='<td>'+grand+'</td><td></td></tr>';
@@ -26591,11 +26636,13 @@ var CHILDFEE=(function(){
       '<tr><td class="red"><b>合計</b></td><td class="red"><b>'+grand+'</b></td></tr></table></div>';
     html+='</div>';
 
-    /* 2026-11-18：把 AOA 資料跟公司名稱／期別字串用 JSON.stringify 直接
-       寫成子視窗裡的全域變數，exportExcel() 才找得到資料──子視窗是用
-       document.write 整段寫死的新頁面，沒辦法直接存取外面 CHILDFEE 模組
-       的變數，只能用這種方式把資料「帶」過去。 */
-    html+='<script>var SHEET1_AOA='+JSON.stringify(sheet1AOA)+';var SHEET2_AOA='+JSON.stringify(sheet2AOA)+';'+
+    /* 2026-11-18：匯出要用的資料不再只有「目前選的這一個月」，改算整個
+       期間（115年6月～目前選的月份）的每個月，各自一份完整資料物件，
+       直接整組 JSON.stringify 塞進子視窗當全域變數 PERIODS_DATA，
+       exportExcel() 逐一跑過這個陣列、每個月疊兩張分頁上去。 */
+    var periods=_feeReportPeriodRange(_incEndY,_incEndM);
+    var periodsData=periods.map(function(p){return _computeFeeReportData(p.y,p.m);});
+    html+='<script>var PERIODS_DATA='+JSON.stringify(periodsData)+';'+
       'var COMPANY_NAME='+JSON.stringify(_companyName())+';var PERIOD_LABEL='+JSON.stringify(_incEndY+'年'+_incEndM+'月')+';'+
       js+'<\/script>';
     html+='</body></html>';
@@ -27739,7 +27786,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118230735--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118232338--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
