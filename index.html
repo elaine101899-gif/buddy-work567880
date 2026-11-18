@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118182650';
+  var BUILD='20261118183823';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22806,16 +22806,16 @@ var CHECKOUT=(function(){
     var cf=(p.childfeePk&&typeof CHILDFEE!=='undefined')?CHILDFEE.incomeSumsForPeriod(p.childfeePk):{};
     /* 2026-11-11：結帳頁的「月費」要包含餐費（月費單裡月費/餐費是分開存的兩個
        欄位，但結帳這邊只看合併後的總額），月費單本身的欄位不動。 */
-    /* 2026-11-18：月費單新增了 otherRefund（多收費退回這類零星手動退費），
-       跟原本的 refund（請假退費）性質一樣都是要扣的，結帳這邊「退費」
-       這一行本來就是把月費單的退費金額整筆帶進來、不分原因，所以兩個
-       欄位直接加在一起當作這裡的 refund，不用在結帳另外多開一行——
-       漏加 otherRefund 的話，結帳的收入總計會比月費單實際淨收入多算，
-       跟之前「請款」漏列進 LEDGER_CATS_A 是同一種「加了新科目忘記接進
-       既有加總」的錯誤，這裡要小心避免重演。 */
+    /* 2026-11-18：月費單陸續新增了 otherRefund（多收費退回）、regFeeRefund
+       （註冊費退費）這些退費科目，性質都跟原本的 refund（請假退費）一樣
+       是要扣的，結帳這邊「退費」這一行本來就是把月費單的退費金額整筆
+       帶進來、不分原因，所以全部加在一起當作這裡的 refund，不用在結帳
+       另外多開一行——漏加任何一個退費科目，結帳的收入總計就會比月費單
+       實際淨收入多算，跟之前「請款」漏列進 LEDGER_CATS_A 是同一種「加了
+       新科目忘記接進既有加總」的錯誤，這裡要小心避免重演。 */
     var regFee=parseFloat(cf.regFee)||0,monthFee=(parseFloat(cf.monthFee)||0)+(parseFloat(cf.mealFee)||0),
       agencyFee=parseFloat(cf.agencyFee)||0,extendFee=parseFloat(cf.extendFee)||0,
-      insurance=parseFloat(cf.insurance)||0,refund=(parseFloat(cf.refund)||0)+(parseFloat(cf.otherRefund)||0);
+      insurance=parseFloat(cf.insurance)||0,refund=(parseFloat(cf.refund)||0)+(parseFloat(cf.otherRefund)||0)+(parseFloat(cf.regFeeRefund)||0);
     var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
     var subsidyAmt=parseFloat(p.subsidyAmt)||0,interestAmt=parseFloat(p.interestAmt)||0;
     /* 2026-11-11：使用者要求收入這邊也能像支出一樣「新增項目」（例如政府
@@ -25604,14 +25604,18 @@ var CHILDFEE=(function(){
        給會計師的 Excel「退費」欄只能靠人工對照零用金備註湊數字，容易
        出錯也沒辦法自動化。新增這個欄位後，跟 refund（請假退費）一樣算
        「要扣款」的科目，見下面 FIELDS_SUBTRACT。 */
-    {k:'otherRefund',label:'退費(其他)'}
+    {k:'otherRefund',label:'退費(其他)'},
+    /* 2026-11-18：月費報表要新增「註冊費退費」這個固定欄位（跟退費(其他)
+       不同科目，分開記才對得起月費報表上獨立的那一欄），例如孩子腸病毒
+       確診、按規定要退還部分註冊費的情況。 */
+    {k:'regFeeRefund',label:'註冊費退費'}
   ];
   /* 哪些科目性質上是「退費、要用減的」而不是「收費、要用加的」——目前
-     有 refund（請假退費，上一期請假自動試算）跟 otherRefund（多收費退回
-     這類手動登記的零星退費）兩種。凡是要判斷「這個科目是不是退費」的
-     地方都查這個表，不要再逐一寫死 f.k==='refund'，之後要再加新的退費
-     科目也只要加在這裡就好。 */
-  var FIELDS_SUBTRACT={refund:1,otherRefund:1};
+     有 refund（請假退費，上一期請假自動試算）、otherRefund（多收費退回
+     這類手動登記的零星退費）、regFeeRefund（註冊費退費）三種。凡是要
+     判斷「這個科目是不是退費」的地方都查這個表，不要再逐一寫死
+     f.k==='refund'，之後要再加新的退費科目也只要加在這裡就好。 */
+  var FIELDS_SUBTRACT={refund:1,otherRefund:1,regFeeRefund:1};
   /* 月費單自動帶入預設金額：月費/餐費每一期都有；註冊費/保險只有7月、1月（開學期）才收。
      月費不同的5位小孩(跟延托/請假退費是同一批人)用15800，其他小孩用16415。
      只在欄位還沒填過(undefined)的時候才帶入，存檔過的數字不會被蓋掉。 */
@@ -26251,14 +26255,17 @@ var CHILDFEE=(function(){
   /* 2026-11-18：「月費報表」——給會計師用的另一份獨立報表，完全不影響
      月費單本身（繳費登記、收據、未繳名單都不動）。
      使用者明確要求欄位照會計師原本規定的格式走，不要自己換版面：
-     編號/姓名/註冊/月費/退費/颱風假退費/病假扣費/合計/備註，固定這
-     幾欄，不是按這期實際出現的假別動態開欄（原本那版是我誤會了）。
-     退費＝otherRefund（月費單新增的「退費(其他)」欄位）；颱風假退費＝
-     CHILDLEAVE 的「平日請假就退、金額固定」那幾種假別（颱風假/豪雨假/
-     腸病毒/腸-停課，FLAT_TYPES）退費總和；病假扣費＝「病假/住院」
-     （SICK_TYPES）退費總和。萬一哪個月出現這兩組以外的假別（機率很低，
-     目前 CHILDLEAVE 的退費規則只訂了這幾種），才會多開一欄「XX退費」
-     補在後面，不會悄悄漏掉金額，但正常情況下欄位就是固定這 7 欄。
+     編號/姓名/註冊/月費/退費/註冊費退費/颱風假退費/腸病毒退費/病假扣費/
+     合計/備註，固定這幾欄，不是按這期實際出現的假別動態開欄（原本那版
+     是我誤會了）。
+     退費＝otherRefund（月費單新增的「退費(其他)」欄位）；註冊費退費＝
+     regFeeRefund（月費單新增的獨立欄位，跟退費(其他)分開記）；颱風假
+     退費＝CHILDLEAVE「平日請假就退、金額固定」那幾種假別裡，颱風假/
+     豪雨假/腸-停課（FLAT_TYPES）退費總和；腸病毒退費另外獨立一欄，不
+     算進颱風假退費；病假扣費＝「病假/住院」（SICK_TYPES）退費總和。
+     萬一哪個月出現這些以外的假別（機率很低，目前 CHILDLEAVE 的退費
+     規則只訂了這幾種），才會多開一欄「XX退費」補在後面，不會悄悄漏掉
+     金額，但正常情況下欄位就是固定這幾欄。
      第一步先只做預覽畫面，還沒接存檔／累積／真正匯出 Excel。 */
   function previewFeeReport(){
     if(!_loadedOnce){alert('雲端資料可能還沒同步完成，請稍等幾秒再按一次，避免看到還沒更新的空白資料');return;}
@@ -26266,7 +26273,8 @@ var CHILDFEE=(function(){
     var groups=getKidsByCls(_incEndY,_incEndM);
     var _prior=_priorPeriod(_incEndY,_incEndM);
     var SICK_TYPES=['病假','住院'];
-    var FLAT_TYPES=['颱風假','豪雨假','腸病毒','腸-停課'];
+    var FLAT_TYPES=['颱風假','豪雨假','腸-停課'];
+    var HFMD_TYPES=['腸病毒'];
     var extraTypeOrder=[];
 
     var billed=[];
@@ -26274,13 +26282,14 @@ var CHILDFEE=(function(){
       groups[cls].forEach(function(k){
         var rec=(db.records[pk]||{})[k.id];
         if(!_isBilled(rec))return;
-        var typhoonRefund=0,sickDeduct=0,extraByType={};
+        var typhoonRefund=0,hfmdRefund=0,sickDeduct=0,extraByType={};
         try{
           if(typeof CHILDLEAVE!=='undefined'){
             var entries=CHILDLEAVE.refundEntriesForChild(_prior.roc,_prior.mo,k.id)||[];
             entries.forEach(function(e){
               if(!e.refund)return;
               if(FLAT_TYPES.indexOf(e.type)>=0){typhoonRefund+=e.refund;}
+              else if(HFMD_TYPES.indexOf(e.type)>=0){hfmdRefund+=e.refund;}
               else if(SICK_TYPES.indexOf(e.type)>=0){sickDeduct+=e.refund;}
               else{
                 if(extraByType[e.type]===undefined)extraByType[e.type]=0;
@@ -26293,24 +26302,25 @@ var CHILDFEE=(function(){
         var regFee=parseFloat(rec.regFee)||0;
         var monthFee=(parseFloat(rec.monthFee)||0)+(parseFloat(rec.mealFee)||0);
         var otherRefund=parseFloat(rec.otherRefund)||0;
+        var regFeeRefund=parseFloat(rec.regFeeRefund)||0;
         var extraTotal=0;Object.keys(extraByType).forEach(function(t){extraTotal+=extraByType[t];});
-        var total=regFee+monthFee-otherRefund-typhoonRefund-sickDeduct-extraTotal;
-        billed.push({name:k.name,regFee:regFee,monthFee:monthFee,otherRefund:otherRefund,
-          typhoonRefund:typhoonRefund,sickDeduct:sickDeduct,extraByType:extraByType,total:total,note:rec.note||''});
+        var total=regFee+monthFee-otherRefund-regFeeRefund-typhoonRefund-hfmdRefund-sickDeduct-extraTotal;
+        billed.push({name:k.name,regFee:regFee,monthFee:monthFee,otherRefund:otherRefund,regFeeRefund:regFeeRefund,
+          typhoonRefund:typhoonRefund,hfmdRefund:hfmdRefund,sickDeduct:sickDeduct,extraByType:extraByType,total:total,note:rec.note||''});
       });
     });
 
     var totalPeople=billed.length;
-    var totalReg=0,totalMonth=0,totalOther=0,totalTyphoon=0,totalSick=0;
+    var totalReg=0,totalMonth=0,totalOther=0,totalRegRefund=0,totalTyphoon=0,totalHfmd=0,totalSick=0;
     var totalExtraByType={};
     extraTypeOrder.forEach(function(t){totalExtraByType[t]=0;});
     billed.forEach(function(r){
-      totalReg+=r.regFee;totalMonth+=r.monthFee;totalOther+=r.otherRefund;
-      totalTyphoon+=r.typhoonRefund;totalSick+=r.sickDeduct;
+      totalReg+=r.regFee;totalMonth+=r.monthFee;totalOther+=r.otherRefund;totalRegRefund+=r.regFeeRefund;
+      totalTyphoon+=r.typhoonRefund;totalHfmd+=r.hfmdRefund;totalSick+=r.sickDeduct;
       extraTypeOrder.forEach(function(t){totalExtraByType[t]+=(r.extraByType[t]||0);});
     });
     var totalExtra=0;extraTypeOrder.forEach(function(t){totalExtra+=totalExtraByType[t];});
-    var grand=totalMonth+totalReg-totalOther-totalTyphoon-totalSick-totalExtra;
+    var grand=totalMonth+totalReg-totalOther-totalRegRefund-totalTyphoon-totalHfmd-totalSick-totalExtra;
 
     /* 2026-11-18：使用者要求註冊費也要比照月費那樣寫出「金額*人數」，
        不是只顯示合計數字——註冊費不像月費每個人金額都一樣（有人是舊生
@@ -26361,11 +26371,11 @@ var CHILDFEE=(function(){
 
     html+='<div class="sheet-tabs"><div class="sheet-tab on" onclick="showSheet(0)">收費明細表</div><div class="sheet-tab" onclick="showSheet(1)">收支總表</div></div>';
 
-    html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>颱風假退費</th><th>病假扣費</th>';
+    html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>註冊費退費</th><th>颱風假退費</th><th>腸病毒退費</th><th>病假扣費</th>';
     extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
     html+='<th>合計</th><th>備註</th></tr></thead><tbody>';
     billed.forEach(function(r,i){
-      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td><td>'+(r.typhoonRefund||'')+'</td><td>'+(r.sickDeduct||'')+'</td>';
+      html+='<tr><td>'+(i+1)+'</td><td>'+r.name+'</td><td>'+(r.regFee||'')+'</td><td>'+r.monthFee+'</td><td>'+(r.otherRefund||'')+'</td><td>'+(r.regFeeRefund||'')+'</td><td>'+(r.typhoonRefund||'')+'</td><td>'+(r.hfmdRefund||'')+'</td><td>'+(r.sickDeduct||'')+'</td>';
       extraTypeOrder.forEach(function(t){html+='<td>'+(r.extraByType[t]||'')+'</td>';});
       html+='<td>'+r.total+'</td><td>'+r.note+'</td></tr>';
     });
@@ -26388,7 +26398,9 @@ var CHILDFEE=(function(){
     html+='<div class="box"><table><tr><th colspan="2">月費+註冊費-退費</th></tr><tr><td colspan="2">'+(totalMonth+totalReg)+'</td></tr>'+
       '<tr><td>病假退費</td><td>'+totalSick+'</td></tr>'+
       '<tr><td>颱風假退費</td><td>'+totalTyphoon+'</td></tr>'+
-      '<tr><td>退費</td><td>'+totalOther+'</td></tr>';
+      '<tr><td>腸病毒退費</td><td>'+totalHfmd+'</td></tr>'+
+      '<tr><td>退費</td><td>'+totalOther+'</td></tr>'+
+      '<tr><td>註冊費退費</td><td>'+totalRegRefund+'</td></tr>';
     extraTypeOrder.forEach(function(t){html+='<tr><td>'+t+'退費</td><td>'+totalExtraByType[t]+'</td></tr>';});
     html+=
       '<tr><td class="red"><b>合計</b></td><td class="red"><b>'+grand+'</b></td></tr></table></div>';
@@ -27480,7 +27492,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118182650--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118183823--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
