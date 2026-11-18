@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261118113928';
+  var BUILD='20261118114959';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26280,19 +26280,35 @@ var CHILDFEE=(function(){
     var totalExtra=0;extraTypeOrder.forEach(function(t){totalExtra+=totalExtraByType[t];});
     var grand=totalMonth+totalReg-totalOther-totalTyphoon-totalSick-totalExtra;
 
+    /* 2026-11-18：使用者指出會計師原本的檔案是「兩個分頁」（收費明細表、
+       收支總表是兩張各自獨立的工作表，底下有分頁籤可以切換），不是一張
+       頁面從上到下兩張表都印出來——改成做出分頁籤切換的效果，同一個
+       時間只顯示一張表，模擬 Excel 工作表籤的樣子，以後真的做成 .xlsx
+       時這兩塊內容就直接對應兩張 sheet。 */
     var css='body{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;padding:16px;color:#2C2820;background:#f7f5f0;}'+
       'h2{text-align:center;margin:4px 0 2px;}h3{text-align:center;margin:0 0 16px;color:#666;font-weight:600;}'+
-      'table{border-collapse:collapse;width:100%;margin-bottom:22px;background:#fff;}'+
+      'table{border-collapse:collapse;width:100%;margin-bottom:0;background:#fff;}'+
       'td,th{border:1px solid #999;padding:6px 10px;text-align:center;font-size:13px;}'+
       'th{background:#f0c97a;}'+
       '.box{display:inline-block;vertical-align:top;margin-right:28px;}'+
       '.red{color:#c0392b;font-weight:700;}'+
-      '.note{color:#999;font-size:12px;margin-bottom:14px;}';
+      '.note{color:#999;font-size:12px;margin-bottom:14px;}'+
+      '.sheet-tabs{display:flex;gap:6px;margin:0 0 -1px;}'+
+      '.sheet-tab{padding:8px 18px;border:1px solid #999;border-bottom:none;border-radius:6px 6px 0 0;background:#e8e4da;cursor:pointer;font-size:13px;font-weight:600;color:#555;}'+
+      '.sheet-tab.on{background:#fff;color:#2C2820;}'+
+      '.sheet-page{display:none;border:1px solid #999;border-top:none;padding:14px;background:#fff;}'+
+      '.sheet-page.on{display:block;}';
+    var js='function showSheet(n){'+
+      'document.querySelectorAll(".sheet-tab").forEach(function(el,i){el.className="sheet-tab"+(i===n?" on":"");});'+
+      'document.querySelectorAll(".sheet-page").forEach(function(el,i){el.className="sheet-page"+(i===n?" on":"");});'+
+      '}';
     var html='<!doctype html><html><head><meta charset="utf-8"><title>月費報表預覽</title><style>'+css+'</style></head><body>';
     html+='<h2>'+_companyName()+'</h2><h3>'+_incEndY+'年'+_incEndM+'月　月費報表（預覽，尚未存檔）</h3>';
-    html+='<div class="note">這是「月費報表」功能第一步的畫面預覽，數字已經是真實資料算出來的，但還沒有存檔、也還不是真正的 Excel 檔——確認排版跟數字沒問題後，下一步才會做存檔／匯出 Excel。</div>';
+    html+='<div class="note">這是「月費報表」功能第一步的畫面預覽，數字已經是真實資料算出來的，但還沒有存檔、也還不是真正的 Excel 檔——確認排版跟數字沒問題後，下一步才會做存檔／匯出 Excel。底下兩個分頁籤對應以後 Excel 檔裡的兩張工作表。</div>';
 
-    html+='<table><caption style="caption-side:top;font-weight:700;padding:8px;background:#fdf6ec;">收費明細表</caption><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>颱風假退費</th><th>病假扣費</th>';
+    html+='<div class="sheet-tabs"><div class="sheet-tab on" onclick="showSheet(0)">收費明細表</div><div class="sheet-tab" onclick="showSheet(1)">收支總表</div></div>';
+
+    html+='<div class="sheet-page on"><table><thead><tr><th>編號</th><th>姓名</th><th>註冊</th><th>月費</th><th>退費</th><th>颱風假退費</th><th>病假扣費</th>';
     extraTypeOrder.forEach(function(t){html+='<th>'+t+'退費</th>';});
     html+='<th>合計</th><th>備註</th></tr></thead><tbody>';
     billed.forEach(function(r,i){
@@ -26300,12 +26316,12 @@ var CHILDFEE=(function(){
       extraTypeOrder.forEach(function(t){html+='<td>'+(r.extraByType[t]||'')+'</td>';});
       html+='<td>'+r.total+'</td><td>'+r.note+'</td></tr>';
     });
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
 
-    html+='<table style="width:auto;"><caption style="caption-side:top;font-weight:700;padding:8px;background:#fdf6ec;">收支總表</caption><tbody>';
-    html+='<tr><td colspan="2" class="box">';
-    html+='<table><tr><td>總人數</td><td>'+totalPeople+' 人</td></tr><tr><td>休學人數</td><td>0 人</td></tr><tr><td>轉學人數</td><td>0 人</td></tr></table>';
-    html+='</td></tr></tbody></table>';
+    html+='<div class="sheet-page">';
+    html+='<table style="width:auto;margin-bottom:12px;"><tbody>';
+    html+='<tr><td>總人數</td><td>'+totalPeople+' 人</td></tr><tr><td>休學人數</td><td>0 人</td></tr><tr><td>轉學人數</td><td>0 人</td></tr>';
+    html+='</tbody></table>';
     html+='<div class="box"><table><tr><th colspan="2">月費</th></tr><tr><td>'+(billed[0]?(billed[0].monthFee+'*'+totalPeople):'')+'</td><td>'+totalMonth+'</td></tr><tr><td><b>合計</b></td><td><b>'+totalMonth+'</b></td></tr></table></div>';
     html+='<div class="box"><table><tr><th colspan="2" class="red">註冊費</th></tr><tr><td></td><td></td></tr><tr><td class="red"><b>合計</b></td><td class="red"><b>'+totalReg+'</b></td></tr></table></div>';
     html+='<div class="box"><table><tr><th colspan="2">月費+註冊費-退費</th></tr><tr><td colspan="2">'+(totalMonth+totalReg)+'</td></tr>'+
@@ -26315,7 +26331,9 @@ var CHILDFEE=(function(){
     extraTypeOrder.forEach(function(t){html+='<tr><td>'+t+'退費</td><td>'+totalExtraByType[t]+'</td></tr>';});
     html+=
       '<tr><td class="red"><b>合計</b></td><td class="red"><b>'+grand+'</b></td></tr></table></div>';
+    html+='</div>';
 
+    html+='<script>'+js+'<\/script>';
     html+='</body></html>';
     var w=window.open('','_blank','width=1000,height=800');
     if(!w){alert('請允許瀏覽器彈出視窗以顯示預覽');return;}
@@ -27401,7 +27419,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118113928--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118114959--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
