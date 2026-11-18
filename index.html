@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261117133426';
+  var BUILD='20261118112152';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22795,9 +22795,16 @@ var CHECKOUT=(function(){
     var cf=(p.childfeePk&&typeof CHILDFEE!=='undefined')?CHILDFEE.incomeSumsForPeriod(p.childfeePk):{};
     /* 2026-11-11：結帳頁的「月費」要包含餐費（月費單裡月費/餐費是分開存的兩個
        欄位，但結帳這邊只看合併後的總額），月費單本身的欄位不動。 */
+    /* 2026-11-18：月費單新增了 otherRefund（多收費退回這類零星手動退費），
+       跟原本的 refund（請假退費）性質一樣都是要扣的，結帳這邊「退費」
+       這一行本來就是把月費單的退費金額整筆帶進來、不分原因，所以兩個
+       欄位直接加在一起當作這裡的 refund，不用在結帳另外多開一行——
+       漏加 otherRefund 的話，結帳的收入總計會比月費單實際淨收入多算，
+       跟之前「請款」漏列進 LEDGER_CATS_A 是同一種「加了新科目忘記接進
+       既有加總」的錯誤，這裡要小心避免重演。 */
     var regFee=parseFloat(cf.regFee)||0,monthFee=(parseFloat(cf.monthFee)||0)+(parseFloat(cf.mealFee)||0),
       agencyFee=parseFloat(cf.agencyFee)||0,extendFee=parseFloat(cf.extendFee)||0,
-      insurance=parseFloat(cf.insurance)||0,refund=parseFloat(cf.refund)||0;
+      insurance=parseFloat(cf.insurance)||0,refund=(parseFloat(cf.refund)||0)+(parseFloat(cf.otherRefund)||0);
     var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
     var subsidyAmt=parseFloat(p.subsidyAmt)||0,interestAmt=parseFloat(p.interestAmt)||0;
     /* 2026-11-11：使用者要求收入這邊也能像支出一樣「新增項目」（例如政府
@@ -25579,8 +25586,21 @@ var CHILDFEE=(function(){
     {k:'agencyFee',label:'代辦費'},
     {k:'extendFee',label:'延托費'},
     {k:'deposit',label:'訂金'},
-    {k:'refund',label:'退費(請假)'}
+    {k:'refund',label:'退費(請假)'},
+    /* 2026-11-18：使用者要求「多收費退回」這類零星調整（例如多收餐費、
+       多收保險費）以後都直接記在月費單這筆帳單裡，不要只記在零用金的
+       備註文字裡——之前這種退費完全沒進到月費單的資料結構，每月要產
+       給會計師的 Excel「退費」欄只能靠人工對照零用金備註湊數字，容易
+       出錯也沒辦法自動化。新增這個欄位後，跟 refund（請假退費）一樣算
+       「要扣款」的科目，見下面 FIELDS_SUBTRACT。 */
+    {k:'otherRefund',label:'退費(其他)'}
   ];
+  /* 哪些科目性質上是「退費、要用減的」而不是「收費、要用加的」——目前
+     有 refund（請假退費，上一期請假自動試算）跟 otherRefund（多收費退回
+     這類手動登記的零星退費）兩種。凡是要判斷「這個科目是不是退費」的
+     地方都查這個表，不要再逐一寫死 f.k==='refund'，之後要再加新的退費
+     科目也只要加在這裡就好。 */
+  var FIELDS_SUBTRACT={refund:1,otherRefund:1};
   /* 月費單自動帶入預設金額：月費/餐費每一期都有；註冊費/保險只有7月、1月（開學期）才收。
      月費不同的5位小孩(跟延托/請假退費是同一批人)用15800，其他小孩用16415。
      只在欄位還沒填過(undefined)的時候才帶入，存檔過的數字不會被蓋掉。 */
@@ -25726,7 +25746,7 @@ var CHILDFEE=(function(){
   function _total(rec){
     var t=0;
     FIELDS.forEach(function(f){
-      if(f.k==='refund')t-=(parseFloat(rec[f.k])||0);
+      if(FIELDS_SUBTRACT[f.k])t-=(parseFloat(rec[f.k])||0);
       else t+=(parseFloat(rec[f.k])||0);
     });
     return t;
@@ -25737,7 +25757,7 @@ var CHILDFEE=(function(){
     FIELDS.forEach(function(f){
       var v=parseFloat(rec[f.k])||0;
       if(!v)return;
-      parts.push(f.label+(f.k==='refund'?'-':'')+v);
+      parts.push(f.label+(FIELDS_SUBTRACT[f.k]?'-':'')+v);
     });
     return parts.join('、');
   }
@@ -25983,7 +26003,7 @@ var CHILDFEE=(function(){
     h+='<div class="df-lbl">收入細項加總</div>';
     h+='<div style="background:#fff;border-radius:12px;padding:6px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:18px;">';
     FIELDS.forEach(function(f,i){
-      if(f.k==='refund')return;
+      if(FIELDS_SUBTRACT[f.k])return;
       h+='<div style="display:flex;align-items:center;padding:8px 0;'+(i<FIELDS.length-2?'border-bottom:1px solid #eee;':'')+'">';
       h+='<div style="color:#555;">'+f.label+'</div>';
       h+='<div style="margin-left:auto;font-weight:700;color:#2a6a3f;">'+fieldTotals[f.k]+' 元</div>';
@@ -26135,15 +26155,21 @@ var CHILDFEE=(function(){
     /* 2026-11-16：使用者要求「月費」維持真正的月費金額（不要先扣掉請假
        退費），退費改成自己獨立一行、用負數明寫出來再減，這樣收入總計
        才能直接用眼睛加總表格裡每一行驗證（之前退費只暗中扣在 income
-       這個總計裡、表格完全看不到這一行，對不起來很困惑）。fieldTotals.
-       refund 存的是正數（退費總額），這裡顯示成負數代表用減的。 */
+       這個總計裡、表格完全看不到這一行，對不起來很困惑）。fieldTotals
+       裡這些退費科目存的是正數（退費總額），這裡顯示成負數代表用減的。
+       2026-11-18：多了 otherRefund（退費其他），跟 refund 一樣是要用
+       FIELDS_SUBTRACT 判斷、挑出來個別列一行的科目，不是只有 refund
+       一種了，所以這裡改成跑過 FIELDS_SUBTRACT 裡的每一個科目。 */
     html+='<div class="sec">收入細項（共 '+childCount+' 位已繳費幼兒）</div>';
     html+='<div class="tbl-wrap"><table><thead><tr><th>科目</th><th class="num">金額</th></tr></thead><tbody>';
     FIELDS.forEach(function(f){
-      if(f.k==='refund')return;
+      if(FIELDS_SUBTRACT[f.k])return;
       html+='<tr><td>'+f.label+'</td><td class="num">'+fieldTotals[f.k]+'</td></tr>';
     });
-    html+='<tr><td>退費(請假)</td><td class="num">-'+fieldTotals.refund+'</td></tr>';
+    FIELDS.forEach(function(f){
+      if(!FIELDS_SUBTRACT[f.k])return;
+      html+='<tr><td>'+f.label+'</td><td class="num">-'+fieldTotals[f.k]+'</td></tr>';
+    });
     html+='<tr class="tot-row"><td>收入總計</td><td class="num">'+income+'</td></tr>';
     html+='</tbody></table></div>';
 
@@ -26255,7 +26281,7 @@ var CHILDFEE=(function(){
       FIELDS.forEach(function(f){
         var v=parseFloat(b.rec[f.k])||0;
         if(!v)return;
-        itemsHTML+='<div class="erow"><span>'+f.label+(f.k==='refund'?'（扣）':'')+'</span><span>'+v.toLocaleString()+' 元</span></div>';
+        itemsHTML+='<div class="erow"><span>'+f.label+(FIELDS_SUBTRACT[f.k]?'（扣）':'')+'</span><span>'+v.toLocaleString()+' 元</span></div>';
       });
       var subHTML='';
       var extEntries=extendByChild[b.id]||[];
@@ -27268,7 +27294,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261117133426--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261118112152--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
