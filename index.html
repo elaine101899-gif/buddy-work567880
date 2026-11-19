@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119083106';
+  var BUILD='20261119092530';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26915,8 +26915,12 @@ var CHILDFEE=(function(){
       monthFeeCharge=monthFeeFull;mealFeeCharge=mealFeeFull;
     } else {
       daysPresent=lastDayOfEnrollMonth-enrollDay+1;
-      monthFeeCharge=Math.round(monthFeeFull/30*daysPresent);
-      mealFeeCharge=67*daysPresent;
+      /* 2026-11-19：使用者指出要先把「日費率」四捨五入算好（16415/30→547），
+         再乘以在園天數（547*25=13675），不是先算「月費*天數/30」整個算完
+         才四捨五入一次（那樣16415/30*25=13679.17，四捨五入變13679，跟
+         她要的13675對不起來）——四捨五入的順序差一步，結果就會差好幾元。 */
+      monthFeeCharge=Math.round(monthFeeFull/30)*daysPresent;
+      mealFeeCharge=Math.round(mealFeeFull/30)*daysPresent;
     }
     /* 2026-11-19：使用者指出新生入托一定會有註冊費、代辦費、保險費三筆——
        代辦費固定先帶 8000（沒有真的購買的話，她會自己手動改成0或其他
@@ -27831,7 +27835,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119083106--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119092530--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
