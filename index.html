@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119081505';
+  var BUILD='20261119082444';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26570,8 +26570,7 @@ var CHILDFEE=(function(){
       'else{d.regGroupOrder.forEach(function(amt){setCell("E"+r2,amt+"*"+d.regGroups[amt]);setCell("F"+r2,amt*d.regGroups[amt]);r2++;});}'+
       'setCell("E"+r2,"合計",false,true);setCell("F"+r2,d.totalReg,false,true);r2++;'+
       'var r3=4;'+
-      'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,"月費+註冊費-退費",true,false,true);r3++;'+
-      'ws.mergeCells("H"+r3+":I"+r3);setCell("H"+r3,d.totalMonth+d.totalReg);r3++;'+
+      'setCell("H"+r3,"月費+註冊費",true,false,true);setCell("I"+r3,d.totalMonth+d.totalReg,true,false,true);r3++;'+
       'setCell("H"+r3,"病假/其他退費");setCell("I"+r3,d.totalSickOrOther);r3++;'+
       'setCell("H"+r3,"颱風假退費");setCell("I"+r3,d.totalTyphoon);r3++;'+
       'setCell("H"+r3,"腸病毒退費");setCell("I"+r3,d.totalHfmd);r3++;'+
@@ -27822,7 +27821,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119081505--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119082444--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
