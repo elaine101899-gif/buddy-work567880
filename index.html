@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119082444';
+  var BUILD='20261119083106';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25750,10 +25750,20 @@ var CHILDFEE=(function(){
     });
     /* 2026-11-18：「未分班」待指派的新生——存在獨立的 roster/{yr}/
        unassignedChildren，不是掛在哪位老師底下，所以要另外補進
-       groups.unassigned，其他老師端的畫面因為沒有同樣的補法，天然看不到。 */
+       groups.unassigned，其他老師端的畫面因為沒有同樣的補法，天然看不到。
+       2026-11-19：使用者指出12月才入托的小孩不該出現在11月——已分班的
+       小孩用 rosterBillableAsOf 的 billable 模式本來就「故意」跳過入園日
+       檢查（讓還沒正式入園的新生可以提前收費），但「未分班」這裡沒有
+       套用任何日期篩選，導致不管哪個月份都會看到同一批未分班小孩，連
+       入托日還沒到的月份也會出現。改成自己查 enrollDate、入托日還沒到
+       這一期（asOf 這天）就先不列進來，跟一般班級「已經離園」那條篩選
+       道理一樣，只是這裡反過來篩「還沒入園」。 */
     if(typeof ROSTER!=='undefined'&&ROSTER.getUnassignedChildren){
+      var unassignedAsOfIso=endRoc?((endRoc+1911)+'-'+pad2(endMo||1)+'-26'):_todayISO();
       ROSTER.getUnassignedChildren(autoYr).forEach(function(c){
         if(!c.id||!c.name||seenId[c.id])return;
+        var lc=ROSTER.getChildLifecycle&&ROSTER.getChildLifecycle(autoYr,c.id);
+        if(lc&&lc.enrollDate&&unassignedAsOfIso<lc.enrollDate)return;
         seenId[c.id]=true;
         groups.unassigned.push({id:c.id,name:c.name,teacherName:'未分班'});
       });
@@ -27821,7 +27831,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119082444--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119083106--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
