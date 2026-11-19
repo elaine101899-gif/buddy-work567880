@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119092530';
+  var BUILD='20261119144737';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26927,9 +26927,20 @@ var CHILDFEE=(function(){
        金額）；保險費是半年制，半年保費848元、換算一個月141元，跟註冊費
        一樣用「這學期還剩幾個月」去算，不是固定848（只有剛好從學期第一
        個月開始、六個月都在，才會剛好等於整學期的848）。 */
-    var monthsLeft=_regFeeMonthsLeft(parseInt(enrollParts[1],10));
+    var enrollMo=parseInt(enrollParts[1],10);
+    var monthsLeft=_regFeeMonthsLeft(enrollMo);
     var regFee=monthsLeft*3000;
     var insurance=monthsLeft*141;
+    /* 2026-11-19：使用者指出1月／7月入托的小孩，除了當月所在這個半年
+       （剩幾個月照比例算）的註冊費/保險費以外，還要「多繳」下一個半年
+       （2~7月或8~1月）的整筆註冊費18000、保險848——1月、7月剛好是
+       現有兩個半年學期各自的最後一個月，所以在這個月入托，等於同一筆
+       帳單要同時付清「這個月（當前半年的尾巴）」跟「下學期（提前整筆
+       預收）」兩筆錢，不是只有當月那一個月的比例而已。 */
+    if(enrollMo===1||enrollMo===7){
+      regFee+=18000;
+      insurance+=848;
+    }
     var agencyFee=8000;
 
     var pk=periodKey(period.endRoc,period.endMo);
@@ -26946,7 +26957,8 @@ var CHILDFEE=(function(){
     _endY=period.endRoc;_endM=period.endMo;
     _selCls=cls;_selChild=childId;
     render();
-    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+monthFeeCharge+'元'+(daysPresent?'（'+(enrollMonthIdx+1)+'月'+daysPresent+'天比例）':'（整月）')+'\n餐費 '+mealFeeCharge+'元\n註冊費 '+regFee+'元（這學期剩'+monthsLeft+'個月）\n保險費 '+insurance+'元（這學期剩'+monthsLeft+'個月）\n代辦費 '+agencyFee+'元（先帶預設值，沒有購買的話可自己改）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
+    var halfNote=(enrollMo===1||enrollMo===7)?'（含當月'+monthsLeft+'個月比例+下學期預收18000/848）':'（這學期剩'+monthsLeft+'個月）';
+    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+monthFeeCharge+'元'+(daysPresent?'（'+(enrollMonthIdx+1)+'月'+daysPresent+'天比例）':'（整月）')+'\n餐費 '+mealFeeCharge+'元\n註冊費 '+regFee+'元'+halfNote+'\n保險費 '+insurance+'元'+halfNote+'\n代辦費 '+agencyFee+'元（先帶預設值，沒有購買的話可自己改）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
   /* ── 給「結帳」模組用的唯讀存取：結帳要把月費單某一期的收入總額自動帶入，
@@ -27835,7 +27847,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119092530--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119144737--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
