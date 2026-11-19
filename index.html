@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119072627';
+  var BUILD='20261119081505';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26909,7 +26909,15 @@ var CHILDFEE=(function(){
       monthFeeCharge=Math.round(monthFeeFull/30*daysPresent);
       mealFeeCharge=67*daysPresent;
     }
-    var regFee=_regFeeMonthsLeft(parseInt(enrollParts[1],10))*3000;
+    /* 2026-11-19：使用者指出新生入托一定會有註冊費、代辦費、保險費三筆——
+       代辦費固定先帶 8000（沒有真的購買的話，她會自己手動改成0或其他
+       金額）；保險費是半年制，半年保費848元、換算一個月141元，跟註冊費
+       一樣用「這學期還剩幾個月」去算，不是固定848（只有剛好從學期第一
+       個月開始、六個月都在，才會剛好等於整學期的848）。 */
+    var monthsLeft=_regFeeMonthsLeft(parseInt(enrollParts[1],10));
+    var regFee=monthsLeft*3000;
+    var insurance=monthsLeft*141;
+    var agencyFee=8000;
 
     var pk=periodKey(period.endRoc,period.endMo);
     var rec=_getRec(pk,childId);
@@ -26917,13 +26925,15 @@ var CHILDFEE=(function(){
     rec.monthFee=monthFeeCharge;
     rec.mealFee=mealFeeCharge;
     rec.regFee=regFee;
+    rec.insurance=insurance;
+    rec.agencyFee=agencyFee;
     save();pushRec(pk,childId);
 
     closeNewChild();
     _endY=period.endRoc;_endM=period.endMo;
     _selCls=cls;_selChild=childId;
     render();
-    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+monthFeeCharge+'元'+(daysPresent?'（'+(enrollMonthIdx+1)+'月'+daysPresent+'天比例）':'（整月）')+'\n餐費 '+mealFeeCharge+'元\n註冊費 '+regFee+'元（這學期剩'+_regFeeMonthsLeft(parseInt(enrollParts[1],10))+'個月）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
+    alert(name+' 已新增！這一期（'+periodLabel(period.endRoc,period.endMo)+'）試算：\n月費 '+monthFeeCharge+'元'+(daysPresent?'（'+(enrollMonthIdx+1)+'月'+daysPresent+'天比例）':'（整月）')+'\n餐費 '+mealFeeCharge+'元\n註冊費 '+regFee+'元（這學期剩'+monthsLeft+'個月）\n保險費 '+insurance+'元（這學期剩'+monthsLeft+'個月）\n代辦費 '+agencyFee+'元（先帶預設值，沒有購買的話可自己改）\n\n已經帶您到月費單這一期、這位小孩的畫面，金額都還可以手動調整。');
   }
 
   /* ── 給「結帳」模組用的唯讀存取：結帳要把月費單某一期的收入總額自動帶入，
@@ -27812,7 +27822,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119072627--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119081505--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
