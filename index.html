@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120165058';
+  var BUILD='20261120165853';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5653,7 +5653,8 @@ function _rosterKidsAsOf(cls,dateStr){
   <div class="stat-hero-sm" style="flex-wrap:wrap;">
     <button class="admin-back-btn" onclick="GO('accounting')">&#x2190; 會計</button>
     <div class="stat-hero-title">月費單</div>
-    <button class="hub-hero-btn" style="background:#FFF3DD;color:#B9822A;" onclick="CHILDFEE.openDinnerSub()">&#x1F37D;&#xFE0F; 訂閱晚餐</button>
+    <div style="flex-basis:100%;height:0;"></div>
+    <button class="hub-hero-btn" style="background:#FFF3DD;color:#B9822A;margin-left:auto;" onclick="CHILDFEE.openDinnerSub()">&#x1F37D;&#xFE0F; 訂閱晚餐</button>
     <button class="hub-hero-btn" onclick="GO('childfee-income')">收入及退費總表 &#x203A;</button>
   </div>
   <div style="padding:14px 16px 40px;" id="cf-root">
@@ -28291,7 +28292,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120165058--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120165853--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
