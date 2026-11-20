@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120153910';
+  var BUILD='20261120161703';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26090,14 +26090,7 @@ var CHILDFEE=(function(){
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
     FIELDS.forEach(function(f){
-      if(f.k==='dinnerFee'){
-        var dinnerOn=(parseFloat(rec.dinnerFee)||0)>0;
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div>';
-        h+='<label style="display:flex;align-items:center;gap:6px;height:100%;padding:8px 0;cursor:pointer;font-size:.8rem;color:#2d3057;">';
-        h+='<input type="checkbox" '+(dinnerOn?'checked':'')+' onchange="CHILDFEE.setField(\''+k.id+'\',\'dinnerFee\',this.checked?1500:0)">訂晚餐（1500）</label></div>';
-      } else {
-        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
-      }
+      h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
     });
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px 10px;">';
@@ -28002,7 +27995,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120153910--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120161703--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
