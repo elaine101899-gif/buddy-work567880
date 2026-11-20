@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261119144737';
+  var BUILD='20261120115226';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -2699,6 +2699,66 @@ body.adm .sync-setup{display:block;}
 .cfm-lv-btn{border:none;border-radius:999px;padding:9px 16px;font-size:.8rem;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
 /* ══ 清潔表單改版結束 ══ */
 
+/* ══ 2026-11-19：請假交接單／托育人員 假單列表＋假單內容 外觀改版
+   （只改排版/樣式，不動任何存檔/讀取/列印邏輯；#pg-leave-teacher 這個
+   前綴把會跟其他畫面共用的 .df-*/.lf-* class 鎖在這個畫面裡，
+   不會動到 LEAVE_BOSS/LEAVE_FLEX/LEAVE_COOK 或教保日誌等其他用到
+   同樣 class 的畫面）══ */
+.pg#pg-leave-teacher{background:#FAF6EE;}
+.lfhdr{background:#E3F2EA;border-radius:30px;padding:18px 22px 20px;margin:12px 12px 4px;position:relative;}
+.lfhdr-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.lfhdr-back{background:#fff;border:none;border-radius:999px;padding:8px 18px;font-size:.82rem;font-weight:700;color:#2E2A3A;cursor:pointer;white-space:nowrap;}
+.lfhdr-crumb{font-size:.76rem;color:#6B8F7C;}
+.lfhdr-title{font-size:1.3rem;font-weight:800;color:#2E2A3A;margin-top:10px;padding-right:66px;}
+.lfhdr-mascot{position:absolute;top:16px;right:20px;width:56px;height:56px;object-fit:contain;}
+
+/* 假單列表 */
+.lfl-wrap{max-width:680px;margin:0 auto;padding:16px;}
+.lfl-debug{font-size:.72rem;color:#A8A0AE;margin-bottom:8px;}
+.lfl-add{width:100%;padding:14px;background:#3E8E6A;color:#fff;border:none;border-radius:999px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;font-family:'Noto Sans TC',sans-serif;}
+.lfl-empty{text-align:center;padding:40px;color:#A8A0AE;font-size:.9rem;}
+.lfl-card{background:#fff;border-radius:28px;border:1.5px solid #ECE6DA;overflow:hidden;}
+.lfl-card.unread{border-color:#F2C4B4;}
+.lfl-body{padding:16px;cursor:pointer;}
+.lfl-toprow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.lfl-type-pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.74rem;font-weight:700;white-space:nowrap;}
+.lfl-name{font-weight:800;color:#2E2A3A;margin-left:8px;}
+.lfl-status-pill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap;}
+.lfl-dates{background:#FAF6EE;border-radius:14px;padding:8px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:.78rem;color:#2E2A3A;gap:8px;flex-wrap:wrap;}
+.lfl-senddate{color:#A8A0AE;font-size:.72rem;white-space:nowrap;}
+.lfl-btnrow{display:flex;border-top:1px solid #ECE6DA;}
+.lfl-btn{flex:1;padding:11px 4px;background:none;border:none;font-size:.78rem;font-weight:700;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.lfl-btn.edit,.lfl-btn.markread{background:#EEF7F0;color:#3E8E6A;}
+.lfl-btn.print{background:#F5F0E6;color:#2E2A3A;}
+.lfl-btn.unmark{background:#F5F0E6;color:#8A8578;}
+.lfl-del{padding:11px 16px;background:#fff;border:1.5px solid #F2C4B4;color:#C2603E;font-size:.78rem;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+
+/* 假單內容：只鎖在 #pg-leave-teacher 裡覆蓋共用 class，不影響其他畫面 */
+#pg-leave-teacher .df-sec{background:#fff;border-radius:28px;border:1.5px solid #ECE6DA;box-shadow:none;margin:0 12px 14px;padding:18px;}
+#pg-leave-teacher .df-lbl{font-size:1.05rem;font-weight:800;color:#2E2A3A;letter-spacing:0;}
+#pg-leave-teacher .df-inp,#pg-leave-teacher .df-ta{background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:20px;color:#2E2A3A;}
+#pg-leave-teacher .lf-flbl{color:#8A8578;font-size:.74rem;font-weight:600;}
+#pg-leave-teacher .lf-row{gap:12px;}
+#pg-leave-teacher .lfd-backlink{background:none;border:none;color:#3E8E6A;font-size:.82rem;font-weight:700;cursor:pointer;padding:4px 0;font-family:'Noto Sans TC',sans-serif;}
+#pg-leave-teacher .lfd-datebox{background:#F4FAF6;border-radius:18px;padding:12px 14px;margin-top:8px;}
+#pg-leave-teacher .lfd-daterow{display:flex;align-items:center;gap:8px;}
+#pg-leave-teacher .lfd-daterow+.lfd-daterow{margin-top:8px;}
+#pg-leave-teacher .lfd-datelbl{flex:0 0 auto;background:#fff;border-radius:999px;padding:5px 12px;font-size:.74rem;font-weight:700;color:#3E8E6A;white-space:nowrap;}
+#pg-leave-teacher .lfd-datebox .df-inp{background:#fff;}
+#pg-leave-teacher .lfd-hint{font-size:.72rem;color:#A8A0AE;margin-top:6px;}
+#pg-leave-teacher .lf-ck-row{gap:10px;}
+#pg-leave-teacher .lf-ck-row label{display:inline-flex;align-items:center;padding:8px 16px;border-radius:999px;background:#fff;border:1.5px solid #E2D9C8;color:#8A8578;font-size:.8rem;cursor:pointer;gap:0;}
+#pg-leave-teacher .lf-ck-row label:has(input:checked){background:#3E8E6A;border-color:#3E8E6A;color:#fff;}
+#pg-leave-teacher .lf-ck-row label:has(input:checked)::before{content:'✓ ';}
+#pg-leave-teacher .lf-ck-row label input{display:none;}
+#pg-leave-teacher .lfd-sigbox{border:1.5px dashed #E2D9C8;border-radius:20px;background:#fff;}
+#pg-leave-teacher .lf-child-hd{border-radius:20px 20px 0 0;}
+#pg-leave-teacher ol.lfd-rules{padding-left:0;list-style:none;margin:0;}
+#pg-leave-teacher ol.lfd-rules li{position:relative;padding-left:26px;font-size:.8rem;line-height:1.9;color:#666;margin-bottom:2px;}
+#pg-leave-teacher ol.lfd-rules li::before{content:counter(lfd-rule);counter-increment:lfd-rule;position:absolute;left:0;top:2px;width:17px;height:17px;border-radius:50%;background:#FCEFD9;color:#B9822A;font-size:.66rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+#pg-leave-teacher ol.lfd-rules{counter-reset:lfd-rule;}
+/* ══ 請假交接單改版結束 ══ */
+
 </style>
 <script id="asrDataIsland">window._asrPreload={"teachers": [{"id": "t001", "name": "陳巧芳", "cls": "crawl"}, {"id": "t002", "name": "梁欣萍", "cls": "crawl"}, {"id": "t003", "name": "蔡季涵", "cls": "run"}, {"id": "t005", "name": "鄭亞柔", "cls": "run"}, {"id": "t006", "name": "杜雯捷", "cls": "run"}], "children": {"t001": [{"id": "c0101", "name": "胡語心", "age": "9-15M"}, {"id": "c0103", "name": "陳宥維", "age": "9-15M"}, {"id": "c0104", "name": "陳祉寧", "age": "9-15M"}, {"id": "c0105", "name": "江尚騰", "age": "0-9M"}], "t002": [{"id": "c0201", "name": "蕭牧恒", "age": "9-15M"}, {"id": "c0202", "name": "王品承", "age": "9-15M"}, {"id": "c0203", "name": "韓宇棠", "age": "9-15M"}, {"id": "c0204", "name": "林昕妍", "age": "9-15M"}, {"id": "c0205", "name": "江品嬡", "age": "9-15M"}], "t003": [{"id": "c0301", "name": "劉煦琳", "age": "13-36M"}, {"id": "c0302", "name": "吳品希", "age": "13-36M"}, {"id": "c0303", "name": "王詩漫", "age": "13-36M"}, {"id": "c0304", "name": "呂婕瑄", "age": "13-36M"}, {"id": "c0305", "name": "林敬翰", "age": "13-36M"}], "t004": [], "t005": [{"id": "c0501", "name": "吳雨恩", "age": "13-36M"}, {"id": "c0502", "name": "黃晨維", "age": "13-36M"}, {"id": "c0503", "name": "歐奕亨", "age": "13-36M"}, {"id": "c0504", "name": "蕭聖龍", "age": "13-36M"}, {"id": "c0505", "name": "蕭昀婕", "age": "13-36M"}], "t006": [{"id": "c0601", "name": "李岳恩", "age": "13-36M"}, {"id": "c0602", "name": "李咏璇", "age": "13-36M"}, {"id": "c0603", "name": "蔡沐妘", "age": "13-36M"}, {"id": "c0604", "name": "詹瑾侑", "age": "13-36M"}, {"id": "c0605", "name": "陳嶼樂", "age": "13-36M"}]}, "removed": ["c0102", "c0902"]};
 window._asrPreload114=window._asrPreload;</script>
@@ -5012,9 +5072,13 @@ function _rosterKidsAsOf(cls,dateStr){
 
 <!-- ═══ LEAVE TEACHER（老師假單歷史） ═══ -->
 <div class="pg" id="pg-leave-teacher">
-  <div class="bbar">
-    <button class="bbtn" onclick="LEAVE.exitTop()">&#x2190; 返回</button>
-    <span class="btitle" id="leaveTeacherTitle">假單記錄</span>
+  <div class="lfhdr">
+    <div class="lfhdr-top">
+      <button class="lfhdr-back" onclick="LEAVE.exitTop()">&#x2190; 返回</button>
+      <span class="lfhdr-crumb">請假交接單 &rsaquo; 托育人員 &rsaquo; <span id="leaveTeacherCrumbName"></span></span>
+    </div>
+    <div class="lfhdr-title" id="leaveTeacherTitle">假單記錄</div>
+    <img class="lfhdr-mascot" src="images/leave_role_teacher.png" alt="">
   </div>
   <div id="leaveTeacherWrap" style="padding-bottom:40px;"></div>
 </div>
@@ -10951,6 +11015,9 @@ var LEAVE=(function(){
     var teacher=teacherCheck;
     var titleEl=document.getElementById('leaveTeacherTitle');
     if(titleEl&&teacher)titleEl.textContent=teacher.name+' 的假單';
+    /* 2026-11-19：外觀改版新增的麵包屑（純顯示用，不影響存檔/讀取邏輯） */
+    var crumbEl=document.getElementById('leaveTeacherCrumbName');
+    if(crumbEl&&teacher)crumbEl.textContent=teacher.name;
     var wrap=document.getElementById('leaveTeacherWrap');
     if(wrap)wrap.innerHTML='<div style="padding:20px;text-align:center;color:#888;">⏳ 同步中…</div>';
     loadFb(tid,function(){showList();});
@@ -10969,13 +11036,22 @@ var LEAVE=(function(){
     var forms=getTeacherForms(lTid);
     var fids=Object.keys(forms).sort(function(a,b){return (forms[b].createdAt||0)-(forms[a].createdAt||0);});
     var cls=teacher?teacher.cls:'run';
-    var h='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    /* 2026-11-19：假別色票（純顯示用，跟 clsBd 那套班級顏色是不同東西，
+       這裡只對應「假別」本身），沒列到的假別都用「其他」那組顏色。 */
+    var LTYPE_COLORS={
+      '喪假':{bg:'#EEE6F7',fg:'#7B55A0'},
+      '事假':{bg:'#FCEFD9',fg:'#B9822A'},
+      '病假':{bg:'#E2ECF9',fg:'#3E6BB0'},
+      '家庭照顧假':{bg:'#FBE3EA',fg:'#B8507A'}
+    };
+    function ltColor(lt){return LTYPE_COLORS[lt]||{bg:'#F5F0E6',fg:'#6B6470'};}
+    var h='<div class="lfl-wrap">';
     var _fbCnt=Object.keys(_lFbCache[lTid]||{}).length;
     var _lsCnt=Object.keys(getAll()[lTid]||{}).length;
-    h+='<div id="_leaveDbg" style="font-size:11px;color:#999;margin-bottom:6px;padding:4px 8px;background:#f5f5f5;border-radius:4px;">FB:'+_fbCnt+'筆 本機:'+_lsCnt+'筆 ID:'+lTid+'</div>';
-    h+='<button onclick="LEAVE.newForm()" style="width:100%;padding:14px;background:'+clsBd(cls)+';color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:800;cursor:pointer;margin-bottom:16px;">＋ 新增假單</button>';
+    h+='<div class="lfl-debug">FB:'+_fbCnt+'筆 本機:'+_lsCnt+'筆 ID:'+lTid+'</div>';
+    h+='<button class="lfl-add" onclick="LEAVE.newForm()">＋ 新增假單</button>';
     if(!fids.length){
-      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無假單記錄</div>';
+      h+='<div class="lfl-empty">尚無假單記錄</div>';
     }else{
       h+='<div style="display:flex;flex-direction:column;gap:10px;">';
       fids.forEach(function(fid){
@@ -10983,24 +11059,24 @@ var LEAVE=(function(){
         var isRead=!!fd.read;
         var hdr=fd.header||{};
         var leaveType=hdr.leaveType||'─';
+        var lc=ltColor(leaveType);
         var fromDate=(hdr.from||'').split('T')[0]||'─';
         var toDate=(hdr.to||'').split('T')[0]||'─';
+        var dateRange=(fromDate===toDate)?fromDate:(fromDate+' ～ '+toDate);
         var createdDate=fd.createdAt?new Date(fd.createdAt).toLocaleDateString('zh-TW'):'─';
-        h+='<div style="background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid '+clsBd(cls)+';overflow:hidden;">';
-        h+='<div style="padding:14px 16px;">';
-        h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;cursor:pointer;" onclick="LEAVE.editForm(\''+fid+'\')">';
-        h+='<div><div style="font-weight:800;font-size:.95rem;color:#2d3057;">'+leaveType+(hdr.name?'　'+hdr.name:'')+'</div>';
-        h+='<div style="font-size:.78rem;color:#666;margin-top:3px;">'+fromDate+' ～ '+toDate+'</div></div>';
-        h+='<div style="display:flex;align-items:center;gap:6px;">';
-        h+='<span style="display:inline-block;padding:3px 10px;border-radius:10px;font-size:.72rem;font-weight:700;background:'+(isRead?'#e8f5e9':'#fdecea')+';color:'+(isRead?'#2d8a60':'#e74c3c')+'">'+(isRead?'已閱':'未閱')+'</span>';
-        h+='<span style="font-size:.7rem;color:#aaa;white-space:nowrap;">'+createdDate+'</span>';
-        h+='</div></div>';
+        h+='<div class="lfl-card'+(isRead?'':' unread')+'">';
+        h+='<div class="lfl-body" onclick="LEAVE.editForm(\''+fid+'\')">';
+        h+='<div class="lfl-toprow">';
+        h+='<div><span class="lfl-type-pill" style="background:'+lc.bg+';color:'+lc.fg+';">'+leaveType+'</span>'+(hdr.name?'<span class="lfl-name">'+hdr.name+'</span>':'')+'</div>';
+        h+='<span class="lfl-status-pill" style="background:'+(isRead?'#EEF7F0':'#FBE3DA')+';color:'+(isRead?'#3E8E6A':'#C2603E')+';">'+(isRead?'已閱':'未閱')+'</span>';
         h+='</div>';
-        h+='<div style="display:flex;border-top:1px solid #f0f0f0;">';
-        h+='<button onclick="LEAVE.editForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:'+clsBd(cls)+';font-size:.8rem;font-weight:700;cursor:pointer;">✏️ 編輯</button>';
-        h+='<button onclick="LEAVE.printForm(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;color:#555;font-size:.8rem;font-weight:700;cursor:pointer;">🖨️ 列印</button>';
-        h+='<button onclick="LEAVE.toggleRead(\''+fid+'\')" style="flex:1;padding:9px;background:none;border:none;border-right:1px solid #f0f0f0;font-size:.8rem;font-weight:700;cursor:pointer;color:'+(isRead?'#888':'#2d8a60')+'">'+(isRead?'取消閱':'✅ 標記已閱')+'</button>';
-        h+='<button onclick="LEAVE.deleteForm(\''+fid+'\')" style="padding:9px 14px;background:none;border:none;color:#e57373;font-size:.8rem;cursor:pointer;">🗑</button>';
+        h+='<div class="lfl-dates"><span>請假日期　'+dateRange+'</span><span class="lfl-senddate">'+createdDate+' 送出</span></div>';
+        h+='</div>';
+        h+='<div class="lfl-btnrow">';
+        h+='<button class="lfl-btn edit" onclick="LEAVE.editForm(\''+fid+'\')">編輯</button>';
+        h+='<button class="lfl-btn print" onclick="LEAVE.printForm(\''+fid+'\')">列印</button>';
+        h+='<button class="lfl-btn '+(isRead?'unmark':'markread')+'" onclick="LEAVE.toggleRead(\''+fid+'\')">'+(isRead?'取消已閱':'標記已閱')+'</button>';
+        h+='<button class="lfl-del" onclick="LEAVE.deleteForm(\''+fid+'\')">刪除</button>';
         h+='</div></div>';
       });
       h+='</div>';
@@ -11075,30 +11151,33 @@ var LEAVE=(function(){
 
     var h='<div style="max-width:680px;margin:0 auto;">';
     h+='<div style="padding:8px 16px 0;">';
-    h+='<button onclick="LEAVE.showList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0;">← 返回列表</button>';
+    h+='<button class="lfd-backlink" onclick="LEAVE.showList()">← 假單列表</button>';
     h+='</div>';
 
     /* ── 基本資料 ── */
-    h+='<div class="df-sec"><div class="df-lbl">📄 基本資料</div>';
+    h+='<div class="df-sec"><div class="df-lbl">基本資料</div>';
     /* 2026-11-13：使用者要求交接日期／請假日期（起迄）的日期時間欄位都
        縮小；另外「請假日期（起）」的標籤原本多帶一段提示文字，害它比
        「請假日期（迄）」多一行，兩欄位下面的日期/時間欄就對不齊了——
-       提示文字搬出來變成獨立一行，兩個標籤都還原成一行就會平行。 */
+       提示文字搬出來變成獨立一行，兩個標籤都還原成一行就會平行。
+       2026-11-19：外觀改版——交接日期單獨整排；請假日期（起/迄）改包進
+       一個淡綠色 .lfd-datebox，裡面用「從」「到」小膠囊取代原本的文字
+       標籤，兩排分開排版，不會超出卡片右邊。 */
     h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" style="font-size:.76rem;padding:6px 7px;" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
+    h+='<div class="lf-field"><div class="lf-flbl">交接日期</div><input type="date" id="lHdrDate" class="df-inp" onchange="LEAVE.onDateChange()" value="'+(hdr.date||'')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">請假人姓名</div><input type="text" id="lHdrName" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.name||teacher.name||'').replace(/"/g,'&quot;')+'"></div>';
     h+='<div class="lf-field"><div class="lf-flbl">班級</div><input type="text" id="lHdrCls" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.cls||clsLabel(cls)).replace(/"/g,'&quot;')+'"></div>';
     h+='</div>';
-    h+='<div style="font-size:.7rem;color:#999;margin-top:8px;">下面幼兒名單會依「請假日期（起）」這天的名單顯示</div>';
-    h+='<div class="lf-row">';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（起）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;font-size:.76rem;padding:6px 7px;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;font-size:.76rem;padding:6px 4px;" onchange="LEAVE.saveForm()" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div></div>';
-    h+='<div class="lf-field"><div class="lf-flbl">請假日期（迄）</div><div style="display:flex;gap:6px;">';
-    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;font-size:.76rem;padding:6px 7px;" onchange="LEAVE.saveForm()" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
-    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;font-size:.76rem;padding:6px 4px;" onchange="LEAVE.saveForm()" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div></div>';
+    h+='<div class="lf-flbl" style="margin-top:10px;">請假日期 <span class="lfd-hint">（下面幼兒名單會依「從」這天的名單顯示）</span></div>';
+    h+='<div class="lfd-datebox">';
+    h+='<div class="lfd-daterow"><span class="lfd-datelbl">從</span>';
+    h+='<input type="date" id="lHdrFromDate" class="df-inp" style="flex:3;" onchange="LEAVE.onDateChange()" value="'+(hdr.from||'').split(/[T ]/)[0]+'">';
+    h+='<input type="time" id="lHdrFromTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.from||'').split(/[T ]/)[1]||'')+'"></div>';
+    h+='<div class="lfd-daterow"><span class="lfd-datelbl">到</span>';
+    h+='<input type="date" id="lHdrToDate" class="df-inp" style="flex:3;" onchange="LEAVE.saveForm()" value="'+(hdr.to||'').split(/[T ]/)[0]+'">';
+    h+='<input type="time" id="lHdrToTime" class="df-inp" style="flex:2;" onchange="LEAVE.saveForm()" value="'+((hdr.to||'').split(/[T ]/)[1]||'')+'"></div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">打掃區域</div><input type="text" id="lHdrClean" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.clean||'').replace(/"/g,'&quot;')+'"></div>';
@@ -11113,9 +11192,11 @@ var LEAVE=(function(){
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">代理人資格</div>';
-    h+='<div class="lf-ck-row"><label><input type="checkbox" id="lHdrCertEdu" onchange="LEAVE.saveForm()" '+(hdr.certEdu?'checked':'')+'>相關科系畢</label>';
+    h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">';
+    h+='<div class="lf-ck-row"><label><input type="checkbox" id="lHdrCertEdu" onchange="LEAVE.saveForm()" '+(hdr.certEdu?'checked':'')+'>相關科系畢業</label>';
     h+='<label><input type="checkbox" id="lHdrCertBaby" onchange="LEAVE.saveForm()" '+(hdr.certBaby?'checked':'')+'>保母證號</label></div>';
-    h+='<input type="text" id="lHdrCertNo" class="df-inp" style="margin-top:6px;" onchange="LEAVE.saveForm()" placeholder="請填寫保母證號" value="'+(hdr.certNo||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='<input type="text" id="lHdrCertNo" class="df-inp" style="flex:1;min-width:120px;" onchange="LEAVE.saveForm()" placeholder="請填寫保母證號" value="'+(hdr.certNo||'').replace(/"/g,'&quot;')+'"></div>';
+    h+='</div>';
     h+='</div>';
     h+='<div class="lf-row">';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div><input type="text" id="lHdrDir" class="df-inp" onchange="LEAVE.saveForm()" value="'+(hdr.dir||'').replace(/"/g,'&quot;')+'"></div>';
@@ -11123,8 +11204,8 @@ var LEAVE=(function(){
     h+='</div>';
 
     /* ── 規定 ── */
-    h+='<div class="df-sec"><div class="df-lbl" style="margin-bottom:8px;">📋 請假職務代理人規定如下</div>';
-    h+='<ol style="font-size:.8rem;line-height:1.9;color:#666;padding-left:18px;margin:0;">';
+    h+='<div class="df-sec"><div class="df-lbl" style="margin-bottom:8px;">請假職務代理人規定如下</div>';
+    h+='<ol class="lfd-rules">';
     h+='<li>本請假職務代理交接單請於請假前七天交接並填寫完畢。</li>';
     h+='<li>其請假人應於請假前交由行政/主管機構核備交由主任簽章。</li>';
     h+='<li>主管簽章並影印留存</li><li>公開告知相關人員</li>';
@@ -11140,32 +11221,32 @@ var LEAVE=(function(){
     h+='<div id="lKidsBlock">'+_kidsBlockHTML(kids,childData,cls)+'</div>';
 
     /* ── 代理人代班事後交接 ── */
-    h+='<div class="df-sec"><div class="df-lbl">📝 代理人代班事後交接</div>';
+    h+='<div class="df-sec"><div class="df-lbl">代理人代班事後交接</div>';
     h+='<textarea id="lPostHandover" class="df-ta" style="min-height:150px;" onchange="LEAVE.saveForm()" placeholder="請填寫代班後的交接事項…">'+(saved.postHandover||'')+'</textarea></div>';
 
     /* ── 簽名 ── */
-    h+='<div class="df-sec"><div class="df-lbl">✍️ 簽名</div>';
+    h+='<div class="df-sec"><div class="df-lbl">簽名</div>';
     h+='<div class="lf-row">';
     var _sSig=saved.sigSub||'';
     h+='<div class="lf-field"><div class="lf-flbl">代理人簽名</div>';
     if(_sSig){h+='<img id="lSubSigImg" src="'+_sSig+'" onclick="LEAVE._openSubSig()" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:3px;"><button onclick="LEAVE._openSubSig()" type="button" style="padding:3px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';}
-    else{h+='<button id="lSubSigBtn" onclick="LEAVE._openSubSig()" type="button" style="width:100%;padding:10px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此簽名</button><img id="lSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
+    else{h+='<button id="lSubSigBtn" onclick="LEAVE._openSubSig()" type="button" class="lfd-sigbox" style="width:100%;padding:10px;color:#888;font-size:.8rem;cursor:pointer;">點此簽名</button><img id="lSubSigImg" src="" style="display:none;height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:3px;">';}
     h+='</div>';
     h+='<div class="lf-field"><div class="lf-flbl">主任簽名</div>';
     var _dSig=(typeof SIGLIB!=='undefined')?SIGLIB.get(_directorName()):'';
     if(_dSig){h+='<img src="'+_dSig+'" style="height:44px;border:1px solid #ddd;border-radius:6px;background:#fff;display:block;">';}
-    else{h+='<div style="color:#bbb;font-size:.78rem;">（SIGLIB 尚未有主任簽名）</div>';}
+    else{h+='<div class="lfd-sigbox" style="color:#bbb;font-size:.78rem;padding:12px;text-align:center;">主任簽名處</div>';}
     h+='</div>';
     h+='</div></div>';
 
     /* ── 按鈕 ── */
     h+='<div class="lf-btns" style="flex-wrap:wrap;">';
-    h+='<button class="lf-save-btn" onclick="LEAVE.saveForm()">💾 儲存</button>';
+    h+='<button class="lf-save-btn" onclick="LEAVE.saveForm()">儲存</button>';
     h+='<div id="_leaveSyncStatus" style="width:100%;font-size:12px;margin-top:4px;min-height:18px;"></div>';
-    h+='<button class="lf-dl-btn" onclick="LEAVE.download()">🖨️ 列印</button>';
-    h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="LEAVE.downloadFile()">📥 下載存檔</button>';
-    h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="LEAVE.exportData()">📤 匯出資料</button>';
-    h+='<button class="lf-dl-btn" style="background:#6a4fc8;" onclick="LEAVE.importData()">📂 載入備份</button>';
+    h+='<button class="lf-dl-btn" onclick="LEAVE.download()">列印</button>';
+    h+='<button class="lf-dl-btn" style="background:#2d8a60;" onclick="LEAVE.downloadFile()">下載存檔</button>';
+    h+='<button class="lf-dl-btn" style="background:#b07d2a;" onclick="LEAVE.exportData()">匯出資料</button>';
+    h+='<button class="lf-dl-btn" style="background:#6a4fc8;" onclick="LEAVE.importData()">載入備份</button>';
     h+='</div>';
 
     h+='</div>';
@@ -27847,7 +27928,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261119144737--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120115226--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
