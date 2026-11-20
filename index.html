@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120115226';
+  var BUILD='20261120120512';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3015,7 +3015,14 @@ var WEEK_SONGS={
    其餘週次等拿到影片檔案再補。 */
 var WEEK_VIDEOS={
   '115_2_3':'video/nijiazainali.mp4',
-  '115_2_8':'video/raozhesenlin.mp4','115_2_9':'video/raozhesenlin.mp4'
+  '115_2_8':'video/raozhesenlin.mp4','115_2_9':'video/raozhesenlin.mp4',
+  /* 2026-11-20：第三主題（小企鵝的溜冰鞋）影片——第1、2週 theme 都是
+     「雪花白雪花落」，第5、6週都是「雪地之夢」，所以同一支影片對應
+     兩個週次，跟 115_2_8/115_2_9 共用同一支檔案是同樣的做法。 */
+  '115_3_1':'video/xuehuabaixuehualuo.mp4','115_3_2':'video/xuehuabaixuehualuo.mp4',
+  '115_3_3':'video/xiaopuman.mp4',
+  '115_3_5':'video/xuedizhimeng.mp4','115_3_6':'video/xuedizhimeng.mp4',
+  '115_3_7':'video/keaixiaoqie.mp4'
 };
 /* 依週頁面的 id 反推這一週是「學年_主題_週次」，才能查表找音檔。
    week-N／week5-N 是舊的靜態週頁面，內容其實是 114 學年度的主題；
@@ -27928,7 +27935,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120115226--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120120512--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
