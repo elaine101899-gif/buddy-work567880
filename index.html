@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120135515';
+  var BUILD='20261120153910';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5628,9 +5628,10 @@ function _rosterKidsAsOf(cls,dateStr){
 </div>
 <!-- ═══ 月費單 ═══ -->
 <div class="pg" id="pg-childfee">
-  <div class="stat-hero-sm">
+  <div class="stat-hero-sm" style="flex-wrap:wrap;">
     <button class="admin-back-btn" onclick="GO('accounting')">&#x2190; 會計</button>
     <div class="stat-hero-title">月費單</div>
+    <button class="hub-hero-btn" style="background:#FFF3DD;color:#B9822A;" onclick="CHILDFEE.openDinnerSub()">&#x1F37D;&#xFE0F; 訂閱晚餐</button>
     <button class="hub-hero-btn" onclick="GO('childfee-income')">收入及退費總表 &#x203A;</button>
   </div>
   <div style="padding:14px 16px 40px;" id="cf-root">
@@ -5643,6 +5644,15 @@ function _rosterKidsAsOf(cls,dateStr){
     <div id="cfUnpaidBody" style="max-height:60vh;overflow-y:auto;"></div>
     <div class="asr-mbtns">
       <button class="asr-mcancel" onclick="CHILDFEE.closeUnpaid()">關閉</button>
+    </div>
+  </div>
+</div>
+<div class="asr-modal" id="cfDinnerOv">
+  <div class="asr-mbox" style="max-width:760px;">
+    <h3>&#x1F37D;&#xFE0F; 訂閱晚餐（<span id="cfDinnerPeriodLabel"></span>）</h3>
+    <div id="cfDinnerBody" style="max-height:65vh;overflow-y:auto;"></div>
+    <div class="asr-mbtns">
+      <button class="asr-mcancel" onclick="CHILDFEE.closeDinnerSub()">關閉</button>
     </div>
   </div>
 </div>
@@ -26020,6 +26030,45 @@ var CHILDFEE=(function(){
     document.getElementById('cfClsSel')&&(document.getElementById('cfClsSel').value=cls);
     render();
   }
+  /* 訂閱晚餐名單：批次勾選這一期（目前月費單選的收費期間）誰訂晚餐，
+     不用一個個點進每個小孩的帳單卡片才能勾。勾選時直接呼叫既有的
+     setField('dinnerFee',...) 寫回同一筆帳單資料，跟卡片上那顆勾選框
+     是同一份資料、同一套寫入邏輯，兩邊勾了都會互相同步。 */
+  function openDinnerSub(){
+    document.getElementById('cfDinnerOv').classList.add('on');
+    _renderDinnerSub();
+  }
+  function closeDinnerSub(){
+    document.getElementById('cfDinnerOv').classList.remove('on');
+  }
+  function _renderDinnerSub(){
+    var pk=periodKey(_endY,_endM);
+    var groups=getKidsByCls(_endY,_endM);
+    var label=document.getElementById('cfDinnerPeriodLabel');
+    if(label)label.textContent=_endY+'年'+_endM+'月';
+    var h='',subCount=0;
+    CLSORDER.forEach(function(cls){
+      var kids=groups[cls]||[];
+      if(!kids.length)return;
+      h+='<div class="df-lbl" style="margin-top:10px;">'+CLSLABEL[cls]+'</div>';
+      h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;">';
+      kids.forEach(function(k){
+        var rec=_peekRec(pk,k.id);
+        var on=!!(rec&&(parseFloat(rec.dinnerFee)||0)>0);
+        if(on)subCount++;
+        h+='<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#FAF6EE;border:1.5px solid '+(on?'#F0C97A':'#E2D9C8')+';border-radius:12px;cursor:pointer;font-size:.84rem;color:#2d3057;">';
+        h+='<input type="checkbox" '+(on?'checked':'')+' onchange="CHILDFEE.toggleDinnerSub(\''+k.id+'\',this.checked)">'+k.name+'</label>';
+      });
+      h+='</div>';
+    });
+    if(!h)h='<div style="color:#aaa;text-align:center;padding:20px 0;">這一期沒有名單</div>';
+    h='<div style="color:#B9822A;font-weight:800;margin-bottom:8px;">目前共 '+subCount+' 人訂閱晚餐</div>'+h;
+    document.getElementById('cfDinnerBody').innerHTML=h;
+  }
+  function toggleDinnerSub(cid,checked){
+    setField(cid,'dinnerFee',checked?1500:0);
+    _renderDinnerSub();
+  }
   function _childCard(k,pk,extendTotals,refundTotals){
     var stored=_peekRec(pk,k.id);
     var rec=stored?Object.assign({},stored):{};
@@ -27100,7 +27149,8 @@ var CHILDFEE=(function(){
     });
     return sums;
   }
-  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,previewFeeReport:previewFeeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod,openAssignTeacher:openAssignTeacher,closeAssignTeacher:closeAssignTeacher,asClsChanged:asClsChanged,saveAssignTeacher:saveAssignTeacher};
+  return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,previewFeeReport:previewFeeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod,openAssignTeacher:openAssignTeacher,closeAssignTeacher:closeAssignTeacher,asClsChanged:asClsChanged,saveAssignTeacher:saveAssignTeacher,
+    openDinnerSub:openDinnerSub,closeDinnerSub:closeDinnerSub,toggleDinnerSub:toggleDinnerSub};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -27952,7 +28002,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120135515--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120153910--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
