@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120161703';
+  var BUILD='20261120164555';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4906,6 +4906,17 @@ function _rosterKidsAsOf(cls,dateStr){
         </div>
       </div>
     </div>
+    <div class="hcard c-grn" onclick="GO('promote')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/forms_leave.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">PROMOTION HANDOVER</div>
+          <div class="hcard-title">升班交接單</div>
+          <div class="hcard-desc">幼兒照護交接事項</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5129,6 +5140,17 @@ function _rosterKidsAsOf(cls,dateStr){
     <div class="admin-hero-title">幼兒事故單</div>
   </div>
   <div id="incidentWrap" style="padding-bottom:40px;"></div>
+</div>
+
+<!-- ═══ PROMOTION HANDOVER（升班交接單） ═══ -->
+<div class="pg" id="pg-promote">
+  <div class="admin-hero">
+    <button class="admin-back-btn" onclick="GO('forms-menu')">&#x2190; 各式表單</button>
+    <img class="admin-hero-deco" src="images/forms_leave.png" alt="">
+    <div class="admin-hero-eyebrow">PROMOTION HANDOVER</div>
+    <div class="admin-hero-title">升班交接單</div>
+  </div>
+  <div id="promoteWrap" style="padding-bottom:40px;"></div>
 </div>
 
 <!-- ═══ ENTEROVIRUS CASE FORM ═══ -->
@@ -6191,6 +6213,7 @@ function GO(id, _roleRetry) {
   if (id === 'leave-menu') { /* 靜態頁，不需初始化 */ }
   if (id === 'leave-cook') { if (typeof LEAVE_COOK !== 'undefined') LEAVE_COOK.init(); }
   if (id === 'incident') { if (typeof INCIDENT !== 'undefined') INCIDENT.init(); }
+  if (id === 'promote') { if (typeof PROMOTE !== 'undefined') PROMOTE.init(); }
   if (id === 'enterovirus') { if (typeof ENTEROVIRUS !== 'undefined') ENTEROVIRUS.init(); }
   if (id === 'pj-h-3-1-1-1') { if (typeof GROWTHCASE !== 'undefined') GROWTHCASE.init(); }
   if (id === 'pj-h-3-1-1-2') { if (typeof DEVCHECKCASE !== 'undefined') DEVCHECKCASE.init(); }
@@ -15194,6 +15217,279 @@ var INCIDENT=(function(){
 })();
 
 /* ════ 腸病毒個案異常表 ════ */
+/* ═══ 升班交接單（PROMOTE）═══
+   跟請假/事故單不同，這張單不是按班級分開看的——同一個孩子「升班」只會
+   發生一次，不需要像事故單那樣按三個班分類瀏覽，所以只用一份扁平列表
+   （不分班），按建立時間新到舊排序。欄位完全照紙本表單（嬰幼兒照護
+   交接單）照抄，簽名部分紙本本來就只是一條空白線讓人手寫名字，不是要
+   畫簽名，所以這裡也用普通文字欄位，不用像事故單那樣另外做畫筆簽名板。 */
+var PROMOTE=(function(){
+  var KEY='xiaoBudiPromoteV1',FB_PATH='xiaobuddyPromote';
+  var curFid='',curStep='list';
+  var db={};
+
+  function loadLocal(){
+    try{db=JSON.parse(localStorage.getItem(_ckey(KEY))||'{}');}catch(e){db={};}
+  }
+  function _wrap(){return document.getElementById('promoteWrap');}
+  function saveAll(){
+    try{localStorage.setItem(_ckey(KEY),JSON.stringify(db));}catch(e){}
+  }
+  function pushFb(fid,data){
+    try{var fb=_fbInit();if(!fb)return;fb.ref(FB_PATH+'/'+fid).set(data);}catch(e){}
+  }
+  function loadFb(cb){
+    try{
+      var fb=_fbInit();if(!fb){cb();return;}
+      fb.ref(FB_PATH).once('value',function(snap){
+        var d=snap.val()||{};
+        Object.keys(d).forEach(function(fid){db[fid]=d[fid];});
+        saveAll();cb();
+      });
+    }catch(e){cb();}
+  }
+
+  function v(id){var e=document.getElementById(id);return e?(e.value||''):'';}
+  function gcb(name){var es=document.querySelectorAll('input[name="'+name+'"]:checked');var r=[];es.forEach(function(e){r.push(e.value);});return r;}
+  function chk(name,val,arr){var checked=arr&&arr.indexOf(val)!==-1;return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;margin-bottom:6px;font-size:.85rem;cursor:pointer;"><input type="checkbox" name="'+name+'" value="'+val+'"'+(checked?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
+  function rad(name,val,cur){return '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:14px;font-size:.85rem;cursor:pointer;"><input type="radio" name="'+name+'" value="'+val+'"'+(cur===val?' checked':'')+' style="width:15px;height:15px;cursor:pointer;"> '+val+'</label>';}
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function pe(s){return (s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  /* ─── 列表 ─── */
+  function renderList(){
+    var fids=Object.keys(db).sort(function(a,b){return (db[b].createdAt||0)-(db[a].createdAt||0);});
+    var h='<div class="rec-hero" style="background:#E3F2EA;">';
+    h+='<div class="rec-hero-mid"><span class="rec-hero-circle">&#x1F4CB;</span><span class="rec-hero-title">升班交接單</span></div>';
+    h+='<button class="rec-hero-add" style="background:#3E8E6A;" onclick="PROMOTE.newForm()">＋ 新增</button>';
+    h+='</div>';
+    h+='<div style="max-width:680px;margin:0 auto;padding:16px;">';
+    if(!fids.length){
+      h+='<div style="text-align:center;padding:40px;color:#aaa;font-size:.9rem;">尚無升班交接單記錄<br><br><button onclick="PROMOTE.newForm()" style="padding:12px 24px;background:#3E8E6A;color:#fff;border:none;border-radius:999px;font-size:.9rem;font-weight:800;cursor:pointer;font-family:\'Noto Sans TC\',sans-serif;">＋ 新增第一份交接單</button></div>';
+    } else {
+      fids.forEach(function(fid){
+        var d=db[fid];
+        var dateStr=d.dHandoverDate||'（未填日期）';
+        var childName=d.dChildName||'（未填姓名）';
+        h+='<div class="rec-item-card">';
+        h+='<div class="rec-item-top" onclick="PROMOTE.editForm(\''+fid+'\')">';
+        h+='<span class="rec-item-circle" style="background:#E3F2EA;color:#3E8E6A;">'+esc(childName.charAt(0))+'</span>';
+        h+='<div class="rec-item-body"><div class="rec-item-name">'+esc(childName)+'</div>';
+        h+='<span class="rec-item-date">'+esc(dateStr)+'</span></div>';
+        h+='</div>';
+        h+='<div class="rec-item-btns">';
+        h+='<button class="rec-btn" style="background:#E3F2EA;color:#3E8E6A;" onclick="PROMOTE.editForm(\''+fid+'\')">編輯</button>';
+        h+='<button class="rec-btn rec-btn-print" onclick="PROMOTE.downloadFid(\''+fid+'\')">列印</button>';
+        h+='<button class="rec-btn rec-btn-del" onclick="PROMOTE.deleteForm(\''+fid+'\')">刪除</button>';
+        h+='</div></div>';
+      });
+    }
+    h+='</div>';
+    return h;
+  }
+
+  /* ─── 表單（完全照紙本「嬰幼兒照護交接單」欄位）─── */
+  function renderForm(d){
+    var h='<div style="max-width:700px;margin:0 auto;padding:12px 0 24px;">';
+    h+='<button onclick="PROMOTE.backToList()" style="background:none;border:none;color:var(--teal);font-size:.9rem;cursor:pointer;padding:0 0 12px;">← 返回列表</button>';
+    h+='<div class="df-sec">';
+    (function(){
+      if(typeof window._asrPreload115==='undefined'&&typeof window._asrPreload==='undefined')return;
+      var clsLabelMap={baby:'寶寶班',crawl:'爬爬班',run:'跑跑班'};
+      h+='<div style="margin-bottom:10px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">快速選擇幼兒</div>';
+      h+='<select id="dChildSel" class="df-inp" style="width:100%;" onchange="PROMOTE.onChildSel()">';
+      h+='<option value="">── 選擇幼兒（自動填入姓名）──</option>';
+      var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+      var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+      var teachers=pl.teachers||[];
+      ['baby','crawl','run'].forEach(function(cls){
+        teachers.filter(function(t){return t.cls===cls;}).forEach(function(t){
+          var kids=(pl.children&&pl.children[t.id])||[];
+          kids.forEach(function(c){h+='<option value="'+c.id+'">【'+clsLabelMap[cls]+'】'+c.name+'</option>';});
+        });
+      });
+      h+='</select></div>';
+    })();
+    h+='<div style="margin-bottom:8px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">幼兒姓名</div><input type="text" id="dChildName" class="df-inp" placeholder="請填寫" value="'+esc(d.dChildName||'')+'"></div>';
+    h+='<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:.82rem;white-space:nowrap;">肖像權：</span>'+rad('dPortrait','同意',d.dPortrait)+rad('dPortrait','不同意',d.dPortrait)+'</div>';
+    h+='</div>';
+    /* 一、幼兒身體狀況 */
+    h+='<div class="df-sec"><div class="df-lbl">一、幼兒身體狀況</div>';
+    h+='<div style="margin-bottom:8px;"><span style="font-size:.82rem;">本身體質的體溫：</span>'+rad('dTemp','正常36.5~36.9',d.dTemp)+rad('dTemp','偏高37~37.4',d.dTemp)+'</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">是否有過敏原：</span>'+rad('dAllergySrc','無',d.dAllergySrc)+rad('dAllergySrc','有',d.dAllergySrc)+'<span style="font-size:.82rem;white-space:nowrap;">說明：</span><input type="text" id="dAllergyDesc" class="df-inp" style="flex:1;min-width:140px;" value="'+esc(d.dAllergyDesc||'')+'"></div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">其他注意事項</div><input type="text" id="dOtherNote" class="df-inp" style="width:100%;" placeholder="例如：蠶豆症、熱痙攣" value="'+esc(d.dOtherNote||'')+'">';
+    h+='</div>';
+    /* 二、飲食與作息 */
+    h+='<div class="df-sec"><div class="df-lbl">二、飲食與作息</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">1. 飲食狀況</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;">'+rad('dMilkType','配方奶',d.dMilkType)+rad('dMilkType','母奶',d.dMilkType)+'<span style="font-size:.82rem;">睡前</span><input type="number" id="dMilkNight" class="df-inp" style="width:70px;" value="'+esc(d.dMilkNight||'')+'"><span style="font-size:.82rem;">c.c. 起床</span><input type="number" id="dMilkMorning" class="df-inp" style="width:70px;" value="'+esc(d.dMilkMorning||'')+'"><span style="font-size:.82rem;">c.c.</span></div>';
+    h+='<div style="margin-bottom:8px;">'+chk('dMealType','副食品',d.dMealType)+chk('dMealType','正餐',d.dMealType)+'</div>';
+    h+='<div style="margin-bottom:8px;"><span style="font-size:.82rem;">3. 食量：</span>'+rad('dAppetite','正常',d.dAppetite)+rad('dAppetite','量多',d.dAppetite)+rad('dAppetite','量少',d.dAppetite)+'</div>';
+    h+='<div style="margin-bottom:8px;"><span style="font-size:.82rem;">4. 用餐：</span>'+rad('dMealHelp','需協助',d.dMealHelp)+rad('dMealHelp','學習中',d.dMealHelp)+rad('dMealHelp','可自理',d.dMealHelp)+'</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">5. 過敏食物</div><input type="text" id="dFoodAllergy" class="df-inp" style="width:100%;margin-bottom:10px;" value="'+esc(d.dFoodAllergy||'')+'">';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;"><span style="font-size:.82rem;white-space:nowrap;">睡眠狀況：</span>'+rad('dSleep','熟睡',d.dSleep)+rad('dSleep','淺眠',d.dSleep)+'<span style="font-size:.82rem;white-space:nowrap;">睡眠嗜好：</span><input type="text" id="dSleepHabit" class="df-inp" style="flex:1;min-width:140px;" placeholder="例如：陪伴、安撫物" value="'+esc(d.dSleepHabit||'')+'"></div>';
+    h+='</div>';
+    /* 三、排泄狀況 */
+    h+='<div class="df-sec"><div class="df-lbl">三、排泄狀況</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:.82rem;white-space:nowrap;">排便屬性：</span>'+rad('dPoop','多',d.dPoop)+rad('dPoop','正常',d.dPoop)+rad('dPoop','少',d.dPoop)+'<span style="font-size:.82rem;white-space:nowrap;">注意事項：</span><input type="text" id="dPoopNote" class="df-inp" style="flex:1;min-width:140px;" value="'+esc(d.dPoopNote||'')+'"></div>';
+    h+='</div>';
+    /* 四、物品清單 */
+    h+='<div class="df-sec"><div class="df-lbl">四、物品清單</div><div style="display:flex;flex-wrap:wrap;">';
+    ['尿布','床墊、寢具','衣物','沐浴乳','洗屁巾','口水巾','姓名貼','個人資料本','適性本','防蚊液','屁屁膏','乳液','牙刷組'].forEach(function(vv){h+=chk('dItems',vv,d.dItems);});
+    h+='</div></div>';
+    /* 備註 */
+    h+='<div class="df-sec"><div class="df-lbl">備註</div><textarea id="dNote" class="df-ta" style="min-height:70px;">'+pe(d.dNote||'')+'</textarea></div>';
+    /* 交接資訊 */
+    h+='<div class="df-sec"><div class="df-lbl">交接資訊</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">交接人員</div><input type="text" id="dHandoverBy" class="df-inp" style="width:100%;" value="'+esc(d.dHandoverBy||'')+'"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">接班人員</div><input type="text" id="dHandoverTo" class="df-inp" style="width:100%;" value="'+esc(d.dHandoverTo||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">交接日期</div><input type="date" id="dHandoverDate" class="df-inp" value="'+esc(d.dHandoverDate||'')+'">';
+    h+='</div>';
+    /* 主任簽章 */
+    h+='<div class="df-sec"><div class="df-lbl">主任簽章</div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">主任簽章</div><input type="text" id="dDirectorSign" class="df-inp" style="width:100%;" value="'+esc(d.dDirectorSign||_directorName()||'')+'"></div>';
+    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">日期</div><input type="date" id="dDirectorDate" class="df-inp" style="width:100%;" value="'+esc(d.dDirectorDate||'')+'"></div>';
+    h+='</div>';
+    h+='<div style="color:#999;font-size:.74rem;margin-top:8px;">PS：升班至少前三天交接完成</div>';
+    h+='</div>';
+    /* 按鈕 */
+    h+='<div class="lf-btns" style="flex-wrap:wrap;">';
+    h+='<button class="lf-save-btn d-save-btn" onclick="PROMOTE.saveForm()">💾 儲存</button>';
+    h+='<button class="lf-dl-btn" onclick="PROMOTE.download()">🖨️ 列印</button>';
+    h+='</div>';
+    h+='</div>';
+    return h;
+  }
+
+  function collectData(){
+    var d=JSON.parse(JSON.stringify(db[curFid]||{}));
+    ['dChildName','dAllergyDesc','dOtherNote','dMilkNight','dMilkMorning','dFoodAllergy','dSleepHabit',
+     'dPoopNote','dNote','dHandoverBy','dHandoverTo','dHandoverDate','dDirectorSign','dDirectorDate'
+    ].forEach(function(id){d[id]=v(id);});
+    ['dPortrait','dTemp','dAllergySrc','dAppetite','dMealHelp','dSleep','dPoop'].forEach(function(name){
+      var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
+    });
+    ['dMealType','dItems'].forEach(function(name){d[name]=gcb(name);});
+    return d;
+  }
+
+  function init(){
+    curStep='list';curFid='';
+    loadLocal();
+    var w=_wrap();if(!w)return;
+    w.innerHTML=renderList();
+    loadFb(function(){if(curStep==='list')w.innerHTML=renderList();});
+  }
+  function backToList(){curStep='list';_wrap().innerHTML=renderList();}
+  function newForm(){
+    curFid='f'+Date.now();
+    var today=new Date();
+    var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
+    db[curFid]={createdAt:Date.now(),dHandoverDate:yy};
+    curStep='form';_wrap().innerHTML=renderForm(db[curFid]);
+  }
+  function editForm(fid){
+    curFid=fid;var d=db[fid]||{};
+    curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  function saveForm(){
+    var d=collectData();
+    var ex=db[curFid]||{};
+    d.createdAt=ex.createdAt||Date.now();d.updatedAt=Date.now();
+    db[curFid]=d;saveAll();pushFb(curFid,d);
+    var btn=document.querySelector('#promoteWrap .d-save-btn');
+    if(btn){btn.textContent='✅ 已儲存';setTimeout(function(){btn.textContent='💾 儲存';},1500);}
+  }
+  function deleteForm(fid){
+    if(!confirm('確定要刪除這份升班交接單嗎？此操作無法復原。'))return;
+    try{var fb=_fbInit();if(fb)fb.ref(FB_PATH+'/'+fid).remove();}catch(e){}
+    delete db[fid];saveAll();
+    _wrap().innerHTML=renderList();
+  }
+  function downloadFid(fid){
+    var d=db[fid];if(!d)return;
+    _doPrint(_buildHTML(d));
+  }
+  function download(){
+    saveForm();var d=db[curFid]||{};
+    _doPrint(_buildHTML(d));
+  }
+  function _doPrint(h){
+    var w=null;try{w=window.open('','_blank');}catch(e){}
+    if(w){w.document.write(h);w.document.close();setTimeout(function(){try{w.print();}catch(e){}},600);}
+    else{
+      var ifr=document.createElement('iframe');
+      ifr.style.cssText='position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:0;';
+      document.body.appendChild(ifr);
+      ifr.contentDocument.open();ifr.contentDocument.write(h);ifr.contentDocument.close();
+      setTimeout(function(){try{ifr.contentWindow.focus();ifr.contentWindow.print();}catch(e){}setTimeout(function(){document.body.removeChild(ifr);},3000);},600);
+    }
+  }
+  function onChildSel(){
+    var sel=document.getElementById('dChildSel');if(!sel||!sel.value)return;
+    var cid=sel.value;
+    var autoYr=(new Date()>=new Date(2026,7,1))?'115':'114';
+    var pl=window['_asrPreload'+autoYr]||window._asrPreload||{};
+    var teachers=pl.teachers||[];
+    var found=null;
+    teachers.forEach(function(t){
+      (pl.children&&pl.children[t.id]||[]).forEach(function(c){if(c.id===cid)found=c;});
+    });
+    var nameEl=document.getElementById('dChildName');
+    if(found&&nameEl)nameEl.value=found.name;
+  }
+
+  /* ─── 列印 HTML（版面照紙本單一頁 A4） ─── */
+  function _buildHTML(d){
+    var mark=function(on){return on?'☑':'☐';};
+    var portraitAgree=mark(d.dPortrait==='同意'),portraitDisagree=mark(d.dPortrait==='不同意');
+    var p='<!DOCTYPE html><html><head><meta charset="utf-8"><title>升班交接單</title><style>';
+    p+='*{box-sizing:border-box;margin:0;padding:0;}';
+    p+='body{font-family:"微軟正黑體","Noto Sans TC",sans-serif;font-size:11pt;padding:20px 28px;color:#111;}';
+    p+='h1{font-size:17pt;text-align:center;margin-bottom:14px;}';
+    p+='.row{margin-bottom:9px;line-height:1.7;}';
+    p+='.sec-title{font-weight:700;margin:12px 0 5px;}';
+    p+='.indent{margin-left:18px;}';
+    p+='.ul{text-decoration:underline;padding:0 4px;min-width:60px;display:inline-block;}';
+    p+='.ps{color:#555;font-size:9.5pt;margin-top:16px;}';
+    p+='@media print{body{padding:10mm 14mm;}}';
+    p+='</style></head><body>';
+    p+='<h1>嬰幼兒照護交接單</h1>';
+    p+='<div class="row">幼兒姓名：<span class="ul">'+esc(d.dChildName||'')+'</span>　　';
+    p+='肖像權：'+portraitAgree+'同意　'+portraitDisagree+'不同意</div>';
+    p+='<div class="sec-title">一、幼兒身體狀況</div>';
+    p+='<div class="row indent">本身體質的體溫：'+mark(d.dTemp==='正常36.5~36.9')+'正常36.5~36.9　'+mark(d.dTemp==='偏高37~37.4')+'偏高37~37.4</div>';
+    p+='<div class="row indent">是否有過敏原：'+mark(d.dAllergySrc==='無')+'無　'+mark(d.dAllergySrc==='有')+'有，說明：<span class="ul">'+esc(d.dAllergyDesc||'')+'</span></div>';
+    p+='<div class="row indent">其他注意事項：<span class="ul" style="min-width:300px;">'+esc(d.dOtherNote||'')+'</span>(例如:蠶豆症.熱痙攣)</div>';
+    p+='<div class="sec-title">二、飲食與作息</div>';
+    p+='<div class="row indent">飲食狀況：1. '+mark(d.dMilkType==='配方奶')+'配方奶　'+mark(d.dMilkType==='母奶')+'母奶　睡前<span class="ul">'+esc(d.dMilkNight||'')+'</span>c.c. 起床<span class="ul">'+esc(d.dMilkMorning||'')+'</span>c.c.</div>';
+    p+='<div class="row indent">　　　　　　2. '+mark((d.dMealType||[]).indexOf('副食品')>=0)+'副食品　'+mark((d.dMealType||[]).indexOf('正餐')>=0)+'正餐</div>';
+    p+='<div class="row indent">　　　　　　3. 食量：'+mark(d.dAppetite==='正常')+'正常　'+mark(d.dAppetite==='量多')+'量多　'+mark(d.dAppetite==='量少')+'量少</div>';
+    p+='<div class="row indent">　　　　　　4. 用餐：'+mark(d.dMealHelp==='需協助')+'需協助　'+mark(d.dMealHelp==='學習中')+'學習中　'+mark(d.dMealHelp==='可自理')+'可自理</div>';
+    p+='<div class="row indent">　　　　　　5. 過敏食物：<span class="ul">'+esc(d.dFoodAllergy||'')+'</span></div>';
+    p+='<div class="row indent">睡眠狀況：'+mark(d.dSleep==='熟睡')+'熟睡　'+mark(d.dSleep==='淺眠')+'淺眠　　睡眠嗜好：<span class="ul">'+esc(d.dSleepHabit||'')+'</span>(例如:陪伴.安撫物)</div>';
+    p+='<div class="sec-title">三、排泄狀況</div>';
+    p+='<div class="row indent">排便屬性：'+mark(d.dPoop==='多')+'多　'+mark(d.dPoop==='正常')+'正常　'+mark(d.dPoop==='少')+'少　　注意事項：<span class="ul">'+esc(d.dPoopNote||'')+'</span></div>';
+    p+='<div class="sec-title">四、物品清單</div><div class="row indent">';
+    ['尿布','床墊、寢具','衣物','沐浴乳','洗屁巾','口水巾'].forEach(function(it){p+=mark((d.dItems||[]).indexOf(it)>=0)+it+'　';});
+    p+='</div><div class="row indent">';
+    ['姓名貼','個人資料本','適性本','防蚊液','屁屁膏','乳液','牙刷組'].forEach(function(it){p+=mark((d.dItems||[]).indexOf(it)>=0)+it+'　';});
+    p+='</div>';
+    p+='<div class="sec-title">備註：</div><div class="row indent">'+pe(d.dNote||'').replace(/\n/g,'<br>')+'</div>';
+    p+='<div class="row" style="margin-top:20px;">交接人員：<span class="ul">'+esc(d.dHandoverBy||'')+'</span>　　接班人員：<span class="ul">'+esc(d.dHandoverTo||'')+'</span></div>';
+    p+='<div class="row">交接日期：<span class="ul">'+esc(d.dHandoverDate||'')+'</span></div>';
+    p+='<div class="row" style="text-align:right;">主任簽章：<span class="ul">'+esc(d.dDirectorSign||'')+'</span>　日期：<span class="ul">'+esc(d.dDirectorDate||'')+'</span></div>';
+    p+='<div class="ps">PS：升班至少前三天交接完成</div>';
+    p+='</body></html>';
+    return p;
+  }
+
+  return{init:init,newForm:newForm,editForm:editForm,backToList:backToList,saveForm:saveForm,deleteForm:deleteForm,downloadFid:downloadFid,download:download,onChildSel:onChildSel};
+})();
+
 var ENTEROVIRUS=(function(){
   var KEY='xiaoBudiEnterovirusV1',FB_PATH='xiaobuddyEnterovirus';
   var curCls='run',curFid='',curStep='hub';
@@ -27995,7 +28291,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120161703--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120164555--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
