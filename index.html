@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120122943';
+  var BUILD='20261120135515';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22968,8 +22968,9 @@ var CHECKOUT=(function(){
        新科目忘記接進既有加總」的錯誤，這裡要小心避免重演。 */
     var regFee=parseFloat(cf.regFee)||0,monthFee=(parseFloat(cf.monthFee)||0)+(parseFloat(cf.mealFee)||0),
       agencyFee=parseFloat(cf.agencyFee)||0,extendFee=parseFloat(cf.extendFee)||0,
-      insurance=parseFloat(cf.insurance)||0,refund=(parseFloat(cf.refund)||0)+(parseFloat(cf.otherRefund)||0)+(parseFloat(cf.regFeeRefund)||0);
-    var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance-refund;
+      insurance=parseFloat(cf.insurance)||0,dinnerFee=parseFloat(cf.dinnerFee)||0,
+      refund=(parseFloat(cf.refund)||0)+(parseFloat(cf.otherRefund)||0)+(parseFloat(cf.regFeeRefund)||0);
+    var incomeAuto=regFee+monthFee+agencyFee+extendFee+insurance+dinnerFee-refund;
     var subsidyAmt=parseFloat(p.subsidyAmt)||0,interestAmt=parseFloat(p.interestAmt)||0;
     /* 2026-11-11：使用者要求收入這邊也能像支出一樣「新增項目」（例如政府
        臨時補助、捐款這類不固定、每期不一定有的收入），存在 p.incomeEntries
@@ -25755,6 +25756,11 @@ var CHILDFEE=(function(){
     {k:'agencyFee',label:'代辦費'},
     {k:'extendFee',label:'延托費'},
     {k:'deposit',label:'訂金'},
+    /* 2026-11-20：晚餐費——固定一個月1500元、沒有退費邏輯（不像月費/
+       餐費會因為請假按比例退），所以不放進 FIELDS_SUBTRACT；畫面上用
+       勾選框代替數字輸入框（見 _childCard 裡針對 dinnerFee 的特殊渲染），
+       勾了就是1500、取消勾選就是0，不用每個月自己打數字。 */
+    {k:'dinnerFee',label:'晚餐費'},
     {k:'refund',label:'退費(請假)'},
     /* 2026-11-18：使用者要求「多收費退回」這類零星調整（例如多收餐費、
        多收保險費）以後都直接記在月費單這筆帳單裡，不要只記在零用金的
@@ -26035,7 +26041,14 @@ var CHILDFEE=(function(){
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
     FIELDS.forEach(function(f){
-      h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
+      if(f.k==='dinnerFee'){
+        var dinnerOn=(parseFloat(rec.dinnerFee)||0)>0;
+        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div>';
+        h+='<label style="display:flex;align-items:center;gap:6px;height:100%;padding:8px 0;cursor:pointer;font-size:.8rem;color:#2d3057;">';
+        h+='<input type="checkbox" '+(dinnerOn?'checked':'')+' onchange="CHILDFEE.setField(\''+k.id+'\',\'dinnerFee\',this.checked?1500:0)">訂晚餐（1500）</label></div>';
+      } else {
+        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
+      }
     });
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px 10px;">';
@@ -27939,7 +27952,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120122943--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120135515--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
