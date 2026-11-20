@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120164555';
+  var BUILD='20261120165058';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -4851,6 +4851,17 @@ function _rosterKidsAsOf(cls,dateStr){
         </div>
       </div>
     </div>
+    <div class="hcard c-grn" onclick="GO('promote')">
+      <div class="hcard-in">
+        <div class="hcard-img"><img src="images/forms_leave.png" alt=""></div>
+        <div class="hcard-body">
+          <div class="hcard-lbl">PROMOTION HANDOVER</div>
+          <div class="hcard-title">升班交接單</div>
+          <div class="hcard-desc">幼兒照護交接事項</div>
+          <div class="hcard-arr">&#x203A;</div>
+        </div>
+      </div>
+    </div>
     <div class="hcard c-amb" onclick="GO('incident')">
       <div class="hcard-in">
         <div class="hcard-img"><img src="images/forms_incident.png" alt=""></div>
@@ -4902,17 +4913,6 @@ function _rosterKidsAsOf(cls,dateStr){
           <div class="hcard-lbl">MONTHLY CHECK</div>
           <div class="hcard-title">月檢查</div>
           <div class="hcard-desc">月底確認四張表</div>
-          <div class="hcard-arr">&#x203A;</div>
-        </div>
-      </div>
-    </div>
-    <div class="hcard c-grn" onclick="GO('promote')">
-      <div class="hcard-in">
-        <div class="hcard-img"><img src="images/forms_leave.png" alt=""></div>
-        <div class="hcard-body">
-          <div class="hcard-lbl">PROMOTION HANDOVER</div>
-          <div class="hcard-title">升班交接單</div>
-          <div class="hcard-desc">幼兒照護交接事項</div>
           <div class="hcard-arr">&#x203A;</div>
         </div>
       </div>
@@ -28291,7 +28291,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120164555--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120165058--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
