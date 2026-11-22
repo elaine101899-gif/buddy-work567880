@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261120170350';
+  var BUILD='20261122174156';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -8566,7 +8566,21 @@ var ASR = (function() {
     var photo=fCtx.photos[ai]&&fCtx.photos[ai][si];
     if(!photo){return;}
     var allKids=asrDB.children[fCtx.tid]||[];
-    var others=allKids.filter(function(c){return c.id!==fCtx.cid;});
+    /* 2026-11-22：asrDB.children 故意用 rosterAll()（不篩入園/離園日期）
+       建的，是為了讓剛新增、入園日還沒到的新生也能在後台名單裡選到——
+       但這裡是「複製給同老師其他小孩」，已經離園的孩子不該再被選進來
+       （離園後各表單新增資料本來就不該再選到他），所以在這裡另外補一層
+       離園日篩選，不去動 asrDB.children 本身（其他用到它的地方還是要
+       保留新生提前出現的行為）。 */
+    var _today=_todayISO();
+    var others=allKids.filter(function(c){
+      if(c.id===fCtx.cid)return false;
+      if(typeof ROSTER!=='undefined'&&ROSTER.getChildLifecycle){
+        var lc=ROSTER.getChildLifecycle(selYear,c.id);
+        if(lc&&lc.leaveDate&&_today>=lc.leaveDate)return false;
+      }
+      return true;
+    });
     if(!others.length){alert('同一老師下沒有其他小孩可以複製');return;}
     // 找老師的班別
     var myTeacher=(asrDB.teachers||[]).filter(function(t){return t.id===fCtx.tid;})[0];
@@ -28291,7 +28305,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261120170350--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261122174156--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
