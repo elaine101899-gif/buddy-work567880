@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261122174156';
+  var BUILD='20261123190221';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -15353,18 +15353,39 @@ var PROMOTE=(function(){
     h+='</div></div>';
     /* 備註 */
     h+='<div class="df-sec"><div class="df-lbl">備註</div><textarea id="dNote" class="df-ta" style="min-height:70px;">'+pe(d.dNote||'')+'</textarea></div>';
-    /* 交接資訊 */
+    /* 交接資訊：交接人員改成簽名（跟事故單「填表人簽名」同一套畫筆簽名板，
+       點名字chip快速簽，也可以自己手畫），接班人員維持純文字——紙本單
+       子通常是交接人員簽完就直接拿去給接班人員看，不一定當場就簽名。 */
     h+='<div class="df-sec"><div class="df-lbl">交接資訊</div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">交接人員</div><input type="text" id="dHandoverBy" class="df-inp" style="width:100%;" value="'+esc(d.dHandoverBy||'')+'"></div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:flex-start;">';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">交接人員簽名</div>';
+    if(d.dHandoverBySig){
+      h+='<img id="dHandoverBySigImg" src="'+d.dHandoverBySig+'" onclick="PROMOTE.openHandoverSig()" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:4px;">';
+      h+='<button id="dHandoverBySigBtn" onclick="PROMOTE.openHandoverSig()" type="button" style="padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';
+    } else {
+      h+='<button id="dHandoverBySigBtn" onclick="PROMOTE.openHandoverSig()" type="button" style="width:100%;padding:16px 8px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此<br>簽名</button>';
+      h+='<img id="dHandoverBySigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:4px;">';
+    }
+    h+='</div>';
     h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">接班人員</div><input type="text" id="dHandoverTo" class="df-inp" style="width:100%;" value="'+esc(d.dHandoverTo||'')+'"></div>';
     h+='</div>';
     h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">交接日期</div><input type="date" id="dHandoverDate" class="df-inp" value="'+esc(d.dHandoverDate||'')+'">';
     h+='</div>';
-    /* 主任簽章 */
+    /* 主任簽章：一樣改成簽名，預設帶入園長在簽名庫（SIGLIB）裡存過的
+       簽名（跟事故單/其他表單的主任簽章同一套邏輯），省得每次都要再畫一次。 */
     h+='<div class="df-sec"><div class="df-lbl">主任簽章</div>';
-    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;">';
-    h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">主任簽章</div><input type="text" id="dDirectorSign" class="df-inp" style="width:100%;" value="'+esc(d.dDirectorSign||_directorName()||'')+'"></div>';
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">';
+    h+='<div style="flex:1;min-width:120px;">';
+    h+='<div style="font-size:.72rem;color:#666;margin-bottom:3px;">主任簽章</div>';
+    if(d.dDirectorSignSig){
+      h+='<img id="dDirectorSignSigImg" src="'+d.dDirectorSignSig+'" onclick="PROMOTE.openDirectorSig()" style="height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;display:block;margin-bottom:4px;">';
+      h+='<button id="dDirectorSignSigBtn" onclick="PROMOTE.openDirectorSig()" type="button" style="padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;">重新簽名</button>';
+    } else {
+      h+='<button id="dDirectorSignSigBtn" onclick="PROMOTE.openDirectorSig()" type="button" style="width:100%;padding:16px 8px;border-radius:10px;border:1.5px dashed #aaa;background:#fafafa;color:#888;font-size:.8rem;cursor:pointer;">✍️ 點此<br>簽名</button>';
+      h+='<img id="dDirectorSignSigImg" src="" style="display:none;height:52px;border:1px solid #ddd;border-radius:6px;background:#fff;margin-top:4px;">';
+    }
+    h+='</div>';
     h+='<div style="flex:1;min-width:140px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">日期</div><input type="date" id="dDirectorDate" class="df-inp" style="width:100%;" value="'+esc(d.dDirectorDate||'')+'"></div>';
     h+='</div>';
     h+='<div style="color:#999;font-size:.74rem;margin-top:8px;">PS：升班至少前三天交接完成</div>';
@@ -15379,9 +15400,13 @@ var PROMOTE=(function(){
   }
 
   function collectData(){
+    /* dHandoverBySig/dDirectorSignSig 不在這個清單裡——它們是簽名圖檔，
+       由 openHandoverSig()/openDirectorSig() 的callback直接寫進
+       db[curFid]，這裡從 db[curFid] clone 出來的 d 已經帶著，不用也不能
+       用 v(id) 去讀（畫面上根本沒有那個 id 的 input）。 */
     var d=JSON.parse(JSON.stringify(db[curFid]||{}));
     ['dChildName','dAllergyDesc','dOtherNote','dMilkNight','dMilkMorning','dFoodAllergy','dSleepHabit',
-     'dPoopNote','dNote','dHandoverBy','dHandoverTo','dHandoverDate','dDirectorSign','dDirectorDate'
+     'dPoopNote','dNote','dHandoverTo','dHandoverDate','dDirectorDate'
     ].forEach(function(id){d[id]=v(id);});
     ['dPortrait','dTemp','dAllergySrc','dAppetite','dMealHelp','dSleep','dPoop'].forEach(function(name){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
@@ -15403,11 +15428,41 @@ var PROMOTE=(function(){
     var today=new Date();
     var yy=today.getFullYear()+'-'+(('0'+(today.getMonth()+1)).slice(-2))+'-'+(('0'+today.getDate()).slice(-2));
     db[curFid]={createdAt:Date.now(),dHandoverDate:yy};
+    _loadDirSig();
     curStep='form';_wrap().innerHTML=renderForm(db[curFid]);
   }
   function editForm(fid){
     curFid=fid;var d=db[fid]||{};
+    _loadDirSig();
     curStep='form';_wrap().innerHTML=renderForm(d);
+  }
+  /* 主任簽章預設帶入簽名庫（SIGLIB）裡存過的園長簽名，跟事故單同一套
+     邏輯——只在這筆記錄本來就還沒有簽名時才帶，不會蓋掉已經手動簽過的。 */
+  function _loadDirSig(){
+    if(typeof SIGLIB==='undefined'||!db[curFid])return;
+    if(db[curFid].dDirectorSignSig)return;
+    var sig=SIGLIB.get(_directorName());
+    if(sig)db[curFid].dDirectorSignSig=sig;
+  }
+  function openHandoverSig(){
+    var d=db[curFid];if(!d)return;
+    _sigPad.open('交接人員簽名',d.dHandoverBySig||'',function(dataURL){
+      d.dHandoverBySig=dataURL;
+      var img=document.getElementById('dHandoverBySigImg');
+      var btn=document.getElementById('dHandoverBySigBtn');
+      if(img){img.src=dataURL;img.style.display='';}
+      if(btn){btn.textContent='重新簽名';btn.style.cssText='padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;';}
+    });
+  }
+  function openDirectorSig(){
+    var d=db[curFid];if(!d)return;
+    _sigPad.open('主任簽章',d.dDirectorSignSig||'',function(dataURL){
+      d.dDirectorSignSig=dataURL;
+      var img=document.getElementById('dDirectorSignSigImg');
+      var btn=document.getElementById('dDirectorSignSigBtn');
+      if(img){img.src=dataURL;img.style.display='';}
+      if(btn){btn.textContent='重新簽名';btn.style.cssText='padding:4px 10px;border-radius:8px;border:1px solid #ccc;background:#f5f5f5;color:#666;font-size:.72rem;cursor:pointer;';}
+    });
   }
   function saveForm(){
     var d=collectData();
@@ -15493,15 +15548,18 @@ var PROMOTE=(function(){
     ['姓名貼','個人資料本','適性本','防蚊液','屁屁膏','乳液','牙刷組'].forEach(function(it){p+=mark((d.dItems||[]).indexOf(it)>=0)+it+'　';});
     p+='</div>';
     p+='<div class="sec-title">備註：</div><div class="row indent">'+pe(d.dNote||'').replace(/\n/g,'<br>')+'</div>';
-    p+='<div class="row" style="margin-top:20px;">交接人員：<span class="ul">'+esc(d.dHandoverBy||'')+'</span>　　接班人員：<span class="ul">'+esc(d.dHandoverTo||'')+'</span></div>';
+    /* dHandoverBySig/dDirectorSignSig 是簽名圖檔（新版），dHandoverBy/
+       dDirectorSign 是改版前存的純文字姓名——舊資料沒有簽名圖檔，印出來
+       還是顯示文字，不會變空白。 */
+    p+='<div class="row" style="margin-top:20px;">交接人員：'+(d.dHandoverBySig?'<img src="'+d.dHandoverBySig+'" style="height:34px;vertical-align:middle;">':'<span class="ul">'+esc(d.dHandoverBy||'')+'</span>')+'　　接班人員：<span class="ul">'+esc(d.dHandoverTo||'')+'</span></div>';
     p+='<div class="row">交接日期：<span class="ul">'+esc(d.dHandoverDate||'')+'</span></div>';
-    p+='<div class="row" style="text-align:right;">主任簽章：<span class="ul">'+esc(d.dDirectorSign||'')+'</span>　日期：<span class="ul">'+esc(d.dDirectorDate||'')+'</span></div>';
+    p+='<div class="row" style="text-align:right;">主任簽章：'+(d.dDirectorSignSig?'<img src="'+d.dDirectorSignSig+'" style="height:34px;vertical-align:middle;">':'<span class="ul">'+esc(d.dDirectorSign||'')+'</span>')+'　日期：<span class="ul">'+esc(d.dDirectorDate||'')+'</span></div>';
     p+='<div class="ps">PS：升班至少前三天交接完成</div>';
     p+='</body></html>';
     return p;
   }
 
-  return{init:init,newForm:newForm,editForm:editForm,backToList:backToList,saveForm:saveForm,deleteForm:deleteForm,downloadFid:downloadFid,download:download,onChildSel:onChildSel};
+  return{init:init,newForm:newForm,editForm:editForm,backToList:backToList,saveForm:saveForm,deleteForm:deleteForm,downloadFid:downloadFid,download:download,onChildSel:onChildSel,openHandoverSig:openHandoverSig,openDirectorSig:openDirectorSig};
 })();
 
 var ENTEROVIRUS=(function(){
@@ -28305,7 +28363,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261122174156--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261123190221--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
