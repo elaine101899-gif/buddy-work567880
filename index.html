@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261123190221';
+  var BUILD='20261124143955';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -15327,6 +15327,12 @@ var PROMOTE=(function(){
     h+='<div style="margin-bottom:8px;"><div style="font-size:.72rem;color:#666;margin-bottom:3px;">幼兒姓名</div><input type="text" id="dChildName" class="df-inp" placeholder="請填寫" value="'+esc(d.dChildName||'')+'"></div>';
     h+='<div style="display:flex;align-items:center;gap:8px;"><span style="font-size:.82rem;white-space:nowrap;">肖像權：</span>'+rad('dPortrait','同意',d.dPortrait)+rad('dPortrait','不同意',d.dPortrait)+'</div>';
     h+='</div>';
+    /* 交接原因：固定四選一，勾「其他」才需要再填文字說明——不是紙本
+       原始表單上有的欄位，是後來加的需求，獨立放一個 df-sec。 */
+    h+='<div class="df-sec"><div class="df-lbl">交接原因</div>';
+    h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+rad('dReason','幼兒升班',d.dReason)+rad('dReason','幼兒轉班',d.dReason)+rad('dReason','老師離職',d.dReason)+rad('dReason','其他',d.dReason);
+    h+='<input type="text" id="dReasonOther" class="df-inp" style="flex:1;min-width:140px;" placeholder="請說明" value="'+esc(d.dReasonOther||'')+'"></div>';
+    h+='</div>';
     /* 一、幼兒身體狀況 */
     h+='<div class="df-sec"><div class="df-lbl">一、幼兒身體狀況</div>';
     h+='<div style="margin-bottom:8px;"><span style="font-size:.82rem;">本身體質的體溫：</span>'+rad('dTemp','正常36.5~36.9',d.dTemp)+rad('dTemp','偏高37~37.4',d.dTemp)+'</div>';
@@ -15406,9 +15412,9 @@ var PROMOTE=(function(){
        用 v(id) 去讀（畫面上根本沒有那個 id 的 input）。 */
     var d=JSON.parse(JSON.stringify(db[curFid]||{}));
     ['dChildName','dAllergyDesc','dOtherNote','dMilkNight','dMilkMorning','dFoodAllergy','dSleepHabit',
-     'dPoopNote','dNote','dHandoverTo','dHandoverDate','dDirectorDate'
+     'dPoopNote','dNote','dHandoverTo','dHandoverDate','dDirectorDate','dReasonOther'
     ].forEach(function(id){d[id]=v(id);});
-    ['dPortrait','dTemp','dAllergySrc','dAppetite','dMealHelp','dSleep','dPoop'].forEach(function(name){
+    ['dPortrait','dTemp','dAllergySrc','dAppetite','dMealHelp','dSleep','dPoop','dReason'].forEach(function(name){
       var e=document.querySelector('input[name="'+name+'"]:checked');d[name]=e?e.value:'';
     });
     ['dMealType','dItems'].forEach(function(name){d[name]=gcb(name);});
@@ -15529,6 +15535,7 @@ var PROMOTE=(function(){
     p+='<h1>嬰幼兒照護交接單</h1>';
     p+='<div class="row">幼兒姓名：<span class="ul">'+esc(d.dChildName||'')+'</span>　　';
     p+='肖像權：'+portraitAgree+'同意　'+portraitDisagree+'不同意</div>';
+    p+='<div class="row">交接原因：'+mark(d.dReason==='幼兒升班')+'幼兒升班　'+mark(d.dReason==='幼兒轉班')+'幼兒轉班　'+mark(d.dReason==='老師離職')+'老師離職　'+mark(d.dReason==='其他')+'其他：<span class="ul">'+esc(d.dReasonOther||'')+'</span></div>';
     p+='<div class="sec-title">一、幼兒身體狀況</div>';
     p+='<div class="row indent">本身體質的體溫：'+mark(d.dTemp==='正常36.5~36.9')+'正常36.5~36.9　'+mark(d.dTemp==='偏高37~37.4')+'偏高37~37.4</div>';
     p+='<div class="row indent">是否有過敏原：'+mark(d.dAllergySrc==='無')+'無　'+mark(d.dAllergySrc==='有')+'有，說明：<span class="ul">'+esc(d.dAllergyDesc||'')+'</span></div>';
@@ -28363,7 +28370,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261123190221--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261124143955--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
