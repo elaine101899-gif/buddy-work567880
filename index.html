@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125165040';
+  var BUILD='20261125172351';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25802,11 +25802,20 @@ var CHILDLEAVE=(function(){
     var today0=new Date();today0.setHours(0,0,0,0);
     var d=new Date(startIso+'T00:00:00');
     var end=new Date(endIso+'T00:00:00');
-    var written=0,skipped=0;
+    var written=0,skipped=0,offDaySkipped=0;
     var childName=_curEditChild.name,childId=_curEditChild.id;
     while(d<=end){
       var k=dateInputValToKey(d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()));
-      if(d<today0&&!isAdm){skipped++;}
+      /* 2026-11-25：週六日／國定假日本來就不開園，不該連這幾天也寫一筆
+         請假紀錄——腸病毒/颱風假/豪雨假這類「平日請假就退」的退費計算
+         （_sumCollect）是直接看「這天有沒有紀錄」來退費，沒有另外排除
+         假日，如果這裡把假日也寫進去，退費就會連公休日也一起算進去，
+         跟吳宇祈10/28(三)~11/2(一)腸病毒只該退平日那4天、不該連10/31(六)
+         11/1(日)也退的實際情況對不起來。改成假日整天跳過不寫，從根本
+         讓假日永遠不會有紀錄可以被誤退費（跟病假/住院那段邏輯本來就假設
+         「週末不會有紀錄」是一致的）。 */
+      if(_isOffDay(d)){offDaySkipped++;}
+      else if(d<today0&&!isAdm){skipped++;}
       else{
         var r=getRec(childId,k);
         r.name=childName;
@@ -25820,7 +25829,7 @@ var CHILDLEAVE=(function(){
     save();
     closeEdit();
     render();
-    alert('已設定 '+childName+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過，請解鎖後重新設定）':''));
+    alert('已設定 '+childName+' '+startIso+' ～ '+endIso+'，共 '+written+' 天請假'+(offDaySkipped?'（其中 '+offDaySkipped+' 天是假日，不開園不算請假，已自動跳過）':'')+(skipped?'（'+skipped+' 天是過去日期，未解鎖後台所以跳過，請解鎖後重新設定）':''));
   }
   function deleteEdit(){
     if(!_curEditChild)return;
@@ -25896,6 +25905,9 @@ var CHILDLEAVE=(function(){
       if(rec&&rec.type&&types.indexOf(rec.type)>=0){
         var p=dk.split('_');
         var dt=new Date(parseInt(p[0],10)+1911,parseInt(p[1],10)-1,parseInt(p[2],10));
+        /* 假日不開園，就算雲端留著舊的假日請假紀錄也不該算進「連續請假」
+           的區間判斷，理由跟 _sumCollect() 裡那段一樣。 */
+        if(_isOffDay(dt))return;
         out.push({date:dt,dateKey:dk});
       }
     });
@@ -25956,6 +25968,12 @@ var CHILDLEAVE=(function(){
       Object.keys(dayRec).forEach(function(cid){
         var rec=dayRec[cid];
         if(!rec||!rec.type)return;
+        /* 2026-11-25：假日（週六日／國定假日）本來就不開園，就算雲端
+           還留著舊的假日請假紀錄（例如改版前用日期區間一次寫入、沒有
+           跳過假日的舊資料），這裡也不該再算退費——跟 saveEdit() 現在
+           已經不會再「新寫」假日紀錄是同一套邏輯，這裡是保險，讓舊資料
+           也自動失效，不用一筆一筆手動去雲端刪。 */
+        if(_isOffDay(d))return;
         if(!byChild[cid])byChild[cid]={id:cid,name:rec.name||'（未知）',cls:clsOf[cid]||'',entries:[],refundTotal:0};
         var refund=0;
         if(FLAT_REFUND_TYPES.indexOf(rec.type)>=0){
@@ -28408,7 +28426,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125165040--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125172351--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
