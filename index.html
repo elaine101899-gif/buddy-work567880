@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125162129';
+  var BUILD='20261125165040';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26590,7 +26590,15 @@ var CHILDFEE=(function(){
     }
     if(found)_applyFeeDefaults(rec,found,_endM);
     if(field==='payMethod'||field==='payDate'||field==='last5'||field==='receiptNo'||field==='note')rec[field]=val;
-    else rec[field]=val===''?undefined:parseFloat(val);
+    /* 2026-11-25：清空欄位（val===''）要用 delete 整個拿掉這個 key，
+       不能寫成 rec[field]=undefined——Firebase compat SDK 的 .set() 收到
+       物件裡有任何屬性「值是 undefined」就會直接同步丟例外（不是打
+       不過去而已，是整段程式碼中斷執行），底下的 pushRec()／render()
+       都不會跑到，畫面看起來像「清空/取消完全沒反應」，其實是雲端
+       同步那行就炸掉了。晚餐訂閱名單「再按一次取消」就是踩到這個洞
+       才發現的——這裡修掉，所有欄位清空（不只晚餐）都受益。 */
+    else if(val===''){delete rec[field];}
+    else rec[field]=parseFloat(val);
     if(found)rec.name=found;
     save();pushRec(pk,cid);
     render();
@@ -28400,7 +28408,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125162129--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125165040--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
