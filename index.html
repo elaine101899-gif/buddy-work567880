@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125183625';
+  var BUILD='20261125190330';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3351,9 +3351,29 @@ var ROSTER=(function(){
        只要雲端 children 裡任何老師底下已經有這個孩子的紀錄，就代表這個
        孩子的位置已經交給雲端管理了，底稿那份永遠是舊的，不該再顯示——
        跟老師資料「雲端有對應紀錄就整筆取代底稿」是同一套邏輯。 */
+    /* 2026-11-25 再修正：上面這個「雲端有紀錄就不信底稿」的判斷太寬鬆了——
+       moveChild() 排未來生效日期時，會把孩子「立刻」預先寫進新老師的雲端
+       節點（這是故意的，為了生效當天不用再手動搬一次），但這個預先寫入的
+       節點在生效之前只是「預留位置」，不代表孩子現在真的歸雲端管理。如果
+       看到這個預留節點就判斷「雲端有資料了，底稿不用管」，孩子會在生效日
+       之前整個消失（底稿原本的位置被這裡擋掉，雲端那邊又因為還沒生效被
+       loop2 的 showHere 擋掉，兩頭都不顯示）——王品承/林昕妍/陳宥維/黃芯悅
+       排了12/1的排程後，整個從爬爬班消失，就是踩到這個洞。
+       改成：只有「這筆雲端紀錄不是『還沒生效的升班目標』」才算數，排程本身
+       預先寫進目標老師的那筆要排除在外，不能拿來當作「底稿已經過時」的
+       證據。 */
     var cloudChildIds={};
     Object.keys(cloudC).forEach(function(tid){
-      Object.keys(cloudC[tid]).forEach(function(cid){cloudChildIds[cid]=true;});
+      Object.keys(cloudC[tid]).forEach(function(cid){
+        var r=reassignedRaw[cid];
+        if(r){
+          var _tid=(typeof r==='string')?r:r.tid;
+          var _effDate=(typeof r==='object'&&r.effDate)?r.effDate:null;
+          var _isEffective=(!_effDate||_effDate<=asOfDate);
+          if(!_isEffective&&tid===_tid)return;
+        }
+        cloudChildIds[cid]=true;
+      });
     });
     var children={};
     Object.keys(b.children||{}).forEach(function(tid){
@@ -28484,7 +28504,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125183625--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125190330--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
