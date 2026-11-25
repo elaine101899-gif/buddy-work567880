@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125160742';
+  var BUILD='20261125161725';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26430,12 +26430,19 @@ var CHILDFEE=(function(){
       h+='<div style="display:flex;flex-direction:column;gap:8px;">';
       kids.forEach(function(k){
         var rec=_peekRec(pk,k.id);
-        var on=!!(rec&&(parseFloat(rec.dinnerFee)||0)>0);
-        if(on){clsOn++;totalOn++;}
+        /* 2026-11-25：rec.dinnerFee 還沒被任何一邊按過的話是 undefined
+           （不是0）——這裡故意分三種狀態：還沒選（兩顆都灰色，代表還沒
+           交通知單回條）、要（1500）、不要（明確存0）。不能只看
+           "有沒有>0" 兩分法，不然「還沒交」跟「已經選不要」畫面上會長
+           得一樣，分不出誰還沒回覆。 */
+        var raw=rec?rec.dinnerFee:undefined;
+        var state=raw===undefined?'unset':((parseFloat(raw)||0)>0?'yes':'no');
+        if(state==='yes'){clsOn++;totalOn++;}
+        var yesOn=state==='yes',noOn=state==='no';
         h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:12px;font-size:.84rem;color:#2d3057;">';
-        h+='<span style="flex:1;">'+k.name+'</span>';
-        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',true)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(on?'#B9822A':'#ddd')+';background:'+(on?'#F0C97A':'#fff')+';color:'+(on?'#4a3300':'#999')+';font-weight:800;font-size:.78rem;cursor:pointer;">要</button>';
-        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',false)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(on?'#ddd':'#999')+';background:'+(on?'#fff':'#E8E8E8')+';color:'+(on?'#999':'#555')+';font-weight:800;font-size:.78rem;cursor:pointer;">不要</button>';
+        h+='<span style="flex:1;">'+k.name+(state==='unset'?' <span style="font-size:.68rem;color:#bbb;font-weight:700;">（未回覆）</span>':'')+'</span>';
+        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',true)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(yesOn?'#B9822A':'#ddd')+';background:'+(yesOn?'#F0C97A':'#eee')+';color:'+(yesOn?'#4a3300':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">要</button>';
+        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',false)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(noOn?'#999':'#ddd')+';background:'+(noOn?'#E8E8E8':'#eee')+';color:'+(noOn?'#555':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">不要</button>';
         h+='</div>';
       });
       h+='</div>';
@@ -28381,7 +28388,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125160742--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125161725--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
