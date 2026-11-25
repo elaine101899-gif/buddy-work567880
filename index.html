@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261124143955';
+  var BUILD='20261125154101';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26432,7 +26432,9 @@ var CHILDFEE=(function(){
         var on=!!(rec&&(parseFloat(rec.dinnerFee)||0)>0);
         if(on)subCount++;
         h+='<label style="display:flex;align-items:center;gap:6px;padding:8px 10px;background:#FAF6EE;border:1.5px solid '+(on?'#F0C97A':'#E2D9C8')+';border-radius:12px;cursor:pointer;font-size:.84rem;color:#2d3057;">';
-        h+='<input type="checkbox" '+(on?'checked':'')+' onchange="CHILDFEE.toggleDinnerSub(\''+k.id+'\',this.checked)">'+k.name+'</label>';
+        h+='<input type="checkbox" '+(on?'checked':'')+' onchange="CHILDFEE.toggleDinnerSub(\''+k.id+'\',this.checked)">'+k.name;
+        h+='<span style="margin-left:auto;font-size:.68rem;font-weight:800;padding:1px 7px;border-radius:999px;'+(on?'background:#FCEFD9;color:#B9822A;':'background:#F0F0F0;color:#999;')+'">'+(on?'有訂':'沒有')+'</span>';
+        h+='</label>';
       });
       h+='</div>';
     });
@@ -28370,7 +28372,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261124143955--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125154101--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
