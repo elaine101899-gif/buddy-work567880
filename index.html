@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125183059';
+  var BUILD='20261125183625';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3634,6 +3634,19 @@ var ROSTER=(function(){
     var lc=lastCloud[yr]&&lastCloud[yr].lifecycle&&lastCloud[yr].lifecycle[childId];
     return lc||null;
   }
+  /* 查詢某個幼兒「排好但還沒生效」的升班排程（給後台名單畫面顯示提醒標籤用，
+     跟入園/離園日期那組同一個用途——排了升班排程之後不容易記得哪個小孩
+     已經排過，到了生效日期自然會搬走、這個標籤自己就不會再顯示了，不用
+     另外清除）。已經生效（或是舊格式沒有日期、視同立即生效）的話回傳
+     null，不用再提醒。 */
+  function getPendingReassignment(yr,childId){
+    var r=lastCloud[yr]&&lastCloud[yr].reassigned&&lastCloud[yr].reassigned[childId];
+    if(!r)return null;
+    var tid=(typeof r==='string')?r:r.tid;
+    var effDate=(typeof r==='object'&&r.effDate)?r.effDate:null;
+    if(!effDate||effDate<=_todayISO())return null;
+    return {tid:tid,effDate:effDate};
+  }
   function removeChild(yr,teacherId,childId,cb){
     var fb=_fbInit();
     if(fb){
@@ -3691,7 +3704,7 @@ var ROSTER=(function(){
   /* 不再固定於 DOMContentLoaded 自動 init()：改由 applyCompany()（選公司時，
      或已儲存公司、開機自動套用時）呼叫 forceSync()，避免跟公司切換的時機互相搶跑，
      造成 base 快照被還沒切換完成的舊公司資料污染。 */
-  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,rosterBillableAsOf:rosterBillableAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle,addUnassignedChild:addUnassignedChild,getUnassignedChildren:getUnassignedChildren,assignTeacherToChild:assignTeacherToChild};
+  return{init:init,addTeacher:addTeacher,updateTeacher:updateTeacher,addChild:addChild,updateChildAge:updateChildAge,moveChild:moveChild,removeTeacher:removeTeacher,removeChild:removeChild,forceSync:forceSync,rosterAsOf:rosterAsOf,rosterAll:rosterAll,rosterBillable:rosterBillable,rosterBillableAsOf:rosterBillableAsOf,setChildLifecycle:setChildLifecycle,getChildLifecycle:getChildLifecycle,getPendingReassignment:getPendingReassignment,addUnassignedChild:addUnassignedChild,getUnassignedChildren:getUnassignedChildren,assignTeacherToChild:assignTeacherToChild};
 })();
 
 /* 給「填表日期／紀錄日期」會影響幼兒名單的表單共用：依指定班級＋日期，回傳
@@ -8048,6 +8061,17 @@ var ASR = (function() {
         h+='<div style="font-size:.6rem;color:#c0784a;font-weight:700;margin-top:2px;">';
         if(_lc.enrollDate)h+='🚪入園'+_lc.enrollDate.slice(5)+' ';
         if(_lc.leaveDate)h+='🚪離園'+_lc.leaveDate.slice(5);
+        h+='</div>';
+      }
+      /* 2026-11-25：排了升班排程之後，在生效日到之前先在小孩卡片上
+         提醒一下，不然排過的小孩跟還沒排的長得一樣，容易忘記已經排過
+         哪幾個。到了生效日那天小孩自然會搬到新老師底下、這張卡片的
+         名單也會少這個人，提醒就自然消失了，不用另外清除。 */
+      var _pr=(typeof ROSTER!=='undefined'&&ROSTER.getPendingReassignment)?ROSTER.getPendingReassignment(selYear,c.id):null;
+      if(_pr){
+        var _prT=(asrDB.teachers||[]).filter(function(t){return t.id===_pr.tid;})[0];
+        h+='<div style="font-size:.6rem;color:#4a7ac0;font-weight:700;margin-top:2px;">';
+        h+='⬆️升班'+_pr.effDate.slice(5)+(_prT?'→'+_prT.name:'');
         h+='</div>';
       }
       h+='<button class="asr-del-btn" data-del-cid="'+c.id+'" style="display:none;margin-top:5px;background:#e04040;color:white;border:none;border-radius:6px;padding:3px 10px;font-size:.65rem;cursor:pointer;" onclick="event.stopPropagation();ASR.delC(this.getAttribute(\'data-del-cid\'))">&#x2715; 刪除</button>';
@@ -28460,7 +28484,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125183059--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125183625--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
