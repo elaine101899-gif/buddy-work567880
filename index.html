@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125173143';
+  var BUILD='20261125182257';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3338,11 +3338,27 @@ var ROSTER=(function(){
     Object.keys(cloudT).forEach(function(id){
       if(!tIds[id]&&!removedT[id]){teachers.push(Object.assign({},cloudT[id],{id:id}));tIds[id]=true;}
     });
+    var cloudC=(cloud&&cloud.children)||{};
+    /* 2026-11-25：reassigned 這個對照表一次只記得「最近一次」的升班排程——
+       如果一個孩子之前已經升過一次班（舊排程生效後，雲端 children 底下
+       已經有了現在真正的班級），後來又排了「下一次」升班（例如先前就從
+       底稿老師搬到A老師，現在又要在12/1搬去B老師），新排程會直接覆蓋掉
+       舊排程，底稿（base）老師那邊的濾除判斷就失去了「這孩子早就搬走了」
+       這個資訊——因為 reassigned[cid] 現在指向還沒生效的B，対底稿老師
+       來說 reassigned[c.id] 是假的（還沒生效），孩子就會在底稿老師底下
+       「復活」，變成同時出現在底稿老師、A老師兩邊（吳宇祈升班排程踩到
+       這個洞才發現：韓宇棠同時出現在郭于綺、徐華家兩邊）。
+       只要雲端 children 裡任何老師底下已經有這個孩子的紀錄，就代表這個
+       孩子的位置已經交給雲端管理了，底稿那份永遠是舊的，不該再顯示——
+       跟老師資料「雲端有對應紀錄就整筆取代底稿」是同一套邏輯。 */
+    var cloudChildIds={};
+    Object.keys(cloudC).forEach(function(tid){
+      Object.keys(cloudC[tid]).forEach(function(cid){cloudChildIds[cid]=true;});
+    });
     var children={};
     Object.keys(b.children||{}).forEach(function(tid){
-      children[tid]=b.children[tid].filter(function(c){return !removedC[c.id]&&!(reassigned[c.id]&&reassigned[c.id]!==tid);});
+      children[tid]=b.children[tid].filter(function(c){return !removedC[c.id]&&!cloudChildIds[c.id]&&!(reassigned[c.id]&&reassigned[c.id]!==tid);});
     });
-    var cloudC=(cloud&&cloud.children)||{};
     Object.keys(cloudC).forEach(function(tid){
       if(!children[tid])children[tid]=[];
       var cIds={}; children[tid].forEach(function(c){cIds[c.id]=true;});
@@ -28444,7 +28460,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125173143--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125182257--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
