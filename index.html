@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125172351';
+  var BUILD='20261125173143';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3349,10 +3349,28 @@ var ROSTER=(function(){
       Object.keys(cloudC[tid]).forEach(function(cid){
         /* 這個孩子如果有「升班」排程，只有在排程對象就是目前這個老師、
            而且生效日期已到（cid 有出現在上面已生效的 reassigned 裡）才顯示；
-           還沒到生效日期的話，先不要顯示在新班級，維持只在舊班級看得到。 */
+           還沒到生效日期的話，先不要顯示在新班級，維持只在舊班級看得到。
+           2026-11-25 修正：moveChild() 排未來生效日期時，會「立刻」把孩子
+           寫進新老師的雲端節點（child.id 同時存在 cloudC[舊老師] 和
+           cloudC[新老師] 兩邊），原本這裡只判斷「是不是排程目標老師」，
+           沒生效的話兩邊都會被 hasSchedule 擋下來——對只存在雲端、不在
+           底稿（base）裡的孩子（例如升班排程設定之後才新增的幼兒），
+           兩個老師底下都看不到人，整個從名單消失。改成：還沒生效的話，
+           只排除「排程目標」那位老師，非目標的那位（通常就是原本老師）
+           照常顯示，底稿裡的孩子本來就是靠上面第一段邏輯處理、不受這裡
+           影響，這裡修的是只存在雲端的孩子。 */
         var hasSchedule=Object.prototype.hasOwnProperty.call(reassignedRaw,cid);
-        var effectiveHere=(reassigned[cid]===tid);
-        if(!cIds[cid]&&!removedC[cid]&&(!hasSchedule||effectiveHere)){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
+        var showHere;
+        if(!hasSchedule){
+          showHere=true;
+        } else if(reassigned[cid]){
+          showHere=(reassigned[cid]===tid);
+        } else {
+          var _raw=reassignedRaw[cid];
+          var _scheduledTid=(typeof _raw==='string')?_raw:_raw.tid;
+          showHere=(tid!==_scheduledTid);
+        }
+        if(!cIds[cid]&&!removedC[cid]&&showHere){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
     /* 入園／離園日期：跟升班一樣是「看日期」的，不是一刀切的刪除。
@@ -28426,7 +28444,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125172351--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125173143--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
