@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125190330';
+  var BUILD='20261125193644';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -3362,9 +3362,20 @@ var ROSTER=(function(){
        改成：只有「這筆雲端紀錄不是『還沒生效的升班目標』」才算數，排程本身
        預先寫進目標老師的那筆要排除在外，不能拿來當作「底稿已經過時」的
        證據。 */
+    /* 2026-11-25 第三次修正：updateChildAge() 只對 .../children/{tid}/{cid}/age
+       這個葉節點呼叫 .set()，如果這個孩子在雲端本來完全沒有資料（只活在
+       底稿裡），Firebase 會順便生出一個「只有 age、沒有 name/id」的殘缺
+       節點。畫面渲染小孩卡片時會直接用 c.name.slice(0,1) 來取頭像文字，
+       遇到這種沒有 name 的殘缺節點就會整個丟例外、把那個老師底下全部
+       小孩的畫面都搞垮（不是只有那一個孩子不見，是那位老師整欄空白）——
+       陳巧芳的小孩全部消失，就是江尚騰(c0105)踩到這顆地雷。
+       這種殘缺節點不能拿來當作「雲端已經接管」的證據，也不能真的被拿去
+       顯示，一律當作它不存在，繼續信任底稿／其他真正完整的雲端紀錄。 */
+    function _validCloudChild(v){return !!(v&&v.name);}
     var cloudChildIds={};
     Object.keys(cloudC).forEach(function(tid){
       Object.keys(cloudC[tid]).forEach(function(cid){
+        if(!_validCloudChild(cloudC[tid][cid]))return;
         var r=reassignedRaw[cid];
         if(r){
           var _tid=(typeof r==='string')?r:r.tid;
@@ -3406,7 +3417,7 @@ var ROSTER=(function(){
           var _scheduledTid=(typeof _raw==='string')?_raw:_raw.tid;
           showHere=(tid!==_scheduledTid);
         }
-        if(!cIds[cid]&&!removedC[cid]&&showHere){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
+        if(!cIds[cid]&&!removedC[cid]&&showHere&&_validCloudChild(cloudC[tid][cid])){children[tid].push(cloudC[tid][cid]);cIds[cid]=true;}
       });
     });
     /* 入園／離園日期：跟升班一樣是「看日期」的，不是一刀切的刪除。
@@ -8045,7 +8056,11 @@ var ASR = (function() {
   function rdrC(){
     var g=document.getElementById('childGrid');
     if(!selT){g.innerHTML='';return;}
-    var _allCs=asrDB.children[selT]||[];
+    /* 2026-11-25：濾掉沒有 name 的殘缺紀錄（例如只更新過年齡、從沒正式
+       新增過的雲端孤兒節點）——c.name.slice(0,1) 遇到這種資料會直接丟
+       例外，把這個迴圈剩下的小孩全部一起搞垮、整個老師底下看起來像沒人，
+       這裡當作最後一道防線，就算 ROSTER 那邊漏接也不會壞到畫面全空。 */
+    var _allCs=(asrDB.children[selT]||[]).filter(function(c){return c&&c.name;});
     /* 這裡是後台幼兒管理畫面：未到入園日的新生仍然要顯示（帶入園日期提醒），
        避免忘記已經新增過。只有「離園日已到」的孩子預設隱藏——
        寢具/日誌/電訪表等前台模組本來就是依日期各自判斷是否顯示，不受這裡影響，
@@ -28504,7 +28519,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125190330--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125193644--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
