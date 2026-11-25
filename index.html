@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261125161725';
+  var BUILD='20261125162129';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26459,7 +26459,19 @@ var CHILDFEE=(function(){
     document.getElementById('cfDinnerBody').innerHTML=h;
   }
   function toggleDinnerSub(cid,checked){
-    setField(cid,'dinnerFee',checked?1500:0);
+    /* 再按一次目前已經亮著的那顆按鈕，變回「未回覆」（undefined），
+       不是只能在「要」「不要」兩個狀態之間切換——點錯了要能retreat回
+       「還沒交」的狀態，不用被迫選一個不對的答案。 */
+    var pk=periodKey(_endY,_endM);
+    var rec=_peekRec(pk,cid);
+    var raw=rec?rec.dinnerFee:undefined;
+    var curState=raw===undefined?'unset':((parseFloat(raw)||0)>0?'yes':'no');
+    var wantState=checked?'yes':'no';
+    if(curState===wantState){
+      setField(cid,'dinnerFee','');
+    } else {
+      setField(cid,'dinnerFee',checked?1500:0);
+    }
     _renderDinnerSub();
   }
   function _childCard(k,pk,extendTotals,refundTotals){
@@ -28388,7 +28400,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125161725--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261125162129--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
