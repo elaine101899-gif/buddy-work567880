@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261126112236';
+  var BUILD='20261126132403';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -22158,7 +22158,7 @@ var SPACES=(function(){
    所以共用同一個工廠函式產生兩個獨立模組，不用寫兩份幾乎一樣的程式碼。
    每月一筆記錄：一、每月總數量（每個品項一格） 二、當月用品拿取紀錄（可自由新增/刪除列，
    每列有日期、各品項拿取數量、拿取者/簽名）。列印固定輸出成一張橫式A4。 */
-var ITEMSTAT_ITEMS=['床單','床墊','書包','餐具袋','三色碗','資料夾(內務袋)','透明夾鏈袋','壓舌棒','幼兒健康輕便夾','適性果凍夾'];
+var ITEMSTAT_ITEMS=['床單','床墊','書包','餐具袋','三色碗','資料夾(內務袋)','透明夾鏈袋','樂扣盒','幼兒健康輕便夾','適性果凍夾'];
 /* 2026-11 把原本幾個「斜線合併寫在同一格」的細項拆開成獨立品項
    （例如 垃圾袋(特大/大/中) 拆成 特大/大/中 三個獨立品項），這樣每個
    品項才能各自輸入數字、才有辦法加總結算，不會卡在同一格裡要自己
@@ -28519,7 +28519,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261126112236--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261126132403--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
