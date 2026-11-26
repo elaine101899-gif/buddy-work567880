@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261126132403';
+  var BUILD='20261126155248';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26030,7 +26030,30 @@ var CHILDLEAVE=(function(){
      總共算下來天數滿5天（含）以上，這一整段有記錄到的病假日「全部」
      都退費；沒滿5天的整段都不退。例如10/14(三)～10/19(一)中間跨了
      週末，整段共6天滿5天，10/14.15.16.19 這4筆記錄全退；10/16(五)～
-     10/19(一)整段只有4天沒滿5天，兩筆記錄都不退。 */
+     10/19(一)整段只有4天沒滿5天，兩筆記錄都不退。
+     2026-11-26：李岳恩的案例——10/19~10/23是腸病毒，10/24~10/26剛好
+     連著六日＋補假（整段都是假日），10/27~10/30是病假，單看病假這4天
+     本身沒滿5天，依原本規則不會退。但「腸病毒」跟「病假」是不同假別，
+     原本只看同一種假別（SICK_TYPES）串連續，腸病毒不算在內，等於完全
+     忽略了「這個孩子其實是同一場病、只是前半段跟後半段登記成不同假別」
+     這件事。改成：病假的這一段如果緊接著的前面或後面（中間一樣只隔
+     假日）剛好有腸病毒/腸-停課這類假別的紀錄，一樣當作「跨過一個完整
+     假期、證明真的連續生病」，整段病假照樣全退，不用再要求病假本身
+     單獨湊滿5天。 */
+  function _bridgedByFlatLeave(cid,date,dir){
+    var t=new Date(date.getTime());
+    var guard=0;
+    for(;;){
+      t.setDate(t.getDate()+dir);
+      guard++;
+      if(guard>14)return false; /* 保險：避免資料異常時無窮迴圈往前/往後掃 */
+      if(!_isOffDay(t)){
+        var k=_sumDateKey(t);
+        var rec=(db.records[k]||{})[cid];
+        return !!(rec&&rec.type&&FLAT_REFUND_TYPES.indexOf(rec.type)>=0);
+      }
+    }
+  }
   function _eligibleSickDateKeys(cid){
     var dates=_fullTypeDatesForChild(cid,SICK_TYPES);
     var eligible={};
@@ -26042,7 +26065,8 @@ var CHILDLEAVE=(function(){
         run.push(dates[j]);j++;
       }
       var span=Math.round((run[run.length-1].date-run[0].date)/86400000)+1;
-      if(span>=5)run.forEach(function(e){eligible[e.dateKey]=true;});
+      var bridged=_bridgedByFlatLeave(cid,run[0].date,-1)||_bridgedByFlatLeave(cid,run[run.length-1].date,1);
+      if(span>=5||bridged)run.forEach(function(e){eligible[e.dateKey]=true;});
       i=j;
     }
     return eligible;
@@ -28519,7 +28543,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261126132403--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261126155248--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
