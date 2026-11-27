@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127091447';
+  var BUILD='20261127093820';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -5748,7 +5748,7 @@ function _rosterKidsAsOf(cls,dateStr){
   </div>
 </div>
 <div class="asr-modal" id="cfDinnerOv">
-  <div class="asr-mbox" style="max-width:760px;">
+  <div class="asr-mbox" style="max-width:920px;">
     <h3>&#x1F37D;&#xFE0F; 訂閱晚餐（<span id="cfDinnerPeriodLabel"></span>）</h3>
     <div id="cfDinnerBody" style="max-height:65vh;overflow-y:auto;"></div>
     <div class="asr-mbtns">
@@ -26600,15 +26600,15 @@ var CHILDFEE=(function(){
           mealTypeTotals['7-12M']+=q712;mealTypeTotals['13-36M']+=q1336;
         }
         var yesOn=state==='yes',noOn=state==='no';
-        h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:12px;font-size:.84rem;color:#2d3057;">';
-        h+='<span style="flex:1;min-width:64px;">'+k.name+(state==='unset'?' <span style="font-size:.68rem;color:#bbb;font-weight:700;">（未回覆）</span>':'')+'</span>';
-        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',true)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(yesOn?'#B9822A':'#ddd')+';background:'+(yesOn?'#F0C97A':'#eee')+';color:'+(yesOn?'#4a3300':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">要</button>';
-        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',false)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(noOn?'#999':'#ddd')+';background:'+(noOn?'#E8E8E8':'#eee')+';color:'+(noOn?'#555':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">不要</button>';
+        h+='<div style="display:flex;align-items:center;gap:4px;flex-wrap:nowrap;overflow-x:auto;padding:8px 10px;background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:12px;font-size:.84rem;color:#2d3057;">';
+        h+='<span style="flex:1;min-width:0;white-space:nowrap;">'+k.name+(state==='unset'?' <span style="font-size:.66rem;color:#bbb;font-weight:700;">（未回覆）</span>':'')+'</span>';
+        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',true)" style="flex-shrink:0;padding:5px 10px;border-radius:999px;border:1.5px solid '+(yesOn?'#B9822A':'#ddd')+';background:'+(yesOn?'#F0C97A':'#eee')+';color:'+(yesOn?'#4a3300':'#aaa')+';font-weight:800;font-size:.76rem;cursor:pointer;">要</button>';
+        h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',false)" style="flex-shrink:0;padding:5px 10px;border-radius:999px;border:1.5px solid '+(noOn?'#999':'#ddd')+';background:'+(noOn?'#E8E8E8':'#eee')+';color:'+(noOn?'#555':'#aaa')+';font-weight:800;font-size:.76rem;cursor:pointer;">不要</button>';
         if(yesOn){
-          h+='<span style="font-size:.7rem;color:#B9822A;">7-12M</span>';
-          h+='<input type="number" min="0" value="'+q712+'" style="width:36px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.78rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'712\',this.value)">';
-          h+='<span style="font-size:.7rem;color:#B9822A;">13-36M</span>';
-          h+='<input type="number" min="0" value="'+q1336+'" style="width:36px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.78rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'1336\',this.value)">';
+          h+='<span style="flex-shrink:0;font-size:.66rem;color:#B9822A;">7-12</span>';
+          h+='<input type="number" min="0" value="'+q712+'" style="flex-shrink:0;width:30px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.76rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'712\',this.value)">';
+          h+='<span style="flex-shrink:0;font-size:.66rem;color:#B9822A;">13-36</span>';
+          h+='<input type="number" min="0" value="'+q1336+'" style="flex-shrink:0;width:30px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.76rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'1336\',this.value)">';
         }
         h+='</div>';
       });
@@ -28605,7 +28605,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127091447--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127093820--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
