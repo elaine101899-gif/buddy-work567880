@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127104835';
+  var BUILD='20261127115328';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26330,7 +26330,12 @@ var CHILDFEE=(function(){
     /* 2026-11-18：月費報表要新增「註冊費退費」這個固定欄位（跟退費(其他)
        不同科目，分開記才對得起月費報表上獨立的那一欄），例如孩子腸病毒
        確診、按規定要退還部分註冊費的情況。 */
-    {k:'regFeeRefund',label:'註冊費退費'}
+    {k:'regFeeRefund',label:'註冊費退費'},
+    /* 2026-11-27：之前某期退費算錯多退給家長的錢，這期要跟家長收回來
+       （例如許恩愷），跟上面三個退費科目方向相反，是「要加收」不是
+       「要扣」，所以故意不放進 FIELDS_SUBTRACT，讓它跟月費/餐費一樣
+       用加的。 */
+    {k:'takeback',label:'補回來的錢'}
   ];
   /* 哪些科目性質上是「退費、要用減的」而不是「收費、要用加的」——目前
      有 refund（請假退費，上一期請假自動試算）、otherRefund（多收費退回
@@ -28643,7 +28648,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127104835--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127115328--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
