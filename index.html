@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127095843';
+  var BUILD='20261127104835';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25991,6 +25991,16 @@ var CHILDLEAVE=(function(){
   }
   function _sumDateKey(d){return (d.getFullYear()-1911)+'_'+pad2(d.getMonth()+1)+'_'+pad2(d.getDate());}
   /* 掃過該幼兒「全部」請假紀錄（不限這一期），抓出指定假別的日期，由舊到新排序 */
+  /* 某一天歸屬「哪一期」月費單——跟 _sumPeriodRange 的「27號切期」規則
+     相反運算：27號（含）以後算下個月那一期（例如11/27歸屬12月那一期，
+     因為12月那一期的請假退費視窗是11/27~12/26），26號以前算自己當月
+     那一期。判斷一段病假「整段算哪一期退費」時要用這個，不是用病假
+     本身每一天各自落在哪個月份。 */
+  function _ownerPeriodOf(date){
+    var roc=date.getFullYear()-1911,mo=date.getMonth()+1;
+    if(date.getDate()>=27){mo++;if(mo>12){mo=1;roc++;}}
+    return{roc:roc,mo:mo};
+  }
   function _fullTypeDatesForChild(cid,types){
     var out=[];
     Object.keys(db.records).forEach(function(dk){
@@ -26066,7 +26076,10 @@ var CHILDLEAVE=(function(){
       }
       var span=Math.round((run[run.length-1].date-run[0].date)/86400000)+1;
       var bridged=_bridgedByFlatLeave(cid,run[0].date,-1)||_bridgedByFlatLeave(cid,run[run.length-1].date,1);
-      if(span>=5||bridged)run.forEach(function(e){eligible[e.dateKey]=true;});
+      if(span>=5||bridged){
+        var owner=_ownerPeriodOf(run[run.length-1].date);
+        run.forEach(function(e){eligible[e.dateKey]={ownerRoc:owner.roc,ownerMo:owner.mo};});
+      }
       i=j;
     }
     return eligible;
@@ -26096,8 +26109,33 @@ var CHILDLEAVE=(function(){
         if(FLAT_REFUND_TYPES.indexOf(rec.type)>=0){
           refund=_refundRate(rec.name,rec.type);
         } else if(SICK_TYPES.indexOf(rec.type)>=0){
-          if(!sickEligCache[cid])sickEligCache[cid]=_eligibleSickDateKeys(cid);
-          if(sickEligCache[cid][k])refund=_refundRate(rec.name,rec.type);
+          if(!sickEligCache[cid]){
+            sickEligCache[cid]=_eligibleSickDateKeys(cid);
+            /* 2026-11-27：某一段病假「整段算哪一期」是用最後一天決定的
+               （見 _eligibleSickDateKeys 的說明），這代表這段裡比較早
+               的那幾天，日期上可能落在「上一期」的視窗裡、day-loop
+               這個迴圈根本不會走到那幾天（迴圈只跑 range.startDate~
+               range.endDate）。這裡在第一次算出這個孩子的病假適用名單時，
+               順便把「歸屬這一期、但日期早於這一期視窗起點」的那些天
+               一次性補上，不然蘇思瑾11/23~26（歸屬12月那一期，但都在
+               12月視窗起點11/27之前）就永遠不會被這個迴圈走到、退費
+               會憑空消失。 */
+            Object.keys(sickEligCache[cid]).forEach(function(ek){
+              var info=sickEligCache[cid][ek];
+              if(info.ownerRoc!==endRoc||info.ownerMo!==endMo)return;
+              var p=ek.split('_');
+              var edt=new Date(parseInt(p[0],10)+1911,parseInt(p[1],10)-1,parseInt(p[2],10));
+              if(edt>=range.startDate)return; /* 本來就在視窗內，day-loop自己會處理 */
+              var erec=(db.records[ek]||{})[cid];
+              if(!erec)return;
+              if(!byChild[cid])byChild[cid]={id:cid,name:erec.name||'（未知）',cls:clsOf[cid]||'',entries:[],refundTotal:0};
+              var eRefund=_refundRate(erec.name,erec.type);
+              byChild[cid].entries.push({date:(edt.getMonth()+1)+'/'+edt.getDate(),type:erec.type,note:erec.note||'',refund:eRefund,ts:edt.getTime()});
+              byChild[cid].refundTotal+=eRefund;
+            });
+          }
+          var _info=sickEligCache[cid][k];
+          if(_info&&_info.ownerRoc===endRoc&&_info.ownerMo===endMo)refund=_refundRate(rec.name,rec.type);
         }
         /* ts 給月費單那邊判斷「連續天」用：同一個假別、日期剛好差一天
            （86400000ms）才算連續，可以合併顯示成「幾月幾號～幾月幾號」，
@@ -28605,7 +28643,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127095843--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127104835--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
