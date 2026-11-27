@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127115328';
+  var BUILD='20261127120236';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -25707,6 +25707,12 @@ var CHILDLEAVE=(function(){
        腸病毒/腸-停課 一天 251 元、颱風假/豪雨假 一天 314 元，病假/住院一樣是 67 元。 */
   var SICK_TYPES=['病假','住院'];
   var FLAT_REFUND_TYPES=['腸病毒','腸-停課','颱風假','豪雨假'];
+  /* 2026-11-27：病假能不能跟前後緊接的假別「橋接」算連續生病，只看
+     腸病毒/腸-停課這兩種真正跟生病有關的假別；颱風假/豪雨假是天災
+     停課，跟孩子本身有沒有連續生病無關，不能證明病假是連續的，所以
+     不放進這份橋接專用清單（跟上面退費金額共用的 FLAT_REFUND_TYPES
+     分開）。 */
+  var ILLNESS_BRIDGE_TYPES=['腸病毒','腸-停課'];
   var SPECIAL_FEE_NAMES=['王品承','韓宇棠','蕭聖龍','黃晨維','呂婕瑄'];
   function _refundRate(name,type){
     if(SICK_TYPES.indexOf(type)>=0)return 67;
@@ -26060,7 +26066,7 @@ var CHILDLEAVE=(function(){
       if(!_isOffDay(t)){
         var k=_sumDateKey(t);
         var rec=(db.records[k]||{})[cid];
-        return !!(rec&&rec.type&&FLAT_REFUND_TYPES.indexOf(rec.type)>=0);
+        return !!(rec&&rec.type&&ILLNESS_BRIDGE_TYPES.indexOf(rec.type)>=0);
       }
     }
   }
@@ -28648,7 +28654,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127115328--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127120236--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
