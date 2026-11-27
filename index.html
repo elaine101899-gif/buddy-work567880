@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127120236';
+  var BUILD='20261127121020';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26724,7 +26724,14 @@ var CHILDFEE=(function(){
     var stored=_peekRec(pk,k.id);
     var rec=stored?Object.assign({},stored):{};
     if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
-    if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
+    /* 2026-11-27：退費(請假)原本跟延托費一樣「第一次自動帶入後就鎖住，
+       不會再被覆蓋」，結果請假紀錄後來改掉/補登，帳單上的退費金額卻
+       沒跟著更新，造成帳面數字跟請假明細對不上（林昕妍、許恩愷等好
+       幾筆都踩到）。使用者要求直接取消這個鎖定，改成每次畫面打開都
+       用 CHILDLEAVE 當下算出來的金額，不管之前存檔存過什麼都蓋掉——
+       這筆已經「已繳」的帳單在收支總表那邊是另外讀 db.records 的歷史
+       存檔值，不受這裡影響，所以不會動到已經結清的帳。 */
+    rec.refund=(refundTotals&&refundTotals[k.id]!==undefined)?refundTotals[k.id]:0;
     _applyFeeDefaults(rec,k.name,_endM);
     var total=_total(rec);
     var paid=rec.payMethod&&rec.payMethod!=='未繳';
@@ -26741,6 +26748,13 @@ var CHILDFEE=(function(){
     h+='</div>';
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px 10px;margin-bottom:8px;">';
     FIELDS.forEach(function(f){
+      /* 退費(請假)已經改成每次都即時算，不再是存檔鎖住的數字，
+         這裡改成不能手動編輯，避免打了一個數字卻在下次打開又被蓋掉，
+         讓使用者誤以為自己改過了。 */
+      if(f.k==='refund'){
+        h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'（即時計算）</div><input type="number" class="df-inp" style="width:100%;background:#f1efe9;color:#888;" value="'+rec.refund+'" disabled></div>';
+        return;
+      }
       h+='<div><div style="font-size:.66rem;color:#aaa;margin-bottom:2px;">'+f.label+'</div><input type="number" class="df-inp" style="width:100%;" value="'+(rec[f.k]!==undefined?rec[f.k]:'')+'" onchange="CHILDFEE.setField(\''+k.id+'\',\''+f.k+'\',this.value)"></div>';
     });
     h+='</div>';
@@ -26794,7 +26808,7 @@ var CHILDFEE=(function(){
     for(var m=1;m<=12;m++)h+='<option value="'+m+'"'+(m===_endM?' selected':'')+'>'+m+' 月</option>';
     h+='</select>';
     h+='</div>';
-    h+='<div class="cf-hint-box">延托費、退費(請假)兩欄會自動帶入上一期算好的金額，<br>直接從這期月費加收／扣抵；存檔後不會再被覆蓋。</div>';
+    h+='<div class="cf-hint-box">延托費會自動帶入上一期算好的金額，存檔後不會再被覆蓋；<br>退費(請假)改成每次都即時計算，請假紀錄改了會自動跟著變，不用手動改。</div>';
     h+='<div style="display:flex;gap:6px;flex-wrap:nowrap;margin-bottom:14px;">';
     h+='<button class="cf-add-btn" style="flex:1;text-align:center;" onclick="CHILDFEE.openNewChild()">＋ 新增幼兒</button>';
     h+='<button class="cf-unpaid-btn" style="flex:1;text-align:center;" onclick="CHILDFEE.openUnpaid()">未繳名單</button>';
@@ -26831,9 +26845,8 @@ var CHILDFEE=(function(){
     if(rec.extendFee===undefined&&field!=='extendFee'){
       try{if(typeof EXTENDCARE!=='undefined'){var _etfPrior=_priorPeriod(_endY,_endM);var et=EXTENDCARE.feeTotalsForPeriod(_etfPrior.roc,_etfPrior.mo);if(et&&et[cid]!==undefined)rec.extendFee=et[cid];}}catch(e){}
     }
-    if(rec.refund===undefined&&field!=='refund'){
-      try{if(typeof CHILDLEAVE!=='undefined'){var _sfPrior=_priorPeriod(_endY,_endM);var rt=CHILDLEAVE.refundTotalsForPeriod(_sfPrior.roc,_sfPrior.mo);if(rt&&rt[cid]!==undefined)rec.refund=rt[cid];}}catch(e){}
-    }
+    /* 2026-11-27：退費(請假)不再鎖住存檔，每次顯示都重新即時算（見
+       _childCard），這裡就不用再把試算金額寫進這筆帳單存檔了。 */
     if(found)_applyFeeDefaults(rec,found,_endM);
     if(field==='payMethod'||field==='payDate'||field==='last5'||field==='receiptNo'||field==='note'||field==='dinnerMealType')rec[field]=val;
     /* 2026-11-25：清空欄位（val===''）要用 delete 整個拿掉這個 key，
@@ -27521,7 +27534,9 @@ var CHILDFEE=(function(){
         var stored=_peekRec(pk,k.id);
         var rec=stored?Object.assign({},stored):{};
         if(rec.extendFee===undefined&&extendTotals&&extendTotals[k.id]!==undefined)rec.extendFee=extendTotals[k.id];
-        if(rec.refund===undefined&&refundTotals&&refundTotals[k.id]!==undefined)rec.refund=refundTotals[k.id];
+        /* 2026-11-27：跟 _childCard 一樣，印出來的退費(請假)也改成每次
+           都用 CHILDLEAVE 當下算出來的金額，不再沿用存檔鎖住的舊值。 */
+        rec.refund=(refundTotals&&refundTotals[k.id]!==undefined)?refundTotals[k.id]:0;
         _applyFeeDefaults(rec,k.name,_endM);
         billed.push({id:k.id,name:k.name,cls:cls,rec:rec,total:_total(rec)});
       });
@@ -28654,7 +28669,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127120236--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127121020--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
