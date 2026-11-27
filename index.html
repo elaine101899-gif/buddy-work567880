@@ -10,7 +10,7 @@
 <script>
 /* 強制瀏覽器載入最新版：把版本號加進 URL */
 (function(){
-  var BUILD='20261127090637';
+  var BUILD='20261127091447';
   if(!BUILD||BUILD.indexOf('BUILD_TS')>-1)return;
   /* 網址如果帶 #hash（例如隱藏的登入試用頁 #logintest），一定要先把 hash
      切掉再接 ?_v=，不然 ?_v= 會被瀏覽器當成 hash 的一部分（不是真正的查詢
@@ -26556,18 +26556,21 @@ var CHILDFEE=(function(){
     var groups=getKidsByCls(_endY,_endM);
     var label=document.getElementById('cfDinnerPeriodLabel');
     if(label)label.textContent=_endY+'年'+_endM+'月';
-    /* 2026-11-27：廚房要的是「7-12M做幾份、13-36M做幾份」這種餐別統計，
-       跟小孩資料本身的月齡欄位（0-9M/9-15M/13-36M）分法對不起來（例如
-       9-15M橫跨她的7-12M跟13-36M兩邊），沒辦法直接拿系統月齡欄位反推，
-       所以晚餐餐別是獨立存一個 rec.dinnerMealType 欄位，預設先用月齡
-       欄位猜一個（13-36M就猜13-36M、其他都先猜7-12M），猜錯的話她自己
-       改下拉選單即可，不影響金額（金額還是份數×1500）。
-       卡片版面改成上面姓名一行、下面控制項一行，手機版名字才不會被
-       擠得很窄、直向被拉長。 */
-    var MEALTYPE_OPTS=['7-12M','13-36M'];
+    /* 2026-11-27 再修正：同一個孩子訂2份，不代表2份都是同一種餐別——
+       可能是1份7-12M＋1份13-36M（例如一份自己吃、一份帶給家裡另一個
+       月齡不同的孩子），原本用「總份數＋單一下拉選單選餐別」沒辦法
+       表達「同一人兩種餐別都要」。改成每個孩子分開存兩個數量欄位
+       rec.dinnerQty712（7-12M份數）、rec.dinnerQty1336（13-36M份數），
+       兩個都是獨立的勾選＋數量，金額＝(兩者加總)×1500，寫回原本的
+       dinnerFee 欄位，CHECKOUT/itemize等用到 dinnerFee 的地方完全不用改。
+       版面改回她要的單行——姓名＋要/不要＋兩個餐別各自的份數輸入框，
+       都擠在同一行用 flex-wrap，螢幕窄的話才整個換行，不是拆成兩行。
+       舊資料（只有 dinnerFee、沒有 dinnerQty712/dinnerQty1336，或舊版
+       dinnerMealType 單一選項）相容處理：没有拆分欄位時，把原本的
+       份數整包塞進「用月齡猜的那個餐別」，另一個餐別份數算0，她之後
+       要拆開再自己調整即可。 */
     function _guessMealType(age){return age==='13-36M'?'13-36M':'7-12M';}
-    var h='',totalPeople=0,totalPortions=0,clsCounts=[],mealTypeTotals={};
-    MEALTYPE_OPTS.forEach(function(m){mealTypeTotals[m]=0;});
+    var h='',totalPeople=0,totalPortions=0,clsCounts=[],mealTypeTotals={'7-12M':0,'13-36M':0};
     CLSORDER.forEach(function(cls){
       var kids=groups[cls]||[];
       if(!kids.length)return;
@@ -26576,38 +26579,38 @@ var CHILDFEE=(function(){
       h+='<div style="display:flex;flex-direction:column;gap:8px;">';
       kids.forEach(function(k){
         var rec=_peekRec(pk,k.id);
-        /* 2026-11-25：rec.dinnerFee 還沒被任何一邊按過的話是 undefined
-           （不是0）——這裡故意分三種狀態：還沒選（兩顆都灰色，代表還沒
-           交通知單回條）、要（1500起）、不要（明確存0）。不能只看
-           "有沒有>0" 兩分法，不然「還沒交」跟「已經選不要」畫面上會長
-           得一樣，分不出誰還沒回覆。
-           2026-11-27：同一個孩子可能要訂2份（例如要帶回家一份），
-           dinnerFee 本來就是「這個孩子這期晚餐費總金額」，份數直接用
-           金額除以1500反推（1500一份），不用另外加一個獨立的份數欄位，
-           金額欄位（CHECKOUT/itemize等）完全不用改，份數只是這裡拿來
-           給份數輸入框顯示用。 */
         var raw=rec?rec.dinnerFee:undefined;
+        /* 2026-11-25：還沒被任何一邊按過的話 dinnerFee 是 undefined
+           （不是0）——故意分三種狀態：還沒選（兩顆都灰色，代表還沒交
+           通知單回條）、要、不要（明確存0）。不能只看"有沒有>0"兩分法，
+           不然「還沒交」跟「已經選不要」畫面上會長得一樣，分不出誰
+           還沒回覆。 */
         var state=raw===undefined?'unset':((parseFloat(raw)||0)>0?'yes':'no');
-        var qty=state==='yes'?Math.max(1,Math.round((parseFloat(raw)||1500)/1500)):1;
-        var mealType=(rec&&rec.dinnerMealType)||_guessMealType(k.age);
+        var q712,q1336;
+        if(rec&&(rec.dinnerQty712!==undefined||rec.dinnerQty1336!==undefined)){
+          q712=parseFloat(rec.dinnerQty712)||0;q1336=parseFloat(rec.dinnerQty1336)||0;
+        } else if(state==='yes'){
+          var totalQty=Math.max(1,Math.round((parseFloat(raw)||1500)/1500));
+          var guess=(rec&&rec.dinnerMealType)||_guessMealType(k.age);
+          q712=guess==='7-12M'?totalQty:0;q1336=guess==='13-36M'?totalQty:0;
+        } else { q712=0;q1336=0; }
         if(state==='yes'){
+          var qty=q712+q1336;
           clsPeople++;totalPeople++;clsPortions+=qty;totalPortions+=qty;
-          mealTypeTotals[mealType]=(mealTypeTotals[mealType]||0)+qty;
+          mealTypeTotals['7-12M']+=q712;mealTypeTotals['13-36M']+=q1336;
         }
         var yesOn=state==='yes',noOn=state==='no';
-        h+='<div style="padding:8px 10px;background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:12px;font-size:.84rem;color:#2d3057;">';
-        h+='<div style="font-weight:700;margin-bottom:6px;">'+k.name+(state==='unset'?' <span style="font-size:.68rem;color:#bbb;font-weight:700;">（未回覆）</span>':'')+'</div>';
-        h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+        h+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#FAF6EE;border:1.5px solid #E2D9C8;border-radius:12px;font-size:.84rem;color:#2d3057;">';
+        h+='<span style="flex:1;min-width:64px;">'+k.name+(state==='unset'?' <span style="font-size:.68rem;color:#bbb;font-weight:700;">（未回覆）</span>':'')+'</span>';
         h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',true)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(yesOn?'#B9822A':'#ddd')+';background:'+(yesOn?'#F0C97A':'#eee')+';color:'+(yesOn?'#4a3300':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">要</button>';
         h+='<button type="button" onclick="CHILDFEE.toggleDinnerSub(\''+k.id+'\',false)" style="padding:5px 14px;border-radius:999px;border:1.5px solid '+(noOn?'#999':'#ddd')+';background:'+(noOn?'#E8E8E8':'#eee')+';color:'+(noOn?'#555':'#aaa')+';font-weight:800;font-size:.78rem;cursor:pointer;">不要</button>';
         if(yesOn){
-          h+='<span style="font-size:.76rem;color:#B9822A;margin-left:4px;">份數</span>';
-          h+='<input type="number" min="1" value="'+qty+'" style="width:42px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.8rem;" onchange="CHILDFEE.setDinnerQty(\''+k.id+'\',this.value)">';
-          h+='<select style="padding:4px 6px;border-radius:8px;border:1.5px solid #ddd;font-size:.78rem;" onchange="CHILDFEE.setDinnerMealType(\''+k.id+'\',this.value)">';
-          MEALTYPE_OPTS.forEach(function(m){h+='<option value="'+m+'"'+(m===mealType?' selected':'')+'>'+m+'餐</option>';});
-          h+='</select>';
+          h+='<span style="font-size:.7rem;color:#B9822A;">7-12M</span>';
+          h+='<input type="number" min="0" value="'+q712+'" style="width:36px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.78rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'712\',this.value)">';
+          h+='<span style="font-size:.7rem;color:#B9822A;">13-36M</span>';
+          h+='<input type="number" min="0" value="'+q1336+'" style="width:36px;padding:4px 2px;text-align:center;border-radius:8px;border:1.5px solid #ddd;font-size:.78rem;" onchange="CHILDFEE.setDinnerQtyByType(\''+k.id+'\',\'1336\',this.value)">';
         }
-        h+='</div></div>';
+        h+='</div>';
       });
       h+='</div>';
       clsCounts.push({cls:cls,people:clsPeople,portions:clsPortions});
@@ -26619,7 +26622,7 @@ var CHILDFEE=(function(){
       h+=clsCounts.map(function(c){return CLSLABEL[c.cls]+' '+c.people+'人'+(c.portions!==c.people?'（'+c.portions+'份）':'');}).join('　／　');
       h+='　　共 '+totalPeople+' 人'+(totalPortions!==totalPeople?'，共 '+totalPortions+' 份':'');
       h+='<div style="font-weight:800;margin:8px 0 4px;">給廚房：餐別份數</div>';
-      h+=MEALTYPE_OPTS.map(function(m){return m+'餐　'+(mealTypeTotals[m]||0)+'份';}).join('　／　');
+      h+='7-12M餐　'+mealTypeTotals['7-12M']+'份　／　13-36M餐　'+mealTypeTotals['13-36M']+'份';
       h+='</div>';
     }
     document.getElementById('cfDinnerBody').innerHTML=h;
@@ -26635,22 +26638,37 @@ var CHILDFEE=(function(){
     var wantState=checked?'yes':'no';
     if(curState===wantState){
       setField(cid,'dinnerFee','');
+      setField(cid,'dinnerQty712','');
+      setField(cid,'dinnerQty1336','');
+    } else if(checked){
+      /* 剛從「不要」或「還沒回覆」點成「要」：先預設1份，份數放在用
+         月齡猜出來的那個餐別，兩個餐別各自的份數之後她自己在輸入框
+         調整（包含同時兩種餐別都要的情況）。 */
+      var groups=getKidsByCls(_endY,_endM);
+      var found=null;
+      CLSORDER.forEach(function(cls){groups[cls].forEach(function(k){if(k.id===cid)found=k;});});
+      var guess=(found&&found.age==='13-36M')?'13-36M':'7-12M';
+      setField(cid,'dinnerQty712',guess==='7-12M'?1:0);
+      setField(cid,'dinnerQty1336',guess==='13-36M'?1:0);
+      setField(cid,'dinnerFee',1500);
     } else {
-      setField(cid,'dinnerFee',checked?1500:0);
+      setField(cid,'dinnerQty712',0);
+      setField(cid,'dinnerQty1336',0);
+      setField(cid,'dinnerFee',0);
     }
     _renderDinnerSub();
   }
-  /* 調整份數：1份=1500元，直接改這個孩子這期的晚餐費總金額，
-     跟一般打金額的欄位是同一筆資料，不用另外存份數。 */
-  function setDinnerQty(cid,val){
-    var qty=Math.max(1,parseInt(val,10)||1);
-    setField(cid,'dinnerFee',qty*1500);
-    _renderDinnerSub();
-  }
-  /* 餐別：7-12M／13-36M，給廚房準備不同月齡餐點用，跟金額無關，
-     純粹記錄用。 */
-  function setDinnerMealType(cid,val){
-    setField(cid,'dinnerMealType',val);
+  /* 份數依餐別分開調整：type是'712'或'1336'，兩個餐別各自的份數加總
+     ×1500寫回 dinnerFee（CHECKOUT/itemize等照舊只看 dinnerFee，完全
+     不用改），份數本身也存起來，下次打開畫面才不用再用月齡重新猜。 */
+  function setDinnerQtyByType(cid,type,val){
+    var pk=periodKey(_endY,_endM);
+    var rec=_peekRec(pk,cid)||{};
+    var qty=Math.max(0,parseInt(val,10)||0);
+    var otherField=type==='712'?'dinnerQty1336':'dinnerQty712';
+    var otherQty=parseFloat(rec[otherField])||0;
+    setField(cid,'dinnerQty'+type,qty);
+    setField(cid,'dinnerFee',(qty+otherQty)*1500);
     _renderDinnerSub();
   }
   function _childCard(k,pk,extendTotals,refundTotals){
@@ -27735,7 +27753,7 @@ var CHILDFEE=(function(){
     return sums;
   }
   return{init:init,changeYM:changeYM,setField:setField,setCls:setCls,setChild:setChild,incInit:incInit,incChangeYM:incChangeYM,openWd:openWd,closeWd:closeWd,saveWd:saveWd,deleteWd:deleteWd,refresh:render,incRefresh:incRender,checkPw:checkPw,openPinOv:openPinOv,closePinOv:closePinOv,openNewChild:openNewChild,closeNewChild:closeNewChild,ncClsChanged:ncClsChanged,saveNewChild:saveNewChild,printIncomeReport:printIncomeReport,previewFeeReport:previewFeeReport,printSlips:printSlips,openUnpaid:openUnpaid,closeUnpaid:closeUnpaid,jumpToChild:jumpToChild,ensureAttached:load,listPeriodsForCheckout:listPeriodsForCheckout,incomeSumsForPeriod:incomeSumsForPeriod,openAssignTeacher:openAssignTeacher,closeAssignTeacher:closeAssignTeacher,asClsChanged:asClsChanged,saveAssignTeacher:saveAssignTeacher,
-    openDinnerSub:openDinnerSub,closeDinnerSub:closeDinnerSub,toggleDinnerSub:toggleDinnerSub,setDinnerQty:setDinnerQty,setDinnerMealType:setDinnerMealType};
+    openDinnerSub:openDinnerSub,closeDinnerSub:closeDinnerSub,toggleDinnerSub:toggleDinnerSub,setDinnerQtyByType:setDinnerQtyByType};
 })();
 
 /* ════ TEACHERLEAVE：每日回報 — 老師請假追蹤（已寫假單/已列印交接單）、育嬰留停名單，
@@ -28587,7 +28605,7 @@ document.addEventListener('DOMContentLoaded',function(){
 
 </script>
 
-<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127090637--></div>
+<div id="appVerTag" style="position:fixed;bottom:6px;left:10px;font-size:10px;color:#bbb;pointer-events:none;z-index:9999;"><!--20261127091447--></div>
 <script>
 (function(){
   var el=document.getElementById('appVerTag');
